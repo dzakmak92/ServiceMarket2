@@ -35,24 +35,38 @@ _origins = [o for o in (
 app.add_middleware(CORSMiddleware, allow_origins=_origins, allow_credentials=True,
                    allow_methods=["*"], allow_headers=["*"])
 
-from routes._pro import require_pro_id  # noqa: E402,F401
-from routes.auth_routes import router as auth_router  # noqa: E402
-from routes.customer_routes import router as customer_router  # noqa: E402
-from routes.invoice_routes import router as invoice_router  # noqa: E402
-from routes.job_routes import router as job_router  # noqa: E402
-from routes.pm_pg_routes import (portal_router as pm_portal_router,  # noqa: E402
-                                 router as pm_router, timer_router as pm_timer_router)
-from routes.quote_routes import (invoice_router as quote_invoice_router,  # noqa: E402
-                                 public_router as portal_router, router as quote_router)
-from routes.tax_pg_routes import router as tax_router  # noqa: E402
-from routes.upload_routes import (portal_router as upload_portal_router,  # noqa: E402
-                                  router as upload_router)
+# Route imports are guarded. If one fails on Vercel — a module missing from
+# the bundle, a dependency absent from api/requirements.txt — an unguarded
+# ImportError at module scope means the platform never gets an `app` object
+# at all, and every request returns a bare INTERNAL_FUNCTION_INVOCATION_FAILED
+# with no way to tell which module broke. Recording the failure and still
+# serving /api/health turns an opaque 500 into a named cause.
+_import_error: str | None = None
 
-for r in (auth_router, customer_router, job_router, quote_router,
-          quote_invoice_router, invoice_router, tax_router,
-          pm_router, pm_timer_router, upload_router,
-          portal_router, pm_portal_router, upload_portal_router):
-    app.include_router(r, prefix="/api")
+try:
+    from routes._pro import require_pro_id  # noqa: E402,F401
+    from routes.auth_routes import router as auth_router  # noqa: E402
+    from routes.customer_routes import router as customer_router  # noqa: E402
+    from routes.invoice_routes import router as invoice_router  # noqa: E402
+    from routes.job_routes import router as job_router  # noqa: E402
+    from routes.pm_pg_routes import (portal_router as pm_portal_router,  # noqa: E402
+                                     router as pm_router, timer_router as pm_timer_router)
+    from routes.quote_routes import (invoice_router as quote_invoice_router,  # noqa: E402
+                                     public_router as portal_router, router as quote_router)
+    from routes.tax_pg_routes import router as tax_router  # noqa: E402
+    from routes.upload_routes import (portal_router as upload_portal_router,  # noqa: E402
+                                      router as upload_router)
+
+    for r in (auth_router, customer_router, job_router, quote_router,
+              quote_invoice_router, invoice_router, tax_router,
+              pm_router, pm_timer_router, upload_router,
+              portal_router, pm_portal_router, upload_portal_router):
+        app.include_router(r, prefix="/api")
+except Exception as exc:  # noqa: BLE001 — must not propagate
+    import traceback
+    _import_error = f"{type(exc).__name__}: {exc}"
+    logger.error("route import failed — API routes are NOT mounted\n%s",
+                 traceback.format_exc())
 
 
 def _scrub(text: str) -> str:
@@ -79,8 +93,11 @@ async def startup() -> None:
     misconfigured. The pool is opened lazily on first query instead, so the
     app boots without a database and says so.
     """
-    from db.pg import init_pool
     try:
+        # Imported inside the guard: if backend/ is missing from the function
+        # bundle this raises ModuleNotFoundError, and an unguarded import here
+        # would abort lifespan just as surely as a failed connection.
+        from db.pg import init_pool
         # One connection per instance. Vercel may run many instances
         # concurrently, and each holding ten would exhaust the pooler.
         await init_pool(min_size=0, max_size=1)
@@ -90,15 +107,18 @@ async def startup() -> None:
 
 @app.on_event("shutdown")
 async def shutdown() -> None:
-    from db.pg import close_pool
-    await close_pool()
+    try:
+        from db.pg import close_pool
+        await close_pool()
+    except Exception as exc:  # noqa: BLE001 — a failed teardown must not 500
+        logger.warning("shutdown: %s", _scrub(str(exc)))
 
 
 @app.get("/api/health")
 async def health():
-    from db.pg import fetchval
     detail = None
     try:
+        from db.pg import fetchval
         await fetchval("select 1")
         db_ok = True
     except Exception as exc:
@@ -109,11 +129,15 @@ async def health():
         "status": "ok" if db_ok else "degraded",
         "database": "connected" if db_ok else "unavailable",
         "database_url_set": bool(os.environ.get("DATABASE_URL")),
+        "routes_mounted": len(app.routes),
         "version": "2.0.0",
         "region": os.environ.get("VERCEL_REGION"),
     }
     if detail:
         body["detail"] = detail
+    if _import_error:
+        body["status"] = "degraded"
+        body["import_error"] = _scrub(_import_error)
     return body
 
 
