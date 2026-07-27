@@ -80,61 +80,6 @@ async def disable_pay_link(invoice_id: str, user: dict = Depends(get_current_use
     return {"enabled": False}
 
 
-@router.post("/{invoice_id}/share-in-conversation")
-async def share_pay_link_in_conversation(invoice_id: str, user: dict = Depends(get_current_user)):
-    """Send the active pay-link as a message in the conversation with the invoice's customer.
-    Requires: pay-link enabled, invoice has homeowner_id + job_id."""
-    from os import environ
-    inv = await _get_pro_invoice_or_404(invoice_id, user["_id"])
-    if not inv.get("pay_link_enabled") or not inv.get("pay_link_token"):
-        raise HTTPException(status_code=400, detail="Enable the pay-link first")
-    if not inv.get("homeowner_id") or not inv.get("job_id"):
-        raise HTTPException(status_code=400, detail="This invoice has no linked job/customer — share manually.")
-    base_url = environ.get("PUBLIC_APP_URL") or environ.get("FRONTEND_URL") or environ.get("REACT_APP_BACKEND_URL") or ""
-    pay_url = f"{base_url.rstrip('/')}/pay/{inv['pay_link_token']}" if base_url else f"/pay/{inv['pay_link_token']}"
-    text = (
-        f"Hier ist der Zahlungslink für Rechnung {inv['invoice_number']} "
-        f"über €{float(inv.get('brutto_total', 0)):.2f}. "
-        f"Sicher zahlen via Karte: {pay_url}"
-    )
-    msg_doc = {
-        "job_id": str(inv["job_id"]),
-        "from_id": user["_id"] if isinstance(user["_id"], ObjectId) else ObjectId(user["_id"]),
-        "to_id": ObjectId(inv["homeowner_id"]) if isinstance(inv["homeowner_id"], str) else inv["homeowner_id"],
-        "text": text,
-        "kind": "text",
-        "sent_at": datetime.now(timezone.utc),
-        "read_at": None,
-        "attachments": [],
-    }
-    res = await db.messages.insert_one(msg_doc)
-    # Bump conversation's last_message_at + unread for recipient (so the thread sorts to the top)
-    try:
-        await db.conversations.update_one(
-            {"job_id": str(inv["job_id"]),
-             "participants": {"$all": [str(msg_doc["from_id"]), str(msg_doc["to_id"])]}},
-            {"$set": {"last_message_at": datetime.now(timezone.utc), "last_message_text": text[:160]},
-             "$inc": {f"unread_count.{str(msg_doc['to_id'])}": 1}},
-        )
-    except Exception:
-        pass
-    # Notification to recipient
-    try:
-        await db.notifications.insert_one({
-            "user_id": msg_doc["to_id"],
-            "kind": "pay_link_shared",
-            "title": "Zahlungslink erhalten",
-            "body": f"Sie haben einen Zahlungslink für Rechnung {inv['invoice_number']} erhalten.",
-            "link_to": f"/messages?job={inv['job_id']}",
-            "is_read": False,
-            "created_at": datetime.now(timezone.utc),
-        })
-    except Exception:
-        pass
-    return {"sent": True, "message_id": str(res.inserted_id), "pay_url": pay_url}
-
-
-
 @router.get("/{invoice_id}")
 async def get_pay_link_status(invoice_id: str, user: dict = Depends(get_current_user)):
     inv = await _get_pro_invoice_or_404(invoice_id, user["_id"])

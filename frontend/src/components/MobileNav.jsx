@@ -47,36 +47,22 @@ export default function MobileNav() {
   const isActive = (path) => location.pathname === path;
 
   // 4 most-used links per role + a "More" right-corner action.
-  const primaryHomeowner = [
-    { to: '/', icon: Home, label: t('nav_home') },
-    { to: '/find-pros', icon: Search, label: t('nav_find_pros') },
-    { to: '/post-job', icon: PlusCircle, label: t('nav_post_job') },
-    { to: '/messages', icon: MessageSquare, label: t('nav_messages') },
-  ];
-  const moreHomeowner = [
-    { to: '/dashboard', icon: Briefcase, label: t('nav_my_jobs') },
-    { to: '/my-projects', icon: Building2, label: t('nav_my_projects') },
-    { to: '/settings', icon: SettingsIcon, label: t('nav_settings') },
-  ];
-
   const primaryPro = [
     { to: '/', icon: Home, label: t('nav_home') },
-    { to: '/browse-jobs', icon: Briefcase, label: t('nav_browse_jobs') },
-    { to: '/messages', icon: MessageSquare, label: t('nav_messages') },
     { to: '/dashboard', icon: LayoutDashboard, label: t('nav_dashboard') },
-  ];
-  const morePro = [
-    { to: '/my-quotes', icon: ListChecks, label: t('nav_my_quotes') },
-    ...(hasToolkit ? [{ to: '/my-invoices', icon: Receipt, label: t('nav_my_invoices') }] : []),
-    ...(hasTax ? [{ to: '/tax', icon: ListChecks, label: t('nav_tax') }] : []),
     ...(hasPm ? [{ to: '/projects', icon: Briefcase, label: t('nav_projects') }] : []),
     { to: '/pro-calendar', icon: CalendarDays, label: t('nav_pro_calendar') || 'My Calendar' },
+  ];
+  const morePro = [
+    ...(hasToolkit ? [{ to: '/my-invoices', icon: Receipt, label: t('nav_my_invoices') }] : []),
+    ...(hasTax ? [{ to: '/tax', icon: ListChecks, label: t('nav_tax') }] : []),
+    { to: '/schedule', icon: CalendarDays, label: t('nav_schedule') || 'Schedule' },
     { to: '/billing', icon: CreditCard, label: t('nav_billing') },
     { to: '/settings', icon: SettingsIcon, label: t('nav_settings') },
   ];
 
-  const primary = user.role === 'homeowner' ? primaryHomeowner : user.role === 'tradesperson' ? primaryPro : [];
-  const more = user.role === 'homeowner' ? moreHomeowner : user.role === 'tradesperson' ? morePro : [];
+  const primary = user.role === 'tradesperson' ? primaryPro : [];
+  const more = user.role === 'tradesperson' ? morePro : [];
 
   return (
     <>

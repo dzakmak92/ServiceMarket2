@@ -6,8 +6,8 @@ import api from '../api/client';
 import Turnstile from 'react-turnstile';
 import OnboardingClaimStep from '../components/OnboardingClaimStep';
 import {
-  Home as HomeIcon, Hammer, ChevronRight, ChevronLeft, CheckCircle2,
-  Upload, FileText, Loader2, Shield, AlertCircle,
+  Hammer, ChevronRight, ChevronLeft, CheckCircle2,
+  Upload, FileText, Loader2, AlertCircle,
 } from 'lucide-react';
 
 const TURNSTILE_SITE_KEY = process.env.REACT_APP_TURNSTILE_SITE_KEY;
@@ -17,7 +17,6 @@ const COUNTRIES = [
   { code: 'CH', name: 'Switzerland' }, { code: 'FR', name: 'France' }, { code: 'TR', name: 'Türkiye' },
 ];
 
-const HOMEOWNER_REQUIRED = ['username', 'name', 'surname', 'phone', 'address', 'postal_code', 'city'];
 const PRO_REQUIRED = ['contact_person', 'company_name', 'phone', 'address', 'postal_code', 'city', 'licence_file_id'];
 
 export default function OnboardingPage() {
@@ -25,8 +24,8 @@ export default function OnboardingPage() {
   const { t } = useLang();
   const navigate = useNavigate();
 
-  const [step, setStep] = useState(0); // 0=role, 1=details, 2=docs(pro), 3=security
-  const [role, setRole] = useState('');
+  const [step, setStep] = useState(0); // 0=country, 1=details, 2=docs, 3=claim, 4=security
+  const [role] = useState('tradesperson');
   const [country, setCountry] = useState('AT');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -47,21 +46,18 @@ export default function OnboardingPage() {
   // Completion percentage
   // ──────────────────────────────────────────────
   const completion = useMemo(() => {
-    if (!role) return 5;
-    const req = role === 'homeowner' ? HOMEOWNER_REQUIRED : PRO_REQUIRED;
+    const req = PRO_REQUIRED;
     const filled = req.filter((k) => (form[k] || '').toString().trim()).length;
     // Last 10% reserved for Turnstile pass
     return Math.round(10 + (filled / req.length) * (turnstileToken ? 90 : 80));
   }, [role, form, turnstileToken]);
 
   const detailsValid = () => {
-    if (!role) return false;
-    const req = role === 'homeowner' ? HOMEOWNER_REQUIRED.filter(k => k !== 'licence_file_id') :
-                                       PRO_REQUIRED.filter(k => k !== 'licence_file_id');
+    const req = PRO_REQUIRED.filter(k => k !== 'licence_file_id');
     return req.every((k) => (form[k] || '').toString().trim());
   };
 
-  const docsValid = () => role !== 'tradesperson' || !!form.licence_file_id;
+  const docsValid = () => !!form.licence_file_id;
   const allValid = () => detailsValid() && docsValid() && !!turnstileToken;
 
   // ──────────────────────────────────────────────
@@ -105,7 +101,6 @@ export default function OnboardingPage() {
     try {
       await completeOnboarding({
         role, country,
-        username: role === 'homeowner' ? form.username.trim().toLowerCase() : undefined,
         name: form.name.trim(),
         surname: form.surname.trim(),
         phone: form.phone.trim(),
@@ -132,7 +127,7 @@ export default function OnboardingPage() {
   // ──────────────────────────────────────────────
   const totalSteps = role === 'tradesperson' ? 5 : 3;
   const securityStep = role === 'tradesperson' ? 4 : 2;
-  const stepIndex = role === 'tradesperson' ? step : Math.min(step, 2);  // hide docs step for homeowner
+  const stepIndex = step;
 
   return (
     <div className="min-h-screen bg-cream py-6 px-4">
@@ -156,33 +151,11 @@ export default function OnboardingPage() {
         </div>
 
         <div className="card-lg space-y-5 animate-fade-in">
-          {/* STEP 0 — Role */}
+          {/* STEP 0 — Country */}
           {step === 0 && (
             <>
               <h2 className="font-headings font-bold text-ink text-lg">{t('onboarding_role_title')}</h2>
               <p className="text-ink-muted text-sm">{t('onboarding_role_subtitle')}</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button
-                  onClick={() => setRole('homeowner')}
-                  className={`text-left p-5 rounded-[18px] border-2 transition-all
-                    ${role === 'homeowner' ? 'border-teal bg-teal/5' : 'border-sm-border hover:bg-cream-soft'}`}
-                  data-testid="onboarding-role-homeowner"
-                >
-                  <HomeIcon size={28} className="text-teal mb-2" />
-                  <h3 className="font-headings font-bold text-ink">{t('role_homeowner')}</h3>
-                  <p className="text-xs text-ink-muted mt-1">{t('role_homeowner_desc')}</p>
-                </button>
-                <button
-                  onClick={() => setRole('tradesperson')}
-                  className={`text-left p-5 rounded-[18px] border-2 transition-all
-                    ${role === 'tradesperson' ? 'border-teal bg-teal/5' : 'border-sm-border hover:bg-cream-soft'}`}
-                  data-testid="onboarding-role-pro"
-                >
-                  <Hammer size={28} className="text-teal mb-2" />
-                  <h3 className="font-headings font-bold text-ink">{t('role_service_provider')}</h3>
-                  <p className="text-xs text-ink-muted mt-1">{t('role_service_provider_desc')}</p>
-                </button>
-              </div>
               {/* Country selector */}
               <div>
                 <label className="block text-sm font-medium text-ink mb-1.5">{t('onboarding_country')}</label>
@@ -202,32 +175,10 @@ export default function OnboardingPage() {
           {step === 1 && (
             <>
               <h2 className="font-headings font-bold text-ink text-lg">
-                {role === 'homeowner' ? t('onboarding_homeowner_details_title') : t('onboarding_pro_details_title')}
+                {t('onboarding_pro_details_title')}
               </h2>
 
-              {/* Privacy reassurance */}
-              {role === 'homeowner' && (
-                <div className="rounded-[14px] bg-teal/10 border border-teal/20 p-3 flex items-start gap-2.5" data-testid="onboarding-privacy-notice">
-                  <Shield size={16} className="text-teal flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-ink leading-relaxed">{t('onboarding_homeowner_privacy_note')}</p>
-                </div>
-              )}
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {role === 'homeowner' && (
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-ink mb-1.5">{t('field_username')} *</label>
-                    <input
-                      value={form.username}
-                      onChange={(e) => set('username', e.target.value.replace(/\s/g, ''))}
-                      placeholder="john_doe"
-                      maxLength={32}
-                      className="sm-input"
-                      data-testid="onboarding-username"
-                    />
-                    <p className="text-[11px] text-ink-muted mt-1">{t('field_username_help')}</p>
-                  </div>
-                )}
                 {role === 'tradesperson' && (
                   <>
                     <div>
@@ -317,7 +268,7 @@ export default function OnboardingPage() {
           )}
 
           {/* STEP 2 — Documents (PRO ONLY) */}
-          {step === 2 && role === 'tradesperson' && (
+          {step === 2 && (
             <>
               <h2 className="font-headings font-bold text-ink text-lg">{t('onboarding_docs_title')}</h2>
               <p className="text-ink-muted text-sm">{t('onboarding_docs_subtitle')}</p>
@@ -349,7 +300,7 @@ export default function OnboardingPage() {
           )}
 
           {/* STEP 3 — Claim business / join the family (PRO ONLY) */}
-          {step === 3 && role === 'tradesperson' && (
+          {step === 3 && (
             <OnboardingClaimStep defaultQuery={form.company_name} t={t} />
           )}
 
@@ -402,15 +353,13 @@ export default function OnboardingPage() {
             {step < securityStep ? (
               <button
                 onClick={() => {
-                  if (step === 0 && !role) return setError(t('onboarding_pick_role'));
                   if (step === 1 && !detailsValid()) return setError(t('onboarding_fill_required'));
-                  if (step === 2 && role === 'tradesperson' && !docsValid()) return setError(t('onboarding_licence_required'));
+                  if (step === 2 && !docsValid()) return setError(t('onboarding_licence_required'));
                   setError(''); setStep((s) => s + 1);
                 }}
                 disabled={
-                  (step === 0 && !role) ||
                   (step === 1 && !detailsValid()) ||
-                  (step === 2 && role === 'tradesperson' && !docsValid())
+                  (step === 2 && !docsValid())
                 }
                 className="btn-primary"
                 data-testid="onboarding-next"

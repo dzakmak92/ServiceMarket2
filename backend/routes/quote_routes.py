@@ -1,296 +1,254 @@
-from fastapi import APIRouter, HTTPException, Depends
-from database import db
+"""Quote endpoints (Postgres) + the public customer portal.
+
+`router` is pro-authenticated. `public_router` is token-scoped and needs no
+account: the customer never logs in, so the share token is their credential.
+"""
+from __future__ import annotations
+
+from datetime import date
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, Field
+
 from auth import get_current_user
-from models import QuoteCreate
-from utils import serialize_doc
-from billing_cycle import next_billing_date
-from datetime import datetime, timezone
-from bson import ObjectId
+from db import pg
+from repositories import quotes as repo
+from routes._pro import require_pro_id
 
-router = APIRouter(prefix="/quotes")
-
-
-async def create_notification(user_id: str, kind: str, title: str, body: str, link_to: str = "/dashboard"):
-    await db.notifications.insert_one({
-        "user_id": user_id,
-        "kind": kind,
-        "title": title,
-        "body": body,
-        "link_to": link_to,
-        "is_read": False,
-        "created_at": datetime.now(timezone.utc)
-    })
+router = APIRouter(prefix="/quotes", tags=["quotes"])
+public_router = APIRouter(prefix="/portal", tags=["customer-portal"])
 
 
-@router.post("")
-async def create_quote(data: QuoteCreate, user: dict = Depends(get_current_user)):
-    if user["role"] != "tradesperson":
-        raise HTTPException(status_code=403, detail="Only pros can submit quotes")
-
-    # Get pro profile
-    pro_profile = await db.pro_profiles.find_one({"user_id": user["_id"]})
-    if not pro_profile:
-        raise HTTPException(status_code=400, detail="Pro profile not found")
-
-    pro_id = str(pro_profile["_id"])
-
-    # Check job exists and is open
-    try:
-        job = await db.jobs.find_one({"_id": ObjectId(data.job_id)})
-    except Exception:
-        raise HTTPException(status_code=404, detail="Job not found")
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-    if job["status"] != "open":
-        raise HTTPException(status_code=400, detail="Job is not accepting quotes")
-
-    # Check for duplicate quote
-    existing = await db.quotes.find_one({"job_id": data.job_id, "pro_id": pro_id})
-    if existing:
-        raise HTTPException(status_code=400, detail="You already quoted on this job")
-
-    # Per-job quote cap: 5 for tasks, 8 for projects (keeps projects competitive)
-    quote_count = await db.quotes.count_documents({"job_id": data.job_id})
-    quote_cap = 8 if job.get("listing_type") == "project" else 5
-    if quote_count >= quote_cap:
-        raise HTTPException(status_code=400, detail="JOB_FULL")
-
-    # Validate price type
-    if data.price_type not in ("pauschal", "hourly", "milestone"):
-        raise HTTPException(status_code=400, detail="price_type must be 'pauschal', 'hourly', or 'milestone'")
-    if data.price_type == "hourly" and (not data.estimated_hours or data.estimated_hours <= 0):
-        raise HTTPException(status_code=400, detail="estimated_hours is required for hourly quotes")
-    if data.price_type == "milestone":
-        if not data.milestones or len(data.milestones) < 2:
-            raise HTTPException(status_code=400, detail="Milestone quotes require at least 2 phases")
-        # Override amount with sum of milestones (ensures billing/invoice total is always correct)
-        milestone_total = int(round(sum(m.amount for m in data.milestones)))
-        total_price = milestone_total + data.travel_cost + data.parking_cost
-    else:
-        total_price = data.computed_total
-    # NOTE: contact fee is NOT charged here. It is incurred when the homeowner accepts the quote.
-
-    quote_doc = {
-        "job_id": data.job_id,
-        "pro_id": pro_id,
-        "pro_user_id": user["_id"],
-        # Legacy price column kept as the *total* so existing UI / billing / sort still works
-        "price": total_price,
-        "price_total": total_price,
-        "price_type": data.price_type,
-        "amount": data.amount if data.price_type != "milestone" else int(round(sum(m.amount for m in data.milestones))),
-        "estimated_hours": data.estimated_hours,
-        "travel_cost": data.travel_cost,
-        "parking_cost": data.parking_cost,
-        "message": data.message,
-        "milestones": [m.model_dump() for m in (data.milestones or [])],
-        "status": "pending",
-        "sent_at": datetime.now(timezone.utc),
-        "contact_fee_paid": 0.0
-    }
-    result = await db.quotes.insert_one(quote_doc)
-
-    # Update quote count on job
-    await db.jobs.update_one({"_id": ObjectId(data.job_id)}, {"$inc": {"quote_count_cache": 1}})
-
-    # Notify homeowner
-    await create_notification(
-        job["posted_by_id"], "new_quote",
-        "New quote received",
-        f"New quote of €{total_price} received for '{job['title']}'",
-        f"/jobs/{data.job_id}"
-    )
-
-    # Web Push to homeowner (best-effort)
-    try:
-        from push import send_push_to_user
-        await send_push_to_user(job["posted_by_id"], {
-            "title": "New quote received",
-            "body": f"€{total_price} quote on '{job['title']}'",
-            "url": f"/jobs/{data.job_id}",
-            "tag": f"quote-{data.job_id}",
-        })
-    except Exception:
-        pass
-
-    quote_doc["_id"] = result.inserted_id
-    return serialize_doc(quote_doc)
+class QuoteLineIn(BaseModel):
+    position: Optional[int] = None
+    kind: str = Field(default="labor", pattern="^(labor|material|travel|other)$")
+    description: str = Field(min_length=1, max_length=300)
+    detail: Optional[str] = None
+    qty: float = 1
+    unit: str = "pcs"
+    unit_price: float = 0
+    # Verschnitt. Pattern-aware for tiling — diagonal and herringbone waste
+    # far more than straight, and a flat guess loses money on tile one.
+    waste_factor: float = Field(default=0, ge=0, le=1)
+    discount_pct: float = Field(default=0, ge=0, le=100)
+    tax_treatment: Optional[str] = None
+    vat_rate: Optional[float] = None
+    is_optional: bool = False
+    is_selected: bool = True
 
 
-@router.post("/{quote_id}/accept")
-async def accept_quote(quote_id: str, user: dict = Depends(get_current_user)):
-    if user["role"] != "homeowner":
-        raise HTTPException(status_code=403, detail="Only homeowners can accept quotes")
+class QuoteIn(BaseModel):
+    job_id: str
+    tier: str = Field(default="standard", pattern="^(basic|standard|premium)$")
+    title: Optional[str] = None
+    intro: Optional[str] = None
+    # Auto-inserted protective caveats, so an optimistic estimate does not
+    # become a fixed-price trap when the substrate turns out to be rotten.
+    assumptions: Optional[str] = None
+    valid_until: Optional[date] = None
+    discount_pct: float = Field(default=0, ge=0, le=100)
+    lines: list[QuoteLineIn] = []
 
-    try:
-        quote = await db.quotes.find_one({"_id": ObjectId(quote_id)})
-    except Exception:
-        raise HTTPException(status_code=404, detail="Quote not found")
-    if not quote:
-        raise HTTPException(status_code=404, detail="Quote not found")
 
-    # Verify homeowner owns the job
-    job = await db.jobs.find_one({"_id": ObjectId(quote["job_id"])})
-    if not job or job["posted_by_id"] != user["_id"]:
-        raise HTTPException(status_code=403, detail="Not authorized")
-    if job["status"] != "open":
-        raise HTTPException(status_code=400, detail="Job is not open")
+class TieredQuoteIn(BaseModel):
+    job_id: str
+    title: Optional[str] = None
+    intro: Optional[str] = None
+    assumptions: Optional[str] = None
+    valid_until: Optional[date] = None
+    basic: Optional[list[QuoteLineIn]] = None
+    standard: Optional[list[QuoteLineIn]] = None
+    premium: Optional[list[QuoteLineIn]] = None
 
-    job_id = quote["job_id"]
-    pro_id = quote["pro_id"]
 
-    # Accept this quote
-    await db.quotes.update_one({"_id": ObjectId(quote_id)}, {"$set": {"status": "accepted"}})
+class LinesIn(BaseModel):
+    lines: list[QuoteLineIn]
 
-    # Decline all other quotes
-    await db.quotes.update_many(
-        {"job_id": job_id, "_id": {"$ne": ObjectId(quote_id)}},
-        {"$set": {"status": "declined"}}
-    )
 
-    # ── Charge the accepted pro a contact fee (only if they're on Standard plan) ──
-    pro_profile = await db.pro_profiles.find_one({"_id": ObjectId(pro_id)})
-    fee = 0.0
-    if pro_profile and pro_profile.get("plan_tier") == "standard":
-        category_doc = await db.categories.find_one({"_id": job["category"]})
-        fee = category_doc.get("contact_fee", 6.0) if category_doc else 6.0
-        await db.fee_log.insert_one({
-            "pro_id": pro_id,
-            "quote_id": quote_id,
-            "job_id": job_id,
-            "category": job["category"],
-            "amount": fee,
-            "status": "pending",  # outstanding — pro pays via /api/billing/pay-outstanding
-            "incurred_at": datetime.now(timezone.utc),
-            "due_at": next_billing_date(),  # monthly cycle cutoff (25th)
-        })
-        await db.pro_profiles.update_one(
-            {"_id": pro_profile["_id"]},
-            {"$inc": {"monthly_fees": fee}}
-        )
-        # Also update the quote's recorded fee for transparency
-        await db.quotes.update_one(
-            {"_id": ObjectId(quote_id)},
-            {"$set": {"contact_fee_paid": fee}}
-        )
+class RejectIn(BaseModel):
+    reason: str = ""
 
-    # Update job status
-    await db.jobs.update_one(
-        {"_id": ObjectId(job_id)},
-        {"$set": {"status": "in_progress", "accepted_pro_id": pro_id, "final_price": quote["price"]}}
-    )
 
-    # Get pro user id for messaging
-    if pro_profile:
-        pro_user_id = pro_profile["user_id"]
+class AcceptIn(BaseModel):
+    """Verbal on-site acceptance still needs a name against it."""
+    accepted_by: Optional[str] = None
 
-        # Create system acceptance message
-        await db.messages.insert_one({
-            "job_id": job_id,
-            "from_id": pro_user_id,
-            "to_id": user["_id"],
-            "text": f"Quote of €{quote['price']} was accepted",
-            "kind": "acceptance",
-            "sent_at": datetime.now(timezone.utc),
-            "read_at": None
-        })
 
-        # Notify pro
-        await create_notification(
-            pro_user_id, "quote_accepted",
-            "Your quote was accepted!",
-            f"Your €{quote['price']} quote for '{job['title']}' was accepted",
-            f"/messages"
-        )
-
-        # Web Push to pro (best-effort)
-        try:
-            from push import send_push_to_user
-            await send_push_to_user(pro_user_id, {
-                "title": "Quote accepted!",
-                "body": f"Your €{quote['price']} quote for '{job['title']}' was accepted. Open chat to confirm details.",
-                "url": "/messages",
-                "tag": f"accepted-{job_id}",
-                "requireInteraction": True,
-            })
-        except Exception:
-            pass
-
-    return {"message": "Quote accepted", "job_id": job_id, "pro_user_id": pro_profile.get("user_id") if pro_profile else None}
-
-@router.post("/{quote_id}/mark-lost")
-async def mark_quote_lost(quote_id: str, user: dict = Depends(get_current_user)):
-    """The pro themselves can flag a quote as Lost (e.g., didn't win it / the
-    homeowner went silent). Moves it out of the Applied tab into the Lost tab.
-    Lost quotes can NOT be marked lost again. Accepted quotes cannot be marked
-    lost — the pro has to wait for the homeowner to close the job."""
-    if user["role"] != "tradesperson":
-        raise HTTPException(status_code=403, detail="Pros only")
-    try:
-        quote = await db.quotes.find_one({"_id": ObjectId(quote_id)})
-    except Exception:
-        raise HTTPException(status_code=404, detail="Quote not found")
-    if not quote:
-        raise HTTPException(status_code=404, detail="Quote not found")
-    # Ownership check
-    pro_profile = await db.pro_profiles.find_one({"user_id": user["_id"]})
-    if not pro_profile or quote.get("pro_id") != str(pro_profile["_id"]):
-        raise HTTPException(status_code=403, detail="Not your quote")
-    if quote.get("status") in ("accepted", "lost"):
-        raise HTTPException(status_code=400, detail=f"Cannot mark a {quote['status']} quote as lost")
-    await db.quotes.update_one(
-        {"_id": ObjectId(quote_id)},
-        {"$set": {"status": "lost", "lost_at": datetime.now(timezone.utc)}},
-    )
-    return {"message": "Quote moved to Lost"}
-
+def _lines(items) -> list[dict]:
+    return [i.model_dump(exclude_none=True) for i in (items or [])]
 
 
 @router.get("")
-async def list_my_quotes(user: dict = Depends(get_current_user)):
-    """List quotes for the current pro, enriched with job details for the My Quotes UI."""
-    if user["role"] != "tradesperson":
-        raise HTTPException(status_code=403, detail="Only pros can view their quotes")
+async def list_quotes(job_id: Optional[str] = None, status: Optional[str] = None,
+                      limit: int = Query(default=50, le=200), offset: int = 0,
+                      user: dict = Depends(get_current_user)):
+    pro_id = await require_pro_id(user)
+    return await repo.list_for_pro(pro_id, job_id=job_id, status=status,
+                                   limit=limit, offset=offset)
 
-    pro_profile = await db.pro_profiles.find_one({"user_id": user["_id"]})
-    if not pro_profile:
-        return {"quotes": []}
 
-    pro_id = str(pro_profile["_id"])
-    quotes = await db.quotes.find({"pro_id": pro_id}).sort("sent_at", -1).to_list(200)
+@router.post("", status_code=201)
+async def create_quote(body: QuoteIn, user: dict = Depends(get_current_user)):
+    pro_id = await require_pro_id(user)
+    data = body.model_dump(exclude={"lines", "job_id", "tier"}, exclude_none=True)
+    try:
+        return await repo.create(pro_id, body.job_id, lines=_lines(body.lines),
+                                 tier=body.tier, **data)
+    except LookupError as e:
+        raise HTTPException(404, str(e))
+    except ValueError as e:
+        raise HTTPException(400, str(e))
 
-    # Iter45: gather every job-id this pro has a pending/in-progress complaint on
-    job_ids_with_complaint: set[str] = set()
-    async for tk in db.support_tickets.find({
-        "user_id": user["_id"] if isinstance(user["_id"], ObjectId) else ObjectId(user["_id"]),
-        "status": {"$in": ["open", "in_progress"]},
-    }, {"job_id": 1}):
-        if tk.get("job_id"):
-            job_ids_with_complaint.add(str(tk["job_id"]))
 
-    result = []
-    for q in quotes:
-        q_ser = serialize_doc(q)
-        try:
-            job = await db.jobs.find_one({"_id": ObjectId(q["job_id"])})
-        except Exception:
-            job = None
-        if job:
-            # Bring along enough to render an expandable card client-side
-            q_ser["job_number"] = job.get("job_number", "")
-            q_ser["job_title"] = job.get("title", "")
-            q_ser["job_description"] = job.get("description", "")
-            q_ser["job_status"] = job.get("status", "")
-            q_ser["job_city"] = job.get("city", "")
-            q_ser["job_category"] = job.get("category", "")
-            q_ser["job_urgency"] = job.get("urgency", "medium")
-            q_ser["job_budget_min"] = job.get("budget_min")
-            q_ser["job_budget_max"] = job.get("budget_max")
-            q_ser["job_posted_at"] = job.get("posted_at")
-            q_ser["job_attachments"] = job.get("attachments", []) or []
-            q_ser["job_accepted_pro_id"] = job.get("accepted_pro_id")
-            q_ser["job_posted_by_id"] = job.get("posted_by_id")
-        q_ser["has_open_complaint"] = str(q["job_id"]) in job_ids_with_complaint
-        result.append(q_ser)
+@router.post("/tiered", status_code=201)
+async def create_tiered(body: TieredQuoteIn, user: dict = Depends(get_current_user)):
+    """Basic / Standard / Premium in one call — the escape from pure price
+    comparison when eight firms are quoting the same lead."""
+    pro_id = await require_pro_id(user)
+    tiers = {t: _lines(getattr(body, t)) for t in ("basic", "standard", "premium")
+             if getattr(body, t)}
+    if not tiers:
+        raise HTTPException(400, "Provide lines for at least one tier")
+    data = body.model_dump(exclude={"basic", "standard", "premium", "job_id"}, exclude_none=True)
+    try:
+        return {"quotes": await repo.create_tiers(pro_id, body.job_id, tiers, **data)}
+    except LookupError as e:
+        raise HTTPException(404, str(e))
 
-    return {"quotes": result}
+
+@router.get("/{quote_id}")
+async def get_quote(quote_id: str, user: dict = Depends(get_current_user)):
+    q = await repo.get(await require_pro_id(user), quote_id)
+    if not q:
+        raise HTTPException(404, "Quote not found")
+    return q
+
+
+@router.put("/{quote_id}/lines")
+async def replace_lines(quote_id: str, body: LinesIn, user: dict = Depends(get_current_user)):
+    pro_id = await require_pro_id(user)
+    try:
+        return await repo.replace_lines(pro_id, quote_id, _lines(body.lines))
+    except LookupError as e:
+        raise HTTPException(404, str(e))
+    except PermissionError as e:
+        raise HTTPException(409, str(e))
+
+
+@router.post("/{quote_id}/revise", status_code=201)
+async def revise(quote_id: str, body: LinesIn, user: dict = Depends(get_current_user)):
+    """A change creates version N+1; version N is superseded, never rewritten."""
+    pro_id = await require_pro_id(user)
+    try:
+        return await repo.revise(pro_id, quote_id, lines=_lines(body.lines))
+    except LookupError as e:
+        raise HTTPException(404, str(e))
+    except PermissionError as e:
+        raise HTTPException(409, str(e))
+
+
+@router.post("/{quote_id}/send")
+async def send_quote(quote_id: str, user: dict = Depends(get_current_user)):
+    pro_id = await require_pro_id(user)
+    q = await repo.mark_sent(pro_id, quote_id)
+    if not q:
+        raise HTTPException(404, "Quote not found or already decided")
+    job = await pg.fetchrow("select share_token from jobs where id = $1", q["job_id"])
+    return {"quote": q, "share_token": (job or {}).get("share_token")}
+
+
+@router.post("/{quote_id}/accept")
+async def accept_quote(quote_id: str, body: AcceptIn = AcceptIn(),
+                       user: dict = Depends(get_current_user)):
+    """Pro-side acceptance, for when the customer says yes on the doorstep."""
+    pro_id = await require_pro_id(user)
+    try:
+        return await repo.accept(quote_id, pro_id=pro_id)
+    except LookupError as e:
+        raise HTTPException(404, str(e))
+    except ValueError as e:
+        raise HTTPException(409, str(e))
+
+
+@router.post("/{quote_id}/reject")
+async def reject_quote(quote_id: str, body: RejectIn, user: dict = Depends(get_current_user)):
+    pro_id = await require_pro_id(user)
+    try:
+        return await repo.reject(quote_id, body.reason, pro_id=pro_id)
+    except LookupError as e:
+        raise HTTPException(404, str(e))
+
+
+@router.post("/expire-stale")
+async def expire_stale(user: dict = Depends(get_current_user)):
+    pro_id = await require_pro_id(user)
+    return {"expired": await repo.expire_stale(pro_id)}
+
+
+# ── Quote → Invoice ───────────────────────────────────────────────────
+invoice_router = APIRouter(prefix="/jobs", tags=["quotes"])
+
+
+@invoice_router.get("/{job_id}/invoice-preview")
+async def invoice_preview(job_id: str, user: dict = Depends(get_current_user)):
+    """What the invoice would inherit, without creating anything."""
+    pro_id = await require_pro_id(user)
+    return {"lines": await repo.to_invoice_lines(pro_id, job_id)}
+
+
+@invoice_router.post("/{job_id}/draft-invoice", status_code=201)
+async def draft_invoice(job_id: str,
+                        invoice_type: str = Query(default="standard",
+                                                  pattern="^(standard|abschlag|schluss)$"),
+                        user: dict = Depends(get_current_user)):
+    """Create a draft invoice pre-filled from the accepted quote + Nachträge.
+
+    Every accepted line is inherited with its kind and tax treatment intact,
+    so the §35a split and per-position VAT survive the hand-off. Approved
+    change orders are pulled in and flipped to `invoiced` so they cannot be
+    billed twice.
+    """
+    pro_id = await require_pro_id(user)
+    try:
+        return await repo.draft_invoice_from_job(pro_id, job_id, invoice_type=invoice_type)
+    except LookupError as e:
+        raise HTTPException(404, str(e))
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+# ══════════════════════════════════════════════════════════════════════
+# Customer portal — no account, share token is the credential
+# ══════════════════════════════════════════════════════════════════════
+
+@public_router.get("/{share_token}")
+async def portal_view(share_token: str):
+    data = await repo.get_by_share_token(share_token)
+    if not data:
+        raise HTTPException(404, "This link is no longer valid.")
+    for q in data["quotes"]:
+        await repo.mark_viewed(str(q["id"]))
+    return data
+
+
+@public_router.post("/{share_token}/quotes/{quote_id}/accept")
+async def portal_accept(share_token: str, quote_id: str):
+    data = await repo.get_by_share_token(share_token)
+    if not data or not any(str(q["id"]) == quote_id for q in data["quotes"]):
+        raise HTTPException(404, "This link is no longer valid.")
+    try:
+        return await repo.accept(quote_id)
+    except (LookupError, ValueError) as e:
+        raise HTTPException(409, str(e))
+
+
+@public_router.post("/{share_token}/quotes/{quote_id}/reject")
+async def portal_reject(share_token: str, quote_id: str, body: RejectIn):
+    data = await repo.get_by_share_token(share_token)
+    if not data or not any(str(q["id"]) == quote_id for q in data["quotes"]):
+        raise HTTPException(404, "This link is no longer valid.")
+    try:
+        return await repo.reject(quote_id, body.reason)
+    except LookupError as e:
+        raise HTTPException(404, str(e))

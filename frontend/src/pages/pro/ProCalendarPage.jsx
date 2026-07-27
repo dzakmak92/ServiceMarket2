@@ -177,94 +177,6 @@ function DayCell({ date, today, cursorMonth, bookings, availability, selected, o
   );
 }
 
-/* ─── Reschedule Modal ────────────────────────────────────────────────────── */
-function RescheduleModal({ booking, targetDate, availability, onConfirm, onClose, saving }) {
-  const [selectedSlots, setSelectedSlots] = useState([]);
-  const dow = WEEKDAYS_JS[targetDate.getDay()];
-  const daySlots = (availability.find(a => a.day === dow)
-    ? [...new Set(availability.filter(a => a.day === dow && a.is_available).map(a => a.slot))].sort()
-    : []);
-
-  const toggleSlot = (slot) => {
-    setSelectedSlots(prev => prev.includes(slot) ? prev.filter(s => s !== slot) : [...prev, slot].sort());
-  };
-
-  const mergedSlot = useMemo(() => {
-    if (!selectedSlots.length) return null;
-    const hours = selectedSlots.map(s => s.split('-').map(Number));
-    const start = Math.min(...hours.map(h => h[0]));
-    const end = Math.max(...hours.map(h => h[1]));
-    return `${String(start).padStart(2,'0')}:00-${String(end).padStart(2,'0')}:00`;
-  }, [selectedSlots]);
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-sm p-4">
-      <div className="bg-paper rounded-[20px] shadow-2xl max-w-sm w-full p-5 animate-slide-up">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-headings font-bold text-ink text-base flex items-center gap-2">
-            <CalendarDays size={16} className="text-teal" /> Propose Reschedule
-          </h3>
-          <button onClick={onClose} className="p-1 text-ink-muted hover:text-ink rounded">
-            <XCircle size={18} />
-          </button>
-        </div>
-        <div className="text-xs text-ink-soft mb-3 space-y-1">
-          <p><span className="font-semibold">Job:</span> {booking.job_title || 'Appointment'}</p>
-          <p><span className="font-semibold">Currently:</span> {booking.date} · {booking.slot}</p>
-          <p><span className="font-semibold text-teal">Proposed date:</span> {isoDate(targetDate)} ({dow})</p>
-        </div>
-
-        {daySlots.length === 0 ? (
-          <p className="text-xs text-ink-muted text-center py-4 bg-cream-soft rounded-[12px]">
-            No available slots on this day. Choose another date.
-          </p>
-        ) : (
-          <>
-            <p className="text-xs font-semibold text-ink-soft mb-2">Select new time slot(s):</p>
-            <div className="grid grid-cols-3 gap-1.5 max-h-48 overflow-y-auto mb-4">
-              {daySlots.map(slot => (
-                <button
-                  key={slot}
-                  onClick={() => toggleSlot(slot)}
-                  className={`text-[10px] py-1.5 rounded-[8px] border transition-all
-                    ${selectedSlots.includes(slot)
-                      ? 'bg-teal border-teal text-paper font-semibold'
-                      : 'border-sm-border text-ink hover:bg-cream-soft'}`}
-                  data-testid={`reschedule-slot-${slot}`}
-                >
-                  {slot.split('-')[0]}
-                </button>
-              ))}
-            </div>
-            {mergedSlot && (
-              <p className="text-xs text-teal font-semibold text-center mb-3">
-                New slot: {mergedSlot}
-              </p>
-            )}
-          </>
-        )}
-
-        <div className="flex gap-2">
-          <button
-            onClick={onClose}
-            className="flex-1 border border-sm-border text-ink-soft text-xs py-2 rounded-[10px] hover:bg-cream-soft transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => mergedSlot && onConfirm(isoDate(targetDate), mergedSlot, dow)}
-            disabled={!mergedSlot || saving}
-            className="flex-1 btn-primary text-xs py-2 rounded-[10px] disabled:opacity-50"
-            data-testid="confirm-reschedule-btn"
-          >
-            {saving ? <Loader2 size={12} className="animate-spin mx-auto" /> : 'Propose Reschedule'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ─── AgendaRow (compact booking row used in the 7-day schedule) ──────────── */
 function AgendaRow({ b, today, onCancel, navigate }) {
   const style = getBookingStyle(b, today);
@@ -447,8 +359,6 @@ export default function ProCalendarPage() {
 
   // Reschedule drag-and-drop state
   const [draggedBookingId, setDraggedBookingId] = useState(null);
-  const [rescheduleModal, setRescheduleModal]   = useState(null); // { booking, targetDate }
-  const [rescheduleLoading, setRescheduleLoading] = useState(false);
   const [toast, setToast] = useState('');
 
   const today = useMemo(() => { const d = new Date(); d.setHours(0,0,0,0); return d; }, []);
@@ -457,13 +367,12 @@ export default function ProCalendarPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [bRes, jRes, profileRes] = await Promise.all([
+      const [bRes, profileRes] = await Promise.all([
         api.get('/api/bookings'),
-        api.get('/api/jobs?status=in_progress'),
         api.get('/api/profile/pro'),
       ]);
       setBookings(bRes.data.bookings || []);
-      setActiveJobs((jRes.data.jobs || []).slice(0, 10));
+      // TODO(Phase 2): the "Active jobs" sidebar repoints at the Job spine.
       const pid = profileRes.data?.id;
       setProId(pid);
       if (pid) {
@@ -527,34 +436,11 @@ export default function ProCalendarPage() {
     } catch {/* noop */}
   };
 
-  /* ── drag-and-drop reschedule ── */
-  const handleDrop = (targetDate) => {
-    if (!draggedBookingId) return;
-    const booking = bookings.find(b => b.id === draggedBookingId);
-    if (!booking) return;
-    if (isoDate(targetDate) === booking.date) return; // same day, no-op
-    setRescheduleModal({ booking, targetDate });
-    setDraggedBookingId(null);
-  };
-
-  const confirmReschedule = async (newDate, newSlot, newDay) => {
-    if (!rescheduleModal) return;
-    setRescheduleLoading(true);
-    try {
-      await api.patch(`/api/bookings/${rescheduleModal.booking.id}/propose-reschedule`, {
-        new_date: newDate, new_slot: newSlot, new_day: newDay,
-      });
-      setBookings(prev => prev.map(b =>
-        b.id === rescheduleModal.booking.id
-          ? { ...b, reschedule_status: 'pending', proposed_date: newDate, proposed_slot: newSlot }
-          : b
-      ));
-      setRescheduleModal(null);
-      showToast('Reschedule proposal sent to homeowner');
-    } catch (e) {
-      showToast(e.response?.data?.detail || 'Could not propose reschedule');
-    } finally { setRescheduleLoading(false); }
-  };
+  /* TODO(Phase 2): drag-to-reschedule proposed a new slot for the homeowner to
+     confirm. With no customer account there is no counterparty — Phase 2
+     reintroduces this as a direct pro-side move plus a customer notification.
+     The drag affordance stays wired so that change is a one-line swap. */
+  const handleDrop = () => setDraggedBookingId(null);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -577,18 +463,6 @@ export default function ProCalendarPage() {
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-ink text-paper text-xs px-4 py-2.5 rounded-full shadow-lg animate-slide-up" data-testid="cal-toast">
           {toast}
         </div>
-      )}
-
-      {/* Reschedule modal */}
-      {rescheduleModal && (
-        <RescheduleModal
-          booking={rescheduleModal.booking}
-          targetDate={rescheduleModal.targetDate}
-          availability={availability}
-          onConfirm={confirmReschedule}
-          onClose={() => setRescheduleModal(null)}
-          saving={rescheduleLoading}
-        />
       )}
 
       {/* ── Header ── */}

@@ -11,10 +11,18 @@ import asyncio
 from database import create_indexes
 from seed import seed_all
 from routes.auth_routes import router as auth_router
+from routes.customer_routes import router as customer_router
 from routes.job_routes import router as job_router
-from routes.quote_routes import router as quote_router
-from routes.message_routes import router as message_router
-from routes.pro_routes import router as pro_router
+from routes.invoice_routes import router as invoice_router
+from routes.tax_pg_routes import router as tax_pg_router
+from routes.upload_routes import (router as upload_router,
+                                  portal_router as upload_portal_router)
+from routes.pm_pg_routes import (router as pm_pg_router,
+                                 timer_router as pm_timer_router,
+                                 portal_router as pm_portal_router)
+from routes.quote_routes import (router as quote_router,
+                                 public_router as portal_router,
+                                 invoice_router as quote_invoice_router)
 from routes.billing_routes import router as billing_router
 from routes.admin_routes import router as admin_router
 from routes.admin_invoicing_routes import router as admin_invoicing_router
@@ -23,7 +31,6 @@ from routes.pro_invoicing_routes import router as pro_invoicing_router
 from routes.tax_routes import router as tax_router, public_tax_router
 from routes.payment_link_routes import router as pay_link_router, public_router as pay_link_public_router
 from routes.pm_routes import router as pm_router, public_router as pm_public_router
-from routes.pm_homeowner_routes import router as pm_homeowner_router
 from routes.admin_insights_routes import router as admin_insights_router
 from routes.misc_routes import router as misc_router
 from routes.ai_routes import router as ai_router
@@ -57,11 +64,14 @@ app.add_middleware(
 # IMPORTANT: iter45_pro_router MUST be registered BEFORE pro_invoicing_router because
 # both share the `/pro-invoices` prefix. The pro_invoicing_router has a catch-all
 # `/{invoice_id}` route that would otherwise swallow `/export.pdf` and 404 it.
-for router in [auth_router, job_router, quote_router, message_router,
-               pro_router, billing_router, admin_router, admin_invoicing_router, admin_advanced_router,
+for router in [auth_router, customer_router, job_router,
+               quote_router, quote_invoice_router, portal_router, invoice_router,
+               tax_pg_router, pm_pg_router, pm_timer_router, pm_portal_router,
+               upload_router, upload_portal_router,
+               billing_router, admin_router, admin_invoicing_router, admin_advanced_router,
                iter45_admin_router, iter45_pro_router,
                pro_invoicing_router, tax_router, public_tax_router, pm_router, pm_public_router,
-               pm_homeowner_router, admin_insights_router,
+               admin_insights_router,
                pay_link_router, pay_link_public_router,
                misc_router, ai_router,
                push_router, analytics_router, privacy_router, me_privacy_router,
@@ -123,6 +133,19 @@ async def _subscription_expiry_loop():
 @app.on_event("startup")
 async def startup():
     logger.info("Starting ServiceMarket API...")
+
+    # Postgres (Supabase) — the Phase 2 spine. Mongo still serves the routes
+    # that have not been ported yet, so both run side by side until the
+    # migration completes.
+    from db.pg import init_pool
+    try:
+        await init_pool()
+        logger.info("Postgres pool initialised")
+    except Exception as exc:
+        logger.error("Postgres unavailable: %s", exc)
+        if os.environ.get("REQUIRE_POSTGRES", "").lower() in ("1", "true", "yes"):
+            raise
+
     await create_indexes()
     await seed_all()
     # GDPR retention / inactive-user cleanup (hourly)
@@ -135,5 +158,7 @@ async def startup():
 
 @app.on_event("shutdown")
 async def shutdown():
+    from db.pg import close_pool
+    await close_pool()
     from database import client
     client.close()

@@ -60,47 +60,7 @@ def verify_password_safe(plain, hashed):
 
 
 async def seed_test_users():
-    """Seed test homeowner + pro for development"""
-    test_ho_email = "homeowner@test.com"
-    if not await db.users.find_one({"email": test_ho_email}):
-        ho_result = await db.users.insert_one({
-            "email": test_ho_email,
-            "password_hash": hash_password("Test123!"),
-            "name": "Anna Müller",
-            "role": "homeowner",
-            "country": "AT",
-            "lang": "en",
-            "city": "Vienna",
-            "phone": "+436641234567",
-            "onboarding_complete": True,
-            "is_email_verified": True,
-            "notif_email": True,
-            "notif_sms": False,
-            "privacy_show_lastname": True,
-            "privacy_share_contact_pre_accept": False,
-            "created_at": datetime.now(timezone.utc)
-        })
-        ho_id = str(ho_result.inserted_id)
-
-        # Seed a demo job for the homeowner
-        await db.jobs.insert_one({
-            "posted_by_id": ho_id,
-            "posted_by_name": "Anna M.",
-            "title": "Replace leaking kitchen tap",
-            "category": "plumbing",
-            "description": "The kitchen tap has been dripping for two weeks. I need a plumber to replace the tap and check the pipes underneath the sink for any damage.",
-            "country": "AT",
-            "city": "Vienna",
-            "budget_min": 80,
-            "budget_max": 200,
-            "urgency": "medium",
-            "status": "open",
-            "accepted_pro_id": None,
-            "final_price": None,
-            "quote_count_cache": 0,
-            "posted_at": datetime.now(timezone.utc)
-        })
-
+    """Seed the development test pro."""
     test_pro_email = "pro@test.com"
     # Keep the test pro's badges correct on every re-run. Per the Explorer intro
     # plan, pro@test.com is pre-seeded as Explorer-ACTIVE (3-month, all toolkits)
@@ -251,12 +211,6 @@ async def seed_all():
 - Email: {admin_email}
 - Password: {admin_pw}
 - Role: admin
-
-## Test Homeowner
-- Email: homeowner@test.com
-- Password: Test123!
-- Role: homeowner
-- Country: AT
 
 ## Test Pro (Tradesperson)
 - Email: pro@test.com

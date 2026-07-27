@@ -6,7 +6,6 @@ Endpoints:
 - GET     /admin/invoices/{id}       — single
 - GET     /admin/invoices/{id}/pdf   — stream the PDF
 - POST    /admin/invoices/generate-subscriptions
-- POST    /admin/invoices/generate-fees
 - POST    /admin/invoices/{id}/storno
 - GET     /admin/fees/grouped        — pending fees grouped by pro
 - PATCH   /admin/fees/{id}           — edit amount of a single pending fee
@@ -19,7 +18,7 @@ from typing import Optional, List
 
 from database import db
 from auth import require_admin
-from models import CompanySettings, StornoRequest, FeeEditRequest
+from models import CompanySettings, StornoRequest
 from utils import serialize_doc
 from services.invoicing import (
     create_subscription_invoice, create_fees_invoice, create_storno_invoice,
@@ -132,31 +131,6 @@ async def generate_subscription_invoices(user: dict = Depends(require_admin)):
             "invoice_numbers": created}
 
 
-@router.post("/invoices/generate-fees")
-async def generate_fees_invoices(user: dict = Depends(require_admin)):
-    """One aggregated fees invoice per pro for the previous month."""
-    period_start, period_end = _previous_month_window()
-    settings = await db.company_settings.find_one({"_id": "default"})
-    if not settings:
-        raise HTTPException(status_code=400, detail="Company settings not configured")
-
-    # Distinct pros with pending fees in the period
-    pro_ids = await db.fee_log.distinct("pro_id", {
-        "status": "pending",
-        "incurred_at": {"$gte": period_start, "$lt": period_end},
-    })
-    created = []
-    for pid in pro_ids:
-        try:
-            inv = await create_fees_invoice(pid, period_start, period_end)
-            if inv:
-                created.append(inv["invoice_number"])
-        except Exception:
-            pass
-    return {"created": len(created), "period": period_start.strftime("%m/%Y"),
-            "invoice_numbers": created}
-
-
 @router.post("/invoices/{invoice_id}/storno")
 async def storno_invoice(invoice_id: str, data: StornoRequest, user: dict = Depends(require_admin)):
     try:
@@ -164,65 +138,3 @@ async def storno_invoice(invoice_id: str, data: StornoRequest, user: dict = Depe
     except RuntimeError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return serialize_doc(inv)
-
-
-# ──────────────────────────────────────────────
-# Fees admin (grouped by pro, editable)
-# ──────────────────────────────────────────────
-@router.get("/fees/grouped")
-async def fees_grouped_by_pro(
-    status: str = "pending",
-    user: dict = Depends(require_admin),
-):
-    fees = await db.fee_log.find({"status": status}).sort("incurred_at", -1).to_list(2000)
-    by_pro: dict = {}
-    for f in fees:
-        pid = f.get("pro_id")
-        if not pid:
-            continue
-        by_pro.setdefault(pid, []).append(serialize_doc(f))
-
-    out = []
-    for pro_id, items in by_pro.items():
-        try:
-            p = await db.pro_profiles.find_one({"_id": ObjectId(pro_id)})
-        except Exception:
-            p = None
-        if not p:
-            continue
-        u = await db.users.find_one({"_id": ObjectId(p["user_id"])}) or {}
-        out.append({
-            "pro_id": pro_id,
-            "user_id": p["user_id"],
-            "name": u.get("name", ""),
-            "email": u.get("email", ""),
-            "company_name": p.get("company_name") or p.get("business_name", ""),
-            "fee_count": len(items),
-            "total_eur": round(sum(x.get("amount", 0) for x in items), 2),
-            "fees": items,
-        })
-    out.sort(key=lambda r: r["total_eur"], reverse=True)
-    return {"groups": out, "total_fees": sum(g["fee_count"] for g in out)}
-
-
-@router.patch("/fees/{fee_id}")
-async def edit_fee(fee_id: str, data: FeeEditRequest, user: dict = Depends(require_admin)):
-    try:
-        f = await db.fee_log.find_one({"_id": ObjectId(fee_id)})
-    except Exception:
-        raise HTTPException(status_code=404, detail="Fee not found")
-    if not f:
-        raise HTTPException(status_code=404, detail="Fee not found")
-    if f.get("status") != "pending":
-        raise HTTPException(status_code=400, detail="Only pending fees can be edited")
-
-    await db.fee_log.update_one(
-        {"_id": ObjectId(fee_id)},
-        {"$set": {
-            "amount": round(float(data.amount), 2),
-            "edited_at": datetime.now(timezone.utc),
-            "edited_by_admin": user["_id"],
-            "edit_reason": data.reason or "",
-        }},
-    )
-    return {"message": "Fee updated", "amount": round(float(data.amount), 2)}

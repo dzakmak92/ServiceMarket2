@@ -19,7 +19,7 @@ KNOWN_CATEGORIES = [
 
 SYSTEM_PROMPT = (
     "You are a category classifier for a home-service marketplace. "
-    "Given a homeowner's free-text job description, identify exactly ONE category "
+    "Given a free-text job description, identify exactly ONE category "
     "from the allowed list. The description may be in English, German, Turkish or Spanish.\n\n"
     f"Allowed categories (use the exact slug): {', '.join(KNOWN_CATEGORIES)}\n\n"
     "Respond ONLY with a strict JSON object:\n"
@@ -30,8 +30,8 @@ SYSTEM_PROMPT = (
 
 @router.post("/classify-job")
 async def classify_job(data: AIClassifyRequest, user: dict = Depends(get_current_user)):
-    if user["role"] != "homeowner":
-        raise HTTPException(status_code=403, detail="Only homeowners can classify")
+    if user["role"] != "tradesperson":
+        raise HTTPException(status_code=403, detail="Only pros can classify")
 
     # Rate-limit: 20 calls/hour per user — generous enough for normal typing/debounce,
     # tight enough to keep LLM cost predictable.

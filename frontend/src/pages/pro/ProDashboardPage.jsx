@@ -65,12 +65,12 @@ export default function ProDashboard() {
   useEffect(() => {
     Promise.all([
       api.get('/api/profile/pro'),
-      api.get('/api/quotes'),
       api.get('/api/pro-invoices/stats').catch(() => ({ data: null })),
       api.get('/api/pro-invoices/cashflow').catch(() => ({ data: null })),
-    ]).then(([p, q, s, cf]) => {
+    ]).then(([p, s, cf]) => {
       setProProfile(p.data);
-      setQuotes(q.data.quotes || []);
+      // TODO(Phase 3): win-rate + monthly-activity charts repoint at the new
+      // quote model. Invoice stats and cash flow are unaffected.
       setInvStats(s.data);
       setCashflow(cf.data);
     }).finally(() => setLoading(false));

@@ -4,7 +4,6 @@ import { useLang } from '../../../contexts/LangContext';
 import { Eye, Ban, Loader2 } from 'lucide-react';
 import AdminFilterBar from '../../../components/admin/AdminFilterBar';
 import AdminPagination from '../../../components/admin/AdminPagination';
-import ProReviewsPanel from './ProReviewsPanel';
 
 export default function AdminUsers({ flash }) {
   const { t } = useLang();
@@ -51,14 +50,11 @@ export default function AdminUsers({ flash }) {
 
   return (
     <div className="space-y-4">
-      {/* Pro Reviews moderation — collapsible sub-section (was its own tab before iter36) */}
-      <ProReviewsPanel flash={flash} />
-
       <AdminFilterBar
         filters={[
           { key: 'role', label: 'Role', options: [
             { value: 'all', label: 'All' },
-            { value: 'homeowner', label: 'Homeowners' },
+
             { value: 'tradesperson', label: 'Tradespeople' },
           ] },
         ]}

@@ -66,9 +66,7 @@ export default function BillingPage() {
   const [proProfile, setProProfile]   = useState(null);
   const [subStatus, setSubStatus]     = useState(null);
   const [pricing, setPricing]         = useState(null);
-  const [fees, setFees]               = useState([]);
   const [transactions, setTransactions] = useState([]);
-  const [nextInvoice, setNextInvoice] = useState(null);
   const [loading, setLoading]         = useState(true);
   const [billingPeriod, setBillingPeriod] = useState('monthly');
   const [sessionChecked, setSessionChecked] = useState(false);
@@ -82,13 +80,11 @@ export default function BillingPage() {
   const [undoCancelLoading, setUndoCancelLoading] = useState(false);
   const [portalLoading, setPortalLoading]     = useState(false);
   const [trialLoading, setTrialLoading]       = useState(false);
-  const [payOutstandingLoading, setPayOutstandingLoading] = useState(false);
   const [explorerLoading, setExplorerLoading] = useState(false);
   const [chooseStdLoading, setChooseStdLoading] = useState(false);
   const [devLoading, setDevLoading]           = useState(false);
 
   /* accordion state */
-  const [feesOpen, setFeesOpen]               = useState(false);
   const [historyOpen, setHistoryOpen]         = useState(false);
   const [selectedToolkit, setSelectedToolkit] = useState('invoice');
 
@@ -99,18 +95,14 @@ export default function BillingPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [p, f, txns, ni, pr, ss] = await Promise.all([
+      const [p, txns, pr, ss] = await Promise.all([
         api.get('/api/profile/pro'),
-        api.get('/api/billing/fee-log'),
         api.get('/api/billing/transactions'),
-        api.get('/api/billing/next-invoice').catch(() => ({ data: null })),
         api.get('/api/billing/pricing').catch(() => ({ data: null })),
         api.get('/api/billing/subscription-status').catch(() => ({ data: null })),
       ]);
       setProProfile(p.data);
-      setFees(f.data.fees || []);
       setTransactions(txns.data.transactions || []);
-      setNextInvoice(ni.data);
       setPricing(pr.data);
       setSubStatus(ss.data);
       if (ss.data?.sub_billing_period) setBillingPeriod(ss.data.sub_billing_period);
@@ -221,15 +213,6 @@ export default function BillingPage() {
     finally { setTrialLoading(false); }
   };
 
-  const handlePayOutstanding = async () => {
-    setPayOutstandingLoading(true); setError('');
-    try {
-      const { data } = await api.post('/api/billing/pay-outstanding', { origin_url: origin });
-      if (data.url) window.location.href = data.url;
-    } catch (e) { setError(e.response?.data?.detail || 'Payment failed.'); }
-    finally { setPayOutstandingLoading(false); }
-  };
-
   /* ── Explorer intro plan handlers ──────────────────────── */
   const handleExplorerCheckout = async () => {
     setExplorerLoading(true); setError('');
@@ -286,7 +269,6 @@ export default function BillingPage() {
   const daysLeft       = subStatus?.days_remaining;
   const annualNet      = 29.99 * 10;
   const annualSaving   = Math.round((29.99 * 12 - annualNet) / (29.99 * 12) * 100);
-  const outstandingTotal = fees.filter(f => f.status === 'pending').reduce((s, f) => s + (f.amount || 0), 0);
 
   if (loading) {
     return (
@@ -454,54 +436,7 @@ export default function BillingPage() {
           </>
         )}
 
-        {/* ─── Section 4: Fees accordion ──────────────────────── */}
-        <Accordion
-          open={feesOpen}
-          onToggle={() => setFeesOpen(o => !o)}
-          label={t('billing_contact_fees')}
-          badge={`€${Math.abs(proProfile?.monthly_fees || 0).toFixed(2)}`}
-          badgeColor="amber"
-          testId="fees-accordion"
-        >
-          {fees.length === 0 ? (
-            <p className="text-sm text-ink-muted text-center py-4">
-              {isPro ? t('quote_free_note') : t('billing_no_fees')}
-            </p>
-          ) : (
-            <>
-              <div className="space-y-1 mb-3">
-                {fees.slice(0, 10).map((fee) => (
-                  <div key={fee.id} className="flex items-center justify-between py-2 border-b border-sm-border text-sm last:border-0">
-                    <div>
-                      <p className="font-medium text-ink capitalize">{fee.category?.replace('_', ' ')}</p>
-                      <p className="text-xs text-ink-muted">{new Date(fee.incurred_at).toLocaleDateString()}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-ink">€{fee.amount?.toFixed(2)}</p>
-                      <p className={`text-[10px] uppercase tracking-wide ${fee.status === 'paid' ? 'text-green-pos' : 'text-amber-deep'}`}>
-                        {fee.status || 'pending'}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {outstandingTotal > 0 && !isPro && (
-                <button
-                  onClick={handlePayOutstanding}
-                  disabled={payOutstandingLoading}
-                  className="btn-primary w-full py-3"
-                  data-testid="pay-outstanding-btn"
-                >
-                  {payOutstandingLoading
-                    ? <><Loader2 size={14} className="animate-spin" /> {t('billing_paying')}</>
-                    : <>{t('billing_pay_outstanding')} — €{outstandingTotal.toFixed(2)}</>}
-                </button>
-              )}
-            </>
-          )}
-        </Accordion>
-
-        {/* ─── Section 5: Payment history accordion ───────────── */}
+        {/* ─── Section 4: Payment history accordion ───────────── */}
         {transactions.length > 0 && (
           <Accordion
             open={historyOpen}

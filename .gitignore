@@ -140,3 +140,6 @@ frontend/node_modules/.cache/default-development/20.pack
 credentials.json
 *.key
 .credentials
+
+# Pre-migration database dumps — contain personal data, never commit
+backend/backups/

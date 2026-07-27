@@ -10,7 +10,7 @@ class RegisterRequest(BaseModel):
     accepted_privacy: bool = False
     policy_version: Optional[str] = None
     marketing_opt_in: bool = False
-    turnstile_token: Optional[str] = None  # Cloudflare Turnstile token — required for homeowner signup
+    turnstile_token: Optional[str] = None  # Cloudflare Turnstile token
 
 
 class LoginRequest(BaseModel):
@@ -19,17 +19,15 @@ class LoginRequest(BaseModel):
 
 
 class OnboardingRequest(BaseModel):
-    role: str  # homeowner | tradesperson
+    role: str  # tradesperson
     country: str  # AT | DE | CH | FR | ES | TR
-    # Homeowner & service provider — common
+    # Common
     name: Optional[str] = None       # first name
     surname: Optional[str] = None    # last / family name
     phone: Optional[str] = None
     address: Optional[str] = None    # street + house number
     postal_code: Optional[str] = None
     city: Optional[str] = None
-    # Homeowner-only
-    username: Optional[str] = None   # public display handle
     # Service provider-only
     contact_person: Optional[str] = None
     company_name: Optional[str] = None
@@ -55,98 +53,10 @@ class MilestoneItem(BaseModel):
     order: int = 0
 
 
-class JobCreate(BaseModel):
-    title: str = Field(min_length=5)
-    category: str
-    description: str = ""  # optional for tasks; required for projects (enforced in route)
-    city: str
-    budget_min: Optional[int] = None
-    budget_max: Optional[int] = None
-    urgency: str = "medium"  # low | medium | high
-    attachments: Optional[List[Attachment]] = None
-    # Listing type split (iter36)
-    listing_type: str = "task"          # "task" | "project"
-    timeline_weeks: Optional[int] = None  # projects: estimated duration 1–52 weeks
-    site_visit_required: bool = False   # projects: pro needs a site visit before quoting
-    # Recurring jobs
-    recurring_type: Optional[str] = None   # "weekly" | "biweekly" | "monthly"
-    recurring_count: Optional[int] = None  # 2–8 total occurrences (including first)
-
-
-class JobStatusUpdate(BaseModel):
-    status: str  # in_progress | completed | cancelled
-
-
-class JobUpdate(BaseModel):
-    """Homeowner-side edit of a job that's still in 'open' status."""
-    title: Optional[str] = Field(default=None, min_length=5)
-    category: Optional[str] = None
-    description: Optional[str] = None
-    city: Optional[str] = None
-    budget_min: Optional[int] = None
-    budget_max: Optional[int] = None
-    urgency: Optional[str] = None  # low | medium | high
-    attachments: Optional[List[Attachment]] = None
-    listing_type: Optional[str] = None
-    timeline_weeks: Optional[int] = None
-    site_visit_required: Optional[bool] = None
-
-
-class JobLocationShare(BaseModel):
-    address_full: str = Field(min_length=4)
-    lat: Optional[float] = None
-    lng: Optional[float] = None
-
-
 class AIClassifyRequest(BaseModel):
     description: str = Field(min_length=10)
     title: Optional[str] = None
     lang: Optional[str] = "en"
-
-
-class QuoteCreate(BaseModel):
-    job_id: str
-    # New iter22 fields — pauschal vs hourly required
-    price_type: str = Field(default="pauschal")  # 'pauschal' | 'hourly' | 'milestone'
-    amount: int = Field(gt=0)  # flat fee (pauschal) OR hourly rate (hourly) OR total of all milestones (milestone)
-    estimated_hours: Optional[float] = Field(default=None, ge=0)
-    travel_cost: int = Field(default=0, ge=0)
-    parking_cost: int = Field(default=0, ge=0)
-    message: str = Field(min_length=20)
-    milestones: Optional[List[MilestoneItem]] = None  # iter36: project phase breakdown
-
-    @property
-    def computed_total(self) -> int:
-        base = self.amount if self.price_type == "pauschal" else int(round(self.amount * (self.estimated_hours or 0)))
-        return base + self.travel_cost + self.parking_cost
-
-
-class MessageCreate(BaseModel):
-    job_id: str
-    to_id: str
-    text: str
-    kind: str = "text"
-    booking_day: Optional[str] = None
-    booking_slot: Optional[str] = None
-    attachments: Optional[List[Attachment]] = None
-
-
-class BookingCreate(BaseModel):
-    job_id: str
-    pro_id: str
-    day: str
-    slot: str
-    date: Optional[str] = None  # ISO YYYY-MM-DD; used for iCal export
-
-
-class ReviewCreate(BaseModel):
-    job_id: str
-    rating: int = Field(ge=1, le=5)
-    text: Optional[str] = None
-
-
-class ReviewResponseCreate(BaseModel):
-    response: str = Field(min_length=1, max_length=1000)
 
 
 # ──────────────────────────────────────────────
@@ -176,12 +86,6 @@ class CompanySettings(BaseModel):
 
 class StornoRequest(BaseModel):
     reason: str = Field(min_length=3, max_length=500)
-
-
-class FeeEditRequest(BaseModel):
-    """Admin edits a contact_fee row's amount before the monthly invoice is generated."""
-    amount: float = Field(ge=0)
-    reason: Optional[str] = None
 
 
 class ProProfileUpdate(BaseModel):
@@ -218,17 +122,13 @@ class UserProfileUpdate(BaseModel):
     name: Optional[str] = None
     phone: Optional[str] = None
     city: Optional[str] = None
-    address: Optional[str] = None  # street + number + postal code (homeowner)
+    address: Optional[str] = None  # street + number + postal code
     lang: Optional[str] = None
     notif_email: Optional[bool] = None
     notif_sms: Optional[bool] = None
     notif_categories: Optional[List[str]] = None
     # Per-event notification preferences (master notif_email/notif_sms still gate everything)
     notif_new_message: Optional[bool] = None        # both roles
-    notif_new_review: Optional[bool] = None         # pros: new review on their profile
-    notif_new_quote: Optional[bool] = None          # homeowners: pro sent a quote
-    notif_quote_accepted: Optional[bool] = None     # pros: homeowner accepted their quote
-    notif_new_job_match: Optional[bool] = None      # pros: new matching job posted
     notif_booking_confirmed: Optional[bool] = None  # both
     notif_job_status: Optional[bool] = None         # both: job started / completed
     notif_payment_receipt: Optional[bool] = None    # both: monthly billing run
@@ -249,20 +149,11 @@ class CheckoutRequest(BaseModel):
     origin_url: str
 
 
-class CategoryFeeUpdate(BaseModel):
-    contact_fee: float
-
-
 class BusinessClaimRequest(BaseModel):
-    """A user requests to claim a business_directory listing as their own."""
+    """A pro requests to claim a business_directory listing as their own
+    (onboarding accelerator — prefills company details)."""
     message: Optional[str] = None
     contact_phone: Optional[str] = None
-
-
-class BusinessInquiryRequest(BaseModel):
-    """A homeowner writes a message to a (possibly unclaimed) directory business.
-    Captured as a lead and surfaced to admins for onboarding."""
-    message: str
 
 
 class ClaimReviewRequest(BaseModel):
