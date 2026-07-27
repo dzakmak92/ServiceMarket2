@@ -1,0 +1,39 @@
+{
+  "summary": "Tested 8 features: Pro Calendar page, unavailable days red+X, job_number badge, bookings enrichment, notification read, list view toggle, Go to My Calendar button, and nav translation keys.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "ProCalendarPage DayCell + BookingPill",
+        "issue": "Nested <button> inside <button> (BookingPill is a button rendered inside DayCell which is also a button). This is invalid HTML and causes React hydration warnings in console.",
+        "selector": "[data-testid^='pro-cal-day-'] button",
+        "priority": "LOW"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_47.json"],
+  "action_items": [
+    "LOW: Fix nested button issue in ProCalendarPage - BookingPill (currently a button) inside DayCell (also a button). Change BookingPill to a div or span to fix HTML validity."
+  ],
+  "critical_code_review_comments": [
+    "Nested button in DayCell/BookingPill - invalid HTML spec: <button> cannot be a descendant of <button>"
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "95%"
+  },
+  "test_credentials": "pro@test.com / Test123!, homeowner@test.com / Test123!",
+  "seed_data_creation": "",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All 8 features tested and working: (1) /pro-calendar loads with month calendar + availability + active jobs. (2) Unavailable days show red+X (both in ProCalendarPage and MonthBookingCalendar). (3) GET /api/bookings returns job_title+homeowner_name enrichment - job_number empty on old jobs (expected). (4) PATCH /api/notifications/{id}/read returns success. (5) List view toggle works. (6) Go to My Calendar button visible in conversation top panel for tradesperson. (7) nav_pro_calendar translation key renders 'My Calendar' in More menu. Only minor issue: nested button HTML warning.",
+  "rca_of_issues": {
+    "nested_button": "BookingPill component renders as <button>, but it's placed inside DayCell which is also rendered as <button>. HTML spec disallows nested interactive elements. Fix: render BookingPill as <div role='button'> or <span> with onClick."
+  }
+}

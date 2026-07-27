@@ -1,0 +1,134 @@
+{
+  "theme": "Light",
+  "archetype": "Archetype 1 (Organic & Earthy). Mapped existing 'teal' requirement to a deep, grounded Pine Teal to maintain warmth and trust, avoiding clinical UI.",
+  "colors": {
+    "background": {
+      "value": "#F7F5F0",
+      "usage": "Main app background (Warm Sand)"
+    },
+    "surface": {
+      "value": "#FFFFFF",
+      "usage": "Primary cards and widgets"
+    },
+    "surface_alt": {
+      "value": "#EFECE5",
+      "usage": "Empty states, subtle backgrounds, availability summary"
+    },
+    "primary_accent": {
+      "value": "#174F4D",
+      "usage": "The 'teal' accent—deepened to Pine Teal for CTA buttons, active states, and the Up Next widget"
+    },
+    "primary_hover": {
+      "value": "#103C3A",
+      "usage": "Hover state for primary buttons"
+    },
+    "text_main": {
+      "value": "#1C1C1C",
+      "usage": "Headings and primary text ('ink')"
+    },
+    "text_muted": {
+      "value": "#5C5C5C",
+      "usage": "Subtitles, labels, empty state text"
+    },
+    "border": {
+      "value": "#E5E3DB",
+      "usage": "Card borders, dividers"
+    },
+    "status_colors": {
+      "booked": "#174F4D",
+      "quoted": "#C05746",
+      "in_progress": "#D99748",
+      "cancelled": "#A33B3B"
+    }
+  },
+  "typography": {
+    "fonts": {
+      "headings": "font-headings",
+      "body": "font-sans"
+    },
+    "hierarchy": {
+      "h1": "text-3xl md:text-4xl tracking-tight leading-none text-text_main font-medium",
+      "h2": "text-xl md:text-2xl tracking-tight text-text_main font-medium",
+      "h3": "text-lg md:text-xl text-text_main font-medium",
+      "label": "text-xs tracking-[0.2em] uppercase text-text_muted"
+    }
+  },
+  "layout_and_spacing": {
+    "strategy": "The 'Control Room' Grid (Dashboard Mode) customized for breathing room.",
+    "grid_container": "grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 p-4 md:p-8 lg:p-12",
+    "left_column": {
+      "span": "col-span-1 md:col-span-8",
+      "content": "Calendar Widget (top), 7-Day Agenda (bottom). Flex column with gap-8."
+    },
+    "right_column": {
+      "span": "col-span-1 md:col-span-4",
+      "content": "Up Next Widget (top), Active Jobs (middle), Availability Summary (bottom). Flex column with gap-6."
+    }
+  },
+  "components": {
+    "calendar": {
+      "surface_strategy": "Flat Solid. bg-white border border-border rounded-2xl p-6 lg:p-8.",
+      "header": "Month/Year left-aligned (H2), Prev/Next controls right-aligned.",
+      "grid": "Subtle 1px borders between days. Days outside current month use bg-surface_alt.",
+      "interactions": "Hover: bg-surface_alt. Selected day: ring-2 ring-primary_accent."
+    },
+    "agenda_7_day": {
+      "surface_strategy": "Flat Solid. bg-white border border-border rounded-2xl p-6 lg:p-8.",
+      "header": "Title 'Schedule' (H2), 'Today' reset button, 'View Toggle' (Calendar/List).",
+      "list_items": "py-4 border-b border-border last:border-0. Flex row: Date (left), Job Details (center), Message/Cancel Actions (right)."
+    },
+    "up_next_widget": {
+      "surface_strategy": "Neumorphism / High-Contrast. bg-primary_accent text-white rounded-2xl p-6.",
+      "purpose": "Addresses the 'Jump to next booking' requirement.",
+      "content": "Label 'UP NEXT', Job Title (H3), Date/Time. 'Jump to Date' button (bg-white text-primary_accent)."
+    },
+    "active_jobs": {
+      "surface_strategy": "Flat Solid. bg-white border border-border rounded-2xl p-6.",
+      "content": "List of active project-management jobs (title, number, city). Linked to project."
+    },
+    "availability_summary": {
+      "surface_strategy": "Soft Utility. bg-surface_alt rounded-2xl p-6.",
+      "purpose": "Replaces the creepy Mon-Sun matrix. Provides lightweight read-only summary.",
+      "content": "Label 'WEEKLY AVAILABILITY', compact text 'Mon - Fri: 08:00 - 16:00'. 'Edit in Settings' link (text-sm underline)."
+    }
+  },
+  "empty_states": {
+    "agenda_empty": {
+      "philosophy": "Calm, purposeful, encouraging. Never a grid of hollow grey cells.",
+      "visual": "A large padded area (p-12) with the 'relaxing coffee' image as a soft background or a framed visual.",
+      "copy": "Your schedule is beautifully clear.",
+      "action": "Primary CTA: 'Add Appointment'."
+    },
+    "calendar_sparse": {
+      "visual": "When a week is empty, days look clean with a soft background, not 'disabled'. No overwhelming grey blocks."
+    }
+  },
+  "motion_and_interactions": {
+    "hover_states": "All buttons must explicitly define text color on hover (e.g., hover:bg-primary_hover hover:text-white).",
+    "transitions": "transition-colors duration-200 ease-in-out.",
+    "drag_drop": "Smooth visual feedback when dragging calendar bookings (opacity-70 on drag, highlighted drop zone)."
+  },
+  "media": {
+    "image_urls": [
+      {
+        "category": "agenda_empty_state_visual",
+        "url": "https://images.unsplash.com/photo-1518057111178-44a106bad636?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwxfHxyZWxheGluZyUyMGNvZmZlZSUyMG1vcm5pbmd8ZW58MHx8fHwxNzgxMTE4ODUxfDA&ixlib=rb-4.1.0&q=85",
+        "description": "Person holding white ceramic cup with hot coffee - use as a calming visual for the 'No Appointments' empty state."
+      }
+    ]
+  },
+  "testing": {
+    "data_testid_rules": "All interactive elements MUST include data-testid. Examples: 'jump-next-booking-btn', 'calendar-day-[date]', 'agenda-item-[id]-cancel', 'today-reset-btn'."
+  },
+  "instructions_to_main_agent": [
+    "Execute the desktop redesign using the 12-column 'Control Room' grid layout.",
+    "Build the Left Column (col-span-8) containing the Calendar and 7-day Agenda. Ensure the agenda defaults to today and responds to calendar clicks.",
+    "Build the Right Column (col-span-4) containing the 'Up Next' widget, 'Active Jobs', and 'Availability Summary'.",
+    "Completely remove the old 'Weekly Availability' matrix. Replace it with the compact 'Availability Summary'.",
+    "Implement the 'Jump to next booking' shortcut inside the 'Up Next' widget.",
+    "Apply the earthy 'Pine Teal' accent instead of the default generic teal. Follow the Light theme colors.",
+    "Implement the calm empty state for the agenda using the provided 'relaxing coffee' image URL, avoiding any creepy empty grey cells.",
+    "Preserve existing mobile responsiveness (calendar stacks single-column on mobile).",
+    "Use standard Shadcn components (Button, Card, Calendar, etc.) but override styles to match the flat solid, roomy aesthetics described."
+  ]
+}

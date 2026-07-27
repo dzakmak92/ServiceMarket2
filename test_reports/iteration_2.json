@@ -1,0 +1,38 @@
+{
+  "summary": "Iteration 2 testing — both backend (pytest 43/43 = 13 new iter2 tests + 30 regression) and frontend critical flows verified green. AI classify-job returns 'plumbing' for sink description with confidence within bounds; role guard returns 403 for pros. Quote creation does NOT log a fee; accept does (status=pending, monthly_fees incremented, other quotes auto-declined, job → in_progress, accepted_pro_user_id/pro_user_id exposed). Share-location requires in_progress (400 otherwise), persists address, and contact endpoint returns pro+homeowner+address+location_shared. Portfolio max 10 enforced (11th = 400 'Maximum 10 photos allowed') + delete works. cancel-subscription returns 400 when on Standard. pay-outstanding returns Stripe URL + creates payment_transactions row with metadata.type=contact_fees. /api/search?q=sink returns jobs+pros arrays. /api/messages/thread now returns other_pro_id. Frontend: homeowner login → / works; PostJobPage AI banner appears within seconds showing 'AI suggests: Plumbing (99%)' with Use this button; /search?q=sink renders 5 results; header search input + Enter navigates to /search; /messages thread page shows Contact-Info-Unlocked card (email pro@test.com, address shared) AND the month-grid Schedule-an-appointment calendar always visible below the message composer with dots on availability days, prev/next month navigation present. Pro /billing shows 'Pay outstanding fees — €32.00' and 'Upgrade to Pro' (Standard plan); clicking Pay outstanding successfully redirected to Stripe checkout. Settings → Portfolio tab loads with file input. All critical iter2 acceptance criteria pass.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Contact unlocked card on /messages", "issues": ["Homeowner seeded user has no phone → 'Phone not provided' shown without Call/WhatsApp buttons (correct conditional UI). Consider seeding a phone for test users so the Call/WhatsApp buttons can be exercised E2E."]},
+      {"screen": "Notification bell panel", "issues": ["'Enable browser notifications' button is conditional on Notification.permission==='default'. In headless Chromium this is 'denied', so the button wasn't visible. This is expected; manual verification in a real browser is recommended."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration2.py",
+    "/app/backend/tests/test_servicemarket_api.py",
+    "/app/backend/tests/conftest.py",
+    "/app/test_reports/pytest/iter2_results.xml"
+  ],
+  "action_items": [
+    "(Optional) Seed homeowner@test.com with a phone number so the Call/WhatsApp buttons on the homeowner-side contact card can be exercised in automated tests.",
+    "(Optional) The 'Enable browser notifications' button only renders when Notification.permission==='default'. Consider exposing a data-testid='enable-browser-notif' so future tests can detect its absence vs. wrong state."
+  ],
+  "critical_code_review_comments": [
+    "billing_routes.get_checkout_status: when payment_status=='paid' and the txn is type=contact_fees, the route uses current user's pro profile to recompute monthly_fees. If a different user opens the success URL with someone else's session_id, the fee_log update still happens but monthly_fees would be recomputed on the wrong pro. Consider deriving the pro from the transaction.user_id stored at creation rather than the requester.",
+    "ai_routes.classify-job uses session_id=f'classify-{user[\"_id\"]}' — fine, but consider rate-limiting per user to avoid abuse since each call costs an LLM token.",
+    "job_routes.share-location stores the message kind='location' but the inbox renders it as plain text emoji ('📍 Address shared: ...'). A typed renderer would let the UI show a styled location card consistently.",
+    "Portfolio storage as base64 inside pro_profiles document risks blowing past Mongo's 16MB doc limit at scale (10 × ~600KB ≈ 6MB plus other fields). Consider GridFS or S3-style external storage for prod."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration2.py (new)"
+  ],
+  "success_rate": {"backend": "100% (43/43, 1 skipped only when no outstanding fees)", "frontend": "100% of critical iter2 flows verified"},
+  "test_credentials": "homeowner@test.com / Test123!, pro@test.com / Test123!, admin@servicemarket.eu / Admin123! — all working",
+  "seed_data_creation": "Test suite creates TEST_-prefixed jobs/quotes and a portfolio-upload sequence on pro@test.com (cleans up portfolio at end). One quote on pro@test.com leaves an in_progress test job with shared location and pending fees in fee_log — this is intentional so pay-outstanding test has data to exercise.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Run cd /app/backend && pytest tests/ -v. test_iteration2.py covers all iter2 endpoints: AI classify, accept-quote fee flow, share-location, contact, portfolio, cancel-subscription, pay-outstanding, search, thread other_pro_id. Quote.message has min_length=20 in models — keep test messages ≥20 chars. Pay-outstanding test will SKIP if no pending fees; run the QuoteAcceptFlow first to ensure fees exist. Frontend selectors: data-testid=auth-email-input/auth-password-input/auth-submit-button, job-title-input, job-description-input-early, category-select-<slug>, header-search-input, notification-bell, language-switcher, user-menu-button. Stripe checkout in pay-outstanding does navigate offsite — handle with care if you don't want full redirect.",
+  "rca_of_the_issue": "No bugs found this iteration. Initial test failures were due to (a) Quote.message min_length=20 validator (fixed in tests) and (b) cascading fixture failure when quote creation 422'd."
+}

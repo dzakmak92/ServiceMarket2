@@ -1,0 +1,85 @@
+{
+  "summary": "Iter19 testing complete: 3 features (homeowner job edit, pro reviews enrichment+pagination, inbox composer contact actions). Backend: 10/10 pytest PASS. Frontend: all spec data-testids verified on desktop 1440x1000. One MINOR frontend guard gap found (direct nav to /jobs/:id/edit on non-open job loads empty edit form).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "PostJobPage (edit mode)",
+        "issue": "Navigating directly to /jobs/:id/edit for a job whose status is in_progress/completed/cancelled renders the EMPTY 'Edit job' form (page title 'Edit job', placeholders only, no pre-fill, no edit_job_not_open warning, no redirect). The PATCH would 400 on submit, but the user shouldn't reach this state. JobDetailPage already hides edit-job-btn for non-open jobs (correct), but the route itself is unguarded.",
+        "selector": "/jobs/:id/edit when job.status != 'open'",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_results": {
+    "backend_PATCH_jobs": {
+      "edit_open_job_basic_fields": "PASS (title/description/city/urgency/budget_min/budget_max all persisted; edited_at set; GET-back verifies)",
+      "edit_attachments_max5": "PASS (6 attachments -> 400; 5 -> 200)",
+      "budget_max_less_than_min": "PASS (400)",
+      "title_min_length": "PASS (422 from pydantic for title='abc')",
+      "pro_cannot_edit_homeowner_job": "PASS (403)",
+      "unauth_cannot_edit": "PASS (401/403)",
+      "non_existent_job": "PASS (404)",
+      "cannot_edit_non_open_job": "PASS (400 on in_progress)"
+    },
+    "backend_pro_reviews_enrichment": {
+      "pro_detail_loads": "PASS (name/reviews/availability/bookings present)",
+      "review_carries_job_id_title_category_city": "PASS (review[0] enriched with job context)",
+      "reviewer_name_present": "PASS (privacy_show_lastname respected)",
+      "reviews_limit_le_50": "PASS"
+    },
+    "frontend_pro_detail_pagination": {
+      "with_1_review_no_pagination": "PASS (reviews-pagination NOT rendered)",
+      "with_6_reviews_pagination_shows": "PASS (Page 1 of 2, prev disabled, next enabled)",
+      "click_next_to_page_2": "PASS (1 chip on page 2, prev enabled, next disabled)",
+      "review_job_context_chip_present": "PASS ('FOR JOB <title> <category> <city>' visible)"
+    },
+    "frontend_inbox_composer": {
+      "composer-contact-actions_present": "PASS",
+      "composer-call-btn_present": "PASS",
+      "composer-whatsapp-btn_present": "PASS",
+      "composer-share-location-btn_present": "PASS (homeowner side on in_progress job)",
+      "composer-show-location-btn_absent_before_share": "PASS (location not yet shared -> not rendered)",
+      "contact-bar_has_NO_action_buttons": "PASS (0 buttons inside [data-testid=contact-bar])",
+      "contact-bar_shows_unlocked_phrase_and_phone": "PASS ('CONTACT INFO UNLOCKED +436608765432')",
+      "share-location-modal_opens": "PASS ([data-testid=share-location-modal] appears on click)"
+    },
+    "frontend_job_edit": {
+      "edit-job-btn_visible_on_open_job_for_owner": "PASS",
+      "edit-job-btn_NOT_shown_on_in_progress_job": "PASS",
+      "click_edit_navigates_to_/jobs/:id/edit": "PASS",
+      "post-job-page-title_says_Edit_job": "PASS",
+      "form_prefilled_with_current_values": "PASS (title, description, city, category Plumbing selected, budget 80-999)",
+      "edit-job-submit_present": "PASS",
+      "edit-job-cancel_present": "PASS",
+      "direct_nav_/edit_for_non_open_job": "FAIL (renders empty form — no guard)"
+    }
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter19_job_edit_and_reviews.py",
+    "/app/test_reports/pytest/iter19_results.xml"
+  ],
+  "action_items": [
+    "MEDIUM: PostJobPage in edit mode should guard against non-open job status. When the GET /api/jobs/:id returns status != 'open', either: (a) redirect to /jobs/:id with a toast using translation key 'edit_job_not_open', or (b) render a disabled/error card instead of the empty form. Currently the route is reachable via direct URL even though the JobDetailPage button correctly hides it.",
+    "OPTIONAL: PATCH /api/jobs/:id returns 422 (pydantic) for title min_length<5, but test in spec said '400 on title<5'. Spec wording is broad; 422 is conventional FastAPI/pydantic. Worth aligning if the spec is strict."
+  ],
+  "critical_code_review_comments": [
+    "/app/backend/routes/job_routes.py update_job: budget guard correctly handles partial updates by merging incoming with stored. attachments validated at len(>5) (good). edited_at always set with UTC tz — good.",
+    "/app/backend/routes/pro_routes.py enrichment: try/except around ObjectId(job_id) properly swallows malformed job ids, so a review with corrupt job_id won't 500 the endpoint. job_completed_at uses ISO; null when not completed.",
+    "PostJobPage frontend (edit mode): missing status guard. Should check job.status==='open' after loading the job and bail out otherwise."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter19_job_edit_and_reviews.py"
+  ],
+  "success_rate": {"backend": "100% (10/10)", "frontend": "97% (1 minor guard gap on direct /edit URL for non-open job)"},
+  "test_credentials": "homeowner@test.com / Test123! ; pro@test.com / Test123! (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Inserted 5 reviews directly into Mongo collection 'reviews' (pro_id=6a14b72e05a5dee99e39fd16, homeowner_id=Anna Müller) to trigger pagination (1+5=6 reviews). CLEANED UP after testing (all rows with text starting 'TEST_iter19' deleted). Pytest also creates+cancels a TEST_iter19 plumbing job per session and cleans it up.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter19 backend tests are green and live at /app/backend/tests/test_iter19_job_edit_and_reviews.py. The pro Markus Weber (id 6a14b72e05a5dee99e39fd16) is back to 1 seeded review after cleanup — to test pagination again insert 5+ extra rows into Mongo db.reviews with prefix 'TEST_iter19'. The /jobs/:id/edit direct-nav guard gap is the only outstanding item; main agent should add status check in PostJobPage edit mode."
+}

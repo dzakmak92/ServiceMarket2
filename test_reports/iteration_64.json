@@ -1,0 +1,57 @@
+{
+  "summary": "Frontend-only E2E testing of the new 'Pro Heatmap' feature for ServiceMarket. Covered homeowner navigation via desktop 'More' dropdown, /business-map page (stat cards, leaflet heatmap, list, filters, pagination), claim submission flow, admin Heatmap tab (stats + Approve), Pro user direct navigation + claim, and mobile (390px) bottom-nav 'More' sheet → Pro Heatmap. All critical flows pass with no UI bugs found.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Search field is case/locale-sensitive: searching 'vienna' returns 0 rows because data is stored as 'Wien'. Consider mapping common English city names (Vienna→Wien) or supporting both for UX, since the page header says 'across Austria' in English."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped per request)", "frontend": "100%"},
+  "test_credentials": "homeowner@test.com/Test123!, pro@test.com/Test123!, admin@servicemarket.eu/Admin123!",
+  "seed_data_creation": "Two demo businesses were claimed during testing (one approved by admin, one still pending submitted by pro@test.com). Backend now has 1 claimed / 63 unclaimed / 1 pending.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Pro Heatmap feature fully validated. Test artifacts in /app/test_reports/iteration_64.json. All data-testids resolve correctly (business-map-page, business-heatmap, hm-stat-total/cities/claimed, hm-business-list, hm-search-input, hm-category-select, hm-city-select, hm-prev-page/hm-next-page/hm-page-label, business-row-<id>, business-claim-btn-<id>, claim-modal/claim-phone-input/claim-message-input/claim-submit-btn, business-pending-<id>, admin-tab-heatmap, admin-heatmap, hm-admin-total/claimed/unclaimed/pending, csv-import-btn, admin-claim-<id>, claim-approve-<id>, claim-reject-<id>, mobile-nav-more, mobile-nav-more-sheet, mobile-more-business-map). Reject button testid exists but was not clicked during this run because only one pending claim existed and it was approved. CSV import flow not exercised (no test CSV provided).",
+  "detailed_results": {
+    "homeowner_desktop": {
+      "login": "PASS",
+      "more_menu_open": "PASS (clicked header More)",
+      "click_desktop-more-link-business-map": "PASS",
+      "page_render": "PASS - business-map-page, business-heatmap, hm-stat-total='64 Pros mapped', hm-stat-cities='13 Cities covered', hm-stat-claimed='0 Claimed'",
+      "rows_visible": "12 (page 1 of 6)",
+      "search_filter": "PASS (search 'vienna'→0 rows, clear→12 rows)",
+      "category_city_selects": "PRESENT (All trades / All cities options enumerated)",
+      "pagination": "PASS (1/6 → 2/6 via hm-next-page, then back via hm-prev-page)",
+      "claim_flow": "PASS - modal opened, phone+message filled, success toast 'Claim submitted — we\u2019ll review it shortly.', business-pending-<id> rendered, claim button removed for that row"
+    },
+    "admin": {
+      "login": "PASS",
+      "admin-tab-heatmap": "PASS",
+      "admin-heatmap_tab_render": "PASS - all 4 stat cards visible: hm-admin-total=64, hm-admin-claimed=0, hm-admin-unclaimed=64, hm-admin-pending=1",
+      "map+top_cities+top_categories": "PRESENT (Roofing 12, Painting 10 etc; Wien 16, Linz 8, Graz 7)",
+      "csv-import-btn": "PRESENT",
+      "pending_claim_card": "PRESENT (admin-claim-<id>)",
+      "approve_action": "PASS - card removed, toast 'Claim approved', counts updated pending 1→0, claimed 0→1, unclaimed 64→63",
+      "reject_action": "NOT EXECUTED - only 1 pending claim existed; reject button testid claim-reject-<id> verified in code"
+    },
+    "pro": {
+      "login": "PASS",
+      "direct_navigation_/business-map": "PASS - page renders, 12 rows, 64 total",
+      "claim_flow": "PASS - modal+submit+pending badge"
+    },
+    "mobile_390px": {
+      "login": "PASS",
+      "mobile-nav-more": "VISIBLE",
+      "mobile-nav-more-sheet": "OPENS with Pro Heatmap entry",
+      "mobile-more-business-map": "PRESENT and clickable",
+      "/business-map_render": "PASS - page+heatmap+12 rows render",
+      "horizontal_overflow": "NONE (docW=winW=390)"
+    }
+  }
+}

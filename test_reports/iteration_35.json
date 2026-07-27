@@ -1,0 +1,48 @@
+{
+  "summary": "Iter35 verification complete. Backend: 33/33 PASS on new iter35 suite (admin RBAC across 10 endpoints × 2 non-admin roles, admin Toolkits/Pay-Now/White-label/share-tokens/OCR-audit shapes, storno-fix regression on /api/tax/dashboard, Pay-Now flow end-to-end with 1% fee math + bad-token 404s). Regression: iter33 (12/12 PASS) + iter34 (10/10 PASS) + iter34 supplemental (5/5 PASS, 1 SKIP for absent seed receipts). Frontend: all 3 new admin tabs render with correct data — Toolkits shows KPI strip (Total Pros 2 / Total MRR €79.98 / New 30d 0 / Bundle 2) + 4 toolkit cards + OCR panel + share-token inventory. Pay-Now shows 4 KPI tiles (Volume YTD €600 / Fee Revenue €6.00 / Volume MTD €600 / Failed 30d 0) + Top earners table + Latest 20 sessions + Export CSV. White-label shows All/Pending/Approved/Rejected filter chips + empty 'No logos' state. Storno-aggregation fix confirmed in tax_reports.py L87-90 (excludes is_storno OR is_cancelled from paid/pending) and pro_invoicing_routes.py L503 (sets payment_status='storno'). Tax dashboard outstanding/pending now ≥ 0.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/admin/toolkits/dashboard", "issue": "When a pro holds all 3 toolkits (bundle), the MRR is fully allocated to the Bundle card and the Invoice/Tax/PM cards show MRR €0.00 + STD/PRO 0/0 even though subs=2. Intentional accounting (no double-counting) but confusing in the UI — consider adding a tooltip 'Bundled, see Bundle card' on Invoice/Tax/PM cards when bundle_subs == subs."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Admin > Toolkits", "issues": ["Invoice/Tax/PM cards show MRR €0.00 / STD-PRO 0/0 because both pros are bundle subscribers. Adoption % shows 100% but tier counts show 0/0 — visually inconsistent. Consider showing 'bundled' badge or zero-suppress these cards."]},
+      {"screen": "Admin > all tabs", "issues": ["Cookie banner persists at bottom-left and overlaps the lower-left of every admin screen. Auto-dismiss or move above content."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter35_admin_tabs.py",
+    "/app/backend/tests/test_iter33_payments_storno_tax_p1.py",
+    "/app/backend/tests/test_iter34_pay_now.py",
+    "/app/backend/tests/test_iter34_supplemental.py",
+    "/app/test_reports/pytest/iter35_results.xml"
+  ],
+  "action_items": [
+    "OPTIONAL/COSMETIC: Show 'Bundled' indicator on Invoice/Tax/PM toolkit cards in the admin Toolkits tab when the underlying pros are bundle subscribers, so MRR €0.00 / STD 0 / PRO 0 isn't visually alarming.",
+    "OPTIONAL: Auto-dismiss the cookie banner inside /admin routes (it overlaps the lower-left of all admin tabs)."
+  ],
+  "critical_code_review_comments": [
+    "Storno-aggregation fix correctly applied at both layers: tax_reports.revenue_summary L87-90 skips is_storno or is_cancelled from paid/pending sums, AND pro_invoicing_routes L503 sets payment_status='storno' on storno-doc creation. Defense in depth verified — outstanding_brutto returns ≥ 0 in all tested scenarios.",
+    "Admin RBAC: All 10 /api/admin/* endpoints correctly return 403 for both tradesperson and homeowner roles (via require_admin dependency). No leak.",
+    "Pay-Now flow math validated end-to-end: outstanding × 0.01 = service_fee, outstanding + fee = total, service_fee_pct = 1.0. Public endpoint returns 404 on bad token. Idempotency on checkout-status verified (invoice_payment_recorded flag prevents double-recording).",
+    "Admin Pay-Now revenue endpoint correctly coerces tz-naive Mongo datetimes to UTC-aware before comparing against month_start/year_start (line 74) — guards against older inserts.",
+    "Admin Toolkits MRR allocation logic at admin_advanced_routes L180-205 prefers bundle accounting (if all 3 flags set, attributes MRR to bundle only). This is correct revenue accounting but the frontend should signal this to the operator on the Invoice/Tax/PM cards."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter35_admin_tabs.py (NEW — 33 tests: admin RBAC, toolkits dashboard, pay-now revenue, white-label, share-tokens audit, OCR audit, storno-fix regression, pay-now sanity)"
+  ],
+  "success_rate": {
+    "backend": "100% (60/60 executed, 1 skip — iter33 12/12 + iter34 10/10 + iter34_supp 5/5 + iter35 33/33)",
+    "frontend": "100% (all 3 new admin tabs render with expected testids, data, KPIs, and interactive controls)"
+  },
+  "test_credentials": "admin@servicemarket.eu/Admin123!, pro@test.com/Test123!, homeowner@test.com/Test123! (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "No new seed required. Used existing 13 invoices in pro_invoices and 5 paid Stripe sessions in payment_transactions.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter35 admin tabs (Toolkits/Pay-Now/White-label) are production-ready. Storno fix is solid across both aggregation paths. Pay-Now flow end-to-end works including 1% fee, Stripe Checkout creation, idempotent status polling. iter35 regression suite at /app/backend/tests/test_iter35_admin_tabs.py covers 33 cases — use as guard against regressions when adding new admin endpoints. Only cosmetic items remain (cookie banner overlap on /admin, Invoice/Tax/PM cards showing zero MRR when pros are bundled).",
+  "rca of the issue": "N/A — no critical issues remaining. The prior iter34 storno bug (negative outstanding_brutto) has been fixed at both layers (tax_reports.py + pro_invoicing_routes.py) and confirmed via the test_tax_dashboard_outstanding_non_negative regression test."
+}

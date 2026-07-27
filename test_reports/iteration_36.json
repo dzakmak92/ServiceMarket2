@@ -1,0 +1,79 @@
+{
+  "summary": "Iter36 testing of Feedback+Support model and unified admin filter/pagination. Backend: 33 passed / 2 failed / 1 skipped of 36 tests. Frontend: All 11 admin tabs render correctly (Overview/Verifications/Users/Jobs/Billing/Invoicing/Fees/Feedback/Support/Toolkits/Pay-Now), confirmed no White-label or old Reviews tab. /feedback page renders with all kind chips + form. Admin Feedback tab fully functional (filter chips, pagination strip with 25/50/100, year filter, prev/next, range, detail drawer opens). Found ONE CRITICAL backend bug: homeowner cannot file a support ticket on their OWN job because /api/feedback/support checks job['homeowner_id'] but jobs actually store the owner under 'posted_by_id'. This breaks the primary support-ticket-from-homeowner flow.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "POST /api/feedback/support",
+        "issue": "Homeowner always receives 403 'Not party to this job' when filing a support ticket on their OWN job. /app/backend/routes/feedback_routes.py:101 checks `str(job.get('homeowner_id')) == uid_str`, but the jobs collection stores the owner field as `posted_by_id` (see /app/backend/routes/job_routes.py:82 and L27). Result: is_owner is always False → falls through to quote check → 403. This breaks the primary user flow for the entire support feature.",
+        "priority": "CRITICAL"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "FeedbackPage",
+        "issue": "A 'Quick reminder' modal (accepted-quotes nudge) appears on /feedback for homeowners with pending completion confirmations and overlaps the feedback form, blocking input until dismissed. Consider auto-skipping this modal on /feedback or rendering it less aggressively (toast).",
+        "selector": "[data-testid=\"feedback-submit-form\"]",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Admin Support — category filter chips",
+        "issue": "PRD specifies `filter-category-no_show`, `filter-category-quality`, etc. None of these testids exist on the rendered Support tab. The AdminFilterBar likely renders category as a <select> (testid `filter-category-select`) rather than chip-row. Either expose chip-style testids or update the PRD/spec to match.",
+        "affected_selectors": ["filter-category-no_show","filter-category-quality","filter-category-pricing","filter-category-communication","filter-category-other"]
+      },
+      {
+        "flow": "Admin Feedback — search input testid",
+        "issue": "PRD specifies `filter-search` but actual testid is `admin-filter-search` (AdminFilterBar.jsx:76). Same for `admin-filter-total` vs PRD `pagination-range`. Reconcile naming.",
+        "affected_selectors": ["filter-search","admin-filter-search"]
+      },
+      {
+        "flow": "Admin Jobs — category quick-jump chips",
+        "issue": "Element with data-testid=\"job-category-buckets\" exists in source (AdminJobs.jsx:102) but does NOT render in the DOM at /admin → Jobs tab. Likely conditionally rendered only when category_buckets array is non-empty AND not gated by data load timing. Re-check the render condition (component currently shows pagination strip + table but no bucket chip strip).",
+        "affected_selectors": ["job-category-buckets","job-bucket-{cat}"]
+      },
+      {
+        "flow": "Header user-dropdown — Feedback & support link",
+        "issue": "Link exists at Header.jsx:323 with data-testid=\"user-menu-feedback\" but only appears after clicking data-testid=\"user-menu-button\". This is normal dropdown behavior — flagging only to confirm the link is properly wired (verified by source inspection). Manual click test recommended."
+      }
+    ],
+    "design_issues": [
+      {"screen": "All pages", "issues": ["Cookie banner persists bottom-left and overlaps content (carried over from iter35)."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter36_feedback_support.py",
+    "/app/test_reports/pytest/iter36_results.xml"
+  ],
+  "action_items": [
+    "[CRITICAL] Fix /app/backend/routes/feedback_routes.py:101 — change `job.get('homeowner_id')` to `job.get('posted_by_id')` so homeowners can file support tickets on their own jobs.",
+    "Reconcile admin-tab testid naming with PRD: rename or alias `admin-filter-search`→`filter-search`, expose `filter-category-<value>` chip-style testids on Support tab (or update PRD).",
+    "Investigate why `job-category-buckets` strip doesn't render on Admin → Jobs tab even though endpoint returns category_buckets (verified via backend test).",
+    "OPTIONAL: Suppress the 'Quick reminder' accepted-quotes modal on /feedback so it doesn't block the form.",
+    "OPTIONAL: Auto-dismiss cookie banner on /admin routes (carried over from iter35)."
+  ],
+  "critical_code_review_comments": [
+    "feedback_routes.py — `is_owner` check uses non-existent field `homeowner_id`. Codebase canonical field is `posted_by_id` (used in job_routes.py and all admin queries). This is a regression-free copy-paste bug that completely breaks homeowner support submission. Add a backend unit test using the canonical field name to lock this in.",
+    "feedback_routes.py — `_serialize` correctly excludes Mongo _id via pop→id rename. Good. Datetime fields are kept as datetimes which serialize through FastAPI's default jsonable encoder. OK.",
+    "admin_routes.py jobs handler — per-category buckets aggregation strips the `category` key from the query so bucket counts are independent of the current category filter. Correct UX semantic (lets user re-jump between categories).",
+    "misc_routes.py:220 — logo upload correctly sets logo_moderation_status='approved' immediately. Verified end-to-end via TestLogoAutoApprove (1x1 PNG → profile.logo_moderation_status == 'approved').",
+    "Admin RBAC: All admin endpoints (feedback, support, users, jobs, reviews, verifications, invoices) correctly return 403 for non-admin (verified for homeowner + pro). Pagination is consistently capped at per_page<=100. Good defense.",
+    "feedback_routes admin_router.patch — `body.status not in STATUSES` correctly returns 400, and bad fid returns 404. Test confirmed both paths."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter36_feedback_support.py (NEW — 36 tests: feedback submit + validation, /mine, support tickets 404/403/category/create, admin RBAC, admin list shape + filters + pagination cap, admin PATCH status+resolved_at+response, logo auto-approval, unified pagination across 5 admin endpoints)"
+  ],
+  "success_rate": {
+    "backend": "92% (33/35 executed passed, 1 skipped — 1 critical bug in /feedback/support owner check)",
+    "frontend": "~85% (admin tabs all render, feedback page renders, all major testids present; missing: filter-category-<value> chips on Support, job-category-buckets strip, search-input testid naming mismatch)"
+  },
+  "test_credentials": "admin@servicemarket.eu/Admin123!, pro@test.com/Test123!, homeowner@test.com/Test123! (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Tests create TEST_iter36-prefixed feedback rows + 1 support ticket. Cleanup not strict but rows are namespace-prefixed for easy admin search and manual cleanup.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "iter36 introduced the Feedback (3 kinds) + Support (job-bound) model plus unified admin filters/pagination across users/jobs/reviews/verifications/invoices. The critical bug to verify after fix: /api/feedback/support must accept a homeowner posting on their own job (currently the field-name mismatch posted_by_id vs homeowner_id makes is_owner=False and returns 403). Re-run test_iter36_feedback_support.py::TestSupportTickets after the one-line fix and TestAdminSupport::test_admin_support_patch_resolved (chained on the same flow). Frontend testid contract may need reconciling: PRD asked for filter-search (actual: admin-filter-search), and filter-category-<value> chips on Support tab don't exist (Support filters category via a select).",
+  "rca of the issue": "Backend bug — /app/backend/routes/feedback_routes.py L101 checks `str(job.get('homeowner_id')) == uid_str` but the jobs collection schema uses `posted_by_id` (see job_routes.py L82 + L27 + admin_routes.py jobs handler). Field-name drift between modules. Result: is_owner is always False for homeowner; the function then checks db.quotes for a pro_user_id match (which fails for homeowner) and raises 403. Mitigation: one-line fix to use 'posted_by_id'. Optionally add a model/Pydantic Job schema to enforce field names and prevent future drift."
+}

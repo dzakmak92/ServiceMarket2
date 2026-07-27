@@ -1,0 +1,74 @@
+{
+  "summary": "Iteration 58 — Frontend-only verification of PM Toolkit upgrades (A) Client Portal + Change Orders + Milestone Pay and (C) Smart Scheduling / Crew Calendar. Logged in as pro@test.com (Explorer-active). Confirmed new project tab order Overview/Kanban/Timeline/Materials/Diary/Billing/Customer Page. CO create→send and Payment-request create work end-to-end. Public portal at /p/162u-Id59yUO4-qZc0w2Hw loads, shows the sent CO with line items, financials breakdown (Original €3.000 + Approved extras), Approve/Decline buttons + payments. Portal approve flipped the CO and bumped 'Updated total' from €3.482 → €3.857 (+€375 net, exactly matching CO-002 net). One CRITICAL bug found: 'Convert to invoice' on an approved CO navigates to /jobs/<originalJobId>/invoice which renders 'Job not found' and DOES NOT pre-fill Nachtrag line items. Also a doc/spec-vs-implementation mismatch on tab data-testids.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "BillingTab.jsx → Convert-to-invoice (pm-co-invoice-<id>)",
+        "issue": "Clicking the 'Convert to invoice' button on an APPROVED change order navigates to '/jobs/<originalJobId>/invoice?from_project=<projectId>&from_co=<coId>' but the page renders 'Job not found' and shows ZERO line items. The CO line items + 'Nachtrag CO-...' note are NOT pre-filled. Specifically: project 6a283c58573a159e6192ab8d references job 6a283c58573a159e6192ab8c, which apparently no longer resolves in the invoice editor route. Reproduction: click 'Convert to invoice' on CO-001 (or freshly-approved CO-002) → lands on Job-not-found page.",
+        "selector": "[data-testid^='pm-co-invoice-']",
+        "priority": "CRITICAL"
+      },
+      {
+        "component": "Project tab strip (GanttTab/BillingTab parent)",
+        "issue": "Tab data-testids in the live app are pm-tab-overview / pm-tab-kanban / pm-tab-gantt / pm-tab-materials / pm-tab-diary / pm-tab-billing / pm-tab-share, but the feature spec (and likely any e2e tests) reference pm-billing-tab / pm-overview-tab style. Either the spec or the implementation needs to be aligned — recommend standardising on pm-tab-<key>.",
+        "selector": "#pm-tab-strip > button[data-testid^='pm-tab-']",
+        "priority": "LOW"
+      },
+      {
+        "component": "PMPublicStatusPage.jsx → portal-pay-qr toggle",
+        "issue": "After clicking portal-pay-qr-<id>, the portal-pay-qrimg-<id> <img> element did not become visible in our run for the pre-existing payment (PAY-001). Could be initial state already open / toggle off, but it returned false twice. Needs a quick visual check by main agent to confirm QR is actually rendering an EPC image on first open.",
+        "selector": "[data-testid^='portal-pay-qr-'], [data-testid^='portal-pay-qrimg-']",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "CO → Invoice conversion",
+        "issue": "Endpoint or route /jobs/<jobId>/invoice does not honour the 'from_co' query param to load Nachtrag items, AND fails to resolve the original job. The CO conversion flow is currently end-user broken even though backend tests for /pm/change-orders pass.",
+        "affected_selectors": ["[data-testid='pm-co-invoice-<id>']", "InvoiceEditor route (/jobs/:id/invoice)"]
+      }
+    ],
+    "design_issues": []
+  },
+  "verified_working_flows": [
+    "Login pro@test.com → home (Welcome back Weber Installations, PRO badge) ✓",
+    "Project detail /projects/6a283c58573a159e6192ab8d loads with new tab order: OVERVIEW / KANBAN / TIMELINE / MATERIALS / DIARY / BILLING / CUSTOMER PAGE ✓",
+    "Billing tab opens both pm-changeorders and pm-payments sections ✓",
+    "Change Order create flow: pm-co-new-toggle → pm-co-title + pm-co-item-* + pm-co-add-item → pm-co-create produces CO-002 with computed € 375,00 net / € 450,00 incl. VAT and DRAFT status ✓",
+    "Change Order send: pm-co-send-<id> flips status DRAFT → SENT with 'Awaiting client approval' message ✓",
+    "Payment request create: pm-pay-label + pm-pay-amount + pm-pay-create produces PAY-002 € 500,00 with DUE badge ✓",
+    "Public portal /p/162u-Id59yUO4-qZc0w2Hw loads (no login, pm-public-page visible) ✓",
+    "pm-public-financials breakdown renders 'Original quote / Approved extras / Updated total' correctly ✓",
+    "pm-public-changeorders renders sent CO with line items, totals, Approve/Decline + name field ✓",
+    "Portal approve flow: portal-co-name-<id> + portal-co-approve-<id> → CO flips to 'Approved by <name>' AND 'Updated total' jumps by the CO net amount (€3.482 → €3.857 = +€375 = CO-002 net, exact match) ✓",
+    "pm-public-payments lists both DUE and previously-paid milestones ✓"
+  ],
+  "untested_or_inconclusive": [
+    "Portal reject flow (portal-co-reject-<id>) — could not exercise on a second sent CO because the seeded approved CO-001 + newly-approved CO-002 leave no other 'sent' CO; would require creating two SENT COs before approval to test reject.",
+    "Pro markpaid (pm-pay-markpaid-<id>) — script timed out before reaching this step after the QR-toggle issue. Backend /portal_mark_client_paid is covered by pytest so likely fine.",
+    "Crew & dependencies editor on Timeline tab (pm-crew-editor, pm-crew-assignee-<id>, pm-crew-depends-<id>) — same reason; partially loaded but script exited before assertions printed for this run.",
+    "/schedule cross-project calendar (pm-schedule-page, pm-schedule-crew-all/-Hans/-__none, pm-schedule-prev/next/today, pm-schedule-conflicts/-noconflicts) — same reason.",
+    "375px portal overflow check — partial; visible page loaded but final scrollWidth assertion not printed.",
+    "Regression sweep of Overview/Kanban/Materials/Diary/CustomerPage tabs — not completed in this run, but each tab IS present and clickable as confirmed by the testid enumeration."
+  ],
+  "test_report_links": ["/app/test_reports/iteration_58.json"],
+  "action_items": [
+    "[CRITICAL] Fix 'Convert to invoice' on BillingTab → either change the navigation target to a project-scoped invoice route (e.g. /projects/<id>/invoice?from_co=<coId>) OR make /jobs/<id>/invoice resolve the original job id stored on the PM project AND honour from_co to pre-fill Nachtrag line items + 'Nachtrag CO-...' note. Currently lands on 'Job not found' for the seeded project.",
+    "[LOW] Standardise tab data-testids — implementation uses pm-tab-<key> (pm-tab-billing, pm-tab-gantt, pm-tab-share), update the feature spec / e2e selectors accordingly OR rename to pm-<key>-tab.",
+    "[MEDIUM] Verify portal-pay-qr → portal-pay-qrimg actually renders the EPC base64 <img> on first toggle (manual eyeball check); ours did not become visible after one click on the pre-existing PAY-001 — may be a pre-toggled state or an actual bug.",
+    "[Follow-up] In the next iteration re-run the script to cover the untested items above (reject CO, schedule page, crew editor, 375px portal overflow, regression tab sweep). All blockers are environmental (browser/test timeout), not application bugs."
+  ],
+  "critical_code_review_comments": [
+    "BillingTab convert-to-invoice handler appears to build the URL from project.from_job_id without verifying the job still exists OR without routing to a project-scoped invoice editor — this couples Nachtrag invoicing to the lifecycle of the original Job document, which is fragile (jobs can be deleted/archived). Recommend a /pm/projects/<id>/invoices/new?from_co=<coId> route that creates the invoice draft server-side from project + CO data, then redirects to the editor.",
+    "Tab-key convention inconsistency (pm-tab-<key> vs pm-<key>-tab) — adopt one rule project-wide to avoid future spec/test drift."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "n/a (frontend-only run)", "frontend": "~80% — all create/send/approve flows work; 1 CRITICAL break on Convert-to-invoice; portal-QR toggle inconclusive; 4 secondary flows not exercised due to timeout (no evidence of bugs there)" },
+  "test_credentials": "pro@test.com / Test123! (Explorer-active, all toolkits unlocked). Public portal token 162u-Id59yUO4-qZc0w2Hw. Seeded project id 6a283c58573a159e6192ab8d.",
+  "seed_data_creation": "Created CO-002 'TEST_iter58 Nachtrag' (€375 net / €450 gross) on project 6a283c58573a159e6192ab8d, sent it, then approved it via the public portal as 'Anna Mueller' (this is now an APPROVED CO, joining the pre-existing CO-001). Also created PAY-002 'TEST_iter58 milestone' for €500 (status DUE). These remain in the DB for next iteration.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Real tab testids are pm-tab-overview/pm-tab-kanban/pm-tab-gantt/pm-tab-materials/pm-tab-diary/pm-tab-billing/pm-tab-share — DO NOT use pm-billing-tab style, it will timeout. After this run the seeded project has TWO approved COs (CO-001 €482, CO-002 €375 by Anna Mueller) and TWO payment requests (PAY-001 €1.000, PAY-002 €500, both DUE). Convert-to-invoice is broken (lands on 'Job not found') — re-test once main agent fixes the route. Use wait_until='domcontentloaded' (NOT 'networkidle') on /projects/<id> — networkidle times out at 30s on this preview env.",
+  "rca of the issue": "Convert-to-invoice route mismatch: the button currently links to /jobs/<originalJobId>/invoice?from_project=...&from_co=... but the invoice editor's loader resolves <originalJobId> via the Jobs collection. For PM projects whose source job has been archived/removed (or for projects created without a backing job entry), the loader throws 'Job not found'. The from_co query param is therefore never consumed and Nachtrag line items never reach the editor. Two clean fixes: (a) add a project-scoped route /projects/<id>/invoice that doesn't require the original job; or (b) make the editor's data loader fall back to the PM project (when from_project is present) and use from_co to prefill items + 'Nachtrag CO-<num>' note."
+}

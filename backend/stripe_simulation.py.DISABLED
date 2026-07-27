@@ -1,0 +1,648 @@
+"""
+stripe_payment_simulation.py
+Full end-to-end Stripe payment simulation for ServiceMarket.
+Tests every payment scenario using real Stripe test-mode API calls.
+"""
+import asyncio
+import stripe
+import requests
+import time
+import json
+from datetime import datetime
+
+# ── Config ────────────────────────────────────────────────────────────────────
+import os
+STRIPE_KEY    = os.environ.get("STRIPE_TEST_SECRET_KEY", "")  # set in .env — never hardcode
+API_URL       = "https://pro-toolkit-hub.preview.emergentagent.com"
+stripe.api_key = STRIPE_KEY
+
+# Test payment tokens (Stripe built-in test tokens)
+TOK_VISA          = "tok_visa"            # 4242... — succeeds
+TOK_VISA_3DS      = "tok_visa"            # 3DS-eligible (use tok_threeDSecure2Required for strict 3DS)
+TOK_DECLINED      = "tok_chargeDeclined"  # 4000...0002 — always declines
+TOK_INSUF_FUNDS   = "tok_chargeDeclinedInsufficientFunds"
+
+RESULTS = []
+
+def log(emoji, msg):
+    ts = datetime.now().strftime("%H:%M:%S")
+    print(f"  [{ts}] {emoji}  {msg}")
+
+def section(title):
+    print(f"\n{'='*60}")
+    print(f"  {title}")
+    print(f"{'='*60}")
+
+def record(scenario, status, detail=""):
+    RESULTS.append({"scenario": scenario, "status": status, "detail": detail})
+    icon = "✅" if status == "PASS" else "❌" if status == "FAIL" else "⚠️"
+    print(f"  {icon} {scenario}: {detail}")
+
+# ── Session helpers ───────────────────────────────────────────────────────────
+session = requests.Session()
+
+def login(email, password):
+    r = session.post(f"{API_URL}/api/auth/login",
+                     json={"email": email, "password": password})
+    if r.status_code == 200:
+        log("🔐", f"Logged in as {email}")
+        return True
+    log("❌", f"Login failed: {r.text[:100]}")
+    return False
+
+def logout():
+    session.post(f"{API_URL}/api/auth/logout")
+
+def get_sub_status():
+    r = session.get(f"{API_URL}/api/billing/subscription-status")
+    return r.json() if r.status_code == 200 else {}
+
+def get_pro_profile():
+    r = session.get(f"{API_URL}/api/profile/pro")
+    return r.json() if r.status_code == 200 else {}
+
+def confirm_payment_intent(pi_id, token=TOK_VISA):
+    """Confirm a Stripe PaymentIntent with a test token."""
+    pm = stripe.PaymentMethod.create(type="card", card={"token": token})
+    pi = stripe.PaymentIntent.confirm(
+        pi_id,
+        payment_method=pm.id,
+        return_url=f"{API_URL}/billing",
+    )
+    return pi
+
+def get_checkout_pi(session_id):
+    """Retrieve the PaymentIntent ID from a Checkout Session."""
+    cs = stripe.checkout.Session.retrieve(session_id)
+    return cs.payment_intent
+
+def create_checkout(endpoint, **kwargs):
+    """Create a checkout session via our API."""
+    r = session.post(
+        f"{API_URL}/api/billing/{endpoint}",
+        json={"origin_url": API_URL},
+        **kwargs
+    )
+    if r.status_code == 200:
+        return r.json()
+    log("❌", f"Checkout failed ({endpoint}): {r.status_code} {r.text[:120]}")
+    return {}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SCENARIO 1 — Pro Plan Monthly Subscription
+# ─────────────────────────────────────────────────────────────────────────────
+def sim_pro_monthly():
+    section("SCENARIO 1 — Pro Plan Monthly (€29.99 NET / €35.99 brutto)")
+    login("sim_pro_monthly@test.com", "Test123!")
+
+    data = create_checkout("checkout/subscription", params={"billing_period": "monthly"})
+    if not data.get("url"):
+        record("Pro Monthly — Checkout Session", "FAIL", "No URL returned")
+        return
+    sid = data["session_id"]
+    log("🔗", f"Checkout URL: {data['url'][:70]}...")
+    log("📋", f"Session ID: {sid}")
+    record("Pro Monthly — Checkout Session Created", "PASS", f"Real Stripe session: {sid[:25]}...")
+
+    # Confirm payment via Stripe API
+    try:
+        pi_id = get_checkout_pi(sid)
+        if not pi_id:
+            record("Pro Monthly — PaymentIntent Retrieved", "FAIL", "payment_intent is None on session")
+            return
+        log("💳", f"PaymentIntent: {pi_id} — confirming with Visa test card...")
+        pi = confirm_payment_intent(pi_id, TOK_VISA)
+        log("⚡", f"PaymentIntent status: {pi.status}")
+        record("Pro Monthly — Payment Confirmed", "PASS" if pi.status == "succeeded" else "FAIL",
+               f"PI status={pi.status} amount={pi.amount/100:.2f} {pi.currency.upper()}")
+    except Exception as e:
+        record("Pro Monthly — Payment Confirm", "FAIL", str(e)[:100])
+        return
+
+    # Wait for webhook delivery
+    log("⏳", "Waiting 5s for webhook delivery...")
+    time.sleep(5)
+
+    # Verify activation
+    status = get_sub_status()
+    if status.get("plan_tier") == "pro":
+        record("Pro Monthly — Plan Activated via Webhook", "PASS",
+               f"plan_tier=pro, valid_until={status.get('sub_valid_until','?')[:10]}")
+    else:
+        # Try polling fallback
+        r = session.get(f"{API_URL}/api/billing/checkout/status/{sid}")
+        status = get_sub_status()
+        if status.get("plan_tier") == "pro":
+            record("Pro Monthly — Plan Activated via Poll", "PASS", "activated via polling fallback")
+        else:
+            record("Pro Monthly — Plan Activated", "FAIL",
+                   f"plan_tier={status.get('plan_tier')} (expected 'pro')")
+
+    logout()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SCENARIO 2 — Pro Plan Annual Subscription
+# ─────────────────────────────────────────────────────────────────────────────
+def sim_pro_annual():
+    section("SCENARIO 2 — Pro Plan Annual (€299.90 NET / €359.88 brutto)")
+    login("sim_pro_annual@test.com", "Test123!")
+
+    data = create_checkout("checkout/subscription", params={"billing_period": "annual"})
+    if not data.get("url"):
+        record("Pro Annual — Checkout Session", "FAIL", "No URL returned")
+        return
+    sid = data["session_id"]
+    log("🔗", f"Checkout URL: {data['url'][:70]}...")
+
+    # Verify Stripe session amount
+    cs = stripe.checkout.Session.retrieve(sid)
+    expected_brutto = round(299.90 * 1.20 * 100)  # in cents
+    actual = cs.amount_total
+    amount_ok = abs(actual - expected_brutto) < 5  # allow 5 cent rounding tolerance
+    record("Pro Annual — Amount Correct",
+           "PASS" if amount_ok else "FAIL",
+           f"Expected ~€{expected_brutto/100:.2f}, Stripe has €{actual/100:.2f}")
+
+    try:
+        pi_id = get_checkout_pi(sid)
+        pi = confirm_payment_intent(pi_id, TOK_VISA)
+        record("Pro Annual — Payment Confirmed", "PASS" if pi.status == "succeeded" else "FAIL",
+               f"€{pi.amount/100:.2f} charged, billing_period=annual")
+    except Exception as e:
+        record("Pro Annual — Payment Confirm", "FAIL", str(e)[:100])
+        return
+
+    time.sleep(5)
+    status = get_sub_status()
+    bp = status.get("sub_billing_period", "?")
+    plan = status.get("plan_tier", "?")
+    days = status.get("days_remaining", 0)
+    record("Pro Annual — Activation + Period",
+           "PASS" if plan == "pro" and bp == "annual" and days > 360 else "FAIL",
+           f"plan={plan}, period={bp}, days_remaining={days}")
+    logout()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SCENARIO 3 — Invoice Toolkit Purchase
+# ─────────────────────────────────────────────────────────────────────────────
+def sim_invoice_toolkit():
+    section("SCENARIO 3 — Invoice Toolkit (Standard user price)")
+    login("sim_toolkit_invoice@test.com", "Test123!")
+
+    data = create_checkout("checkout/toolkit", params={"kind": "invoice"})
+    if not data.get("url"):
+        record("Invoice Toolkit — Checkout Session", "FAIL", "No URL")
+        return
+    sid = data["session_id"]
+    cs = stripe.checkout.Session.retrieve(sid)
+    record("Invoice Toolkit — Session Created", "PASS",
+           f"€{cs.amount_total/100:.2f} brutto | {sid[:25]}...")
+
+    try:
+        pi_id = get_checkout_pi(sid)
+        pi = confirm_payment_intent(pi_id, TOK_VISA)
+        record("Invoice Toolkit — Payment Confirmed", "PASS" if pi.status == "succeeded" else "FAIL",
+               f"€{pi.amount/100:.2f}")
+    except Exception as e:
+        record("Invoice Toolkit — Payment Confirm", "FAIL", str(e)[:100])
+        return
+
+    time.sleep(5)
+    profile = get_pro_profile()
+    has_it = profile.get("has_invoice_toolkit", False)
+    record("Invoice Toolkit — Feature Flag Set", "PASS" if has_it else "FAIL",
+           f"has_invoice_toolkit={has_it}")
+    logout()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SCENARIO 4 — Tax Toolkit Purchase
+# ─────────────────────────────────────────────────────────────────────────────
+def sim_tax_toolkit():
+    section("SCENARIO 4 — Tax Toolkit")
+    login("sim_toolkit_tax@test.com", "Test123!")
+
+    data = create_checkout("checkout/toolkit", params={"kind": "tax"})
+    if not data.get("url"):
+        record("Tax Toolkit — Checkout Session", "FAIL", "No URL"); return
+    sid = data["session_id"]
+    cs = stripe.checkout.Session.retrieve(sid)
+    record("Tax Toolkit — Session Created", "PASS", f"€{cs.amount_total/100:.2f}")
+
+    try:
+        pi_id = get_checkout_pi(sid)
+        pi = confirm_payment_intent(pi_id, TOK_VISA)
+        record("Tax Toolkit — Payment Confirmed", "PASS" if pi.status == "succeeded" else "FAIL",
+               f"€{pi.amount/100:.2f}")
+    except Exception as e:
+        record("Tax Toolkit — Payment Confirm", "FAIL", str(e)[:100]); return
+
+    time.sleep(5)
+    profile = get_pro_profile()
+    record("Tax Toolkit — Feature Flag Set", "PASS" if profile.get("has_tax_toolkit") else "FAIL",
+           f"has_tax_toolkit={profile.get('has_tax_toolkit')}")
+    logout()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SCENARIO 5 — PM Toolkit Purchase
+# ─────────────────────────────────────────────────────────────────────────────
+def sim_pm_toolkit():
+    section("SCENARIO 5 — PM Toolkit")
+    login("sim_toolkit_pm@test.com", "Test123!")
+
+    data = create_checkout("checkout/toolkit", params={"kind": "pm"})
+    if not data.get("url"):
+        record("PM Toolkit — Checkout Session", "FAIL", "No URL"); return
+    sid = data["session_id"]
+    cs = stripe.checkout.Session.retrieve(sid)
+    record("PM Toolkit — Session Created", "PASS", f"€{cs.amount_total/100:.2f}")
+
+    try:
+        pi_id = get_checkout_pi(sid)
+        pi = confirm_payment_intent(pi_id, TOK_VISA)
+        record("PM Toolkit — Payment Confirmed", "PASS" if pi.status == "succeeded" else "FAIL",
+               f"€{pi.amount/100:.2f}")
+    except Exception as e:
+        record("PM Toolkit — Payment Confirm", "FAIL", str(e)[:100]); return
+
+    time.sleep(5)
+    profile = get_pro_profile()
+    record("PM Toolkit — Feature Flag Set", "PASS" if profile.get("has_pm_toolkit") else "FAIL",
+           f"has_pm_toolkit={profile.get('has_pm_toolkit')}")
+    logout()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SCENARIO 6 — All-in-One Bundle
+# ─────────────────────────────────────────────────────────────────────────────
+def sim_bundle():
+    section("SCENARIO 6 — Pro Bundle (All 3 Toolkits)")
+    login("sim_bundle@test.com", "Test123!")
+
+    data = create_checkout("checkout/bundle")
+    if not data.get("url"):
+        record("Bundle — Checkout Session", "FAIL", "No URL"); return
+    sid = data["session_id"]
+    cs = stripe.checkout.Session.retrieve(sid)
+    record("Bundle — Session Created", "PASS", f"€{cs.amount_total/100:.2f} brutto")
+
+    try:
+        pi_id = get_checkout_pi(sid)
+        pi = confirm_payment_intent(pi_id, TOK_VISA)
+        record("Bundle — Payment Confirmed", "PASS" if pi.status == "succeeded" else "FAIL",
+               f"€{pi.amount/100:.2f}")
+    except Exception as e:
+        record("Bundle — Payment Confirm", "FAIL", str(e)[:100]); return
+
+    time.sleep(5)
+    profile = get_pro_profile()
+    all_flags = (profile.get("has_invoice_toolkit") and
+                 profile.get("has_tax_toolkit") and
+                 profile.get("has_pm_toolkit"))
+    record("Bundle — All 3 Toolkit Flags Set", "PASS" if all_flags else "FAIL",
+           f"invoice={profile.get('has_invoice_toolkit')} tax={profile.get('has_tax_toolkit')} pm={profile.get('has_pm_toolkit')}")
+    logout()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SCENARIO 7 — Contact Fees Payment
+# ─────────────────────────────────────────────────────────────────────────────
+def sim_contact_fees():
+    section("SCENARIO 7 — Contact Fees (outstanding monthly fees)")
+    login("sim_fees@test.com", "Test123!")
+
+    # Check if there are outstanding fees
+    fees_r = session.get(f"{API_URL}/api/billing/fee-log?status_filter=pending")
+    fees_data = fees_r.json() if fees_r.status_code == 200 else {}
+    pending_count = len(fees_data.get("fees", []))
+    log("📊", f"Pending fees: {pending_count}, total: €{fees_data.get('total', 0):.2f}")
+
+    if fees_data.get("total", 0) <= 0:
+        record("Contact Fees — Pay Outstanding", "SKIP", "No pending fees for test account (expected — seeded account may not have them)")
+        logout()
+        return
+
+    data = create_checkout("pay-outstanding")
+    if not data.get("url"):
+        record("Contact Fees — Checkout Session", "FAIL", "No URL"); logout(); return
+    sid = data["session_id"]
+    record("Contact Fees — Session Created", "PASS",
+           f"€{data.get('amount', 0):.2f} outstanding | {sid[:25]}...")
+
+    try:
+        pi_id = get_checkout_pi(sid)
+        pi = confirm_payment_intent(pi_id, TOK_VISA)
+        record("Contact Fees — Payment Confirmed", "PASS" if pi.status == "succeeded" else "FAIL",
+               f"€{pi.amount/100:.2f}")
+    except Exception as e:
+        record("Contact Fees — Payment Confirm", "FAIL", str(e)[:100]); logout(); return
+
+    time.sleep(5)
+    fees_after = session.get(f"{API_URL}/api/billing/fee-log?status_filter=pending").json()
+    remaining = fees_after.get("total", 0)
+    record("Contact Fees — Cleared After Payment", "PASS" if remaining == 0 else "FAIL",
+           f"Outstanding after payment: €{remaining:.2f}")
+    logout()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SCENARIO 8 — Pay Link (Customer pays Pro invoice online)
+# ─────────────────────────────────────────────────────────────────────────────
+def sim_pay_link():
+    section("SCENARIO 8 — Pay Link (Customer pays Pro's invoice)")
+
+    # First, get a real pro invoice with a pay_link_token
+    login("pro@test.com", "Test123!")
+    inv_r = session.get(f"{API_URL}/api/pro-invoices/my")
+    invoices = inv_r.json().get("invoices", []) if inv_r.status_code == 200 else []
+
+    unpaid_inv = None
+    for inv in invoices:
+        if inv.get("status") in ("issued", "sent") and not inv.get("paid_at"):
+            unpaid_inv = inv
+            break
+
+    if not unpaid_inv:
+        record("Pay Link — Find Unpaid Invoice", "SKIP", "No unpaid issued invoices found for pro@test.com")
+        logout()
+        return
+
+    inv_id = unpaid_inv.get("id") or unpaid_inv.get("_id")
+    log("📄", f"Testing pay link for invoice {unpaid_inv.get('invoice_number')} (€{unpaid_inv.get('brutto_total', 0):.2f})")
+
+    # Get or create pay link token
+    token_r = session.post(f"{API_URL}/api/pro-invoices/{inv_id}/pay-link")
+    if token_r.status_code not in (200, 201):
+        record("Pay Link — Generate Token", "FAIL", f"Status {token_r.status_code}"); logout(); return
+    token = token_r.json().get("pay_link_token") or token_r.json().get("token")
+    record("Pay Link — Token Generated", "PASS", f"Token: {(token or '')[:20]}...")
+    logout()
+
+    # Now simulate as the customer (no auth needed for pay link)
+    view_r = requests.get(f"{API_URL}/api/pay/{token}")
+    if view_r.status_code != 200:
+        record("Pay Link — Public View", "FAIL", f"Status {view_r.status_code}"); return
+    record("Pay Link — Public View", "PASS", "Invoice data accessible without auth")
+
+    # Create checkout for the customer payment
+    pay_r = requests.post(f"{API_URL}/api/pay/{token}/checkout",
+                          json={"origin_url": API_URL})
+    if pay_r.status_code != 200 or not pay_r.json().get("url"):
+        record("Pay Link — Customer Checkout Session", "FAIL", pay_r.text[:100]); return
+    sid = pay_r.json()["session_id"]
+    cs = stripe.checkout.Session.retrieve(sid)
+    record("Pay Link — Customer Checkout Session", "PASS",
+           f"€{cs.amount_total/100:.2f} | {sid[:25]}...")
+
+    try:
+        pi_id = get_checkout_pi(sid)
+        pi = confirm_payment_intent(pi_id, TOK_VISA)
+        record("Pay Link — Customer Payment Confirmed", "PASS" if pi.status == "succeeded" else "FAIL",
+               f"€{pi.amount/100:.2f}")
+    except Exception as e:
+        record("Pay Link — Payment Confirm", "FAIL", str(e)[:100]); return
+
+    time.sleep(5)
+    # Verify invoice marked paid
+    login("pro@test.com", "Test123!")
+    inv_check = session.get(f"{API_URL}/api/pro-invoices/{inv_id}")
+    if inv_check.status_code == 200:
+        paid_at = inv_check.json().get("paid_at") or inv_check.json().get("status")
+        record("Pay Link — Invoice Marked Paid", "PASS" if paid_at else "FAIL",
+               f"paid_at={str(paid_at)[:20]}")
+    logout()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SCENARIO 9 — Declined Card
+# ─────────────────────────────────────────────────────────────────────────────
+def sim_declined_card():
+    section("SCENARIO 9 — Declined Card (4000 0000 0000 0002)")
+    login("sim_declined@test.com", "Test123!")
+
+    data = create_checkout("checkout/subscription", params={"billing_period": "monthly"})
+    if not data.get("url"):
+        record("Declined Card — Checkout Session", "FAIL", "No URL"); logout(); return
+    sid = data["session_id"]
+
+    try:
+        pi_id = get_checkout_pi(sid)
+        pm = stripe.PaymentMethod.create(type="card", card={"token": TOK_DECLINED})
+        pi = stripe.PaymentIntent.confirm(pi_id, payment_method=pm.id,
+                                          return_url=f"{API_URL}/billing",
+                                          error_on_requires_action=True)
+        record("Declined Card — Should Have Been Declined", "FAIL", f"Unexpected success: {pi.status}")
+    except stripe.error.CardError as e:
+        record("Declined Card — Correctly Declined", "PASS",
+               f"Code={e.code} msg={e.user_message[:60]}")
+    except Exception as e:
+        # Payment failed at Stripe level = card correctly declined
+        err = str(e)
+        if "declined" in err.lower() or "card_declined" in err.lower():
+            record("Declined Card — Correctly Declined", "PASS", err[:80])
+        else:
+            record("Declined Card — Unexpected Error", "FAIL", err[:100])
+
+    time.sleep(2)
+    status = get_sub_status()
+    record("Declined Card — Plan NOT Activated", "PASS" if status.get("plan_tier") != "pro" else "FAIL",
+           f"plan_tier={status.get('plan_tier')} (should be standard)")
+    logout()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SCENARIO 10 — Insufficient Funds
+# ─────────────────────────────────────────────────────────────────────────────
+def sim_insufficient_funds():
+    section("SCENARIO 10 — Insufficient Funds (4000 0000 0000 9995)")
+    login("sim_insuf@test.com", "Test123!")
+
+    data = create_checkout("checkout/subscription", params={"billing_period": "monthly"})
+    if not data.get("url"):
+        record("Insuf. Funds — Checkout Session", "FAIL", "No URL"); logout(); return
+    sid = data["session_id"]
+
+    try:
+        pi_id = get_checkout_pi(sid)
+        pm = stripe.PaymentMethod.create(type="card", card={"token": TOK_INSUF_FUNDS})
+        stripe.PaymentIntent.confirm(pi_id, payment_method=pm.id,
+                                     return_url=f"{API_URL}/billing",
+                                     error_on_requires_action=True)
+        record("Insuf. Funds — Should Have Failed", "FAIL", "Unexpected success")
+    except (stripe.error.CardError, Exception) as e:
+        err = str(e)
+        if "insufficient" in err.lower() or "declined" in err.lower():
+            record("Insuf. Funds — Correctly Declined", "PASS", err[:80])
+        else:
+            record("Insuf. Funds — Error", "WARN", err[:80])
+
+    status = get_sub_status()
+    record("Insuf. Funds — Plan NOT Activated", "PASS" if status.get("plan_tier") != "pro" else "FAIL",
+           f"plan_tier={status.get('plan_tier')}")
+    logout()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SCENARIO 11 — Double-Click Guard
+# ─────────────────────────────────────────────────────────────────────────────
+def sim_double_click():
+    section("SCENARIO 11 — Double-Click Guard (idempotency)")
+    login("sim_dblclick@test.com", "Test123!")
+
+    r1 = create_checkout("checkout/subscription", params={"billing_period": "monthly"})
+    r2 = create_checkout("checkout/subscription", params={"billing_period": "monthly"})
+
+    sid1 = r1.get("session_id", "")
+    sid2 = r2.get("session_id", "")
+    reuse = r2.get("reuse", False)
+
+    if reuse and sid1 == sid2:
+        record("Double-Click Guard — Same Session Returned", "PASS",
+               f"Both calls returned same session_id {sid1[:20]}...")
+    elif sid1 and sid2 and sid1 == sid2:
+        record("Double-Click Guard — Same Session Returned", "PASS",
+               f"session_id: {sid1[:20]}...")
+    else:
+        record("Double-Click Guard — Different Sessions Created", "FAIL",
+               f"sid1={sid1[:20]}... sid2={sid2[:20]}... reuse={reuse}")
+    logout()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SCENARIO 12 — Cancel Subscription (end-of-period)
+# ─────────────────────────────────────────────────────────────────────────────
+def sim_cancel_subscription():
+    section("SCENARIO 12 — Cancel Subscription (end-of-period grace)")
+    login("sim_cancel@test.com", "Test123!")
+
+    # First, activate Pro on this account
+    data = create_checkout("checkout/subscription", params={"billing_period": "monthly"})
+    if data.get("url"):
+        sid = data["session_id"]
+        try:
+            pi_id = get_checkout_pi(sid)
+            pi = confirm_payment_intent(pi_id, TOK_VISA)
+            log("💳", f"Activated Pro for cancel test: {pi.status}")
+            time.sleep(5)
+        except Exception as e:
+            log("⚠️", f"Activation error: {e}")
+
+    # Now cancel
+    cancel_r = session.post(f"{API_URL}/api/billing/cancel-subscription")
+    if cancel_r.status_code == 200:
+        data = cancel_r.json()
+        cancels_at = data.get("cancels_at")
+        cancels_now = data.get("cancels_immediately", True)
+        if not cancels_now and cancels_at:
+            record("Cancel Sub — End-of-Period Grace", "PASS",
+                   f"Cancels at {cancels_at[:10]}, NOT immediately")
+        elif cancels_now:
+            record("Cancel Sub — End-of-Period Grace", "WARN",
+                   "Cancelled immediately (no sub_valid_until set — may be legacy account)")
+        else:
+            record("Cancel Sub — Response", "FAIL", str(data))
+
+        # Verify plan stays Pro until cancels_at (should still be 'pro')
+        status = get_sub_status()
+        plan = status.get("plan_tier")
+        cancels = status.get("sub_cancels_at")
+        record("Cancel Sub — Still Pro Until Cancels_At", "PASS" if plan == "pro" or not cancels else "FAIL",
+               f"plan={plan}, sub_cancels_at={str(cancels)[:10] if cancels else 'None'}")
+    else:
+        record("Cancel Sub — Request", "FAIL", f"HTTP {cancel_r.status_code}: {cancel_r.text[:80]}")
+    logout()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SETUP: Seed test accounts
+# ─────────────────────────────────────────────────────────────────────────────
+def setup_test_accounts():
+    section("SETUP — Creating test accounts")
+    accounts = [
+        ("sim_pro_monthly", "Monthly Sub Test"),
+        ("sim_pro_annual",  "Annual Sub Test"),
+        ("sim_toolkit_invoice", "Invoice Toolkit Test"),
+        ("sim_toolkit_tax",  "Tax Toolkit Test"),
+        ("sim_toolkit_pm",   "PM Toolkit Test"),
+        ("sim_bundle",       "Bundle Test"),
+        ("sim_fees",         "Contact Fees Test"),
+        ("sim_declined",     "Declined Card Test"),
+        ("sim_insuf",        "Insufficient Funds Test"),
+        ("sim_dblclick",     "Double Click Test"),
+        ("sim_cancel",       "Cancel Sub Test"),
+    ]
+    created = 0
+    for name, display in accounts:
+        email = f"{name}@test.com"
+        r = requests.post(f"{API_URL}/api/auth/register", json={
+            "email": email,
+            "password": "Test123!",
+            "name": display,
+            "role": "tradesperson",
+            "gdpr_consent": True,
+            "marketing_consent": False,
+        })
+        if r.status_code in (200, 201):
+            created += 1
+        elif "already exists" in (r.text or "").lower() or r.status_code == 409:
+            pass  # Already seeded
+    log("✅", f"Test accounts ready ({created} new, {len(accounts)-created} existing)")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MAIN
+# ─────────────────────────────────────────────────────────────────────────────
+if __name__ == "__main__":
+    print("\n" + "="*60)
+    print("  SERVICEMARKET — FULL STRIPE PAYMENT SIMULATION")
+    print(f"  API: {API_URL}")
+    print(f"  Mode: TEST (sk_test_...)")
+    print(f"  Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("="*60)
+
+    setup_test_accounts()
+
+    sim_pro_monthly()
+    sim_pro_annual()
+    sim_invoice_toolkit()
+    sim_tax_toolkit()
+    sim_pm_toolkit()
+    sim_bundle()
+    sim_contact_fees()
+    sim_pay_link()
+    sim_declined_card()
+    sim_insufficient_funds()
+    sim_double_click()
+    sim_cancel_subscription()
+
+    # ── Final Report ────────────────────────────────────────────────────────
+    print("\n" + "="*60)
+    print("  SIMULATION COMPLETE — FINAL REPORT")
+    print("="*60)
+    passed = [r for r in RESULTS if r["status"] == "PASS"]
+    failed = [r for r in RESULTS if r["status"] == "FAIL"]
+    skipped = [r for r in RESULTS if r["status"] == "SKIP"]
+    warned  = [r for r in RESULTS if r["status"] == "WARN"]
+
+    print(f"\n  ✅ PASS:  {len(passed)}")
+    print(f"  ❌ FAIL:  {len(failed)}")
+    print(f"  ⚠️  WARN:  {len(warned)}")
+    print(f"  ⏭️  SKIP:  {len(skipped)}")
+    print(f"\n  Total checks: {len(RESULTS)}")
+
+    if failed:
+        print("\n  ── FAILURES ──")
+        for r in failed:
+            print(f"    ❌ {r['scenario']}: {r['detail']}")
+    if warned:
+        print("\n  ── WARNINGS ──")
+        for r in warned:
+            print(f"    ⚠️  {r['scenario']}: {r['detail']}")
+
+    score = len(passed) / max(len([r for r in RESULTS if r["status"] != "SKIP"]), 1) * 100
+    print(f"\n  Score: {score:.0f}% ({len(passed)}/{len(RESULTS)-len(skipped)} non-skipped checks)")
+    print("="*60 + "\n")

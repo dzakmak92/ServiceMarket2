@@ -1,0 +1,40 @@
+{
+  "summary": "Iter45 re-test after main agent's two HIGH fixes. 15/15 backend pytest now PASS. Frontend P1 sanity confirmed: pro Feedback page 'My submissions' tab now renders mine_rows=26 testids (>= 23 baseline), toggle expands the row, FIX_VERIFY_iter45 notification 3 ticket shows RESOLVED with admin response inline. All regression items pass: MyQuotes complaints tab visible + 68 'Report a problem' triggers on Won tab + modal opens, MyInvoices export-all-pdf button present, AdminInvoicing 6 sub-tabs all present (subscriptions/fees/online_payments/invoice_data/storno/settings), Online Payments shows 3 KPI tiles + filter bar + 51 transactions table, Invoice Data shows template adoption cards + Export all as PDF button.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "MyQuotesPage tabs", "issue": "Tab labels show untranslated i18n keys: 'myquotes_tab_applied', 'myquotes_tab_won', 'myquotes_tab_completed', 'myquotes_tab_lost'. The Complaints tab label DOES render correctly ('Complaints') because it's hardcoded; but the count badge shows 'NaN' instead of a number on the Complaints tab.", "selector": "[data-testid=\"my-quotes-tab-*\"]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "AdminInvoicing > Invoice Data sub-tab", "issues": ["Spec mentions '5 template adoption cards' but only 3 cards render (Pastel Mint 0%, Pastel Rose 0%, Pastel Grey 100%). May be expected if /api/admin/invoice-templates currently returns 3 templates — not a defect, just an inconsistency with the testing brief."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter45_complaints_and_invoicing.py",
+    "/app/test_reports/pytest/iter45_iter43.xml"
+  ],
+  "action_items": [
+    "Fix MyQuotes tab i18n: tab labels show raw keys like 'myquotes_tab_applied' — add translations in en/de/tr/es locale files OR replace with hardcoded English strings.",
+    "Fix Complaints tab count badge showing 'NaN' on MyQuotes (likely undefined.length or NaN in JSX).",
+    "(Optional) Decide if Invoice Data should always surface 5 templates (Mint/Rose/Grey/Mono/Classic?) or only the configured set — current is 3."
+  ],
+  "critical_code_review_comments": [
+    "Two routers registered with same /pro-invoices prefix is fragile — the include order in server.py is now correct but a future re-order would re-break /export.pdf. Recommend consolidating into one router or adding a comment in server.py stating that iter45_pro_router MUST stay above pro_invoicing_router because of the catch-all /{invoice_id}.",
+    "feedback_routes.py admin_update_support: now correctly casts user_id to str(existing['user_id']); recommend adding an integration test that GETs /api/notifications immediately after PATCH and asserts kind=='support_resolved' (already covered in test_iter45_complaints_and_invoicing.py)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (15/15)", "frontend": "95% (all iter45 testids found; cosmetic i18n issue on MyQuotes tab labels)"},
+  "test_credentials": "admin@servicemarket.eu / Admin123!  |  pro@test.com / Test123!  |  homeowner@test.com / Test123!",
+  "seed_data_creation": "Test created 1 additional TEST_iter45 complaint support_ticket for pro@test.com on a won job during the pytest run (auto-resolved by admin_resolve test). Total mine-row count is now 26.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter45 backend now fully green (15/15). Frontend iter45 features all working with correct testids. Only cosmetic issue is MyQuotes tab i18n keys (non-blocking). Pro routes are /my-quotes, /my-invoices, /feedback. Admin Invoicing has 6 sub-tabs at /admin > Invoicing with testid pattern [data-testid=invoicing-subtab-*]. Auth uses httpOnly cookies.",
+  "rca_of_the_issue": {
+    "previous_pro_pdf_export_404_FIXED": "Main agent moved iter45_pro_router include ABOVE pro_invoicing_router in server.py L51-58. Verified: GET /api/pro-invoices/export.pdf now returns 200 + application/pdf >1KB for pro test account, and 403 for admin (as expected).",
+    "previous_missing_notification_FIXED": "Main agent changed feedback_routes.py L277-278 to insert notification with user_id=str(existing['user_id']). Verified end-to-end via pytest: pro creates support ticket -> admin PATCH /api/admin/support/{id} status=resolved -> pro GET /api/notifications returns a 'support_resolved' record with link_to='/feedback'."
+  }
+}

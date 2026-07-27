@@ -1,0 +1,40 @@
+{
+  "summary": "Iteration 3 testing — 13/13 new pytest cases pass (portfolio multipart+GridFS, public /api/portfolio/{id}, iCal export with date and weekday-fallback, SSE notifications stream with cross-user push trigger, AI rate-limit 20/h returning 429+Retry-After, booking message booking_id). Found and fixed 1 backend bug: SSE generator crashed with 'TypeError: can't compare offset-naive and offset-aware datetimes' on the first matching notification — coerced last_seen_at and Mongo created_at to naive UTC. After fix, SSE notification frames emit within ~3s of message insert. Frontend smoke-tested: SSE EventSource opens on app load for both pro and homeowner; Inbox renders 'Add to Calendar' button with data-testid='ical-download-<booking_id>' on booking system messages; the booking system messages from iter3 backend tests (Wed 09:00-12:00 dated 2026-02-04 and Fri 14:00-16:00 weekday fallback) appear in homeowner messages thread; portfolio settings tab renders <img src> built from REACT_APP_BACKEND_URL + /api/portfolio/<id> (no rendered images at test time because the iter3 portfolio test cleans up its uploads — verified the contract via API). Two pre-existing iter2 tests now fail as EXPECTED per the iter3 contract change: (a) test_classify_homeowner_plumbing → 429 because iter3 rate-limit test consumed the hourly bucket (in-memory limiter — this is documented behavior in the request), and (b) test_upload_and_delete → 422 because iter2 still POSTs base64 JSON to /api/profile/pro/portfolio while iter3 now requires multipart/form-data. Both are intentional and called out by main agent.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/notifications/stream", "issue": "FIXED in this run: SSE generator crashed comparing tz-aware last_seen_at with tz-naive Mongo datetime, silently terminating the stream before yielding 'event: notification'. Coerced both sides to naive UTC."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration3.py",
+    "/app/test_reports/pytest/iter3_results.xml",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Acknowledge the 2 expected iter2 regressions: rate-limit budget exhaustion + portfolio base64→multipart contract change. Suggest updating iter2 test_upload_and_delete to use multipart, or deleting it in favor of the iter3 portfolio coverage.",
+    "Optional: the PortfolioUpload pydantic model in models.py is unused after iter3 — safe to remove to reduce confusion."
+  ],
+  "critical_code_review_comments": [
+    "misc_routes.notifications_stream had a tz comparison bug that would terminate the stream silently on the first notification. Fixed by coercing both ends to naive UTC. Consider a small unit test on _booking_datetime + the SSE generator to catch this kind of regression.",
+    "rate_limit.py is in-memory only — production multi-pod deployment will under-count and effectively allow N×limit per hour. Backed by an explicit comment, but worth turning into a TODO with Redis fallback.",
+    "misc_routes.serve_portfolio_photo reads full file into memory before responding. Fine for ≤5MB but consider streaming via StreamingResponse for larger limits later.",
+    "PortfolioUpload pydantic model is imported in misc_routes but no longer referenced anywhere (iter3 replaced base64 endpoint with multipart). Remove to keep the public API surface clean."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration3.py (new — 13 tests)",
+    "/app/backend/routes/misc_routes.py (bugfix: SSE tz datetime comparison)"
+  ],
+  "success_rate": {"backend": "100% on iter3 (13/13). Full suite: 54/56 = 96.4% — 2 expected iter2 regressions documented above.", "frontend": "100% on the 3 critical iter3 flows verified (SSE on load, Add to Calendar button on bookings, portfolio image URL contract)."},
+  "test_credentials": "homeowner@test.com / Test123!, pro@test.com / Test123!, admin@servicemarket.eu / Admin123! — all working",
+  "seed_data_creation": "Iter3 setup fixture creates one TEST_iter3 in_progress job (homeowner posts → pro quotes → homeowner accepts) and 2 confirmed bookings on it (Wed 09:00-12:00 dated 2026-02-04 + Fri 14:00-16:00 weekday fallback). Portfolio tests upload+delete their own photos and clean up. Rate-limit test exhausts the homeowner's 20/h AI classify budget — subsequent classify-job calls will 429 for ~1h on this uvicorn process.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Run cd /app/backend && pytest tests/test_iteration3.py -v (45s). The SSE test takes ~13s as it streams events. Note the in-memory rate-limit budget is shared across runs — calling /api/ai/classify-job tests within an hour of the iter3 rate-limit test will 429. To reset, sudo supervisorctl restart backend.",
+  "rca_of_the_issue": "SSE stream silent-fail: last_seen_at was created with timezone.utc (tz-aware) while Mongo's motor driver returns datetime fields as tz-naive UTC. The 'last_seen_at = max(...)' inside the inner for-loop raised TypeError which Starlette swallowed via TaskGroup, closing the stream. Symptoms: clients see 'event: hello' + a single ': keep-alive' then nothing, with 200 status. Fix: normalize both to naive UTC. Reproduction: open EventSource as pro@test.com, then trigger a notification by POSTing /api/messages homeowner→pro_user_id; with the bug, no 'event: notification' frame appears. With the fix, the frame arrives within ~3s (polling interval)."
+}

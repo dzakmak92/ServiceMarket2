@@ -1,0 +1,38 @@
+{
+  "summary": "Iter13 retest of /messages multi-slot MonthBookingCalendar. All HIGH-priority items from iter12 are now PASSING. CompactWeekSchedule.jsx has been deleted; InboxPage.jsx now imports MonthBookingCalendar and renders it on homeowner threads (line ~396). End-to-end booking flow verified live in the preview env.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "verified_behaviors": [
+    "/messages right-rail shows [data-testid=calendar-booking] with [data-testid=cal-prev] and [data-testid=cal-next] on homeowner-with-pro thread",
+    "Days with availability render [data-testid^=cal-day-] with data-has-slots='true' and a dot marker",
+    "Clicking such a day reveals 1-hour [data-testid^=cal-slot-] buttons (verified: 09:00-10:00, 10:00-11:00 etc.)",
+    "Clicking cal-slot-09:00-10:00 then cal-slot-10:00-11:00 updates [data-testid=booking-selected-range] to '09:00-11:00 · 2h'",
+    "Selecting a non-adjacent slot (14:00-15:00) collapses selection to that single slot (text '14:00-15:00 · 1h')",
+    "confirm-booking-btn becomes enabled and POST /api/bookings is fired with a single body {job_id, pro_id, day:'Thu', slot:'09:00-11:00', date:'2026-05-28'}",
+    "After confirmation, chat shows two system bubbles: 'Appointment booked: Thu, 09:00-11:00' (Add to Calendar iCal link) AND 'Appointment: Thu, May 28, 09:00-11:00' (kind=booking message)",
+    "AttachmentUploader [data-testid=attachment-uploader] still present in the message composer (regression OK)",
+    "Cookie banner does not block calendar interactions (set via localStorage.cookie_consent='all')"
+  ],
+  "test_report_links": [
+    "/app/test_reports/iteration_12.json",
+    "/app/backend/tests/test_iter12_attachments.py",
+    "/app/backend/tests/test_iter12_extras.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "InboxPage.jsx is 552 lines — borderline (recommendation: split out the booking calendar / contact bar / message bubbles into smaller components before it grows past 700).",
+    "bookSlot uses dateObj.toISOString().slice(0,10) which converts to UTC — for clients far from UTC the booked date can shift by one day. Consider building isoDate from local Y/M/D instead."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (regression not re-run; iter12 was 13/13)", "frontend": "100% on iter13 scope"},
+  "test_credentials": "homeowner@test.com / Test123! and pro@test.com / Test123! — both valid",
+  "seed_data_creation": "Created one booking via UI (job/pro pair from existing TEST_ iter2 thread). No cleanup performed; bookings table now has +1 row from this run.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "The MonthBookingCalendar fix is fully verified. If extending tests: pro@test.com has Mon-Fri availability but the morning 09:00-10:00 / 10:00-11:00 slots are NOT seeded for every weekday — Wednesday only has 15:00-18:00 in current seed, while Thursday has the full 08-20 set. Iterate through days using [data-testid^=cal-day-][data-has-slots='true'] and pick the first one that exposes the slot ids you need. Login redirects homeowner to '/' (not '/dashboard').",
+  "rca_of_the_issue": "Iter12's HIGH-priority bug (CompactWeekSchedule used instead of MonthBookingCalendar) is resolved. Main agent removed CompactWeekSchedule.jsx, switched the import in InboxPage.jsx line 6, and replaced JSX on line 396-400. Confirmed: live POST /api/bookings body shows slot:'09:00-11:00' as expected by the iter12 spec."
+}

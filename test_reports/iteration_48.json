@@ -1,0 +1,55 @@
+{
+  "summary": "Tested 10 features from iteration 48: Pro Calendar, availability, job badges, booking message, notifications, MonthBookingCalendar, More nav link, homeowner popup. Found and fixed 2 bugs: (1) ProCalendarPage used non-existent pro_profile_id from auth/me - fixed to use /api/profile/pro; (2) reseed_clean.py created messages with wrong field names (sender_id/receiver_id) instead of what API expects (from_id/to_id) - fixed both.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "GET /api/jobs?status=in_progress (pro session)",
+        "issue": "Active jobs (in_progress) returns 0 results for tradesperson due to geo-filter. The ProCalendarPage sidebar shows 'No active jobs'. The geo-fence filter is applied after pagination, and the in_progress job (JOB-2026-0002) is in Vienna but pro's service_radius_km=10 is centered near Graz.",
+        "priority": "MEDIUM"
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Pro Calendar availability loading",
+        "issue": "ProCalendarPage.jsx used `meRes.data?.pro_profile_id` from /api/auth/me which doesn't return that field. FIXED: changed to use /api/profile/pro to get the pro profile ID.",
+        "affected_selectors": ["[data-testid='pro-cal-availability-panel']"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration48.py",
+    "/app/test_reports/pytest/iteration48_results.xml"
+  ],
+  "action_items": [
+    "MEDIUM: ProCalendar Active Jobs sidebar shows 0 jobs for pro - geo-filter prevents in_progress jobs from showing. Consider querying accepted/in_progress jobs directly for the pro's own active work rather than using the open-job browse filter.",
+    "LOW: ProCalendar page notification badge didn't show 'Go to My Calendar' button testing - seed data was missing. Fixed seed and confirmed working."
+  ],
+  "critical_code_review_comments": [
+    "ProCalendarPage.jsx: was using meRes.data?.pro_profile_id but /api/auth/me never returns that field. FIXED in this iteration.",
+    "reseed_clean.py: messages were seeded with wrong field names (sender_id, receiver_id, is_read, created_at) vs API schema (from_id, to_id, read_at, sent_at, job_id). FIXED in this iteration.",
+    "job_routes.py: The geo-filter runs after DB pagination query, causing total count mismatch (total=1, jobs=0) - geo filter should be combined into the DB query for accuracy."
+  ],
+  "updated_files": [
+    "/app/frontend/src/pages/pro/ProCalendarPage.jsx",
+    "/app/backend/reseed_clean.py"
+  ],
+  "success_rate": {
+    "backend": "100% (6/6 tests pass)",
+    "frontend": "95% (all features working; active jobs sidebar shows 0 due to geo-filter issue)"
+  },
+  "test_credentials": "pro@test.com / Test123!, homeowner@test.com / Test123!",
+  "seed_data_creation": "Ran reseed_clean.py to create 4 jobs, 1 booking, 2 threads, 4 notifications, 50 availability slots",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All 10 features confirmed working after 2 bug fixes: (1) Pro Calendar loads correctly with Mon-Fri teal slots and Sat/Sun red X. (2) List view toggle works. (3) Availability slot toggle works. (4) Job number badges show on homeowner dashboard. (5) MonthBookingCalendar shows red+X for Sat/Sun unavailable days. (6) More dropdown has My Calendar link. (7) Notification click marks as read (API confirmed). (8) GET /api/bookings returns enriched data. (9) HomeownerCompletionReminder shows 1 in_progress job. (10) Booking chat message shows '2026-06-08 (Mon), 10:00-11:00' format. Active Jobs sidebar (ProCalendar) still shows 0 due to geo-filter issue.",
+  "rca_of_issues": {
+    "pro_calendar_availability": "ProCalendarPage.jsx called /api/auth/me expecting pro_profile_id field, but auth/me endpoint only returns user fields + plan_tier. Fix: changed to use /api/profile/pro which returns the pro profile id field.",
+    "seed_message_mismatch": "reseed_clean.py created messages with sender_id/receiver_id/is_read/created_at but /api/messages/threads queries from_id/to_id/read_at/sent_at/job_id. Fix: updated seed to use correct field names.",
+    "active_jobs_geo_filter": "Tradesperson GET /api/jobs with status=in_progress applies geo-filter after pagination, returning 0 jobs when the in_progress job city is outside the pro's service_radius_km zone."
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "summary": "Full-scale quality audit of ServiceMarket. Tested all major flows: auth, homeowner, pro, admin, inbox, BIC auto-detect, tax/invoice toolkits, GDPR pages, mobile nav, notifications. Found and FIXED 2 critical bugs: (1) /api/messages/threads crashed with 500 due to invalid MongoDB ObjectId from 'pay-now-test' test thread; (2) PostJobPage navigated to dead-end /my-jobs route instead of /dashboard. All 57 backend tests pass (100%). All major frontend flows verified working.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "GET /api/tax/exports/datev-full.csv?year=2025&quarter=1",
+        "issue": "KeyError '1' — DATEV quarter param must be 'Q1'/'Q2'/'Q3'/'Q4', not '1'/'2'. No frontend impact (frontend sends 'Q1' etc.) but could confuse API consumers. Consider adding a user-friendly error instead of 500.",
+        "priority": "LOW"
+      }
+    ]
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "AuthPage",
+        "issue": "Register tab 'Sign Up' link text is part of a <button data-testid='toggle-auth-mode'>, not a link — minor but affects automated selectors expecting <a>",
+        "selector": "[data-testid='toggle-auth-mode']",
+        "priority": "LOW"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "All pages",
+        "issues": [
+          "React hydration warning: '<span> cannot be a child of <option>' — likely from a Lucide icon accidentally rendered inside a <select><option>. Does not break functionality but triggers hydration mismatch warning in React."
+        ]
+      }
+    ]
+  },
+
+  "bugs_fixed": [
+    {
+      "file": "/app/backend/routes/message_routes.py",
+      "issue": "GET /api/messages/threads returned 500 for any user who had threads with invalid job_id ('pay-now-test' is not a valid MongoDB ObjectId). Fixed by wrapping ObjectId() calls in try-except to skip invalid threads.",
+      "severity": "CRITICAL"
+    },
+    {
+      "file": "/app/frontend/src/pages/homeowner/PostJobPage.jsx",
+      "issue": "After posting a job, the app navigated to '/my-jobs' which is not a registered route (catch-all → '/'). Changed navigate('/my-jobs') → navigate('/dashboard') to land on the correct Homeowner My Jobs page.",
+      "severity": "HIGH"
+    }
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_iter47_full_audit.py",
+    "/app/test_reports/pytest/iter47_full_audit.xml"
+  ],
+
+  "action_items": [
+    "MINOR: Fix React hydration warning — find <span> incorrectly placed inside <option> element (likely in a Select component or MobileNav)",
+    "MINOR: DATEV endpoint — return 400 with helpful error message instead of 500 when quarter is not 'Q1'/'Q2'/'Q3'/'Q4' format",
+    "INFO: /api/auth/me returns 401 on initial page load (before auth) — this shows in browser console as error. Consider suppressing expected 401 at auth check time."
+  ],
+
+  "critical_code_review_comments": [
+    "message_routes.py line ~49: ObjectId(thread['job_id']) crash — FIXED this iteration. Consider also adding validation in thread creation to prevent invalid job_ids from being stored.",
+    "PostJobPage.jsx: navigate('/my-jobs') pointed to non-existent route — FIXED this iteration. Search codebase for other hard-coded route strings that may not be in App.js routes.",
+    "tax_routes.py: DATEV endpoint crashes with KeyError when quarter param is not in 'Q1'/'Q4' format — should validate input and return 400 instead of 500.",
+    "AuthContext.js: Initial /api/auth/me call always shows 401 in console on unauthenticated load — suppress or handle gracefully to reduce console noise."
+  ],
+
+  "updated_files": [
+    "/app/backend/routes/message_routes.py",
+    "/app/frontend/src/pages/homeowner/PostJobPage.jsx",
+    "/app/backend/tests/test_iter47_full_audit.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (57/57 tests pass)",
+    "frontend": "95% (all major flows verified, 2 minor design issues)"
+  },
+
+  "flows_verified_passing": [
+    "AUTH: Login homeowner/pro/admin, wrong-password 401, refresh token, register form with GDPR checkboxes (Terms/Privacy/Marketing)",
+    "HOMEOWNER: Post job (redirects to /dashboard now), My Jobs tabs (Open/InProgress/Completed), Find Pros no 401, Quick reminder modal",
+    "PRO: Browse jobs (20 jobs), category filter, Send Quote buttons, My Quotes 5 tabs (no NaN badges), already-applied logic",
+    "BIC AUTO-DETECT: AT611904300234573201 → Bank Austria detected (teal hint), BIC=BKAUATWWXXX auto-filled, bank name=Bank Austria auto-filled",
+    "BIC VALIDATION: 9-char 'BTSABAXXX' → red border + error 'BIC must be exactly 8 or 11 characters'",
+    "INBOX: Thread list loads (500 FIXED), calendar visible, job panel, composer, contact info",
+    "ADMIN: All 9+ tabs render (Overview KPIs, Verifications, Users+role-filter, Jobs+status-filter, Billing, Invoicing 6-subtabs, Fees, Toolkits, Support)",
+    "TAX TOOLKIT: Dashboard KPI tiles (Revenue/Outstanding/Expenses/Profit/UST), DATEV 2026 button, Reports tab DATEV export card with Q1-Q4 period selector",
+    "INVOICE TOOLKIT: Stats cards (Issued €15,300/Paid €2,280/Pending/This Month), filter tabs (ALL/ISSUED/PARTIAL/PAID/STORNO/CANCELLED), Export all as PDF button, compact action row",
+    "BILLING: Pro plan €29.99 + VAT breakdown (€35.99 incl. 20% VAT), Toolkit dual-pricing, All-in-One Bundle ACTIVE",
+    "PM TOOLKIT: Projects list loads (1 active), Create project button, status filter tabs",
+    "NOTIFICATIONS: Bell count (8 for homeowner), dropdown opens, notifications listed, Clear all works",
+    "GDPR: /privacy, /terms, /imprint all render with content, /data-rights form present, /data-rights POST endpoint works",
+    "SEARCH: /search?q=plumbing → 10 results found",
+    "MOBILE NAV: More button found, bottom nav renders",
+    "LOGOUT: User menu accessible"
+  ],
+
+  "test_credentials": {
+    "homeowner": "homeowner@test.com / Test123!",
+    "pro": "pro@test.com / Test123!",
+    "admin": "admin@servicemarket.eu / Admin123!"
+  },
+
+  "seed_data_creation": "3 TEST_iter47 Bathroom Renovation jobs created via backend test (homeowner account)",
+
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+
+  "context_for_next_testing_agent": "2 critical bugs were fixed in this iteration: (1) /messages/threads 500 fix in message_routes.py, (2) PostJobPage dead-end /my-jobs → /dashboard fix. All 57 backend tests pass. Main remaining work: fix <span>-inside-<option> React hydration warning. The pro@test.com account has has_tax_toolkit=true and has_invoice_toolkit=true confirmed. Admin is admin@servicemarket.eu/Admin123!. DATEV exports work with Q1-Q4 string format (not integer 1-4)."
+}

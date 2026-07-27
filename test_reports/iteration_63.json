@@ -1,0 +1,35 @@
+{
+  "summary": "End-to-end verification of Iter 63 Job File PDF export. Backend (existing pytest + new guards test): 16/16 pass across all 4 languages (en/de/tr/es) on both /api/pm/projects/{id}/export-pdf and /api/pm/my-projects/{id}/export-pdf, including 400 on non-done projects and 403 cross-role. Frontend Pro flow: button visible only on done projects, modal opens with 4-lang picker, DE download returns 200 application/pdf and success toast. Frontend Homeowner flow: button visible on done project, modal opens with 4-lang picker, EN download returns 200 application/pdf and success toast (after a pre-existing Quick reminder modal is dismissed). PM detail tabs (Overview/Kanban/Timeline/Materials/Diary/Billing/Customer Page) all clickable; HO project detail renders all key sections.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Homeowner My Projects detail (HomeownerProjectDetailPage)", "issues": ["Pre-existing 'Quick reminder' modal auto-opens on load and visually overlaps/obscures the 'Export Job File' button row until dismissed. Not caused by Iter 63 but degrades discoverability of the new export action; consider lowering its priority or showing it after the user-initiated interaction. The export feature works fine once the modal is closed."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter63_jobfile_export.py",
+    "/app/backend/tests/test_iter63_jobfile_guards.py",
+    "/app/test_reports/pytest/iter63_results.xml",
+    "/app/test_reports/pytest/iter63_guards.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "ExportJobFileModal: API errors are swallowed into a single toast (pm_export_error). For 400/403 specifically you could surface a more actionable message (e.g. 'Project must be marked done before exporting').",
+    "Seed/test data drift: the project IDs in the review request (6a285e689f6cbbf89125899a was supposed to be active) no longer match runtime state (now 'done'). Pinning explicit IDs in test docs is fragile; recommend the test guide query an active project at runtime.",
+    "Minor pre-existing console warning unrelated to this feature: a <span> is being nested inside <option> somewhere in ProtectedRoute-rendered tree (React hydration warning)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter63_jobfile_guards.py (new — supplemental guard/role/lang tests)"
+  ],
+  "success_rate": {"backend": "100% (16/16)", "frontend": "100% on the new export flow for both roles"},
+  "test_credentials": "Pro: pro@test.com / Test123!  |  Homeowner: homeowner@test.com / Test123!",
+  "seed_data_creation": "None. Used existing seed project 6a284a8f939d4f5bf9b5db10 (status=done). Note: the 'active project' id in the brief (6a285e689f6cbbf89125899a) is currently in 'done' state; my supplemental test picks a real active project at runtime (e.g. 6a283c58573a159e6192ab8d) so the 400 guard test remains valid.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iter 63 Job File PDF Export is fully working for both Pro and Homeowner across all 4 languages (en/de/tr/es). Backend endpoints /api/pm/projects/{id}/export-pdf (pro) and /api/pm/my-projects/{id}/export-pdf (homeowner) return 200 application/pdf for done projects, 400 for active, 403 cross-role. Pytest files: test_iter63_jobfile_export.py (5 tests) and test_iter63_jobfile_guards.py (11 tests) — 16 passing. Frontend tip: when testing the homeowner page, ALWAYS dismiss the 'Quick reminder' modal (button text 'Remind me later') before clicking the ho-export-jobfile-btn, otherwise the modal's overlay intercepts the click. The cookie consent banner can also block clicks at the very bottom of the viewport."
+}

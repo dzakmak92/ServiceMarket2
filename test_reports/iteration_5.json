@@ -1,0 +1,31 @@
+{
+  "summary": "Iter5 retest of the two iter4 frontend bugs in /messages (InboxPage). Both fixes verified on desktop 1400x900 with homeowner@test.com.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "verified_fixes": [
+    "contact-action-row now contains 4 buttons on desktop: contact-call-btn (Call), contact-whatsapp-btn (WhatsApp), contact-share-location-btn (Share Location with Pro), contact-view-profile-btn (View profile). All four are visible at viewport 1400x900 (no sm:hidden).",
+    "Clicking [data-testid=contact-view-profile-btn] navigates from /messages to /pros/<pro_user_id> (verified: /pros/6a14b72e05a5dee99e39fd15) within 3s using SPA pushState. openProProfile fallback to activeThread.other_user_id works.",
+    "Clicking [data-testid=header-view-profile] in the inbox header also navigates to /pros/<pro_user_id> within ~3s.",
+    "Pro profile page renders the new layout: header card (Weber Installations, Verified/Licensed/Insured), Portfolio section, Reviews section, Weekly availability grid, 'At a glance' sidebar (Hourly rate, Experience, Jobs completed, Response), and Request quote CTA."
+  ],
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Minor flakiness observed: a Playwright click with force=True on [data-testid=header-view-profile] occasionally did not trigger navigation within 5s on the very first attempt after thread load, while a plain (non-forced) click navigates reliably. This is a test-side artifact (force bypasses actionability checks before React state is fully wired); the production button itself works correctly for real users. No code change needed."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a", "frontend": "100%"},
+  "test_credentials": "homeowner@test.com / Test123! (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Both iter4 bugs are confirmed fixed in /app/frontend/src/pages/shared/InboxPage.jsx. openProProfile uses (otherUser?.id || activeThread?.other_user_id) and the action-row View Profile button no longer has sm:hidden so it appears on desktop. Tested at viewport 1400x900 only; mobile not retested but the change only made it more visible on desktop. If retesting, prefer plain `locator.click()` over `force=True` to avoid timing flakiness on the header button.",
+  "rca of the issue": "Iter4 root cause: (1) openProProfile relied solely on contactInfo.pro.id which is null before the thread's /api/messages/thread/... contact unlock API completes; switching to activeThread.other_user_id as a fallback resolves it. (2) The action-row View Profile button had a `sm:hidden`/responsive class that hid it on desktop; removing that class makes it always visible. Both verified in current InboxPage.jsx lines 190-194 (openProProfile) and 353-361 (button)."
+}

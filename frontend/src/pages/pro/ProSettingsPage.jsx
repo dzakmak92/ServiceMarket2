@@ -1,0 +1,1228 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useLang } from '../../contexts/LangContext';
+import { useAuth } from '../../contexts/AuthContext';
+import api from '../../api/client';
+import ServiceRadiusPicker from '../../components/ServiceRadiusPicker';
+import PrivacySettings from '../../components/PrivacySettings';
+import ScrollSnapTabStrip, { SwipeableTabPanel } from '../../components/ScrollSnapTabStrip';
+import { lookupBankFromIban, isValidIban } from '../../utils/ibanBicLookup';
+import { isPremiumTier, planLabel } from '../../utils/tier';
+import {
+  User, Bell, Briefcase, Settings as SettingsIcon, Image as ImageIcon,
+  Globe, Plus, Trash2, Loader2, AlertCircle, CheckCircle2, Star, Eye, ExternalLink, Shield,
+  MessageSquare, Pencil, MapPin, Receipt, Building2, Banknote, Sparkles, Check,
+} from 'lucide-react';
+
+const TABS = ['about_me', 'services_areas', 'portfolio', 'invoice_details', 'notifications', 'account', 'privacy'];
+const APP_LANG_OPTIONS = [
+  { code: 'en', name: 'English' },
+  { code: 'de', name: 'Deutsch' },
+  { code: 'tr', name: 'Türkçe' },
+  { code: 'es', name: 'Español' },
+];
+const SPOKEN_OPTIONS = [
+  { code: 'en', label: 'English' },
+  { code: 'de', label: 'Deutsch' },
+  { code: 'tr', label: 'Türkçe' },
+  { code: 'es', label: 'Español' },
+  { code: 'fr', label: 'Français' },
+  { code: 'it', label: 'Italiano' },
+  { code: 'pl', label: 'Polski' },
+  { code: 'sr', label: 'Srpski / Hrvatski' },
+  { code: 'ro', label: 'Română' },
+  { code: 'ar', label: 'العربية' },
+];
+const ALL_CATS = [
+  'plumbing', 'electrical', 'painting', 'home_cleaning', 'handyman',
+  'gardening', 'carpentry', 'hvac', 'moving', 'pest_control',
+  'locksmith', 'appliance_repair', 'tiling', 'flooring',
+];
+
+export default function ProSettingsPage() {
+  const { user, refreshUser } = useAuth();
+  const { t, lang, changeLang } = useLang();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [tab, setTab] = useState('about_me');
+
+  // Deep-link: ?tab=<key> opens the matching sub-tab (with friendly aliases).
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const raw = params.get('tab');
+    if (!raw) return;
+    const alias = { services: 'services_areas', area: 'services_areas', invoice: 'invoice_details', bank: 'invoice_details' };
+    const t0 = TABS.includes(raw) ? raw : alias[raw];
+    if (t0 && t0 !== tab) setTab(t0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
+  const [proProfile, setProProfile] = useState(null);
+  const [userForm, setUserForm] = useState({ name: '', phone: '', city: '', lang: 'en' });
+  const [proForm, setProForm] = useState({
+    business_name: '', tagline: '', description: '', hourly_rate: '',
+    years_experience: '', service_areas: '',
+    is_kleinunternehmer: false,
+    bank_account_holder: '', bank_iban: '', bank_bic: '', bank_name: '',
+    invoice_tax_id: '', invoice_footer: '',
+    business_address: '', business_postal_code: '', business_city: '', business_country: 'AT',
+    service_center_lat: null, service_center_lng: null, service_radius_km: 0,
+  });
+  const [selectedCats, setSelectedCats] = useState([]);
+  const [spokenLangs, setSpokenLangs] = useState([]);
+  const [notifForm, setNotifForm] = useState({
+    notif_email: true, notif_sms: false,
+    notif_new_message: true, notif_new_review: true, notif_new_job_match: true,
+    notif_quote_accepted: true, notif_booking_confirmed: true,
+    notif_job_status: true, notif_payment_receipt: true,
+  });
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setUserForm({ name: user.name || '', phone: user.phone || '', city: user.city || '', lang: user.lang || 'en' });
+      setNotifForm({
+        notif_email: user.notif_email ?? true,
+        notif_sms: user.notif_sms ?? false,
+        notif_new_message: user.notif_new_message ?? true,
+        notif_new_review: user.notif_new_review ?? true,
+        notif_new_job_match: user.notif_new_job_match ?? true,
+        notif_quote_accepted: user.notif_quote_accepted ?? true,
+        notif_booking_confirmed: user.notif_booking_confirmed ?? true,
+        notif_job_status: user.notif_job_status ?? true,
+        notif_payment_receipt: user.notif_payment_receipt ?? true,
+      });
+    }
+  }, [user]);
+
+  const fetchProProfile = React.useCallback(() => {
+    api.get('/api/profile/pro').then((r) => {
+      const p = r.data;
+      setProProfile(p);
+      setProForm({
+        business_name: p.business_name || '',
+        tagline: p.tagline || '',
+        description: p.description || '',
+        hourly_rate: p.hourly_rate || '',
+        years_experience: p.years_experience || '',
+        service_areas: (p.service_areas || []).join(', '),
+        is_kleinunternehmer: !!p.is_kleinunternehmer,
+        bank_account_holder: p.bank_account_holder || '',
+        bank_iban: p.bank_iban || '',
+        bank_bic: p.bank_bic || '',
+        bank_name: p.bank_name || '',
+        invoice_tax_id: p.invoice_tax_id || '',
+        invoice_footer: p.invoice_footer || '',
+        business_address: p.business_address || '',
+        business_postal_code: p.business_postal_code || '',
+        business_city: p.business_city || '',
+        business_country: p.business_country || 'AT',
+        service_center_lat: p.service_center_lat ?? null,
+        service_center_lng: p.service_center_lng ?? null,
+        service_radius_km: p.service_radius_km || 0,
+      });
+      setSelectedCats(p.service_categories || []);
+      setSpokenLangs(p.languages_spoken || [user?.lang || 'en']);
+    }).catch(() => {});
+  }, [user]);
+
+  useEffect(() => { fetchProProfile(); }, [fetchProProfile]);
+
+  const toggleCat = (cat) => {
+    setSelectedCats((prev) => prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]);
+  };
+  const toggleSpokenLang = (code) => {
+    setSpokenLangs((prev) => prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]);
+  };
+
+  const saveProfile = async () => {
+    setSaving(true);
+    try {
+      await api.patch('/api/profile', { ...userForm, ...notifForm });
+      await api.patch('/api/profile/pro', {
+        business_name: proForm.business_name,
+        tagline: proForm.tagline,
+        description: proForm.description,
+        hourly_rate: proForm.hourly_rate ? parseInt(proForm.hourly_rate) : 0,
+        years_experience: proForm.years_experience ? parseInt(proForm.years_experience) : 0,
+        service_categories: selectedCats,
+        service_areas: proForm.service_areas.split(',').map((s) => s.trim()).filter(Boolean),
+        languages_spoken: spokenLangs,
+        is_kleinunternehmer: !!proForm.is_kleinunternehmer,
+        bank_account_holder: proForm.bank_account_holder,
+        bank_iban: proForm.bank_iban,
+        bank_bic: proForm.bank_bic,
+        bank_name: proForm.bank_name,
+        invoice_tax_id: proForm.invoice_tax_id,
+        invoice_footer: proForm.invoice_footer,
+        business_address: proForm.business_address,
+        business_postal_code: proForm.business_postal_code,
+        business_city: proForm.business_city,
+        business_country: proForm.business_country,
+        service_center_lat: proForm.service_center_lat,
+        service_center_lng: proForm.service_center_lng,
+        service_radius_km: proForm.service_radius_km ? parseInt(proForm.service_radius_km) : 0,
+      });
+      if (userForm.lang !== lang) changeLang(userForm.lang);
+      await refreshUser();
+      const { data } = await api.get('/api/profile/pro');
+      setProProfile(data);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch { /* noop */ } finally { setSaving(false); }
+  };
+
+  const isPro = isPremiumTier(proProfile?.plan_tier);
+  const rating = proProfile?.rating_avg || 0;
+  const reviewsCount = proProfile?.reviews_count || 0;
+  const jobsDone = proProfile?.completed_jobs_count || 0;
+  const yrs = proProfile?.years_experience || 0;
+  const hr = proProfile?.hourly_rate || 0;
+  const monthlyFees = proProfile?.monthly_fees || 0;
+
+  const ICONS = {
+    about_me: User, services_areas: Briefcase, notifications: Bell, portfolio: ImageIcon, account: SettingsIcon, privacy: Shield, invoice_details: Receipt,
+  };
+
+  const previewPublic = () => {
+    if (user?._id) navigate(`/pros/${user._id}`);
+  };
+
+  return (
+    <div className="min-h-screen bg-cream pb-24 md:pb-12">
+      <div className="page-container py-6">
+        {/* Top bar */}
+        <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
+          <div>
+            <h1 className="text-3xl font-headings font-bold text-ink">{t('settings_pro_title')}</h1>
+            <p className="text-ink-muted text-sm mt-1">{t('settings_pro_subtitle')}</p>
+          </div>
+          <button
+            onClick={previewPublic}
+            className="inline-flex items-center gap-1.5 rounded-full border border-sm-border bg-paper text-ink text-xs font-medium px-3 py-2 hover:bg-cream-soft transition-colors"
+            data-testid="preview-public-profile"
+          >
+            <Eye size={12} /> {t('btn_preview_public_profile')}
+            <ExternalLink size={11} />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
+          {/* LEFT — Profile card + Plan card */}
+          <div className="space-y-4 lg:sticky lg:top-20 lg:self-start">
+            {/* Profile card */}
+            <div className="card-lg" data-testid="settings-profile-card">
+              <div className="flex flex-col items-center text-center">
+                <div className="w-20 h-20 bg-cream-deep rounded-[20px] flex items-center justify-center mb-3">
+                  <span className="text-ink font-headings font-bold text-3xl">
+                    {(proForm.business_name || user?.name || '?')[0]?.toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap justify-center">
+                  <p className="font-headings font-bold text-ink">
+                    {proForm.business_name || user?.name || 'Your Business'}
+                  </p>
+                  {isPro && <span className="pro-badge">PRO</span>}
+                </div>
+                <p className="text-xs text-ink-muted mt-0.5">
+                  {selectedCats[0] ? selectedCats[0].replace('_', ' ') : ''}{selectedCats[0] && user?.name ? ' · ' : ''}{user?.name || ''}
+                </p>
+
+                {rating > 0 && (
+                  <div className="flex items-center gap-1 mt-2">
+                    <Star size={13} className="text-amber fill-amber" />
+                    <span className="font-semibold text-ink text-sm">{rating.toFixed(1)}</span>
+                    <span className="text-xs text-ink-muted">({reviewsCount} {t('reviews_word')})</span>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-1.5 mt-3 flex-wrap justify-center">
+                  {proProfile?.is_verified && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-teal text-paper text-xs font-semibold rounded-full">
+                      <CheckCircle2 size={11} /> {t('pro_verified')}
+                    </span>
+                  )}
+                  {proProfile?.is_licensed && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber text-paper text-xs font-semibold rounded-full">
+                      🪪 {t('pro_licensed')}
+                    </span>
+                  )}
+                  {proProfile?.is_insured && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-ink text-paper text-xs font-semibold rounded-full">
+                      🛡️ {t('pro_insured')}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-sm-border text-center">
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-ink-muted">{t('done_short')}</p>
+                  <p className="text-base font-bold text-ink">{jobsDone}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-ink-muted">{t('exp_short')}</p>
+                  <p className="text-base font-bold text-ink">{yrs} y</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-ink-muted">{t('hr_short')}</p>
+                  <p className="text-base font-bold text-ink">€{hr}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Plan card */}
+            <div className={`card-lg ${isPro ? 'border border-amber bg-amber/5' : ''}`} data-testid="settings-plan-card">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-semibold text-ink-muted uppercase tracking-wider">{t('pro_plan_current')}</span>
+                {isPro && <span className="pro-badge">PRO</span>}
+              </div>
+              <p className="font-headings font-bold text-ink text-lg mt-1">
+                {planLabel(proProfile?.plan_tier, t)}
+              </p>
+              <p className="text-xs text-ink-muted mt-0.5">
+                {isPro ? `${planLabel(proProfile?.plan_tier, t)} ${t('billing_active')}` : `€${monthlyFees.toFixed(2)} ${t('billing_fees_this_month')}`}
+              </p>
+              <Link
+                to="/billing"
+                className="btn-primary w-full text-xs py-2 mt-3"
+                data-testid="settings-manage-billing"
+              >
+                {t('billing_manage')}
+              </Link>
+            </div>
+          </div>
+
+          {/* RIGHT — Tabs + content */}
+          <div className="min-w-0">
+            {/* Tabs — horizontally scrollable on mobile with scroll-snap */}
+            <ScrollSnapTabStrip
+              tabs={TABS.map((tabId) => ({ key: tabId, label: t(tabId) }))}
+              activeKey={tab}
+              onChange={setTab}
+              testidPrefix="pro-settings-tab"
+              variant="underline"
+              className="mb-5"
+            />
+
+            <SwipeableTabPanel tabKeys={TABS} activeKey={tab} onChange={setTab} className="animate-fade-in space-y-4">
+              {tab === 'about_me' && (
+                <>
+                  <div className="card-lg space-y-4">
+                    <h2 className="font-headings font-bold text-ink text-lg">{t('about_me')}</h2>
+
+                    <div>
+                      <label className="block text-sm font-medium text-ink mb-1.5">{t('name')}</label>
+                      <input value={userForm.name} onChange={(e) => setUserForm((f) => ({ ...f, name: e.target.value }))} className="sm-input" data-testid="pro-name-input" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-ink mb-1.5">{t('settings_business_name')}</label>
+                      <input value={proForm.business_name} onChange={(e) => setProForm((f) => ({ ...f, business_name: e.target.value }))} className="sm-input" placeholder="Weber Installations" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-ink mb-1.5">{t('settings_tagline')}</label>
+                      <input value={proForm.tagline} onChange={(e) => setProForm((f) => ({ ...f, tagline: e.target.value }))} className="sm-input" placeholder={t('settings_tagline_placeholder')} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-ink mb-1.5">{t('settings_about_me')}</label>
+                      <textarea value={proForm.description} onChange={(e) => setProForm((f) => ({ ...f, description: e.target.value }))} className="sm-textarea" rows={4} placeholder={t('settings_about_me_placeholder')} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-ink mb-1.5">{t('settings_hourly_rate')}</label>
+                        <input type="number" value={proForm.hourly_rate} onChange={(e) => setProForm((f) => ({ ...f, hourly_rate: e.target.value }))} className="sm-input" min="0" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-ink mb-1.5">{t('settings_years_exp')}</label>
+                        <input type="number" value={proForm.years_experience} onChange={(e) => setProForm((f) => ({ ...f, years_experience: e.target.value }))} className="sm-input" min="0" />
+                      </div>
+                    </div>
+
+                    {/* App language */}
+                    <div>
+                      <label className="text-sm font-medium text-ink mb-1.5 flex items-center gap-1.5"><Globe size={14} />{t('change_language')}</label>
+                      <select value={userForm.lang} onChange={(e) => setUserForm((f) => ({ ...f, lang: e.target.value }))} className="sm-select">
+                        {APP_LANG_OPTIONS.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}
+                      </select>
+                    </div>
+
+                    {/* Kleinunternehmer status (Austrian tax) */}
+                    <div className="rounded-[12px] border border-sm-border bg-cream-soft p-3" data-testid="kleinunternehmer-row">
+                      <label className="flex items-start gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!!proForm.is_kleinunternehmer}
+                          onChange={(e) => setProForm((f) => ({ ...f, is_kleinunternehmer: e.target.checked }))}
+                          className="h-4 w-4 mt-0.5"
+                          data-testid="kleinunternehmer-toggle"
+                        />
+                        <div>
+                          <p className="text-sm font-semibold text-ink">{t('settings_kleinunternehmer')}</p>
+                          <p className="text-xs text-ink-muted">{t('settings_kleinunternehmer_help')}</p>
+                        </div>
+                      </label>
+                    </div>
+
+                    {/* Languages spoken */}
+                    <div data-testid="languages-spoken-section">
+                      <label className="block text-sm font-medium text-ink mb-1.5">{t('settings_languages_spoken')}</label>
+                      <p className="text-xs text-ink-muted mb-2">{t('settings_languages_spoken_help')}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {SPOKEN_OPTIONS.map((l) => (
+                          <button
+                            key={l.code}
+                            type="button"
+                            onClick={() => toggleSpokenLang(l.code)}
+                            className={`px-3 py-1.5 rounded-full text-sm border transition-all
+                              ${spokenLangs.includes(l.code)
+                                ? 'border-teal bg-teal/10 text-teal font-medium'
+                                : 'border-sm-border bg-paper text-ink-soft hover:bg-cream-soft'}`}
+                            data-testid={`lang-spoken-${l.code}`}
+                          >
+                            {l.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <button onClick={saveProfile} disabled={saving} className="btn-primary w-full" data-testid="pro-save-btn">
+                      {saving ? t('btn_saving') : saved ? t('settings_saved_check') : t('btn_save_changes')}
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {tab === 'services_areas' && (
+                <>
+                  <div className="card-lg">
+                    <h2 className="font-headings font-bold text-ink text-lg mb-4">{t('settings_services')}</h2>
+                    <div className="flex flex-wrap gap-2">
+                      {ALL_CATS.map((cat) => (
+                        <button
+                          key={cat}
+                          onClick={() => toggleCat(cat)}
+                          className={`px-3 py-1.5 rounded-full text-sm border transition-all capitalize
+                            ${selectedCats.includes(cat) ? 'border-teal bg-teal/10 text-teal font-medium' : 'border-sm-border bg-paper text-ink-soft hover:bg-cream-soft'}`}
+                          data-testid={`service-cat-${cat}`}
+                        >
+                          {cat.replace('_', ' ')}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="card-lg">
+                    <h2 className="font-headings font-bold text-ink text-lg mb-2">{t('settings_service_areas')}</h2>
+                    <p className="text-xs text-ink-muted mb-3">{t('settings_areas_help')}</p>
+                    <input
+                      value={proForm.service_areas}
+                      onChange={(e) => setProForm((f) => ({ ...f, service_areas: e.target.value }))}
+                      className="sm-input"
+                      placeholder="Vienna 1010, Vienna 1020, ..."
+                    />
+                  </div>
+
+                  <div className="card-lg" data-testid="geo-fence-card">
+                    <h2 className="font-headings font-bold text-ink text-lg mb-1 flex items-center gap-2">
+                      <MapPin size={16} className="text-teal" /> {t('settings_geo_fence_title')}
+                    </h2>
+                    <p className="text-xs text-ink-muted mb-4">{t('settings_geo_fence_help')}</p>
+                    <ServiceRadiusPicker
+                      proForm={proForm}
+                      setProForm={setProForm}
+                      user={user}
+                      t={t}
+                    />
+                  </div>
+                  <button onClick={saveProfile} disabled={saving} className="btn-primary w-full">
+                    {saving ? t('btn_saving') : t('btn_save_changes')}
+                  </button>
+                </>
+              )}
+
+              {tab === 'invoice_details' && (
+                <div className="card-lg space-y-4" data-testid="invoice-details-tab">
+                  <div className="flex items-start gap-3">
+                    <Banknote size={22} className="text-teal flex-shrink-0 mt-1" />
+                    <div>
+                      <h2 className="font-headings font-bold text-ink text-lg">{t('settings_invoice_details_title')}</h2>
+                      <p className="text-xs text-ink-muted">{t('settings_invoice_details_help')}</p>
+                    </div>
+                  </div>
+
+                  {/* Business address — appears on every issued invoice */}
+                  <div className="border-t border-sm-border pt-4">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-ink-muted mb-3">
+                      {t('settings_business_address_title') || 'Business address'}
+                    </h3>
+                    <p className="text-xs text-ink-muted mb-3">
+                      {t('settings_business_address_help') || 'Shown on every invoice you issue. If empty, your personal account address is used.'}
+                    </p>
+                    <div>
+                      <label className="block text-sm font-medium text-ink mb-1.5">{t('settings_address_street') || 'Street + Number'}</label>
+                      <input
+                        value={proForm.business_address}
+                        onChange={(e) => setProForm((f) => ({ ...f, business_address: e.target.value }))}
+                        className="sm-input"
+                        placeholder="Hauptstraße 12"
+                        data-testid="business-address-input"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+                      <div>
+                        <label className="block text-sm font-medium text-ink mb-1.5">{t('settings_postal_code') || 'ZIP / Postal code'}</label>
+                        <input
+                          value={proForm.business_postal_code}
+                          onChange={(e) => setProForm((f) => ({ ...f, business_postal_code: e.target.value }))}
+                          className="sm-input"
+                          placeholder="1010"
+                          data-testid="business-postal-input"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-ink mb-1.5">{t('settings_city') || 'City'}</label>
+                        <input
+                          value={proForm.business_city}
+                          onChange={(e) => setProForm((f) => ({ ...f, business_city: e.target.value }))}
+                          className="sm-input"
+                          placeholder="Wien"
+                          data-testid="business-city-input"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <label className="block text-sm font-medium text-ink mb-1.5">{t('settings_country') || 'Country'}</label>
+                      <select
+                        value={proForm.business_country || 'AT'}
+                        onChange={(e) => setProForm((f) => ({ ...f, business_country: e.target.value }))}
+                        className="sm-input max-w-[200px]"
+                        data-testid="business-country-input"
+                      >
+                        <option value="AT">Österreich</option>
+                        <option value="DE">Deutschland</option>
+                        <option value="CH">Schweiz</option>
+                        <option value="IT">Italien</option>
+                        <option value="SI">Slowenien</option>
+                        <option value="SK">Slowakei</option>
+                        <option value="CZ">Tschechien</option>
+                        <option value="HU">Ungarn</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-sm-border pt-4">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-ink-muted mb-3">
+                      {t('settings_bank_section_title') || 'Bank details (for payments)'}
+                    </h3>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-ink mb-1.5">{t('settings_bank_account_holder')}</label>
+                    <input
+                      value={proForm.bank_account_holder}
+                      onChange={(e) => setProForm((f) => ({ ...f, bank_account_holder: e.target.value }))}
+                      className="sm-input"
+                      placeholder="Max Mustermann"
+                      data-testid="bank-holder-input"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-ink mb-1.5">{t('settings_iban')}</label>
+                      <input
+                        value={proForm.bank_iban}
+                        onChange={(e) => {
+                          const raw = e.target.value.toUpperCase();
+                          const clean = raw.replace(/\s/g, '');
+                          setProForm((f) => ({ ...f, bank_iban: raw }));
+                          // Auto-detect BIC + bank name when IBAN is structurally valid
+                          if (isValidIban(clean)) {
+                            const match = lookupBankFromIban(clean);
+                            if (match) {
+                              setProForm((f) => ({
+                                ...f,
+                                bank_iban: raw,
+                                // Only auto-fill BIC if field is empty and we have a result
+                                bank_bic: (!f.bank_bic && match.bic) ? match.bic : f.bank_bic,
+                                bank_name: !f.bank_name ? match.name : f.bank_name,
+                              }));
+                            }
+                          }
+                        }}
+                        className="sm-input font-mono text-sm"
+                        placeholder="AT12 3456 7890 1234 5678"
+                        data-testid="bank-iban-input"
+                      />
+                      {(() => {
+                        const clean = proForm.bank_iban.replace(/\s/g, '');
+                        if (clean.length >= 15 && isValidIban(clean)) {
+                          const match = lookupBankFromIban(clean);
+                          return match ? (
+                            <p className="text-xs text-teal mt-1 flex items-center gap-1" data-testid="bank-detect-hint">
+                              <CheckCircle2 size={11} /> {match.name} detected
+                            </p>
+                          ) : (
+                            <p className="text-xs text-green-pos mt-1 flex items-center gap-1">
+                              <CheckCircle2 size={11} /> Valid IBAN
+                            </p>
+                          );
+                        }
+                        if (clean.length > 10 && !isValidIban(clean)) {
+                          return <p className="text-xs text-red-500 mt-1">Invalid IBAN checksum</p>;
+                        }
+                        return null;
+                      })()}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-ink mb-1.5">{t('settings_bic')}</label>
+                      <input
+                        value={proForm.bank_bic}
+                        onChange={(e) => setProForm((f) => ({ ...f, bank_bic: e.target.value.replace(/\s/g, '').toUpperCase() }))}
+                        className={`sm-input font-mono text-sm ${proForm.bank_bic && ![8, 11].includes(proForm.bank_bic.replace(/\s/g, '').length) ? 'border-red-400' : ''}`}
+                        placeholder="BKAUATWWXXX"
+                        data-testid="bank-bic-input"
+                      />
+                      {proForm.bank_bic && ![8, 11].includes(proForm.bank_bic.replace(/\s/g, '').length) && (
+                        <p className="text-xs text-red-500 mt-1">BIC must be exactly 8 or 11 characters (e.g. BKAUATWW or BKAUATWWXXX)</p>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-ink mb-1.5">{t('settings_bank_name')}</label>
+                    <input
+                      value={proForm.bank_name}
+                      onChange={(e) => setProForm((f) => ({ ...f, bank_name: e.target.value }))}
+                      className="sm-input"
+                      placeholder="Erste Bank"
+                      data-testid="bank-name-input"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-ink mb-1.5">{t('settings_invoice_tax_id')}</label>
+                    <input
+                      value={proForm.invoice_tax_id}
+                      onChange={(e) => setProForm((f) => ({ ...f, invoice_tax_id: e.target.value }))}
+                      className="sm-input"
+                      placeholder="123/4567"
+                      data-testid="invoice-tax-id-input"
+                    />
+                    <p className="text-[11px] text-ink-muted mt-1">{t('settings_invoice_tax_id_help')}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-ink mb-1.5">{t('settings_invoice_footer')}</label>
+                    <textarea
+                      value={proForm.invoice_footer}
+                      onChange={(e) => setProForm((f) => ({ ...f, invoice_footer: e.target.value }))}
+                      className="sm-textarea"
+                      rows={2}
+                      placeholder={t('settings_invoice_footer_ph')}
+                      data-testid="invoice-footer-input"
+                    />
+                  </div>
+
+                  {/* ─── White-label: logo + template ─── */}
+                  <WhiteLabelSection t={t} proProfile={proProfile} reload={fetchProProfile} />
+
+                  <button onClick={saveProfile} disabled={saving} className="btn-primary w-full" data-testid="invoice-details-save">
+                    {saving ? t('btn_saving') : saved ? t('settings_saved_check') : t('btn_save_changes')}
+                  </button>
+                  {!proProfile?.has_invoice_toolkit && (
+                    <div className="rounded-[12px] border border-amber/40 bg-amber/10 p-3 text-sm text-amber-deep flex items-center gap-2">
+                      <AlertCircle size={14} />
+                      <span>{t('settings_invoice_needs_toolkit')} <Link to="/billing" className="underline font-semibold">{t('settings_get_toolkit_link')}</Link></span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {tab === 'notifications' && (
+                <div className="card-lg space-y-4">
+                  <h2 className="font-headings font-bold text-ink text-lg">{t('notifications')}</h2>
+
+                  {/* Master channels */}
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted mb-2">{t('settings_notif_channels')}</p>
+                    {[
+                      { key: 'notif_email', label: t('settings_email_notif'), desc: t('settings_email_notif_desc') },
+                      { key: 'notif_sms',   label: t('settings_sms_notif'),   desc: t('settings_sms_notif_desc') },
+                    ].map((item) => (
+                      <div key={item.key} className="flex items-center justify-between py-3 border-b border-sm-border last:border-b-0">
+                        <div>
+                          <p className="text-sm font-medium text-ink">{item.label}</p>
+                          <p className="text-xs text-ink-muted">{item.desc}</p>
+                        </div>
+                        <button
+                          data-testid={`notif-toggle-${item.key}`}
+                          onClick={() => setNotifForm((f) => ({ ...f, [item.key]: !f[item.key] }))}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${notifForm[item.key] ? 'bg-teal' : 'bg-ink-faint'}`}
+                        >
+                          <span className={`inline-block h-4 w-4 transform rounded-full bg-paper transition-transform ${notifForm[item.key] ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Per-event preferences (grouped) */}
+                  <div className="pt-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted mb-2">{t('settings_notif_events')}</p>
+                    {[
+                      { key: 'notif_new_job_match',     label: t('settings_notif_new_job_match'),     desc: t('settings_notif_new_job_match_desc') },
+                      { key: 'notif_new_message',       label: t('settings_notif_new_message'),       desc: t('settings_notif_new_message_desc') },
+                      { key: 'notif_quote_accepted',    label: t('settings_notif_quote_accepted'),    desc: t('settings_notif_quote_accepted_desc') },
+                      { key: 'notif_new_review',        label: t('settings_notif_new_review'),        desc: t('settings_notif_new_review_desc') },
+                      { key: 'notif_booking_confirmed', label: t('settings_notif_booking_confirmed'), desc: t('settings_notif_booking_confirmed_desc') },
+                      { key: 'notif_job_status',        label: t('settings_notif_job_status'),        desc: t('settings_notif_job_status_desc') },
+                      { key: 'notif_payment_receipt',   label: t('settings_notif_payment_receipt'),   desc: t('settings_notif_payment_receipt_desc') },
+                    ].map((item) => (
+                      <div key={item.key} className="flex items-center justify-between py-3 border-b border-sm-border last:border-b-0">
+                        <div className="pr-4">
+                          <p className="text-sm font-medium text-ink">{item.label}</p>
+                          <p className="text-xs text-ink-muted">{item.desc}</p>
+                        </div>
+                        <button
+                          data-testid={`notif-toggle-${item.key}`}
+                          onClick={() => setNotifForm((f) => ({ ...f, [item.key]: !f[item.key] }))}
+                          disabled={!notifForm.notif_email}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0
+                            ${notifForm[item.key] && notifForm.notif_email ? 'bg-teal' : 'bg-ink-faint'}
+                            ${!notifForm.notif_email ? 'opacity-40 cursor-not-allowed' : ''}`}
+                        >
+                          <span className={`inline-block h-4 w-4 transform rounded-full bg-paper transition-transform ${notifForm[item.key] ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
+                      </div>
+                    ))}
+                    {!notifForm.notif_email && (
+                      <p className="text-[11px] text-amber-deep mt-2 italic">{t('settings_notif_master_off')}</p>
+                    )}
+                  </div>
+
+                  <button onClick={saveProfile} disabled={saving} className="btn-primary w-full" data-testid="notif-save-btn">{t('btn_save_changes')}</button>
+                </div>
+              )}
+
+              {tab === 'portfolio' && (
+                <div className="space-y-6">
+                  <PortfolioTab proProfile={proProfile} onChange={setProProfile} t={t} />
+                  <MyReviewsTab t={t} />
+                </div>
+              )}
+
+              {tab === 'account' && (
+                <div className="card-lg space-y-4">
+                  <h2 className="font-headings font-bold text-ink text-lg">{t('account')}</h2>
+                  <div>
+                    <label className="block text-sm font-medium text-ink mb-1.5">{t('email')}</label>
+                    <input value={user?.email} disabled className="sm-input opacity-60" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-ink mb-1.5">{t('phone')}</label>
+                    <input value={userForm.phone} onChange={(e) => setUserForm((f) => ({ ...f, phone: e.target.value }))} className="sm-input" placeholder="+43 ..." />
+                  </div>
+                  <button onClick={saveProfile} disabled={saving} className="btn-primary w-full">{t('btn_save_changes')}</button>
+                  <div className="pt-4 border-t border-sm-border">
+                    <button
+                      className="btn-danger w-full"
+                      data-testid="pro-delete-account-btn"
+                      onClick={() => setTab('privacy')}
+                    >
+                      {t('settings_delete_account')}
+                    </button>
+                    <p className="text-[11px] text-ink-muted mt-2 text-center">{t('settings_delete_redirect_help')}</p>
+                  </div>
+                </div>
+              )}
+
+              {tab === 'privacy' && <PrivacySettings />}
+            </SwipeableTabPanel>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ──────────────────────────────────────────────
+// Portfolio tab (Standard: 10 photos, Pro: 30 photos via GridFS)
+// ──────────────────────────────────────────────
+function PortfolioTab({ proProfile, onChange, t }) {
+  const photos = proProfile?.portfolio_photos || [];
+  const fileInputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+  const isPro = isPremiumTier(proProfile?.plan_tier);
+  const MAX = isPro ? 30 : 10;
+
+  const onPick = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (photos.length >= MAX) {
+      setError(`Max ${MAX} photos`);
+      return;
+    }
+    setUploading(true);
+    setError('');
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      await api.post('/api/profile/pro/portfolio', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const { data: pp } = await api.get('/api/profile/pro');
+      onChange(pp);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Upload failed');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const onDelete = async (idx) => {
+    if (!window.confirm(t('btn_delete') + '?')) return;
+    try {
+      await api.delete(`/api/profile/pro/portfolio/${idx}`);
+      const { data: pp } = await api.get('/api/profile/pro');
+      onChange(pp);
+    } catch {
+      /* noop */
+    }
+  };
+
+  return (
+    <div className="card-lg">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-headings font-bold text-ink text-lg">{t('portfolio')}</h2>
+        <span className="text-xs text-ink-muted" data-testid="portfolio-count">
+          {t('settings_portfolio_count').replace('{n}', photos.length)}
+        </span>
+      </div>
+
+      {error && (
+        <div className="flex items-center gap-2 text-red-warn bg-red-50 rounded-[14px] p-3 mb-4 text-sm">
+          <AlertCircle size={14} /> {error}
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        {photos.map((p, i) => {
+          const isFull = (p.url || '').startsWith('http') || (p.url || '').startsWith('data:');
+          const src = isFull ? p.url : `${process.env.REACT_APP_BACKEND_URL}${p.url}`;
+          return (
+            <div key={p.file_id || i} className="relative group rounded-[14px] overflow-hidden border border-sm-border aspect-square bg-cream-soft">
+              <img
+                src={src}
+                alt={p.caption || `Portfolio ${i + 1}`}
+                className="w-full h-full object-cover"
+                data-testid={`portfolio-photo-${i}`}
+              />
+              <button
+                onClick={() => onDelete(i)}
+                className="absolute top-1.5 right-1.5 bg-red-warn text-paper rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                data-testid={`portfolio-delete-${i}`}
+                aria-label="delete"
+              >
+                <Trash2 size={12} />
+              </button>
+            </div>
+          );
+        })}
+
+        {photos.length < MAX && (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="aspect-square rounded-[14px] border-2 border-dashed border-sm-border flex flex-col items-center justify-center gap-2 hover:border-teal hover:bg-teal/5 transition-colors disabled:opacity-50"
+            data-testid="portfolio-add-btn"
+          >
+            {uploading ? (
+              <>
+                <Loader2 size={20} className="text-teal animate-spin" />
+                <span className="text-xs text-ink-muted">{t('settings_portfolio_uploading')}</span>
+              </>
+            ) : (
+              <>
+                <Plus size={20} className="text-teal" />
+                <span className="text-xs text-ink font-medium">{t('settings_portfolio_add')}</span>
+                <span className="text-[10px] text-ink-muted">{t('settings_portfolio_max').replace('{n}', MAX)}</span>
+              </>
+            )}
+          </button>
+        )}
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={onPick}
+          data-testid="portfolio-file-input"
+        />
+      </div>
+    </div>
+  );
+}
+
+
+// ──────────────────────────────────────────────
+// My Reviews tab (Pro sees customer reviews + can post / edit one reply each)
+// ──────────────────────────────────────────────
+function MyReviewsTab({ t }) {
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancel = false;
+    api.get('/api/reviews/mine')
+      .then((r) => { if (!cancel) setReviews(r.data.reviews || []); })
+      .catch(() => { if (!cancel) setReviews([]); })
+      .finally(() => { if (!cancel) setLoading(false); });
+    return () => { cancel = true; };
+  }, []);
+
+  const onUpdate = (id, patch) => {
+    setReviews((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  };
+
+  return (
+    <div className="card-lg" data-testid="pro-reviews-tab">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-headings font-bold text-ink text-lg">
+          {t('admin_reviews_t')}
+          {reviews.length > 0 && <span className="text-ink-muted font-normal ml-2">({reviews.length})</span>}
+        </h2>
+      </div>
+      {loading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 size={24} className="text-teal animate-spin" />
+        </div>
+      ) : reviews.length === 0 ? (
+        <div className="text-center py-6">
+          <MessageSquare size={28} className="text-ink-muted mx-auto mb-2" />
+          <p className="text-sm text-ink-muted">{t('review_no_reviews_settings')}</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {reviews.map((rev) => (
+            <ReviewRow key={rev.id} review={rev} t={t} onUpdate={onUpdate} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ReviewRow({ review, t, onUpdate }) {
+  const [editing, setEditing] = useState(!review.response);
+  const [text, setText] = useState(review.response || '');
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    if (!text.trim() || saving) return;
+    setSaving(true);
+    try {
+      const { data } = await api.put(`/api/reviews/${review.id}/response`, { response: text.trim() });
+      onUpdate(review.id, {
+        response: data.response,
+        response_created_at: data.response_created_at,
+        response_updated_at: data.response_updated_at,
+      });
+      setEditing(false);
+    } catch (e) {
+      alert(e.response?.data?.detail || 'Could not save reply');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const remove = async () => {
+    if (!window.confirm(`${t('review_reply_btn_delete')}?`)) return;
+    setSaving(true);
+    try {
+      await api.delete(`/api/reviews/${review.id}/response`);
+      onUpdate(review.id, {
+        response: null, response_created_at: null, response_updated_at: null,
+      });
+      setText('');
+      setEditing(true);
+    } catch (e) {
+      alert(e.response?.data?.detail || 'Could not delete reply');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const isEdit = !!review.response;
+  return (
+    <div className="border border-sm-border rounded-[14px] p-4" data-testid={`review-row-${review.id}`}>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="font-semibold text-ink text-sm">{review.reviewer_name || 'Anonymous'}</p>
+          <p className="text-xs text-ink-muted">
+            {review.created_at ? new Date(review.created_at).toLocaleDateString() : ''}
+          </p>
+        </div>
+        <div className="flex">
+          {[1, 2, 3, 4, 5].map((s) => (
+            <Star
+              key={s}
+              size={12}
+              className={s <= (review.rating || 0) ? 'text-amber fill-amber' : 'text-cream-deep'}
+            />
+          ))}
+        </div>
+      </div>
+      {/* Job context */}
+      {(review.job_title || review.job_category || review.job_city) && (
+        <div className="mt-2 px-3 py-2 bg-cream-soft rounded-[10px] flex items-center gap-3 flex-wrap text-[11px] text-ink-soft">
+          <span className="font-semibold text-ink-muted uppercase tracking-wide text-[10px]">
+            {t('review_job_label')}
+          </span>
+          {review.job_title && (
+            <span className="flex items-center gap-1 font-medium text-ink truncate max-w-[260px]">
+              <Briefcase size={11} className="text-teal flex-shrink-0" />
+              {review.job_title}
+            </span>
+          )}
+          {review.job_category && (
+            <span className="capitalize text-ink-muted">
+              {review.job_category.replace('_', ' ')}
+            </span>
+          )}
+          {review.job_city && (
+            <span className="flex items-center gap-1 text-ink-muted">
+              <MapPin size={10} /> {review.job_city}
+            </span>
+          )}
+        </div>
+      )}
+      {review.text && <p className="text-sm text-ink-soft mt-2 leading-relaxed">{review.text}</p>}
+
+      {/* Reply section */}
+      <div className="mt-4 ml-4 pl-4 border-l-2 border-teal/30">
+        {editing ? (
+          <>
+            <label className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider mb-1.5 block">
+              {t('review_reply_label')}
+            </label>
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              rows={3}
+              maxLength={1000}
+              placeholder={(t('review_reply_placeholder') || '').replace('{name}', review.reviewer_name || '')}
+              className="sm-textarea w-full text-sm"
+              data-testid={`review-reply-input-${review.id}`}
+            />
+            <div className="mt-2 flex items-center gap-2">
+              <button
+                onClick={save}
+                disabled={!text.trim() || saving}
+                className="btn-primary text-xs px-3 py-1.5"
+                data-testid={`review-reply-save-${review.id}`}
+              >
+                {saving ? <Loader2 size={12} className="animate-spin" /> : null}
+                {isEdit ? t('review_reply_btn_save') : t('review_reply_btn_post')}
+              </button>
+              {isEdit && (
+                <button
+                  onClick={() => { setText(review.response || ''); setEditing(false); }}
+                  className="btn-ghost text-xs px-3 py-1.5"
+                  data-testid={`review-reply-cancel-${review.id}`}
+                >
+                  {t('btn_cancel')}
+                </button>
+              )}
+              <span className="text-[10px] text-ink-muted ml-auto">{text.length}/1000</span>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="text-[11px] font-semibold text-teal uppercase tracking-wider mb-1">
+              {t('review_reply_response_label')}
+            </p>
+            <p
+              className="text-sm text-ink-soft leading-relaxed whitespace-pre-wrap"
+              data-testid={`review-response-${review.id}`}
+            >
+              {review.response}
+            </p>
+            <div className="mt-2 flex items-center gap-3 text-[10px] text-ink-muted">
+              {review.response_created_at && (
+                <span>{new Date(review.response_created_at).toLocaleDateString()}</span>
+              )}
+              {review.response_updated_at && review.response_created_at &&
+                review.response_updated_at !== review.response_created_at && (
+                <span className="italic">· {t('review_reply_edited')}</span>
+              )}
+              <button
+                onClick={() => setEditing(true)}
+                className="ml-auto inline-flex items-center gap-1 text-teal hover:text-teal-deep font-medium"
+                data-testid={`review-reply-edit-${review.id}`}
+              >
+                <Pencil size={10} /> {t('review_reply_btn_edit')}
+              </button>
+              <button
+                onClick={remove}
+                disabled={saving}
+                className="inline-flex items-center gap-1 text-red-warn hover:opacity-80 font-medium"
+                data-testid={`review-reply-delete-${review.id}`}
+              >
+                <Trash2 size={10} /> {t('review_reply_btn_delete')}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+
+// ──────────────────────────────────────────────
+// White-Label section: logo upload + 3 template picker
+// ──────────────────────────────────────────────
+function WhiteLabelSection({ t, proProfile, reload }) {
+  const [tplList, setTplList] = useState([]);
+  const [currentTpl, setCurrentTpl] = useState(proProfile?.invoice_template || 'classic');
+  const [logoUrl, setLogoUrl] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [switching, setSwitching] = useState(null);
+  const [previewKey, setPreviewKey] = useState(null);
+
+  useEffect(() => {
+    api.get('/api/pro-invoices/templates/list').then((r) => {
+      setTplList(r.data.templates || []);
+      setCurrentTpl(r.data.current || 'classic');
+      setLogoUrl(r.data.logo_url || null);
+    }).catch(() => {});
+  }, []);
+
+  const onLogoUpload = async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (f.size > 1024 * 1024) { window.alert(t('settings_logo_too_large')); return; }
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', f);
+      const { data } = await api.post('/api/profile/pro/logo', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setLogoUrl(data.logo_url);
+      if (reload) reload();
+    } catch (err) {
+      window.alert(err?.response?.data?.detail || 'Upload failed');
+    } finally { setUploading(false); }
+  };
+
+  const removeLogo = async () => {
+    if (!window.confirm(t('settings_logo_remove_confirm'))) return;
+    await api.delete('/api/profile/pro/logo');
+    setLogoUrl(null);
+    if (reload) reload();
+  };
+
+  const pickTemplate = async (key) => {
+    setSwitching(key);
+    try {
+      await api.patch('/api/profile/pro/invoice-template', { invoice_template: key });
+      setCurrentTpl(key);
+      if (reload) reload();
+    } finally { setSwitching(null); }
+  };
+
+  return (
+    <div className="border-t border-sm-border pt-4 mt-2" data-testid="white-label-section">
+      <div className="flex items-center gap-2 mb-1">
+        <Sparkles size={16} className="text-teal" />
+        <h3 className="font-headings font-bold text-ink text-base">{t('settings_white_label_title')}</h3>
+        <span className="text-[10px] uppercase font-bold tracking-wider bg-teal/10 text-teal px-2 py-0.5 rounded-full">{t('settings_pro_perk')}</span>
+      </div>
+      <p className="text-xs text-ink-muted mb-4">{t('settings_white_label_help')}</p>
+
+      {/* Logo upload */}
+      <div className="mb-5">
+        <label className="block text-sm font-medium text-ink mb-2">{t('settings_logo_label')}</label>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="w-24 h-24 rounded-[12px] border-2 border-dashed border-sm-border bg-cream-soft flex items-center justify-center overflow-hidden flex-shrink-0" data-testid="logo-preview">
+            {logoUrl ? (
+              <img src={logoUrl} alt="logo" className="max-w-full max-h-full object-contain" />
+            ) : (
+              <ImageIcon size={28} className="text-ink-muted" />
+            )}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="btn-primary text-xs cursor-pointer inline-flex">
+              {uploading ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
+              {logoUrl ? t('settings_logo_replace') : t('settings_logo_upload')}
+              <input type="file" accept="image/png,image/jpeg,image/webp" onChange={onLogoUpload} disabled={uploading} className="hidden" data-testid="logo-input" />
+            </label>
+            {logoUrl && (
+              <button onClick={removeLogo} className="btn-ghost text-xs text-red-warn" data-testid="logo-remove">
+                <Trash2 size={12} /> {t('settings_logo_remove')}
+              </button>
+            )}
+            <p className="text-[11px] text-ink-muted max-w-xs">{t('settings_logo_help')}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Template picker */}
+      <div>
+        <label className="block text-sm font-medium text-ink mb-2">{t('settings_template_label')}</label>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2" data-testid="template-grid">
+          {tplList.map((tpl) => {
+            const active = currentTpl === tpl.key;
+            return (
+              <div
+                key={tpl.key}
+                className={`rounded-[10px] border-2 p-3 cursor-pointer transition-all relative ${active ? 'border-teal bg-teal/5' : 'border-sm-border hover:border-teal/40'}`}
+                onClick={() => !active && pickTemplate(tpl.key)}
+                data-testid={`template-${tpl.key}`}
+              >
+                {active && (
+                  <span className="absolute top-2 right-2 inline-flex items-center justify-center w-5 h-5 rounded-full bg-teal text-paper">
+                    <Check size={10} />
+                  </span>
+                )}
+                <p className="font-headings font-bold text-ink text-sm capitalize">{tpl.name}</p>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setPreviewKey(tpl.key); }}
+                  className="text-[11px] text-teal hover:underline mt-2 inline-flex items-center gap-1"
+                  data-testid={`template-preview-${tpl.key}`}
+                >
+                  <Eye size={10} /> {t('settings_template_preview')}
+                </button>
+                {switching === tpl.key && <Loader2 size={12} className="absolute bottom-2 right-2 text-teal animate-spin" />}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Preview modal */}
+      {previewKey && (
+        <div
+          className="fixed inset-0 z-50 bg-ink/60 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setPreviewKey(null)}
+          data-testid="template-preview-modal"
+        >
+          <div className="bg-paper rounded-[14px] max-w-3xl w-full h-[85vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-sm-border">
+              <p className="font-headings font-bold text-ink capitalize">{previewKey} {t('settings_template_preview_title')}</p>
+              <button onClick={() => setPreviewKey(null)} className="btn-ghost text-xs">✕</button>
+            </div>
+            <iframe
+              src={`${process.env.REACT_APP_BACKEND_URL}/api/pro-invoices/templates/${previewKey}/preview`}
+              title="preview"
+              className="flex-1 w-full"
+              data-testid="template-preview-iframe"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

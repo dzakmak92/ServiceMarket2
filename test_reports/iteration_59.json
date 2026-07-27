@@ -1,0 +1,45 @@
+{
+  "summary": "Iteration 59 — Frontend regression of PM Toolkit (Features A + C) for pro@test.com. RE-VERIFIED iter58 CRITICAL fix: 'Convert to invoice' on an approved CO now navigates to the invoice editor WITHOUT 'Job not found', and the Nachtrag line items + note + total are correctly pre-filled. Completed every flow iter58 left untested: Portal Reject, Pro Mark-paid, /schedule cross-project page, Crew & dependencies editor, Portal EPC-QR, 375px overflow, and a full project-tab regression sweep. ALL 8 flows PASS. One ENV regression encountered before testing: pro@test.com's pro_profile had has_pm_toolkit=False (and has_invoice_toolkit/has_tax_toolkit/has_bundle all False), which made every PM API return 402 and the project tabs blank. Re-enabled the toolkit flags in mongo (pro_profiles.user_id = '6a14b72e05a5dee99e39fd15') with valid_until = utcnow+30d so testing could proceed. This is a SEED-DATA drift, not a code bug, but the seeder should set these on every reset.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "GanttTab.jsx (crew editor)",
+        "issue": "React DOM hydration warning logged once: '<span> cannot be a child of <option>'. Functionally harmless (selects still work and dependency auto-shift fires) but produces a noisy console error on Timeline tab. Likely a JSX wrapper around option labels inside a <select>.",
+        "selector": "[data-testid='pm-tab-gantt'] select option > span",
+        "priority": "LOW"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "verified_working_flows": [
+    "[TEST 1 - CRITICAL re-test] CO→Invoice conversion: Billing tab → pm-co-invoice-<approvedCOId> navigates to /jobs/<jobId>/invoice?from_project=...&from_co=... and the editor LOADS with NO 'Job not found' error. proinv-line-0 prefilled with 'Extra paint coat' qty=2 unit=150, proinv-line-1 'Material handling' qty=1 unit=75. proinv-note = 'Nachtrag CO-002: TEST_iter58 Nachtrag'. proinv-brutto = '€ 450,00'. Total 2 line items rendered. ✓ FIX CONFIRMED. (Did NOT click final submit to avoid duplicate-invoice guard.)",
+    "[TEST 2] Created two new SENT change orders CO-003 + CO-004 ('TEST_iter59 reject0/1' €100 net each). Public portal /p/162u-Id59yUO4-qZc0w2Hw: portal-co-reject-<CO-004> with name 'TEST_iter59 Rejecter' flipped CO-004 to DECLINED. Pro Billing tab pm-changeorders now shows 'CO-004 ... DECLINED' badge. ✓ (CO-003 left in DRAFT — the second send button detached from DOM after the first send because the list re-rendered; not a functional bug, just a script-loop note.)",
+    "[TEST 3] Pro markpaid: clicked pm-pay-markpaid-<PAY-002> and the payment flipped DUE→PAID. PAID badge visible in pm-payments section. ✓",
+    "[TEST 4] /schedule page (pm-schedule-page): loaded, crew filter buttons present (pm-schedule-crew-all, pm-schedule-crew-Hans, pm-schedule-crew-__none — 3 total), all three date nav buttons clickable (prev/next/today), pm-schedule-noconflicts indicator visible (no conflicts in current data), 5 task elements rendered across projects. ✓",
+    "[TEST 5] Crew & dependencies editor on Timeline (pm-tab-gantt): pm-crew-editor toggle present, 6 pm-crew-assignee-* inputs + 6 pm-crew-depends-* selects rendered. Setting a dependency on the first task auto-shifted dates without runtime errors. ✓",
+    "[TEST 6] Portal EPC-QR (portal-pay-qr-<id>): clicking toggle showed portal-pay-qrimg-<id> with src starting 'data:image/png;base64,iVBORw0KGgoAAAA...'. ✓ (Iter58 MEDIUM concern confirmed FALSE POSITIVE.)",
+    "[TEST 7] 375px mobile portal overflow: document.documentElement.scrollWidth = 375, clientWidth = 375, body scrollWidth = 375 → exactly within tolerance, NO horizontal overflow. ✓",
+    "[TEST 8] Project tab regression sweep — clicked all 7 tabs (pm-tab-overview / pm-tab-kanban / pm-tab-gantt / pm-tab-materials / pm-tab-diary / pm-tab-billing / pm-tab-share). All render without runtime errors. Only one console warning (hydration <span>/<option> in crew editor — see ui_bugs). ✓"
+  ],
+  "test_report_links": ["/app/test_reports/iteration_59.json"],
+  "action_items": [
+    "[LOW] Fix the GanttTab/crew editor hydration warning — '<span> cannot be a child of <option>'. Move the icon/label wrapper outside the <option> or use a custom dropdown.",
+    "[SEED] Make sure the test-data seeder sets pro_profiles.has_pm_toolkit / has_invoice_toolkit / has_tax_toolkit / has_bundle = True and valid_until in the future for pro@test.com so future test iterations don't get 402-blocked. Iteration 59 found these were all False on entry — re-enabled in DB to unblock testing."
+  ],
+  "critical_code_review_comments": [
+    "Convert-to-invoice fix (ProInvoiceEditorPage.jsx + pro_invoicing_routes.draft-from-project + InvoiceFromProjectRedirect) works end-to-end and decouples Nachtrag invoicing from the original Job document lifecycle as recommended in iter58 RCA. Good fix.",
+    "Hydration error in crew editor — minor but should be cleaned up to keep the console clean for real bug triage."
+  ],
+  "updated_files": [
+    "(db-state-only) pro_profiles for pro@test.com — toggled has_pm_toolkit/has_invoice_toolkit/has_tax_toolkit/has_bundle to True with valid_until = utcnow+30d. No code/file changes."
+  ],
+  "success_rate": { "backend": "n/a (frontend-only run)", "frontend": "100% (8/8 flows pass; 1 low-priority hydration warning)" },
+  "test_credentials": "pro@test.com / Test123! (PM/Invoice/Tax/Bundle toolkit flags re-enabled in this run). Public portal token 162u-Id59yUO4-qZc0w2Hw. Project id 6a283c58573a159e6192ab8d.",
+  "seed_data_creation": "Created CO-003 'TEST_iter59 reject0' DRAFT €100 net and CO-004 'TEST_iter59 reject1' €100 net (now DECLINED via portal). PAY-002 was flipped DUE→PAID. Toolkit flags re-enabled on pro_profile.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All iter58 + iter59 flows are passing. After this run, the seeded project has: CO-001 APPROVED €482, CO-002 APPROVED €375, CO-003 DRAFT €100, CO-004 DECLINED €100; payments PAY-001 €1000 DUE + PAY-002 €500 PAID. Important env note (still valid): use wait_until='domcontentloaded' (not 'networkidle') on /projects/<id> and /schedule. If a future iteration sees 402 'PM Toolkit not active for this pro' on project loads, fix the seed by setting pro_profiles.has_pm_toolkit=True for pro@test.com (pro_profile._id = 6a14b72e05a5dee99e39fd16). Real tab testids are pm-tab-<key>. Cookie-based auth; login via UI form with [data-testid=auth-email-input]/[data-testid=auth-password-input].",
+  "rca of the issue": "No app bug this iteration. Environmental: pro@test.com's pro_profile had all toolkit flags reset to False between iter58 and iter59. Backend gate _require_pm_toolkit returns 402 when has_pm_toolkit is False, which makes the React project page render empty (no tabs, no errors). Mitigation: re-set the four toolkit booleans + sub_valid_until in mongo. Long-term: ensure the seed/reset job always re-activates Explorer for pro@test.com."
+}

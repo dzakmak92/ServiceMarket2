@@ -1,0 +1,67 @@
+/* Extra animation utilities */
+.animate-fade-in { animation: fade-in 0.3s ease-out; }
+.animate-slide-up { animation: slide-up 0.4s ease-out; }
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Star rating */
+.star-rating { color: #f5a623; }
+.star-empty { color: #f0e3c8; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--cream-soft); }
+::-webkit-scrollbar-thumb { background: var(--sm-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-faint); }
+
+/* Prose text */
+.prose-sm p { color: var(--ink-soft); line-height: 1.6; }
+
+/* Message bubbles */
+.bubble-mine {
+  background: var(--teal);
+  color: white;
+  border-radius: 18px 18px 4px 18px;
+}
+.bubble-other {
+  background: white;
+  color: var(--ink);
+  border: 1px solid var(--sm-border);
+  border-radius: 18px 18px 18px 4px;
+}
+.bubble-system {
+  background: var(--cream-deep);
+  color: var(--ink-soft);
+  border-radius: 14px;
+}
+
+/* Pro badge */
+.pro-badge {
+  background: linear-gradient(135deg, var(--amber), var(--amber-deep));
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 999px;
+  letter-spacing: 0.05em;
+}
+
+/* Mobile bottom nav safe area */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 8px); }
+
+/* Mobile bottom-nav height (icons + label + pt-2 + pb-safe). Used by full-height
+   panels like /messages so the chat composer never hides under the nav. */
+:root {
+  --mobile-nav-h: calc(60px + env(safe-area-inset-bottom, 8px));
+}
+@media (min-width: 768px) {
+  :root { --mobile-nav-h: 0px; }
+}
