@@ -90,13 +90,6 @@ async def require_admin(request: Request) -> dict:
     return user
 
 
-async def require_homeowner(request: Request) -> dict:
-    user = await get_current_user(request)
-    if user.get("role") != "homeowner":
-        raise HTTPException(status_code=403, detail="Homeowner access required")
-    return user
-
-
 async def require_pro(request: Request) -> dict:
     user = await get_current_user(request)
     if user.get("role") != "tradesperson":

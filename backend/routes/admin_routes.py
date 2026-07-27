@@ -42,7 +42,7 @@ async def update_platform_settings(data: dict, user: dict = Depends(require_admi
 
 @router.get("/stats")
 async def get_stats(user: dict = Depends(require_admin)):
-    total_users = await db.users.count_documents({"role": {"$in": ["homeowner", "tradesperson"]}})
+    total_users = await db.users.count_documents({"role": "tradesperson"})
     total_pros = await db.users.count_documents({"role": "tradesperson"})
     active_jobs = await db.jobs.count_documents({"status": "open"})
     in_progress = await db.jobs.count_documents({"status": "in_progress"})

@@ -169,30 +169,15 @@ async def complete_onboarding(data: OnboardingRequest, response: Response, reque
             detail="Unable to verify you are human. Please complete the security check and try again.",
         )
 
-    # Role-specific required-field validation
-    if data.role == "homeowner":
-        required = {"username": data.username, "name": data.name, "surname": data.surname,
-                    "address": data.address, "postal_code": data.postal_code, "city": data.city,
-                    "phone": data.phone}
-        for k, v in required.items():
-            if not (v or "").strip():
-                raise HTTPException(status_code=400, detail=f"Missing required field: {k}")
-        # Username uniqueness
-        clash = await db.users.find_one({
-            "username": data.username.strip().lower(),
-            "_id": {"$ne": ObjectId(user["_id"])},
-        })
-        if clash:
-            raise HTTPException(status_code=400, detail="Username already taken")
-    elif data.role == "tradesperson":
-        required = {"contact_person": data.contact_person, "company_name": data.company_name,
-                    "address": data.address, "postal_code": data.postal_code, "city": data.city,
-                    "phone": data.phone, "licence_file_id": data.licence_file_id}
-        for k, v in required.items():
-            if not (v or "").strip():
-                raise HTTPException(status_code=400, detail=f"Missing required field: {k}")
-    else:
+    # Single-sided product: the only self-service role is the tradesperson.
+    if data.role != "tradesperson":
         raise HTTPException(status_code=400, detail="Invalid role")
+    required = {"contact_person": data.contact_person, "company_name": data.company_name,
+                "address": data.address, "postal_code": data.postal_code, "city": data.city,
+                "phone": data.phone, "licence_file_id": data.licence_file_id}
+    for k, v in required.items():
+        if not (v or "").strip():
+            raise HTTPException(status_code=400, detail=f"Missing required field: {k}")
 
     # Build user update payload
     full_name = ((data.name or "").strip() + " " + (data.surname or "").strip()).strip() or user.get("name", "")
@@ -208,48 +193,44 @@ async def complete_onboarding(data: OnboardingRequest, response: Response, reque
         "postal_code": (data.postal_code or "").strip() or None,
         "city": (data.city or "").strip() or None,
     }
-    if data.role == "homeowner":
-        user_update["username"] = data.username.strip().lower()
-
     await db.users.update_one({"_id": ObjectId(user["_id"])}, {"$set": user_update})
 
     # Create / fill the service-provider profile
-    if data.role == "tradesperson":
-        now = datetime.now(timezone.utc)
-        pro_update = {
-            "business_name": (data.company_name or "").strip(),
-            "company_name": (data.company_name or "").strip(),
-            "contact_person": (data.contact_person or "").strip(),
-            # Documents (admin verifies in queue)
-            "licence_file_id": data.licence_file_id,
-            "licence_status": "pending",     # pending | verified | rejected
-            "insurance_file_id": data.insurance_file_id,
-            "insurance_status": "pending" if data.insurance_file_id else "missing",
-            # Badges derive from the statuses above (computed on read)
-            "is_verified": False,
-            "is_licensed": False,
-            "is_insured": False,
-        }
-        existing_profile = await db.pro_profiles.find_one({"user_id": user["_id"]})
-        if existing_profile:
-            await db.pro_profiles.update_one(
-                {"_id": existing_profile["_id"]},
-                {"$set": pro_update},
-            )
-        else:
-            await db.pro_profiles.insert_one({
-                "user_id": user["_id"],
-                "tagline": "", "description": "",
-                "hourly_rate": 0, "years_experience": 0,
-                "service_categories": [], "service_areas": [],
-                "portfolio_photos": [],
-                "plan_tier": "standard", "card_last4": "",
-                "monthly_fees": 0.0, "rating_avg": 0.0,
-                "reviews_count": 0, "completed_jobs_count": 0,
-                "response_time_minutes": None,
-                "created_at": now,
-                **pro_update,
-            })
+    now = datetime.now(timezone.utc)
+    pro_update = {
+        "business_name": (data.company_name or "").strip(),
+        "company_name": (data.company_name or "").strip(),
+        "contact_person": (data.contact_person or "").strip(),
+        # Documents (admin verifies in queue)
+        "licence_file_id": data.licence_file_id,
+        "licence_status": "pending",     # pending | verified | rejected
+        "insurance_file_id": data.insurance_file_id,
+        "insurance_status": "pending" if data.insurance_file_id else "missing",
+        # Badges derive from the statuses above (computed on read)
+        "is_verified": False,
+        "is_licensed": False,
+        "is_insured": False,
+    }
+    existing_profile = await db.pro_profiles.find_one({"user_id": user["_id"]})
+    if existing_profile:
+        await db.pro_profiles.update_one(
+            {"_id": existing_profile["_id"]},
+            {"$set": pro_update},
+        )
+    else:
+        await db.pro_profiles.insert_one({
+            "user_id": user["_id"],
+            "tagline": "", "description": "",
+            "hourly_rate": 0, "years_experience": 0,
+            "service_categories": [], "service_areas": [],
+            "portfolio_photos": [],
+            "plan_tier": "standard", "card_last4": "",
+            "monthly_fees": 0.0, "rating_avg": 0.0,
+            "reviews_count": 0, "completed_jobs_count": 0,
+            "response_time_minutes": None,
+            "created_at": now,
+            **pro_update,
+        })
 
     updated_user = await db.users.find_one({"_id": ObjectId(user["_id"])})
     updated_user["_id"] = str(updated_user["_id"])

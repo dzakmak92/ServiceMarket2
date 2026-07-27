@@ -12,7 +12,7 @@ from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from database import db
 from auth import get_current_user, require_admin
 from utils import serialize_doc
-from models import BusinessClaimRequest, ClaimReviewRequest, BusinessInquiryRequest
+from models import BusinessClaimRequest, ClaimReviewRequest
 from bson import ObjectId
 from pymongo import UpdateOne
 from datetime import datetime, timezone
@@ -440,62 +440,6 @@ async def claim_business(
     return {"ok": True, "claim": serialize_doc({**claim, "_id": res.inserted_id})}
 
 
-@router.post("/businesses/{business_id}/inquire")
-async def inquire_business(
-    business_id: str,
-    body: BusinessInquiryRequest,
-    user: dict = Depends(get_current_user),
-):
-    """A homeowner writes an on-platform message to a directory business.
-
-    Stored as a lead and pushed to all admins (onboarding funnel). For UNCLAIMED
-    businesses this is the only contact channel — raw phone/email is never shown."""
-    msg = (body.message or "").strip()
-    if len(msg) < 5:
-        raise HTTPException(status_code=400, detail="Please write a short message")
-    try:
-        biz = await db.business_directory.find_one({"_id": ObjectId(business_id)})
-    except Exception:
-        biz = None
-    if not biz:
-        raise HTTPException(status_code=404, detail="Business not found")
-
-    now = datetime.now(timezone.utc)
-    lead = {
-        "business_id": business_id,
-        "business_name": biz.get("name"),
-        "business_city": biz.get("city"),
-        "business_segment": biz.get("segment") or biz.get("category"),
-        "business_claimed": bool(biz.get("claimed")),
-        "homeowner_id": user["_id"],
-        "homeowner_name": user.get("name") or user.get("username") or "Homeowner",
-        "homeowner_email": user.get("email"),
-        "message": msg[:1500],
-        "status": "new",
-        "created_at": now,
-        "resolved_at": None,
-    }
-    res = await db.directory_inquiries.insert_one(lead)
-
-    # Notify all admins (lead funnel for onboarding the business).
-    admins = await db.users.find({"role": "admin"}, {"_id": 1}).to_list(20)
-    if admins:
-        await db.notifications.insert_many([
-            {
-                "user_id": str(a["_id"]),
-                "type": "directory_lead",
-                "title": "New business inquiry",
-                "body": f"{lead['homeowner_name']} → {biz.get('name','a business')}",
-                "link_to": "/admin?tab=heatmap",
-                "is_read": False,
-                "created_at": now,
-            }
-            for a in admins
-        ])
-
-    return {"ok": True, "inquiry_id": str(res.inserted_id)}
-
-
 @router.get("/my-claims")
 async def my_claims(user: dict = Depends(get_current_user)):
     docs = (
@@ -535,36 +479,6 @@ async def admin_stats(admin: dict = Depends(require_admin)):
         "top_segments": await _top("segment"),
         "top_categories": await _top("category"),
     }
-
-
-@router.get("/admin/inquiries")
-async def admin_inquiries(admin: dict = Depends(require_admin), status: str = "new", page: int = 1):
-    """Homeowner → business leads for the admin onboarding funnel."""
-    query = {} if status == "all" else {"status": status}
-    total = await db.directory_inquiries.count_documents(query)
-    docs = (
-        await db.directory_inquiries.find(query)
-        .sort("created_at", -1)
-        .skip((page - 1) * 50)
-        .limit(50)
-        .to_list(50)
-    )
-    return {"inquiries": [serialize_doc(d) for d in docs], "total": total, "page": page}
-
-
-@router.post("/admin/inquiries/{inquiry_id}/resolve")
-async def resolve_inquiry(inquiry_id: str, admin: dict = Depends(require_admin)):
-    try:
-        oid = ObjectId(inquiry_id)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Inquiry not found")
-    res = await db.directory_inquiries.update_one(
-        {"_id": oid},
-        {"$set": {"status": "resolved", "resolved_at": datetime.now(timezone.utc)}},
-    )
-    if res.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Inquiry not found")
-    return {"ok": True}
 
 
 @router.get("/admin/claims")
