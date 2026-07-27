@@ -9,9 +9,6 @@ import { CookieConsentProvider } from "./contexts/CookieConsentContext";
 import Header from "./components/Header";
 import MobileNav from "./components/MobileNav";
 import InstallPrompt from "./components/InstallPrompt";
-import HomeownerCompletionReminder from "./components/HomeownerCompletionReminder";
-import ProJobCompletionPopup from "./components/ProJobCompletionPopup";
-
 import AuthPage from "./pages/AuthPage";
 import OnboardingPage from "./pages/OnboardingPage";
 
@@ -22,20 +19,8 @@ import ImprintPage from "./pages/legal/ImprintPage";
 import DataRightsPage from "./pages/legal/DataRightsPage";
 import RemovalPage from "./pages/legal/RemovalPage";
 
-// Homeowner pages
-import HomeownerHome from "./pages/homeowner/HomePage";
-import PostJobPage from "./pages/homeowner/PostJobPage";
-import FindProsPage from "./pages/homeowner/FindProsPage";
-import HomeownerDashboard from "./pages/homeowner/DashboardPage";
-import HomeownerProjectsPage from "./pages/homeowner/HomeownerProjectsPage";
-import HomeownerProjectDetailPage from "./pages/homeowner/HomeownerProjectDetailPage";
-import JobDetailPage from "./pages/homeowner/JobDetailPage";
-import SettingsPage from "./pages/homeowner/SettingsPage";
-
 // Pro pages
 import ProHomePage from "./pages/pro/ProHomePage";
-import BrowseJobsPage from "./pages/pro/BrowseJobsPage";
-import MyQuotesPage from "./pages/pro/MyQuotesPage";
 import ProDashboard from "./pages/pro/ProDashboardPage";
 import BillingPage from "./pages/pro/BillingPage";
 import MyInvoicesPage from "./pages/pro/MyInvoicesPage";
@@ -48,16 +33,8 @@ import PMProjectDetailPage from "./pages/pro/PMProjectDetailPage";
 import InvoiceFromProjectRedirect from "./pages/pro/InvoiceFromProjectRedirect";
 import ProSettingsPage from "./pages/pro/ProSettingsPage";
 
-// Shared pages
-import InboxPage from "./pages/shared/InboxPage";
-import ProDetailPage from "./pages/shared/ProDetailPage";
-import BusinessMapPage from "./pages/shared/BusinessMapPage";
-
 // Admin
 import AdminPage from "./pages/admin/AdminPage";
-
-// Search
-import SearchPage from "./pages/SearchPage";
 
 // PM public status page (read-only, no auth)
 import PMPublicStatusPage from "./pages/PMPublicStatusPage";
@@ -87,20 +64,7 @@ function ProtectedRoute({ children, roles }) {
 function RoleHome() {
   const { user } = useAuth();
   if (user.role === "admin") return <Navigate to="/admin" replace />;
-  if (user.role === "tradesperson") return <ProHomePage />;
-  return <HomeownerHome />;
-}
-
-function RoleDashboard() {
-  const { user } = useAuth();
-  if (user.role === "tradesperson") return <ProDashboard />;
-  return <HomeownerDashboard />;
-}
-
-function RoleSettings() {
-  const { user } = useAuth();
-  if (user.role === "tradesperson") return <ProSettingsPage />;
-  return <SettingsPage />;
+  return <ProHomePage />;
 }
 
 function AuthRoute() {
@@ -145,8 +109,6 @@ function AppShell() {
   return (
     <div className="App min-h-screen bg-cream">
       {showChrome && <Header />}
-      {showChrome && user?.role === 'homeowner' && <HomeownerCompletionReminder user={user} />}
-      {showChrome && user?.role === 'tradesperson' && <ProJobCompletionPopup user={user} />}
 
       <Routes>
         <Route path="/auth" element={<AuthRoute />} />
@@ -186,65 +148,7 @@ function AppShell() {
           }
         />
 
-        {/* Homeowner-only */}
-        <Route
-          path="/post-job"
-          element={
-            <ProtectedRoute roles={["homeowner"]}>
-              <PostJobPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/jobs/:id/edit"
-          element={
-            <ProtectedRoute roles={["homeowner"]}>
-              <PostJobPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/find-pros"
-          element={
-            <ProtectedRoute roles={["homeowner"]}>
-              <FindProsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/my-projects"
-          element={
-            <ProtectedRoute roles={["homeowner"]}>
-              <HomeownerProjectsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/my-projects/:id"
-          element={
-            <ProtectedRoute roles={["homeowner"]}>
-              <HomeownerProjectDetailPage />
-            </ProtectedRoute>
-          }
-        />
-
         {/* Pro-only */}
-        <Route
-          path="/browse-jobs"
-          element={
-            <ProtectedRoute roles={["tradesperson"]}>
-              <BrowseJobsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/my-quotes"
-          element={
-            <ProtectedRoute roles={["tradesperson"]}>
-              <MyQuotesPage />
-            </ProtectedRoute>
-          }
-        />
         <Route
           path="/billing"
           element={
@@ -323,7 +227,7 @@ function AppShell() {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <RoleDashboard />
+              <ProDashboard />
             </ProtectedRoute>
           }
         />
@@ -331,51 +235,10 @@ function AppShell() {
           path="/settings"
           element={
             <ProtectedRoute>
-              <RoleSettings />
+              <ProSettingsPage />
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/messages"
-          element={
-            <ProtectedRoute>
-              <InboxPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/jobs/:id"
-          element={
-            <ProtectedRoute>
-              <JobDetailPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/pros/:proId"
-          element={
-            <ProtectedRoute>
-              <ProDetailPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/search"
-          element={
-            <ProtectedRoute>
-              <SearchPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/business-map"
-          element={
-            <ProtectedRoute roles={["homeowner", "tradesperson"]}>
-              <BusinessMapPage />
-            </ProtectedRoute>
-          }
-        />
-
         {/* Admin */}
         <Route
           path="/admin"

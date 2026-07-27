@@ -7,7 +7,7 @@ import ScrollSnapTabStrip, { SwipeableTabPanel } from '../../components/ScrollSn
 import AdminPagination from '../../components/admin/AdminPagination';
 import {
   Receipt, Loader2, Download, Share2, CheckCircle2, FileText, Eye, X,
-  TrendingUp, Banknote, Hourglass, AlertCircle, Search, MessageSquare,
+  TrendingUp, Banknote, Hourglass, AlertCircle, Search,
   Plus, Ban, Trash2, FileX, CreditCard, ArrowUpDown, Globe, Trash, PlusCircle,
 } from 'lucide-react';
 
@@ -319,7 +319,7 @@ export default function MyInvoicesPage() {
       )}
 
       {share && (
-        <ShareModal invoice={share} onClose={() => setShare(null)} onDownload={downloadPdf} t={t} reload={load} />
+        <ShareModal invoice={share} onClose={() => setShare(null)} onDownload={downloadPdf} t={t} />
       )}
 
       {payDialog && (
@@ -653,25 +653,8 @@ function PreviewModal({ preview, onClose, onDownload, onShare, t }) {
 }
 
 
-function ShareModal({ invoice, onClose, onDownload, t, reload }) {
-  const [threads, setThreads] = useState([]);
-  const [threadsLoading, setThreadsLoading] = useState(true);
-  const [shareTarget, setShareTarget] = useState(null);
-  const [note, setNote] = useState('');
+function ShareModal({ invoice, onClose, onDownload, t }) {
   const [sending, setSending] = useState(false);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    api.get('/api/messages/threads')
-      .then((r) => {
-        const list = (r.data.threads || []).filter((th) =>
-          (!invoice.job_id || th.job_id === invoice.job_id)
-          && th.other_role === 'homeowner'
-        );
-        setThreads(list);
-      })
-      .finally(() => setThreadsLoading(false));
-  }, [invoice.job_id]);
 
   const shareWhatsapp = async () => {
     setSending(true);
@@ -695,21 +678,6 @@ function ShareModal({ invoice, onClose, onDownload, t, reload }) {
     } finally { setSending(false); }
   };
 
-  const shareInApp = async () => {
-    if (!shareTarget) { setError(t('myinv_share_select_target')); return; }
-    setSending(true); setError('');
-    try {
-      await api.post(`/api/pro-invoices/${invoice.id}/share-message`, {
-        to_user_id: shareTarget.other_user_id,
-        note: note || null,
-      });
-      onClose();
-      reload();
-    } catch (e) {
-      setError(e?.response?.data?.detail || t('error_generic'));
-    } finally { setSending(false); }
-  };
-
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose} data-testid="myinv-share-modal">
       <div className="bg-paper rounded-[14px] shadow-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
@@ -727,56 +695,22 @@ function ShareModal({ invoice, onClose, onDownload, t, reload }) {
             className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-[12px] bg-[#25D366] text-white font-semibold hover:opacity-90"
             data-testid="myinv-share-whatsapp"
           >
-            <Share2 size={16} /> {t('myinv_share_whatsapp')}
+            {sending ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />} {t('myinv_share_whatsapp')}
           </button>
 
-          {/* In-app message */}
-          <div className="pt-3 border-t border-sm-border">
-            <p className="text-xs uppercase font-bold text-ink-muted mb-2">{t('myinv_share_inapp')}</p>
-            {threadsLoading ? (
-              <div className="flex justify-center py-4"><Loader2 size={18} className="text-teal animate-spin" /></div>
-            ) : threads.length === 0 ? (
-              <p className="text-xs text-ink-muted">{t('myinv_share_no_threads')}</p>
-            ) : (
-              <div className="space-y-2">
-                <select
-                  value={shareTarget?.thread_id || ''}
-                  onChange={(e) => setShareTarget(threads.find((th) => th.thread_id === e.target.value) || null)}
-                  className="sm-select"
-                  data-testid="myinv-share-target"
-                >
-                  <option value="">{t('myinv_share_select_target')}</option>
-                  {threads.map((th) => (
-                    <option key={th.thread_id} value={th.thread_id}>{th.other_name} — {th.job_title}</option>
-                  ))}
-                </select>
-                <textarea
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  rows={2}
-                  className="sm-textarea text-sm"
-                  placeholder={t('myinv_share_note_ph')}
-                  data-testid="myinv-share-note"
-                />
-                {error && <p className="text-xs text-red-warn">{error}</p>}
-                <button
-                  onClick={shareInApp}
-                  disabled={sending || !shareTarget}
-                  className="w-full btn-primary"
-                  data-testid="myinv-share-inapp-send"
-                >
-                  {sending ? <Loader2 size={14} className="animate-spin" /> : <MessageSquare size={14} />}
-                  {t('myinv_share_send')}
-                </button>
-              </div>
-            )}
-          </div>
+          {/* Download the PDF and send it however the pro likes */}
+          <button
+            onClick={() => { onDownload(invoice); onClose(); }}
+            className="w-full btn-secondary"
+            data-testid="myinv-share-download"
+          >
+            <Download size={14} /> {t('myinv_download') || 'Download PDF'}
+          </button>
         </div>
       </div>
     </div>
   );
 }
-
 
 
 // ──────────────────────────────────────────────
@@ -798,21 +732,8 @@ function PaymentsModal({ invoice, onClose, reload, t }) {
     token: invoice.pay_link_token || null,
   });
   const [linkCopied, setLinkCopied] = useState(false);
-  const [shareBusy, setShareBusy] = useState(false);
-  const [shareSent, setShareSent] = useState(false);
 
   const publicPayUrl = payLink.token ? `${window.location.origin}/pay/${payLink.token}` : '';
-
-  const shareInConversation = async () => {
-    setShareBusy(true);
-    try {
-      await api.post(`/api/pay-link/${invoice.id}/share-in-conversation`);
-      setShareSent(true);
-      setTimeout(() => setShareSent(false), 2500);
-    } catch (e) {
-      window.alert(e?.response?.data?.detail || 'Failed to share — make sure this invoice is linked to a job + customer.');
-    } finally { setShareBusy(false); }
-  };
 
   const refresh = (updated) => {
     setPayments(updated.payments || []);
@@ -914,17 +835,6 @@ function PaymentsModal({ invoice, onClose, reload, t }) {
                     <code className="text-[10px] bg-paper px-2 py-1.5 rounded-[8px] border border-sm-border flex-1 min-w-[200px] break-all" data-testid="myinv-paylink-url">{publicPayUrl}</code>
                     <button onClick={copyPayUrl} className="btn-ghost text-[10px] px-2 py-1" data-testid="myinv-paylink-copy">{linkCopied ? '✓' : t('myinv_paylink_copy')}</button>
                     <a href={publicPayUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost text-[10px] px-2 py-1">↗</a>
-                    {invoice.job_id && invoice.homeowner_id && (
-                      <button
-                        onClick={shareInConversation}
-                        disabled={shareBusy}
-                        className="btn-ghost text-[10px] px-2 py-1 text-teal border border-teal/30"
-                        data-testid="myinv-paylink-share-chat"
-                        title={t('myinv_paylink_share_help') || 'Send this link as a message in the conversation'}
-                      >
-                        {shareBusy ? '…' : (shareSent ? '✓ sent' : `↗ ${t('myinv_paylink_share') || 'Share in chat'}`)}
-                      </button>
-                    )}
                   </div>
                   <p className="text-[10px] text-ink-muted mt-1.5 leading-tight">{t('myinv_paylink_help')}</p>
                 </>

@@ -15,8 +15,8 @@ export default function ProHomePage() {
 
   useEffect(() => {
     api.get('/api/profile/pro').then(r => setProProfile(r.data)).catch(() => {});
-    api.get('/api/jobs?status=open').then(r => setRecentJobs((r.data.jobs || []).slice(0, 4))).catch(() => {});
-    api.get('/api/quotes').then(r => setQuotes(r.data.quotes || [])).catch(() => {});
+    // TODO(Phase 3): repoint at the new quote model. The marketplace job feed
+    // and bid list are gone; these widgets render empty until then.
   }, []);
 
   const isPro = isPremiumTier(proProfile?.plan_tier);

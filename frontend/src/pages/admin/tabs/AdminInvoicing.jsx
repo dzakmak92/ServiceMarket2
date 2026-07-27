@@ -9,7 +9,7 @@ import ScrollSnapTabStrip from '../../../components/ScrollSnapTabStrip';
 import AdminFilterBar from '../../../components/admin/AdminFilterBar';
 import AdminPagination from '../../../components/admin/AdminPagination';
 
-const SUB_TABS = ['subscriptions', 'fees', 'online_payments', 'invoice_data', 'storno', 'settings'];
+const SUB_TABS = ['subscriptions', 'online_payments', 'invoice_data', 'storno', 'settings'];
 const SUB_LABELS = {
   subscriptions: 'invoicing_subs',
   fees: 'invoicing_fees',
@@ -39,7 +39,6 @@ export default function AdminInvoicing({ flash }) {
       />
 
       {sub === 'subscriptions' && <SubscriptionsTab flash={flash} />}
-      {sub === 'fees' && <FeesTab flash={flash} />}
       {sub === 'online_payments' && <OnlinePaymentsTab flash={flash} t={t} />}
       {sub === 'invoice_data' && <InvoiceDataTab flash={flash} t={t} />}
       {sub === 'storno' && <StornoTab flash={flash} />}
@@ -142,148 +141,6 @@ function SubscriptionsTab({ flash }) {
 
 // ──────────────────────────────────────────────
 // Fees sub-tab — list + pending fees by pro
-// ──────────────────────────────────────────────
-function FeesTab({ flash }) {
-  const { t } = useLang();
-  const [groups, setGroups] = useState([]);
-  const [groupsLoading, setGroupsLoading] = useState(true);
-  const [editing, setEditing] = useState(null);
-  const [draft, setDraft] = useState('');
-  const [editReason, setEditReason] = useState('');
-
-  const loadGroups = useCallback(async () => {
-    setGroupsLoading(true);
-    try {
-      const r = await api.get('/api/admin/billing/fees/grouped');
-      setGroups(r.data.groups || []);
-    } finally { setGroupsLoading(false); }
-  }, []);
-
-  useEffect(() => { loadGroups(); }, [loadGroups]);
-
-  const saveFee = async (feeId) => {
-    try {
-      await api.patch(`/api/admin/billing/fees/${feeId}`, {
-        amount: Number(draft),
-        reason: editReason || null,
-      });
-      setEditing(null); setDraft(''); setEditReason('');
-      flash(t('invoicing_fee_saved'));
-      await loadGroups();
-    } catch {
-      flash(t('error_generic'));
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      <InvoiceListPanel kind="fees" flash={flash} t={t}
-        title={t('invoicing_fees_title')}
-        description={t('invoicing_fees_help')}
-        generateEndpoint="/api/admin/billing/invoices/generate-fees"
-        generateLabel={t('invoicing_generate_fees')}
-      />
-
-      <div className="admin-panel" data-testid="invoicing-pending-fees-panel">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="font-headings font-bold text-ink text-xl">{t('invoicing_pending_fees_title')}</h2>
-            <p className="text-xs text-ink-soft">{t('invoicing_pending_fees_help')}</p>
-          </div>
-          <button onClick={loadGroups} className="admin-btn admin-btn-ghost admin-btn-sm">
-            <RefreshCw size={12} /> {t('admin_refresh')}
-          </button>
-        </div>
-
-        {groupsLoading ? (
-          <div className="flex justify-center py-10"><Loader2 size={24} className="text-teal animate-spin" /></div>
-        ) : !groups.length ? (
-          <p className="text-center text-ink-muted py-8">{t('invoicing_no_pending_fees')}</p>
-        ) : (
-          <div className="space-y-3">
-            {groups.map((g) => (
-              <details key={g.pro_id} className="admin-card" data-testid={`pending-fee-group-${g.pro_id}`}>
-                <summary className="cursor-pointer flex items-center justify-between p-3">
-                  <div>
-                    <p className="font-medium text-ink text-sm">{g.company_name || g.name || g.email}</p>
-                    <p className="text-xs text-ink-muted">{g.email}</p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="admin-tag">{g.fee_count} {t('invoicing_fees_word')}</span>
-                    <span className="font-bold text-ink">{fmtEur(g.total_eur)}</span>
-                  </div>
-                </summary>
-                <div className="px-3 pb-3 pt-1">
-                  <table className="admin-table">
-                    <thead>
-                      <tr>
-                        <th>{t('invoicing_th_date')}</th>
-                        <th>{t('invoicing_th_description')}</th>
-                        <th>{t('invoicing_th_amount')}</th>
-                        <th className="text-right">{t('admin_th_actions')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {g.fees.map((f) => (
-                        <tr key={f.id}>
-                          <td className="text-xs text-ink-soft whitespace-nowrap">{fmtDate(f.incurred_at)}</td>
-                          <td className="text-sm text-ink truncate max-w-[260px]">{f.description || '—'}</td>
-                          <td className="text-sm text-ink whitespace-nowrap">
-                            {editing === f.id ? (
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={draft}
-                                onChange={(e) => setDraft(e.target.value)}
-                                className="admin-input w-24"
-                                data-testid={`fee-edit-amount-${f.id}`}
-                              />
-                            ) : fmtEur(f.amount)}
-                          </td>
-                          <td>
-                            <div className="flex items-center gap-2 justify-end">
-                              {editing === f.id ? (
-                                <>
-                                  <input
-                                    placeholder={t('invoicing_edit_reason_ph')}
-                                    value={editReason}
-                                    onChange={(e) => setEditReason(e.target.value)}
-                                    className="admin-input w-36"
-                                  />
-                                  <button onClick={() => saveFee(f.id)} className="admin-btn admin-btn-primary admin-btn-sm">
-                                    {t('btn_save')}
-                                  </button>
-                                  <button onClick={() => { setEditing(null); setEditReason(''); }} className="admin-btn admin-btn-ghost admin-btn-sm">
-                                    {t('btn_cancel')}
-                                  </button>
-                                </>
-                              ) : (
-                                <button
-                                  onClick={() => { setEditing(f.id); setDraft(String(f.amount)); setEditReason(''); }}
-                                  className="admin-btn admin-btn-ghost admin-btn-sm"
-                                  data-testid={`fee-edit-${f.id}`}
-                                >
-                                  {t('btn_edit')}
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </details>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ──────────────────────────────────────────────
-// Storno sub-tab — list of credit notes
 // ──────────────────────────────────────────────
 function StornoTab({ flash }) {
   const { t } = useLang();

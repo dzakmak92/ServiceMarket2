@@ -45,10 +45,9 @@ export default function PMProjectsPage() {
 
   useEffect(() => {
     if (needsToolkit) return;
-    api.get('/api/quotes').then((r) => {
-      const wins = (r.data?.quotes || []).filter((q) => q.status === 'accepted');
-      setWonQuotes(wins);
-    }).catch(() => {});
+    // TODO(Phase 2): projects were seeded from won marketplace bids. The spine
+    // consolidation replaces this with "create a job for a customer" — until
+    // then the picker is empty.
   }, [needsToolkit]);
 
   const eligibleJobs = useMemo(() => {

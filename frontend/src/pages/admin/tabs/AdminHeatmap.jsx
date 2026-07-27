@@ -3,7 +3,7 @@ import api, { formatError } from '../../../api/client';
 import BusinessHeatMap, { MAP_COLORS } from '../../../components/BusinessHeatMap';
 import {
   Loader2, Flame, Upload, BadgeCheck, Hand, Building2, Check, X,
-  MapPin, Clock, Download, Mail, Inbox,
+  MapPin, Clock, Download, Mail,
 } from 'lucide-react';
 
 function StatCard({ label, value, accent = 'text-teal', testid }) {
@@ -119,7 +119,6 @@ export default function AdminHeatmap({ flash }) {
   const [stats, setStats] = useState(null);
   const [markers, setMarkers] = useState([]);
   const [claims, setClaims] = useState([]);
-  const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [reviewBusy, setReviewBusy] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -128,16 +127,14 @@ export default function AdminHeatmap({ flash }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [sRes, mRes, cRes, lRes] = await Promise.all([
+      const [sRes, mRes, cRes] = await Promise.all([
         api.get('/api/directory/admin/stats'),
         api.get('/api/directory/markers'),
         api.get('/api/directory/admin/claims?status=pending'),
-        api.get('/api/directory/admin/inquiries?status=new'),
       ]);
       setStats(sRes.data);
       setMarkers(mRes.data.markers || []);
       setClaims(cRes.data.claims || []);
-      setLeads(lRes.data.inquiries || []);
     } catch (e) { flash?.(formatError(e)); } finally { setLoading(false); }
   }, [flash]);
 
@@ -148,15 +145,6 @@ export default function AdminHeatmap({ flash }) {
     try {
       await api.post(`/api/directory/admin/claims/${claimId}/review`, { action });
       flash?.(action === 'approve' ? 'Claim approved' : 'Claim rejected');
-      load();
-    } catch (e) { flash?.(formatError(e)); } finally { setReviewBusy(false); }
-  };
-
-  const resolveLead = async (id) => {
-    setReviewBusy(true);
-    try {
-      await api.post(`/api/directory/admin/inquiries/${id}/resolve`);
-      flash?.('Lead marked as handled');
       load();
     } catch (e) { flash?.(formatError(e)); } finally { setReviewBusy(false); }
   };
@@ -234,7 +222,6 @@ export default function AdminHeatmap({ flash }) {
         <StatCard label="Claimed" value={stats?.claimed ?? 0} accent="text-green-pos" testid="hm-admin-claimed" />
         <StatCard label="Unclaimed" value={stats?.unclaimed ?? 0} accent="text-ink" testid="hm-admin-unclaimed" />
         <StatCard label="Pending claims" value={stats?.pending_claims ?? 0} accent="text-amber-deep" testid="hm-admin-pending" />
-        <StatCard label="New inquiries" value={stats?.new_inquiries ?? 0} accent="text-teal" testid="hm-admin-inquiries" />
       </div>
 
       {/* Map + claim-status legend */}
@@ -253,23 +240,6 @@ export default function AdminHeatmap({ flash }) {
 
       {/* Breakdown — categories only */}
       <BreakdownList title="Top categories" rows={stats?.top_segments || []} keyName="segment" />
-
-      {/* Homeowner inquiries / leads */}
-      <div>
-        <h3 className="font-headings font-bold text-ink text-sm mb-3 flex items-center gap-2">
-          <Inbox size={15} className="text-teal" /> Homeowner inquiries
-          <span className="ml-1 text-[10px] font-bold bg-teal/15 text-teal px-2 py-0.5 rounded-full">{leads.length}</span>
-        </h3>
-        {leads.length === 0 ? (
-          <div className="card-lg text-center py-8 text-sm text-ink-muted flex flex-col items-center gap-2" data-testid="no-leads">
-            <Inbox size={22} className="text-ink-muted" /> No new inquiries
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3" data-testid="admin-leads">
-            {leads.map((l) => <LeadCard key={l.id} lead={l} onResolve={resolveLead} busy={reviewBusy} />)}
-          </div>
-        )}
-      </div>
 
       {/* Pending claims */}
       <div>

@@ -81,35 +81,21 @@ export default function Header() {
   // Desktop-only horizontal nav. Less-used pro links (My Quotes, My Invoices,
   // Billing) are collapsed under a "More" dropdown in DesktopHeaderMore.jsx so
   // the bar doesn't keep growing as we ship more toolkits.
-  const navLinks = user?.role === 'homeowner'
+  const navLinks = user?.role === 'tradesperson'
     ? [
         { to: '/', label: t('nav_home') },
-        { to: '/post-job', label: t('nav_post_job') },
-        { to: '/find-pros', label: t('nav_find_pros') },
-        { to: '/dashboard', label: t('nav_my_jobs') },
-        { to: '/my-projects', label: t('nav_my_projects') },
-        { to: '/messages', label: t('nav_messages') },
-      ]
-    : user?.role === 'tradesperson'
-    ? [
-        { to: '/', label: t('nav_home') },
-        { to: '/browse-jobs', label: t('nav_browse_jobs') },
         { to: '/dashboard', label: t('nav_dashboard') },
-        { to: '/messages', label: t('nav_messages') },
+        ...(hasPmToolkit ? [{ to: '/projects', label: t('nav_projects') }] : []),
       ]
     : [];
 
   const moreLinks = user?.role === 'tradesperson'
     ? [
-        { to: '/my-quotes', label: t('nav_my_quotes') },
         ...(hasToolkit ? [{ to: '/my-invoices', label: t('nav_my_invoices') }] : []),
         ...(hasTaxToolkit ? [{ to: '/tax', label: t('nav_tax') }] : []),
-        ...(hasPmToolkit ? [{ to: '/projects', label: t('nav_projects') }] : []),
         { to: '/pro-calendar', label: t('nav_pro_calendar') || 'My Calendar' },
         { to: '/billing', label: t('nav_billing') },
       ]
-    : user?.role === 'homeowner'
-    ? []
     : [];
 
   const currentLang = LANGUAGES.find((l) => l.code === lang) || LANGUAGES[0];

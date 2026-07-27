@@ -10,10 +10,8 @@ import {
 import AdminOverview from './tabs/AdminOverview';
 import AdminVerifications from './tabs/AdminVerifications';
 import AdminUsers from './tabs/AdminUsers';
-import AdminJobs from './tabs/AdminJobs';
 import AdminBilling from './tabs/AdminBilling';
 import AdminInvoicing from './tabs/AdminInvoicing';
-import AdminFees from './tabs/AdminFees';
 import AdminFeedback from './tabs/AdminFeedback';
 import AdminSupport from './tabs/AdminSupport';
 import AdminToolkits from './tabs/AdminToolkits';
@@ -24,18 +22,16 @@ import AdminHeatmap from './tabs/AdminHeatmap';
 import AdminPayouts from './tabs/AdminPayouts';
 import ScrollSnapTabStrip from '../../components/ScrollSnapTabStrip';
 
-const TAB_KEYS = ['overview', 'heatmap', 'verifications', 'users', 'jobs', 'projects', 'billing', 'payouts', 'invoicing', 'fees', 'feedback', 'insights', 'support', 'toolkits', 'paynow'];
+const TAB_KEYS = ['overview', 'heatmap', 'verifications', 'users', 'projects', 'billing', 'payouts', 'invoicing', 'feedback', 'insights', 'support', 'toolkits', 'paynow'];
 const TAB_LABELS = {
   overview: 'admin_overview',
   heatmap: 'admin_heatmap',
   verifications: 'admin_verifications',
   users: 'admin_users',
-  jobs: 'admin_jobs',
   projects: 'admin_projects',
   billing: 'admin_billing',
   payouts: 'admin_payouts',
   invoicing: 'admin_invoicing',
-  fees: 'admin_fees',
   feedback: 'admin_feedback',
   insights: 'admin_insights_tab',
   support: 'admin_support',
@@ -243,12 +239,10 @@ export default function AdminPage() {
           {tab === 'heatmap' && <AdminHeatmap flash={flash} />}
           {tab === 'verifications' && <AdminVerifications flash={flash} />}
           {tab === 'users' && <AdminUsers flash={flash} />}
-          {tab === 'jobs' && <AdminJobs flash={flash} />}
           {tab === 'projects' && <AdminProjects flash={flash} />}
           {tab === 'billing' && <AdminBilling flash={flash} />}
           {tab === 'payouts' && <AdminPayouts flash={flash} />}
           {tab === 'invoicing' && <AdminInvoicing flash={flash} />}
-          {tab === 'fees' && <AdminFees flash={flash} />}
           {tab === 'feedback' && <AdminFeedback flash={flash} />}
           {tab === 'insights' && <AdminInsights flash={flash} />}
           {tab === 'support' && <AdminSupport flash={flash} />}
