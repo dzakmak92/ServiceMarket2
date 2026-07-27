@@ -142,6 +142,10 @@ async def issue(pro_id: str, invoice_id: str, *,
         vat = sum(_d(l["vat_amount"]) for l in lines)
         labor = sum(_d(l["net_amount"]) for l in lines if l["kind"] == "labor")
         material = sum(_d(l["net_amount"]) for l in lines if l["kind"] == "material")
+        # Travel is kept apart from labour so neither column name lies, but
+        # the §35a deductible base is labour + travel: the statute covers
+        # Arbeits-, Maschinen- und Fahrtkosten and excludes only material.
+        travel = sum(_d(l["net_amount"]) for l in lines if l["kind"] == "travel")
         reverse_charge = any(l["tax_treatment"] == "reverse_charge_13b" for l in lines)
 
         # A Schlussrechnung nets off what was already invoiced and paid on
@@ -187,13 +191,14 @@ async def issue(pro_id: str, invoice_id: str, *,
               labor_net = $9, material_net = $10,
               has_reverse_charge = $11,
               prior_payments_net = $12, prior_payments_gross = $13,
-              pro_snapshot = $14::jsonb, customer_snapshot = $15::jsonb
+              pro_snapshot = $14::jsonb, customer_snapshot = $15::jsonb,
+              travel_net = $16
             where id = $1 and pro_id = $2
             returning *
             """,
             invoice_id, pro_id, service_date_start, service_date_end, terms,
             net, vat, net + vat, labor, material, reverse_charge,
-            prior_net, prior_gross, _j(pro_snap), _j(cust_snap),
+            prior_net, prior_gross, _j(pro_snap), _j(cust_snap), travel,
         )
 
     if issued and issued["customer_id"]:
@@ -228,11 +233,11 @@ async def storno(pro_id: str, invoice_id: str, reason: str) -> dict:
             insert into invoices (pro_id, job_id, customer_id, type, status,
               issue_date, service_date_start, service_date_end,
               invoice_country, is_kleinunternehmer,
-              net_total, vat_total, gross_total, labor_net, material_net,
+              net_total, vat_total, gross_total, labor_net, material_net, travel_net,
               has_reverse_charge, storno_of_id, storno_reason,
               pro_snapshot, customer_snapshot, payment_terms_days, note)
             values ($1,$2,$3,'storno','issued',current_date,$4,$5,$6,$7,
-                    $8,$9,$10,$11,$12,$13,$14,$15,$16::jsonb,$17::jsonb,0,$18)
+                    $8,$9,$10,$11,$12,$19,$13,$14,$15,$16::jsonb,$17::jsonb,0,$18)
             returning *
             """,
             pro_id, orig["job_id"], orig["customer_id"],
@@ -242,7 +247,7 @@ async def storno(pro_id: str, invoice_id: str, reason: str) -> dict:
             -_d(orig["labor_net"]), -_d(orig["material_net"]),
             orig["has_reverse_charge"], orig["id"], (reason or "").strip()[:500],
             orig["pro_snapshot"], orig["customer_snapshot"],
-            f"Stornorechnung zu {orig['invoice_number']}",
+            f"Stornorechnung zu {orig['invoice_number']}", -_d(orig["travel_net"]),
         )
 
         for l in lines:

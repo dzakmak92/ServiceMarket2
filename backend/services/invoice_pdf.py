@@ -195,11 +195,16 @@ def render_invoice_pdf(invoice: dict) -> bytes:
     el.extend([wrap, Spacer(1, 5 * mm)])
 
     # ── §35a split ─────────────────────────────────────────────────────
-    labor, material = _d(invoice.get("labor_net")), _d(invoice.get("material_net"))
-    if labor:
+    labor = _d(invoice.get("labor_net"))
+    material = _d(invoice.get("material_net"))
+    travel = _d(invoice.get("travel_net"))
+    # § 35a covers Arbeits-, Maschinen- und Fahrtkosten; only material is
+    # excluded. Showing labour alone understates what the customer can claim.
+    deductible = labor + travel
+    if deductible:
         el.append(Paragraph(
-            f"<b>Aufteilung gemäß § 35a EStG</b> — Lohnanteil: {_eur(labor)} · "
-            f"Materialanteil: {_eur(material)}", small))
+            f"<b>Aufteilung gemäß § 35a EStG</b> — Lohn- und Fahrtkosten: "
+            f"{_eur(deductible)} · Materialanteil: {_eur(material)}", small))
         el.append(Paragraph(
             "Der ausgewiesene Lohnanteil ist steuerlich absetzbar. Voraussetzung "
             "ist die Zahlung per Überweisung (keine Barzahlung).", small))
