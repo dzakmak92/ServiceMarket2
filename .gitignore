@@ -147,3 +147,6 @@ backend/backups/
 # Stray wheels from local dependency testing
 *.whl
 *.tar.gz
+
+# Local build output
+frontend/build/
