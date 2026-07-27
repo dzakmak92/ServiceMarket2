@@ -14,6 +14,10 @@ from routes.auth_routes import router as auth_router
 from routes.customer_routes import router as customer_router
 from routes.job_routes import router as job_router
 from routes.invoice_routes import router as invoice_router
+from routes.tax_pg_routes import router as tax_pg_router
+from routes.pm_pg_routes import (router as pm_pg_router,
+                                 timer_router as pm_timer_router,
+                                 portal_router as pm_portal_router)
 from routes.quote_routes import (router as quote_router,
                                  public_router as portal_router,
                                  invoice_router as quote_invoice_router)
@@ -60,6 +64,7 @@ app.add_middleware(
 # `/{invoice_id}` route that would otherwise swallow `/export.pdf` and 404 it.
 for router in [auth_router, customer_router, job_router,
                quote_router, quote_invoice_router, portal_router, invoice_router,
+               tax_pg_router, pm_pg_router, pm_timer_router, pm_portal_router,
                billing_router, admin_router, admin_invoicing_router, admin_advanced_router,
                iter45_admin_router, iter45_pro_router,
                pro_invoicing_router, tax_router, public_tax_router, pm_router, pm_public_router,
