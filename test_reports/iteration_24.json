@@ -1,0 +1,55 @@
+{
+  "summary": "Iter30 PM Toolkit + Iter29 Tax Toolkit + 3 iter23 UI bug retests. Backend: 23/23 PASS (11 tax + 12 PM) via /app/backend/tests/test_iter29_tax_toolkit.py and /app/backend/tests/test_iter30_pm_toolkit.py — all CRUD on projects/tasks/materials/diary works, public /api/pm/public/{token} returns 200 without auth and 404 on bad/rotated tokens, /api/billing/pricing exposes toolkits.pm (29.99/19.99) AND toolkits.tax AND toolkits.invoice AND bundle 39.99/24.99, RBAC blocks homeowners with 403 on both /api/tax/* and /api/pm/*, Tax CSVs are DATEV-shaped, year-end PDF returns %PDF bytes >1500. Frontend end-to-end (1366x900 + 414x900 mobile): the 3 iter23 UI bugs are NOW FIXED — (1) /messages: 0 React errors, 0 'Maximum update depth' on mount (was 24+ before); (2) /my-quotes Won tab: 0 max-depth errors; (3) MyInvoices list-card Share button (testid is `myinv-share-{id}` — NOT `myinv-open-share-{id}` as the review spec said) opens myinv-share-modal with whatsapp/target/note/inapp-send all mounted; (4) Mobile More sheet on 414px mounts data-testid=mobile-nav-more-sheet with all 6 tiles (My Quotes, My Invoices, Tax, Projects, Billing, Settings). NEW Tax page /tax: 7 tabs all present (Dashboard/USt-VA/EÜR/Mileage/SVS/Receipts/Reports), 4 dashboard tiles (Revenue/Outstanding/Expenses/Profit) populated, USt-VA Q1-Q4 selector works, Reports tab contains DATEV CSV + year-end PDF download. NEW PM /projects: list renders, bootstrap dropdown 'Create project from a won job' present, 1 existing project row links to /projects/<id>. /projects/<id> detail: 4 tabs (Kanban/Materials/Diary/Customer) render with 3 kanban columns (To do/In progress/Done), Customer tab exposes Copy/Rotate/Open public share-link with /p/<token>. Public /p/<token> renders WITHOUT app chrome (no header/footer) and shows progress + Pro snapshot. ONE NEW BLOCKER FOUND: the All-in-One Bundle card is NOT rendered on /billing — searching 0 occurrences of 'Bundle', 'All-in-One', '39,99', '24,99' in /billing DOM; only the 3 toolkit cards (Invoice/Tax/PM) render. The backend pricing API DOES return bundle data correctly (verified in test_pricing_includes_all_toolkits_and_bundle PASS), so this is a pure frontend rendering gap on BillingPage.jsx.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "BillingPage", "issue": "All-in-One Bundle card is NOT rendered. 0 DOM matches for 'Bundle' / 'All-in-One' / '39,99' / '24,99' / 'alacarte' on /billing. Only the 3 toolkit cards (toolkit-card-invoice, toolkit-card-tax, toolkit-card-pm) render. Backend /api/billing/pricing returns bundle.standard_net=39.99 and bundle.pro_net=24.99 correctly — frontend just isn't consuming it.", "selector": "[data-testid='toolkit-card-bundle']", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_results": {
+    "backend_pytest": "23/23 PASS (11 tax + 12 PM) — /app/test_reports/pytest/iter30_results.xml",
+    "iter23_bug_1_messages_infinite_render": "FIXED (0 max-depth errors on /messages)",
+    "iter23_bug_1b_myquotes_won_infinite_render": "FIXED (0 max-depth errors on /my-quotes Won tab)",
+    "iter23_bug_2_myinvoices_share_modal": "FIXED (modal + 4 inner testids mount; note: list-card button testid is myinv-share-{id}, NOT myinv-open-share-{id} as the review spec referenced)",
+    "iter23_bug_3_mobile_more_sheet": "FIXED (sheet mounts on 414px with all 6 tiles)",
+    "tax_page_7_tabs": "PASS",
+    "tax_dashboard_4_tiles": "PASS",
+    "tax_ustva_q1_to_q4": "PASS",
+    "tax_reports_datev_pdf": "PASS",
+    "pm_projects_list_with_bootstrap": "PASS",
+    "pm_detail_4_tabs_3_kanban_cols": "PASS",
+    "pm_customer_share_copy_rotate": "PASS",
+    "pm_public_page_no_chrome": "PASS",
+    "billing_3_toolkit_cards": "PASS",
+    "billing_bundle_card": "FAIL — not rendered",
+    "nav_more_dropdown_has_tax_projects_links": "PASS (mobile more sheet exposes Tax + Projects tiles; desktop nav uses More dropdown — confirmed Tax + Projects appear there too on mobile)"
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter29_tax_toolkit.py",
+    "/app/backend/tests/test_iter30_pm_toolkit.py",
+    "/app/test_reports/pytest/iter30_results.xml"
+  ],
+  "action_items": [
+    "HIGH (frontend only): Render the All-in-One Bundle card on /app/frontend/src/pages/pro/BillingPage.jsx — backend pricing already returns p.bundle with standard_net=39.99, pro_net=24.99, alacarte_net. Add a 4th card under the 3 toolkit cards with the dual-price (Standard amber / Pro teal) block and the 'Save vs á-la-carte' hint. Use data-testid='toolkit-card-bundle' + 'bundle-price-standard' + 'bundle-price-pro' for testability.",
+    "MINOR (docs only): The review spec referenced data-testid='myinv-open-share-{id}' for the list-card Share button — actual implementation uses 'myinv-share-{id}'. The modal works correctly; just align the spec or the testid for future test scripts."
+  ],
+  "critical_code_review_comments": [
+    "frontend/src/pages/pro/BillingPage.jsx — appears to render only the 3 toolkit cards (Invoice/Tax/PM) but skip the bundle/All-in-One card even though /api/billing/pricing returns it. Add the 4th card with dual-price block.",
+    "Iter23 fixes verified: ClickToInvoiceLink + ThreadList dep-array fix landed cleanly — 0 max-depth errors on /messages and /my-quotes Won (was 24+ in iter23).",
+    "PM public share page hides app chrome correctly via location.pathname.startsWith('/p/') — clean implementation.",
+    "PM detail page tab structure (Kanban/Materials/Diary/Customer) renders all required elements; Kanban columns labelled 'To do' / 'In progress' / 'Done' as spec'd."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (23/23)", "frontend": "~92% (12/13 acceptance criteria — only the bundle card on /billing missing)"},
+  "test_credentials": "Used /app/memory/test_credentials.md — pro@test.com / Test123! (has_pm_toolkit + has_tax_toolkit + has_invoice_toolkit), homeowner@test.com / Test123!, admin@servicemarket.eu / Admin123!.",
+  "seed_data_creation": "PM test suite created/deleted tasks, materials, diary entries inside the bootstrapped project (cleaned up at end of each test). One PM project for pro@test.com is now bootstrapped from a won quote (id=6a1d71496db53d1023d8cfb9) with customer_status_note='We will finish by Friday.' and a fresh share_token after rotate test.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Only outstanding gap: /billing missing the All-in-One Bundle card (4th card). Backend pricing returns bundle data — purely a frontend rendering gap on BillingPage.jsx. All other iter29 (Tax) and iter30 (PM) acceptance criteria PASS, and the 3 long-standing iter23 UI bugs (messages infinite-render, myinv share modal, mobile more sheet) are now verified FIXED. PM project id for retest: 6a1d71496db53d1023d8cfb9. The list-card MyInvoices Share button testid is myinv-share-{id} (not myinv-open-share-{id}).",
+  "rca of the issue": "Bundle card missing — BillingPage.jsx likely maps over pricing.toolkits but does not separately render pricing.bundle. Fix is to add a <BundleCard pricing={pricing.bundle} /> block (or similar) after the toolkit list."
+}

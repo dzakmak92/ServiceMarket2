@@ -1,0 +1,30 @@
+{
+  "summary": "Iteration 8 (Web Push) verification complete. 7/7 backend tests pass: public-key returns base64url VAPID key, /push/subscribe requires auth (401 anon), subscribe is upsert (re-POST same endpoint -> deleted_count=1 on unsubscribe), /push/unsubscribe returns enabled flag, /push/test with zero subs returns delivered:0 without error, and the BackgroundTasks matching dispatcher creates a kind='new_job_match' notification on the pro account within ~1s of POST /api/jobs (body contains job title + Vienna, link_to=/jobs/<id>). POST /api/jobs returned in <5s confirming dispatcher does not block. Frontend: /sw.js served at root with content-type application/javascript; PRO sees the yellow ⚡ Instant-job-alerts row with [data-testid=push-enable]; homeowner does NOT see it. Code review verified: dispatcher skips foreign-country pros (country guard at routes/push_routes.py:135) and skips pros whose non-empty service_areas don't include the job city with fallback to the user.city field (routes/push_routes.py:139-145).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration8_push.py",
+    "/app/test_reports/pytest/iter8_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "push.py reads VAPID_PRIVATE_KEY_PEM and replaces literal '\\\\n' with real newlines — verified working with the multi-line PEM stored in backend/.env. Good defensive parse.",
+    "send_push_to_user correctly cleans up expired subscriptions (HTTP 404/410) via delete_many — solid hygiene.",
+    "push_routes.py notify_matching_pros enforces three filters in this order: category match (mongo query), country guard via db.users lookup, and service_areas city filter with fallback to user.city. Self-skip via posted_by_id is present (defensive even though homeowners can't have pro_profiles).",
+    "Minor: notify_matching_pros loads pros 500 at a time without pagination. Fine at MVP scale; revisit when pros >500.",
+    "Minor: POST /api/push/unsubscribe accepts a raw dict body instead of a Pydantic model — works but inconsistent with the rest of the codebase which is strictly Pydantic.",
+    "Frontend useWebPush.js: subscribe() correctly checks Notification.permission, requests if needed, retrieves VAPID public key, subscribes via pushManager, and POSTs to /api/push/subscribe. The 'denied' branch returns {ok:false, reason:'denied'} so headless Chromium will fail silently as expected — no user-facing crash."
+  ],
+  "updated_files": ["/app/backend/tests/test_iteration8_push.py"],
+  "success_rate": {"backend": "100% (7/7)", "frontend": "100% (3/3 checks: sw.js, pro toggle visible, homeowner toggle hidden)"},
+  "test_credentials": "homeowner@test.com / Test123!, pro@test.com / Test123!, admin@servicemarket.eu / Admin123! (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Test created and cancelled one job per dispatcher run with TEST iter8 prefix; one or two such jobs may remain visible in the pro's home feed because /api/jobs DELETE marks status='cancelled' (not hard delete). 3 'new_job_match' notification rows were created on the pro account (visible in screenshot) — these are kind-filtered and non-destructive.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Web Push iter8 is fully green. Real browser push delivery (FCM/Mozilla) was NOT exercised because headless Chromium refuses Notification.requestPermission — that's documented and expected. The deterministic proofs are: (a) /push/public-key returns the env VAPID key, (b) /push/subscribe upserts (one row per endpoint, verified via deleted_count=1 on the unsubscribe step), (c) the BackgroundTasks dispatcher creates kind='new_job_match' notifications within ~1s on POST /api/jobs. The pro account now has ~13 historical notifications; future tests must filter by kind='new_job_match' AND job_id to find the right row.",
+  "rca of the issue": "n/a — no bugs."
+}

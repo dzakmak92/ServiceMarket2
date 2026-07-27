@@ -1,0 +1,56 @@
+{
+  "summary": "Iter45 backend + frontend tests. 11/15 backend tests pass. 2 real backend bugs found: (1) pro PDF export route collision causes 404, (2) admin support-resolve notification stored as ObjectId but get_notifications queries by string -> user can't see toast. Frontend MyQuotes complaints tab + report-problem triggers + Won bucket + Admin Invoicing 6-pill ScrollSnapTabStrip + Online Payments table + Invoice Data 3 template cards + MyInvoices export-all-pdf button + sonner Toaster all verified working.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "GET /api/pro-invoices/export.pdf",
+        "issue": "Returns 404 \"Invoice not found\" instead of merged PDF. Route collision: pro_invoicing_router (registered first in server.py L51-58) has /{invoice_id} which matches 'export.pdf' as the invoice_id before iter45_pro_router gets a chance. Fix: move iter45_pro_router include ABOVE pro_invoicing_router OR register /export.pdf inside pro_invoicing_routes.py BEFORE the /{invoice_id} route.",
+        "priority": "HIGH"
+      },
+      {
+        "endpoint": "PATCH /api/admin/support/{id} status=resolved",
+        "issue": "Notification IS inserted in db.notifications but with user_id stored as ObjectId (feedback_routes.py L277-278). However GET /api/notifications (misc_routes.py L457) queries with user_id=user[\"_id\"] which is a STRING (auth.py L70 stringifies it). Result: notification never surfaces to the pro -> no in-app toast. Fix: insert notification user_id as str(existing[\"user_id\"]) to match the rest of the codebase.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Pro -> Feedback page -> My submissions",
+        "issue": "Test session saw mine_rows=0 even though the pro just filed a support ticket via API. Could be (a) testid prefix mismatch with rendered DOM, or (b) feedback page hits a cached endpoint. Worth a manual sanity check; not blocking since admin invoicing flow + complaints tab work.",
+        "affected_selectors": ["[data-testid^=\"mine-row-\"]"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter45_complaints_and_invoicing.py",
+    "/app/test_reports/pytest/iter45.xml"
+  ],
+  "action_items": [
+    "FIX route ordering: in server.py move iter45_pro_router before pro_invoicing_router, OR register /pro-invoices/export.pdf inside pro_invoicing_routes.py before /{invoice_id}.",
+    "FIX notification user_id type in feedback_routes.py admin_update_support (around L277): store as str(existing[\"user_id\"]) so misc_routes get_notifications query matches.",
+    "Verify Feedback page /feedback shows mine-row-* rows when pro has at least one support_tickets entry (testid sanity check)."
+  ],
+  "critical_code_review_comments": [
+    "iter45_routes.py _merge_pdfs catches generic Exception when pypdf missing and returns only first PDF — silent fallback. Consider logging.",
+    "feedback_routes.py admin_update_support notification body string-concatenates admin_response[:300] — fine, but the user_id type bug breaks delivery.",
+    "Two routers registered with same /pro-invoices prefix is a footgun; combine into one router or document order explicitly."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter45_complaints_and_invoicing.py (new)"
+  ],
+  "success_rate": {"backend": "73% (11/15)", "frontend": "95% (12/13 selectors found)"},
+  "test_credentials": "admin@servicemarket.eu / Admin123!  |  pro@test.com / Test123!  |  homeowner@test.com / Test123!",
+  "seed_data_creation": "Test created 1 support_ticket (TEST_iter45 ...) for pro@test.com on a won job — not cleaned up.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "After main agent fixes route ordering + notification user_id type, re-run /app/backend/tests/test_iter45_complaints_and_invoicing.py — expect 15/15 PASS. Frontend portion already manually verified for the iter45 features; only re-check Feedback page mine-row rendering after a fresh support submission. Pro routes use /my-quotes (not /pro/my-quotes).",
+  "rca_of_the_issue": {
+    "pro_pdf_export_404": "FastAPI matches routes in inclusion order. pro_invoicing_router is included BEFORE iter45_pro_router (both prefix=/pro-invoices). pro_invoicing has @router.get('/{invoice_id}') at line 230 — this catches 'export.pdf' as the path parameter, the handler tries ObjectId('export.pdf') -> fails -> raises 404. The newly-added /export.pdf in iter45_pro_router is never reached. Reproduction: curl https://<base>/api/pro-invoices/export.pdf with pro cookies -> {detail:'Invoice not found'}. Mitigation: change include order in server.py.",
+    "missing_notification": "feedback_routes admin_update_support inserts {user_id: ObjectId(...)} into db.notifications. But misc_routes.get_notifications queries db.notifications.find({user_id: user['_id']}) where user['_id'] = str(...) (set in auth.py L70). String != ObjectId in Mongo, so the new notification is invisible. Existing notifications (e.g. quote_routes.create_notification) pass a STRING user_id, which is why other kinds like 'location_shared' work. Mitigation: change feedback_routes.py L277-278 to: 'user_id': str(existing['user_id'])."
+  }
+}

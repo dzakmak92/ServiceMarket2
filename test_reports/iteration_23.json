@@ -1,0 +1,86 @@
+{
+  "summary": "Iter27 (EPC-QR + Lost-quote + Active/Completed tabs + dual-price toolkit + share-invoice + More-nav) tested end-to-end. Backend: 6/6 PASS, 2 SKIPPED (test_share_invoice_via_chat + test_homeowner_can_open_invoice_pdf — both skipped because the 1st invoice in the seed has homeowner_id=None; manually verified BOTH flows work against the 2nd invoice (id=6a1d281db45161be0a82b8b7, homeowner_id=6a14b72e05a5dee99e39fd13) — homeowner GETs PDF=200 with %PDF magic bytes, share-message returns 200 'Invoice shared in chat'). Direct manual checks confirm: IBAN normalised to AT611904300234573201, bad IBAN rejected with 400 'iban'-message, mark-lost: 200 for pending / 400 for already-lost / 400 for accepted, threads expose my_quote_status, /api/billing/pricing returns toolkit.standard_net=14.99 AND toolkit.pro_net=9.99 simultaneously, admin gets 403 on someone else's invoice PDF (auth gate working). Frontend: visually most acceptance criteria met — Desktop Header has 4 primary links (Home, Browse Jobs, Dashboard, Messages) + a More dropdown that contains My Quotes / My Invoices / Billing and closes on outside-click; Mobile bottom-nav has exactly 4 primary tabs (Home, Browse Jobs, Messages, Dashboard) + a right-corner More button; /billing shows the dual-tier toolkit-price-block with Standard (€14,99 amber border, highlighted) AND Pro (€9,99 dimmed) + 'Save €5,00/mo with the Pro plan' hint; /my-quotes shows 4 tabs Applied(9)/Won(70)/Completed(1)/Lost(5) with 9 mark-lost buttons on Applied; /messages shows Active/Completed thread-tabs and Completed tab renders the green/red row tints; /my-invoices shows the new 4-card stats grid (Issued YTD €1.368, Paid YTD €720, Pending €648, This month €468), All/Issued/Paid status tabs, search box, 7 Preview buttons and the preview modal opens with an embedded PDF iframe + Download/Share buttons in the header. THREE CRITICAL ISSUES FOUND: (1) React 'Maximum update depth exceeded' infinite-render loop from iter22 is STILL firing — and is now reproducible on /messages (24+ console errors stacking while viewing thread list); originally reported on /my-quotes Won tab in iter22 and was NEVER fixed; (2) Share modal on /my-invoices appears to NOT open via the visible 'Share' button on list cards — myinv-share-modal / myinv-share-whatsapp / myinv-share-target / myinv-share-note / myinv-share-inapp-send all NOT found in DOM after click — either the card-level Share button is missing its testid or the click isn't wired; (3) MobileNav 'More' bottom-sheet (mobile-nav-more-sheet) did not render in DOM after tapping mobile-nav-more — may be a Dialog/Drawer mount issue on first tap, or the sheet uses a different testid than spec. Minor: GET /api/pro-invoices listing leaks the Mongo _id field in the response (should be excluded).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/pro-invoices", "issue": "Response objects include both 'id' AND raw Mongo '_id' — _id should be excluded from API output."},
+      {"endpoint": "POST /api/pro-invoices/{id}/share-message", "issue": "Works (200) but most existing invoices in the seed have homeowner_id=None and an empty customer_snapshot — so the homeowner-PDF + auto-share flows are only testable against 2 of 7 seed invoices. Consider backfilling homeowner_id from job_id when missing."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "ThreadList / MyQuotesPage (cross-page)", "issue": "REGRESSION FROM ITER22 STILL UNFIXED — 'Maximum update depth exceeded' React infinite-render error fires 24+ times when /messages thread list mounts, and is also still present on /my-quotes Won tab. The error stack hits the same setState-in-useEffect-without-stable-deps pattern as iter22. Root cause likely identical: a useEffect dep relies on an object/function rebuilt every render (ClickToInvoiceLink or a similar derived prop). User-visible: page still paints but every keystroke / hover may now re-trigger the loop, harming perf.", "selector": "[data-testid='thread-tabs'], [data-testid^='click-to-invoice']", "priority": "HIGH"},
+      {"component": "MyInvoicesPage list-card Share button", "issue": "Clicking the visible 'Share' button on an invoice row (the one to the right of Preview/Download) did NOT mount [data-testid='myinv-share-modal']. None of the spec'd testids (myinv-share-whatsapp / myinv-share-target / myinv-share-note / myinv-share-inapp-send) appeared. Either the card-level Share button is missing a data-testid (e.g. myinv-share-button-{id}) so the test couldn't find the right element, OR the click handler doesn't open the share modal from the list row. The Share button INSIDE the Preview modal header is visible (screenshot myinv_preview), but its behaviour was not verified.", "selector": "button:has-text('Share')", "priority": "HIGH"},
+      {"component": "MobileNav More sheet", "issue": "Tapping [data-testid='mobile-nav-more'] on the mobile viewport (414x900) did NOT mount [data-testid='mobile-nav-more-sheet'] in the DOM. Could be (a) sheet uses a portal/Dialog that needs a different mount trigger, (b) cookie banner overlay intercepted the click, or (c) testid mismatch. Needs verification.", "selector": "[data-testid='mobile-nav-more-sheet']", "priority": "MEDIUM"},
+      {"component": "ConversationView / Active thread items", "issue": "[data-testid^='thread-item-'] returned 0 on /messages Active tab, so I could NOT click into a conversation to verify header-mark-lost button and msg-open-invoice-{msgId} system bubble. Likely the thread row uses a different testid prefix (e.g. 'thread-row-' or 'inbox-thread-'). The flow itself (POST /api/quotes/{id}/mark-lost) works end-to-end at the API level.", "selector": "[data-testid^='thread-item-']", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [
+      {"flow": "Share invoice via in-app chat (UI)", "issue": "End-to-end UI confirmation could not be completed because (a) the list-card Share button did not open the share modal in my run and (b) the conversation thread-item testid prefix didn't match. Backend POST /api/pro-invoices/{id}/share-message itself returns 200 and confirmedly creates the chat message — so this is purely a UI wiring/testability gap.", "affected_selectors": ["[data-testid='myinv-share-modal']", "[data-testid^='msg-open-invoice-']"]}
+    ],
+    "design_issues": [
+      {"screen": "BillingPage toolkit-price-block", "issues": ["Locale formatting uses '€14,99' / '€9,99' (German comma) — correct for AT locale but if tests/E2E expect '14.99' literal strings they will fail. Consider exposing data-price attribute with raw float for testability."]}
+    ]
+  },
+  "test_results": {
+    "backend": {
+      "test_iban_validation_rejects_invalid": "PASS",
+      "test_iban_validation_accepts_valid_and_normalises": "PASS (saved as AT611904300234573201)",
+      "test_mark_quote_lost": "PASS",
+      "test_cannot_mark_accepted_lost": "PASS",
+      "test_threads_expose_my_quote_status": "PASS",
+      "test_pricing_exposes_both_toolkit_tiers": "PASS (standard_net=14.99, pro_net=9.99)",
+      "test_share_invoice_via_chat": "SKIPPED in pytest (1st invoice has homeowner_id=None) — manually verified PASS via curl on 2nd invoice",
+      "test_homeowner_can_open_invoice_pdf": "SKIPPED in pytest (same reason) — manually verified PASS (ho GET /pdf=200, %PDF magic, admin GET /pdf=403)",
+      "manual_mark_already_lost_returns_400": "PASS ('Cannot mark a lost quote as lost')"
+    },
+    "frontend": {
+      "desktop_primary_nav_4_links": "PASS (Home, Browse Jobs, Dashboard, Messages)",
+      "desktop_nav_more_dropdown_3_items_close_on_outside": "PASS (desktop-more-link-my-quotes/my-invoices/billing all visible; dropdown closes on outside click)",
+      "billing_toolkit_dual_price_block": "PASS visually (Standard €14,99 amber-bordered + Pro €9,99 dimmed + Save hint)",
+      "billing_toolkit_save_hint_visible": "PASS ('★ Save €5,00/mo with the Pro plan')",
+      "myquotes_4_tabs_with_counts": "PASS (Applied 9, Won 70, Completed 1, Lost 5)",
+      "myquotes_applied_mark_lost_buttons": "PASS (9 buttons match data-testid^='my-quote-mark-lost-')",
+      "myquotes_lost_tab_renders_rows": "PASS visually (5 lost rows shown with quote_status_lost tag)",
+      "messages_thread_tabs_active_completed": "PASS",
+      "messages_completed_tab_tinting": "PASS (bg-green-pos and bg-red-warn classes found in DOM)",
+      "myinvoices_4_stat_cards": "PASS (Issued YTD/Paid YTD/Pending/This month — all populated with brutto + invoice counts)",
+      "myinvoices_status_tabs": "PASS (All/Issued/Paid)",
+      "myinvoices_search_box": "PASS",
+      "myinvoices_preview_modal_with_iframe": "PASS (modal opens, iframe present, Download + Share buttons in header)",
+      "myinvoices_share_modal_opens": "FAIL — modal/whatsapp/target/note/inapp-send testids NOT mounted after clicking Share",
+      "mobile_primary_nav_4_tabs": "PASS (Home, Browse Jobs, Messages, Dashboard)",
+      "mobile_more_button": "PASS visually",
+      "mobile_more_sheet_opens": "FAIL — mobile-nav-more-sheet not mounted after tap",
+      "conversation_header_mark_lost": "NOT VERIFIED (thread-item testid prefix didn't match)",
+      "conversation_invoice_share_bubble": "NOT VERIFIED (same)",
+      "react_infinite_render_regression_from_iter22": "STILL FIRING (24+ console errors on /messages)"
+    }
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter27_qr_lost_share.py",
+    "/app/test_reports/pytest/iter27_results.xml"
+  ],
+  "action_items": [
+    "HIGH: Fix the 'Maximum update depth exceeded' infinite render — same root cause as iter22 (ClickToInvoiceLink / ThreadList useEffect deps). It is now also leaking onto /messages — please audit any useEffect that depends on objects/functions rebuilt every render across ThreadList, MyQuotesPage, and ClickToInvoiceLink and switch to primitive-id deps or wrap parent props in useMemo/useCallback.",
+    "HIGH: /my-invoices list-card 'Share' button — add a stable data-testid (e.g. data-testid={`myinv-open-share-${inv.id}`}) AND verify the click opens [data-testid='myinv-share-modal']. Today the testid is missing on the card-row Share button so testing can't unambiguously target it.",
+    "MEDIUM: Verify [data-testid='mobile-nav-more-sheet'] mounts in the DOM after tapping mobile-nav-more on a 414x900 viewport. If the sheet is rendered via a portal/Dialog, ensure it's not behind the cookie banner z-index.",
+    "MEDIUM: Add/align testids on the messages thread-list rows. Spec says [data-testid='thread-item-{id}'] but the current implementation may use a different prefix — please confirm and align so e2e can click into a conversation deterministically.",
+    "MINOR: Strip Mongo _id from GET /api/pro-invoices response (project _id:0 in find() or pop from each doc).",
+    "MINOR: Backfill homeowner_id from job_id on the existing pro@test.com seed invoices so the new share-message + homeowner-PDF E2Es exercise all 7 invoices, not just 2."
+  ],
+  "critical_code_review_comments": [
+    "frontend/src/components/ClickToInvoiceLink.jsx + ThreadList.jsx — primary suspects for the infinite-render loop. Replace object/function useEffect deps with primitive ids (quote.id, quote.status, job.status, my_quote_status).",
+    "frontend/src/pages/pro/MyInvoicesPage.jsx — the list-card 'Share' button needs a data-testid and should open the same share modal as the preview-modal-header 'Share' button; today only the preview-modal-header path is testable.",
+    "frontend/src/components/MobileNav.jsx — verify the More sheet (Dialog/Drawer) actually mounts and is visible above the cookie banner; consider Dialog z-index >= 60.",
+    "backend/routes/pro_invoicing_routes.py — exclude _id from the listing query response.",
+    "backend/services/pro_invoicing.py — share-message endpoint correctly accepts to_user_id explicitly, so the case where invoice.homeowner_id is None still works; however the homeowner-PDF gate depends on invoice.homeowner_id being set, so the seed-data normalization above is recommended."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% on executed tests (6/6 pytest + 4/4 manual; 2 pytest skipped due to seed data — both verified manually PASS)", "frontend": "~78% (14/18 verifiable testid contracts PASS; 2 FAIL: share-modal + mobile-more-sheet; 2 NOT VERIFIED: conversation header-mark-lost + msg-open-invoice; HIGH-priority React infinite-render regression from iter22 STILL present)"},
+  "test_credentials": "Used /app/memory/test_credentials.md — pro@test.com / Test123! (has toolkit, 9 pending + 70 won + 5 lost quotes, IBAN AT611904300234573201, 7 customer invoices), homeowner@test.com / Test123! (id=6a14b72e05a5dee99e39fd13, is the customer on 2 of the 7 pro invoices), admin@servicemarket.eu / Admin123!.",
+  "seed_data_creation": "test_iban_validation_accepts_valid_and_normalises wrote bank_iban=AT611904300234573201 on the pro profile (idempotent). test_mark_quote_lost flipped one pending quote to status=lost (Applied count dropped from 10 to 9, Lost count rose to 5 — visible in UI).",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend is solid — iter27 features all wired correctly. The 2 pytest SKIPs are seed-data limitations, not code bugs (manually verified PASS). The dominant outstanding issue is still the iter22-era React infinite-render loop, now also leaking onto /messages — fix the dep arrays in ClickToInvoiceLink + ThreadList. After that, please add a stable data-testid to the /my-invoices list-card Share button so the share modal can be triggered from row level, and confirm the MobileNav More sheet mounts above z-index of the cookie banner. Manual API repro for share-message + homeowner-PDF: login pro -> POST /api/pro-invoices/6a1d281db45161be0a82b8b7/share-message {to_user_id:'6a14b72e05a5dee99e39fd13', note:'x'} -> 200, then login homeowner -> GET /api/pro-invoices/6a1d281db45161be0a82b8b7/pdf -> 200 %PDF.",
+  "rca of the issue": "Infinite-render: same as iter22 — ClickToInvoiceLink and ThreadList useEffects depend on object props (quote, job, thread) rebuilt every render → setState in effect → re-render → effect fires again. Fix: depend only on primitive ids or memoise parent-supplied props. Share modal: the list-card Share button likely calls a setState that doesn't include the invoice id needed to drive the modal, OR the modal portal isn't conditionally mounted. Mobile More sheet: probably a Dialog/portal that isn't mounted before the first user gesture, OR z-index sits behind the cookie banner."
+}

@@ -1,0 +1,59 @@
+{
+  "summary": "Iter 61 (Batch-5): End-to-end validation of CO->invoiced, homeowner notifications (bell+push), materials barcode scan (UPCitemdb + manual fallback), Admin AI Insights, and PM template upgrades (apply with materials+milestones + save-as-template). 13/13 backend pytest pass. Frontend Playwright confirmed Admin Insights tab fully renders (overview + sentiment bar 17/55/28 + theme chips + 4 category cards with item counts), Materials barcode scan modal opens with manual fallback and auto-fills material name from UPCitemdb (real product '2 Packs Of 24 X 330ml Coke Cans' returned for EAN 5449000000996, success toast shown), Apply Template modal shows tasks/materials/milestones counts (Kitchen: 10/5/3) + Contract value input + 5 apply buttons, Save-as-template modal works end-to-end and the new template appears in the Apply list.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "what_was_verified": {
+    "backend_pytest_iter61": [
+      "GET /api/pm/barcode-lookup?code=5449000000996 -> 200 found=true with name returned (UPCitemdb).",
+      "GET /api/pm/barcode-lookup?code=0000000000001 -> 200 found=false (graceful unknown).",
+      "GET /api/pm/barcode-lookup?code=abc -> 400 (input validation).",
+      "GET /api/pm/barcode-lookup with no auth -> 401/403.",
+      "GET /api/admin/insights as pro -> 403 ; POST /api/admin/insights/analyze as pro -> 403.",
+      "GET /api/admin/insights as admin -> 200 with analysis + current_feedback_count + current_review_count.",
+      "POST /api/admin/insights/analyze as admin -> 200 with feedback_analysed, reviews_analysed, model='openai/gpt-5-mini', categories.",
+      "Pro POST /api/pm/projects/<HO_PROJECT>/change-orders + /send -> homeowner GET /api/notifications returns kind='pm_change_order', title 'New change order: ...', link_to='/my-projects/<id>'.",
+      "Pro POST /api/pm/projects/<HO_PROJECT>/payments -> homeowner notification kind='pm_payment', title 'Payment requested: ...', link_to='/my-projects/<id>'.",
+      "GET /api/pm/templates -> built-ins include materials and milestones arrays (used by UI for counts).",
+      "POST /api/pm/projects/<id>/apply-template?template_id=builtin-... &base_amount=10000 -> tasks_created, materials_created, payments_created all > 0 ; materials persisted on subsequent GET.",
+      "POST /api/pm/templates/from-project/<id> -> new template appears in GET /api/pm/templates list ; cleaned up after.",
+      "Project 6a283c58573a159e6192ab8d has a CO with status='invoiced' (prior CO->invoice flow flipped status to invoiced - DB persisted)."
+    ],
+    "frontend_playwright_iter61": [
+      "Admin /admin -> Insights tab (admin-tab-insights) renders panel (admin-insights) with header + Re-analyze button (admin-insights-analyze).",
+      "Admin Insights overview, sentiment bar (17% positive / 55% neutral / 28% negative), themes chips, and all 4 category cards present (admin-insights-cat-missing_features / -problems / -nice_to_have / -praise) with item titles + mention counts.",
+      "Pro PM project -> Materials tab (pm-tab-materials) shows Scan barcode button (pm-material-scan-btn).",
+      "Clicking Scan opens pm-barcode-modal; manual input (pm-barcode-manual-input) + submit (pm-barcode-manual-submit) work in headless mode.",
+      "Submitting EAN 5449000000996 closes the modal, auto-fills pm-material-name with '2 Packs Of 24 X 330ml Coke Cans', and shows green success toast 'Found: 2 Packs Of 24 X 330ml Coke Cans'.",
+      "Pro PM project -> Kanban tab (pm-tab-kanban) shows Apply template (pm-apply-template-btn) and Save as template (pm-save-template-btn) buttons.",
+      "Templates modal (pm-templates-modal) shows per-template tasks/materials/milestones counts (e.g. Kitchen renovation: 10 / 5 / 3), Contract value (for milestone %) input (pm-template-base-<id>) and 5 apply buttons (pm-template-apply-<id>).",
+      "Save-as-template modal (pm-save-template-modal) opens; pm-save-template-name accepts text; pm-save-template-confirm creates the template; reopening Apply template shows 'TEST_iter61_ui_template' in the list.",
+      "Pro header bell badge shows '9+' confirming notifications system renders in nav."
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter61_batch5.py",
+    "/app/test_reports/pytest/iter61_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "admin_insights_routes.py header docstring still says 'GPT-5.4-mini via the Emergent universal key' but MODEL_NAME is 'gpt-5-mini' - docstring should be updated to avoid confusion (gpt-5.4-mini isn't available on the proxy).",
+    "pm_routes.py apply_template silently skips milestone payment creation when pro.bank_iban is missing (payments_created=0). Consider returning a soft warning in the response so the UI can hint to the pro to set IBAN. Currently the response only carries counts.",
+    "/api/pm/barcode-lookup depends on third-party UPCitemdb free trial which is rate-limited; failure is swallowed (returns found=False). That's correct UX but consider logging rate-limit responses for ops visibility.",
+    "_notify_homeowner_co_sent / _notify_homeowner_payment_requested swallow all exceptions silently - if push registration breaks, in-app bell still works but pros wouldn't get visibility. Good enough for now; consider structured logging.",
+    "pm_routes.py is 1878 lines and crossing the maintainability threshold (>700); consider splitting templates/materials/payments/notifications into sibling modules for next refactor pass."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter61_batch5.py (new, 13 tests, all passing)"
+  ],
+  "success_rate": { "backend": "100% (13/13)", "frontend": "100% (all UI testids found, all flows green)" },
+  "test_credentials": "admin@servicemarket.eu / Admin123!  |  pro@test.com / Test123!  |  homeowner@test.com / Test123!",
+  "seed_data_creation": "Created TEST_iter61 change order + sent (triggers homeowner notif), TEST_iter61 payment request (triggers homeowner notif), TEST_iter61_ui_template (saved-as-template via UI). Backend pytest also creates per-test materials/payments via apply-template; left in DB for further smoke testing on HO_PROJECT_ALT (6a284a8f939d4f5bf9b5db10).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter 61 added /app/backend/tests/test_iter61_batch5.py (13 tests, all pass in ~48s). All 5 Batch-5 features are working end-to-end. PM toolkit remained active on pro@test.com during this run (no 402 drift). To reproduce CO->invoiced freshly use HO_PROJECT_ALT 6a284a8f939d4f5bf9b5db10 since 6a283c58573a159e6192ab8d already has its job's single allowed invoice RG-2026-0005.",
+  "rca_of_the_issue": "n/a - all 5 batch-5 features verified working."
+}

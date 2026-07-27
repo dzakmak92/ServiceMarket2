@@ -1,0 +1,50 @@
+{
+  "summary": "Iter44 end-to-end test: 29/32 backend tests PASS (3 minor issues), 100% frontend smoke PASS on all 4 features. Verified business-address fields, pro-invoices year/month/per_page filtering, /pro-invoices/stats KPIs, /admin/invoices filter+pagination, NEW /api/admin/jobs/{id}, MyInvoicesPage UI (142 invoices, compact action icons, 20/50/100), Admin Billing filter bar, Admin Support drawer JobDetailsPanel + Cancel Job button.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "GET /api/pro-invoices?year=2025&month=13",
+        "issue": "Returns 500 instead of 422 when month is out of range (1-12). Spec requires Query(ge=1, le=12) validation. Root cause: `month` param typed `int` (no bounds) in routes/pro_invoicing_routes.py L187; invalid month then crashes datetime(year, 13, 1) with ValueError. Add `month: Optional[int] = Query(None, ge=1, le=12)`."
+      },
+      {
+        "endpoint": "GET /api/profile/pro (misc_routes.py L41)",
+        "issue": "Response does not include business_address/business_postal_code/business_city/business_country keys when they were never set in DB (returns raw mongo doc via serialize_doc). After a PATCH writes them, GET returns them. Frontend handles missing keys gracefully (verified), but for API consumers consider normalising defaults in response (return empty string) — minor."
+      },
+      {
+        "endpoint": "GET /api/admin/jobs/{id}",
+        "issue": "When job has no accepted_quote_id, the `accepted_pro` key is OMITTED from response (instead of returned as null). Spec implies it should always be present (nullable). Also leaks raw mongo `_id` in response. Fix: in admin_routes.py L585 set `js['accepted_pro'] = None` outside the if-block, and `js.pop('_id', None)` before return."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter44_invoice_admin_filters.py",
+    "/app/test_reports/pytest/iter44_results.xml"
+  ],
+  "action_items": [
+    "Add Query(ge=1, le=12) bounds to `month` param in /api/pro-invoices route (currently 500 on month=13).",
+    "In GET /api/admin/jobs/{id}: always return `accepted_pro` (null when none) and strip raw mongo `_id` before returning. Optional: same `_id` strip on /api/profile/pro.",
+    "Optional: normalise missing business_* keys in /api/profile/pro response so they always exist (empty string)."
+  ],
+  "critical_code_review_comments": [
+    "pro_invoicing_routes.py uses `int` for query params without bounds — wrap with `Query(..., ge=1, le=12)` for month to avoid 500s.",
+    "admin_routes.py GET /jobs/{id} returns serialize_doc(job) which retains `_id` — strip it; also conditional accepted_pro key makes response shape inconsistent.",
+    "Multiple endpoints leak mongo `_id` (admin/jobs/{id}, /profile/pro) — consider central serializer that always drops `_id`.",
+    "/api/pro-invoices/stats: well-guarded for tz-naive invoice_date (good)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter44_invoice_admin_filters.py (new)"
+  ],
+  "success_rate": {"backend": "90.6% (29/32)", "frontend": "100% (4/4 features)"},
+  "test_credentials": "admin@servicemarket.eu/Admin123!, pro@test.com/Test123!, homeowner@test.com/Test123! (all from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Created 1 support ticket via POST /api/feedback/support as homeowner@test.com bound to job 6a1d48cf63dda248e64bc95b (subject='iter44 admin support test') to test Admin Support drawer JobDetailsPanel. Also patched pro_profile with business_address=Teststraße 12/3, postal=1010, city=Wien, country=AT.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "iter44 features all working end-to-end. Backend test file /app/backend/tests/test_iter44_invoice_admin_filters.py covers profile business_*, pro-invoices filters/pagination/stats, admin invoices, admin jobs/{id}, and forbidden access. 3 minor backend bugs (see action_items). MyInvoicesPage data-testids confirmed: myinv-period-filter, myinv-filter-year, myinv-filter-month (appears after year), myinv-total-count ('142 invoices'), myinv-actions-{id} containing myinv-preview/download/share/online-payment/paid/storno icon buttons, pagination buttons 20/50/100. AdminSupport rows use data-testid='support-row-{id}' (li elements, NOT table tr). Frontend routes are /settings and /my-invoices (NOT /pro/settings).",
+  "rca of the issue": "All 3 backend minor issues are pure validation/serialization gaps (Pydantic bounds + serialize_doc leaking _id + conditional key). No business logic bugs found."
+}

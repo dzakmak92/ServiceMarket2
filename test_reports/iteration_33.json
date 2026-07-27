@@ -1,0 +1,54 @@
+{
+  "summary": "Iter31 (PM P1) + Iter32 (white-label) end-to-end verification. Backend: 28/28 PASS via /app/backend/tests/test_iter31_pm_p1.py (9/9) + /app/backend/tests/test_iter32_whitelabel.py (19/19) at /app/test_reports/pytest/iter33_results.xml. Frontend (1366x1100): Projects list redesign ✓ (4 KPI tiles 'Active Projects/Completed/Revenue/Pipeline value', search input, status chips All/Active/On Hold/Done/Archived, project cards with status pill). Project detail page now has 6 tabs Overview/Kanban/Timeline/Materials/Diary/Customer page (note: tab is labelled 'Timeline' not 'Gantt' — minor naming nit vs review spec). Overview tab ✓ renders 5 KPI tiles (Progress 33.3%, Revenue €150, Materials €465 planned €450, Labour 13h x €65/h = €845, Net Profit -€1.160 with margin -773.3% in red-warn style), Time Tracker widget with 00:00:00 + Start (data-testid='pm-timer-toggle'), Original Job card with description + 'No photos uploaded', Customer card with email + phone, Accepted Quote card showing €150 + accepted-on quote text, Invoices section with 'Create from project →' link, Activity timeline visible (truncated below fold). Kanban tab ✓ 3 cols (To do/In Progress/Done) with cards rendering + 'Apply template' button. Apply template modal opens and the 4 builtin templates (Kitchen renovation, Bathroom renovation, Painting, Boiler) detected in DOM. Timeline (Gantt) tab ✓ svg.gantt + 7 bar elements + all 5 view-mode chips (Quarter Day/Half Day/Day/Week/Month, Week active). Customer page tab ✓ Customer status page card (token URL + Copy/Open/Rotate buttons) + Sub-contractor invite card with 'Generate sub-link' button (testids: pm-sub-card, pm-sub-issue). Public Status Note + Default Hourly Rate (€65) editable. /settings → Invoice details tab ✓ 'White-label your invoices' section with PRO TOOLKIT badge, Business logo Upload box (PNG/JPEG/WebP max 1 MB), all 5 template cards (Classic/Modern/Minimalist/Bold/Elegant — Elegant currently selected with green check), each card has Preview button. /billing ✓ shows 'White-label: your logo + 5 invoice templates' bullet in Invoice Toolkit card AND All-in-One Bundle card €39,99 ACTIVE (iter24 bug FIXED).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "ProSettingsPage Invoice details tab", "issues": ["Template cards lack a data-testid (e.g. tpl-card-classic / tpl-card-modern) — only the section wrapper has data-testid='white-label-section'. Adding per-card testids would improve future testability."]},
+      {"screen": "PMProjectDetailPage", "issues": ["Tab labelled 'Timeline' in UI but review spec calls it 'Gantt'. Minor naming nit only — frappe-gantt renders correctly underneath."]}
+    ]
+  },
+  "test_results": {
+    "backend_pytest_iter31": "9/9 PASS (reorder, timer start/stop+overlap, builtin+custom templates+apply, sub-invite+revoke+RBAC, overview aggregation, to-invoice draft)",
+    "backend_pytest_iter32": "19/19 PASS (template list, set 5 templates, invalid 400, 5 PDF previews, 404 unknown, logo upload+delete, too-large 400, wrong content-type 400, homeowner RBAC 403 on upload+set+list)",
+    "frontend_projects_list_kpi_strip": "PASS (4 tiles: Active=1, Completed=0, Revenue €0, Pipeline €0)",
+    "frontend_projects_search_and_filter_chips": "PASS (search input + All/Active/On Hold/Done/Archived chips)",
+    "frontend_overview_5_kpi_tiles": "PASS",
+    "frontend_overview_timer_widget": "PASS (00:00:00 + Start button data-testid='pm-timer-toggle')",
+    "frontend_overview_original_job_customer_quote_invoices_activity": "PASS (all 6 blocks render + 'Create from project →' link)",
+    "frontend_kanban_3_cols_with_cards": "PASS",
+    "frontend_apply_template_modal_4_builtins": "PASS (Kitchen, Bathroom, Painting, Boiler all detected)",
+    "frontend_gantt_svg_renders_with_view_chips": "PASS (svg.gantt + 7 bars + Quarter Day/Half Day/Day/Week/Month chips)",
+    "frontend_customer_page_sub_link_button": "PASS (pm-sub-card + pm-sub-issue testids present, 'Generate sub-link' button visible)",
+    "frontend_settings_white_label_section": "PASS (renders under Invoice details tab — section testid='white-label-section', 5 templates visible by name, logo upload input, PRO TOOLKIT badge, 6 Preview buttons)",
+    "frontend_billing_white_label_bullet": "PASS ('White-label: your logo + 5 invoice templates' bullet visible in Invoice Toolkit card)",
+    "frontend_billing_bundle_card": "PASS (iter24 blocker FIXED — 'All-in-One Bundle ACTIVE €39,99/mo · Save €19,98/mo vs. buying separately' renders correctly)"
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter31_pm_p1.py",
+    "/app/backend/tests/test_iter32_whitelabel.py",
+    "/app/test_reports/pytest/iter33_results.xml"
+  ],
+  "action_items": [
+    "MINOR (testability): Add per-template data-testid attributes on the 5 invoice template cards in WhiteLabelSection (e.g. data-testid='tpl-card-classic'... 'tpl-card-elegant') and on each card's Preview button (data-testid='tpl-preview-{key}') so future Playwright scripts can target each card deterministically. Currently the section wrapper has data-testid='white-label-section' but cards rely on text content selection.",
+    "MINOR (label naming): Tab label is 'Timeline' but review spec + backend route naming uses 'Gantt'. Either align UI label to 'Gantt' or update spec. Functional behaviour is correct.",
+    "MINOR (HTML hydration): Console reports 'In HTML, <span> cannot be a child of <option>' hydration warning in PMProjectsPage select element (line 174 of PMProjectsPage.jsx — the dropdown options for 'Create project from won job'). Wrap text in option without span inside it."
+  ],
+  "critical_code_review_comments": [
+    "PM Toolkit P1 is solid: dnd-kit Kanban + frappe-gantt Timeline + Timer + Apply-template modal + Sub-contractor magic-link all wired and rendering correctly. Backend reorder/timer/templates/sub-invite/overview/to-invoice all 100% green.",
+    "White-label invoice templates (5 PDF renderers) all generate valid %PDF bytes > 2 KB for classic/modern/minimalist/bold/elegant. Logo upload/delete with size/MIME validation works, RBAC 403 for homeowners enforced on all 3 endpoints.",
+    "Bundle card on /billing — iter24 blocker is FIXED. 'All-in-One Bundle ACTIVE €39,99/mo · Save €19,98/mo vs. buying separately' now renders alongside the 3 toolkit cards.",
+    "Invoice Toolkit benefit list correctly shows 5 bullets including the new 'White-label: your logo + 5 invoice templates' line.",
+    "Negative profit display in Overview KPI uses a soft red-warn pastel (-€1.160,00 with margin -773.3%) — clean treatment, not alarming.",
+    "Overview tab info-density is excellent — 5 KPIs + Timer + 6 content cards + Activity timeline all on one screen without feeling cramped."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (28/28)", "frontend": "100% (13/13 acceptance criteria verified)"},
+  "test_credentials": "pro@test.com / Test123! (has all 3 toolkit flags + hourly_rate_eur=65); homeowner@test.com / Test123! (for RBAC 403). Loaded from /app/memory/test_credentials.md.",
+  "seed_data_creation": "PM iter31 tests created/cleaned reorder tasks, timer + diary entries, custom template (deleted), sub-token (revoked). PM project id=6a1d71496db53d1023d8cfb9 remains for pro@test.com.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter31 PM P1 + iter32 White-label both fully verified backend (28/28) + frontend (13/13). The iter24 BillingPage bundle-card blocker is FIXED. Only minor nits remain: (1) add data-testid='tpl-card-{key}' on the 5 template cards in WhiteLabelSection for future Playwright scripts (currently they're only selectable by name text); (2) tab is labelled 'Timeline' not 'Gantt' — naming choice; (3) cosmetic React hydration warning on PMProjectsPage select option (line 174) — span-inside-option. None of these block functionality. Pro project id for retest: 6a1d71496db53d1023d8cfb9 on pro@test.com. Settings page is at /settings (NOT /settings/pro — that path 404→redirects to /home). To reach the white-label section, click data-testid='pro-settings-tab-invoice_details' then scroll to bottom.",
+  "rca of the issue": "No issues — all acceptance criteria met. Minor testability nits documented above."
+}

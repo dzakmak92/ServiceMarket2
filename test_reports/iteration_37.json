@@ -1,0 +1,34 @@
+{
+  "summary": "Iter37 retest of two iter36 fixes (a) /api/feedback/support owner check posted_by_id, (b) HomeownerCompletionReminder skip on /feedback /admin /auth. Backend: test_iter36_feedback_support.py 35/35 PASS + 1 intentional SKIP (pro-on-foreign-job needs seed pair, unchanged). Regression test_iter35_admin_tabs.py 33/33 PASS. Frontend: logged in as homeowner@test.com → /feedback → reminder modal NOT shown, feedback-submit-form rendered & interactive (subject/message accept input).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/feedback", "issues": ["Cookie consent banner still overlaps lower-left form area (carried from iter35/36)."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter36_feedback_support.py",
+    "/app/backend/tests/test_iter35_admin_tabs.py",
+    "/app/test_reports/pytest/iter37_results.xml",
+    "/app/test_reports/pytest/iter37_admin_tabs.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "feedback_routes.py L102 defensive check accepting BOTH posted_by_id and homeowner_id is good (backward compat if any legacy doc had homeowner_id).",
+    "HomeownerCompletionReminder.jsx L33-36 path-prefix skip is correct; consider also skipping /pro and /complete-job if those flows surface elsewhere, but not blocking.",
+    "Reminder still uses sessionStorage dismiss key keyed on user.id; safe."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (35/35 executed PASS; 1 SKIP unchanged)", "frontend": "100% on tested flow (/feedback reminder skip + form interactive)"},
+  "test_credentials": "admin@servicemarket.eu/Admin123!, homeowner@test.com/Test123!, pro@test.com/Test123!",
+  "seed_data_creation": "Tests create TEST_iter36-prefixed feedback + 1 support ticket (auto, namespace-prefixed).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter36 fixes are now fully verified. test_homeowner_can_file_on_own_job and test_admin_support_patch_resolved both PASS. /feedback page no longer shows HomeownerCompletionReminder modal. All iter35/iter36 regressions green. No outstanding test failures for this scope.",
+  "rca of the issue": "Original iter36 bug RCA: feedback_routes.py used non-canonical field name homeowner_id while jobs collection canonical field is posted_by_id. Fix applied: L102 now accepts both. Verified via curl + automated TestSupportTickets::test_homeowner_can_file_on_own_job (PASS). Frontend reminder fix: path-prefix check on /feedback /admin /auth in HomeownerCompletionReminder.jsx useEffect prevents modal mount. Verified by Playwright login + navigate."
+}

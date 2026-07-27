@@ -1,0 +1,54 @@
+{
+  "summary": "Iter34 backend + frontend verification of Payments + Storno + Tax Toolkit P1. Backend: 10/10 PASS on iter33 suite (partial payments, storno enforcement, accountant share lifecycle/rotation/RBAC, USt-VA dedup). Supplemental iter34 suite: 4/6 PASS (1 SKIP for receipts PATCH path — no seed receipts present, 1 REAL BUG — see below). Frontend: MyInvoicesPage renders all required UI (4 KPI tiles, 'All/Issued/Paid' status tabs, status pills STORNO/CANCELLED/PAID/ISSUED, red left border + '↺ RG-XXXX' on storno cards, line-through+faded on cancelled cards, Add payment + Mark paid + Storno buttons on eligible cards). Payments modal opens with [data-testid=myinv-payments-modal] showing 3-tile summary (Total/Paid/Outstanding) + 'Record a payment' form (Amount/Method/Date/Note) + 'Record payment' submit. Tax Toolkit /tax Reports tab has 'Share with your accountant' card with '+ Generate accountant link' button and Year-end PDF / Revenue CSV / Expenses CSV downloads + UST-VA deadlines block. /accountant/{token} renders fully chromeless (no Home/BrowseJobs nav) with ServiceMarket·Tax overview header, READ-ONLY badge, Weber Installations / UID 123/4567 / Vienna, 3 KPI tiles (Revenue €612, Expenses €0, Profit €288 in green), Year selector (2026/2025/2024), Quarterly USt-VA buckets table (Q1-Q4 net/vat/gross/invoices), 3 download buttons. /accountant/{badtoken} shows clean 'Link revoked' card, also chromeless. PDF + CSV public downloads return 200 with correct content-type and no auth required.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "GET /api/tax/dashboard", "issue": "outstanding_brutto returns NEGATIVE value (-756 in seed data) because storno invoices are summed into pending_brutto. ROOT CAUSE: in services/tax_reports.py revenue_summary(), the cancelled-exclusion check is `pay_status == 'cancelled'` (line 82), but storno docs are created in routes/pro_invoicing_routes.py line 502 with status='issued' and NO payment_status field. So pay_status falls back to 'issued', the storno's negative brutto is added to pending_brutto, and the dashboard tile breaks. Same bug bleeds into MyInvoicesPage 'PENDING -€ 108,00' KPI tile.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "GET /api/pro-invoices", "issue": "Storno invoices return payment_status=None and outstanding=None. Should either omit these from cards entirely OR explicitly set payment_status='storno' (matching the spec's status-pill values) for self-documenting filtering."},
+      {"endpoint": "GET /api/tax/public/accountant/{token}", "issue": "Quarterly USt-VA bucket invoice count includes storno + cancelled docs (Q2 reports '13 invoices' for seed data even though net/vat/gross correctly reflect only the 3 non-cancelled). Either exclude is_storno + cancelled docs from the count column, or rename column to 'docs' for clarity."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "MyInvoicesPage KPI tiles", "issue": "'PENDING' tile shows -€108,00 (negative) — same root cause as backend outstanding bug. 'THIS MONTH' tile shows -€288,00 negative, also affected by storno math. Both tiles should exclude is_storno docs from their sums.", "selector": "[data-testid='myinv-stat-Pending']", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "MyInvoicesPage status tabs", "issues": ["Filter tabs only show 'All / Issued / Paid' but the spec mentions 5 status pills (issued/partial/paid/storno/cancelled) — adding Partial/Storno/Cancelled filter chips would help pros filter by status."]},
+      {"screen": "Accountant public page", "issues": ["Quarterly USt-VA bucket invoice count includes storno+cancelled — shows '13 invoices' for Q2 but net/vat/gross only reflect 3 non-cancelled. Confusing for accountants."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter33_payments_storno_tax_p1.py",
+    "/app/backend/tests/test_iter34_supplemental.py",
+    "/app/test_reports/pytest/iter34_results.xml"
+  ],
+  "action_items": [
+    "HIGH (data integrity): Fix tax dashboard outstanding_brutto sign. Either (a) in /app/backend/routes/pro_invoicing_routes.py line 502 storno_doc set 'payment_status': 'storno' (and a new tax_reports.py exclusion), OR (b) in /app/backend/services/tax_reports.py revenue_summary line 81-85, also skip when inv.get('is_storno') is True. Approach (a) is preferred — it makes the storno's status pill explicit and removes the need for double-checking in every aggregation site.",
+    "HIGH (frontend): MyInvoicesPage 'PENDING' and 'THIS MONTH' KPI tiles compute sums client-side — exclude is_storno=true invoices (or fix backend to never expose negative aggregates).",
+    "MINOR: Add Partial / Storno / Cancelled filter chips alongside All / Issued / Paid in [data-testid='myinv-status-tabs'].",
+    "MINOR: Public accountant page quarterly bucket count should exclude storno + cancelled docs OR be labelled 'docs' instead of 'invoices'."
+  ],
+  "critical_code_review_comments": [
+    "Storno enforcement is correct (cannot storno a storno, cannot double-storno, cannot record payment on storno/cancelled — all 400 enforced). Original invoice gets cancelled_by_storno_id + payment_status='cancelled', storno doc gets negative net/vat/brutto with same line-items. AT compliance preserved (both docs remain in books, net-zero pair).",
+    "Accountant share lifecycle works perfectly: POST issues + rotates (old token 404s), DELETE revokes (subsequent GET 404), homeowner gets 403, public endpoint serves JSON + CSV (text/csv) + PDF (application/pdf %PDF prefix) with no auth.",
+    "USt-VA dedup invariant holds across notifications collection — no duplicate (user_id, kind, dedup_key) tuples.",
+    "Chromeless /accountant/:token route is properly isolated from global Header/MobileNav.",
+    "Partial-payment math is correct end-to-end: 30% payment → status='partial', remainder → status='paid', DELETE reverts to 'issued' with outstanding=brutto_total. paid_total + outstanding always = brutto_total.",
+    "REAL BUG: tax_reports.revenue_summary doesn't exclude is_storno=true docs from pending_brutto. The fix is one line — add `if inv.get('is_storno'): continue` before the pending math, OR set payment_status='storno' on storno-doc creation."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter34_supplemental.py (NEW — dashboard outstanding sign + receipts list + public PDF/CSV no-auth + bad-token 404)"
+  ],
+  "success_rate": {
+    "backend": "93% (14/15 — 10/10 iter33 + 4/5 iter34, 1 dashboard outstanding sign bug)",
+    "frontend": "85% (MyInvoices UI + modals + Tax Reports + Accountant public all render correctly; Pending+ThisMonth KPI tiles show negative values due to backend bug)"
+  },
+  "test_credentials": "pro@test.com / Test123! (has tax + invoice toolkit), homeowner@test.com / Test123!. From /app/memory/test_credentials.md.",
+  "seed_data_creation": "Backend tests temporarily issue + delete payments and create storno docs on the pro's open invoices, then clean up. Accountant share tokens are rotated/revoked in finally blocks. Seed pro has 13 invoices in Q2 2026 (3 issued / 5 cancelled / 5 storno).",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "The single material bug is the storno-not-excluded-from-pending defect in tax_reports.revenue_summary (manifests as negative outstanding_brutto on /api/tax/dashboard AND negative 'PENDING' / 'THIS MONTH' tiles on MyInvoicesPage). Everything else — partial-payment lifecycle, storno creation + cancellation linkage, accountant token issue/rotate/revoke/RBAC, chromeless /accountant/:token rendering with KPIs + quarterly table + 3 downloads + year selector — works correctly. iter33 test suite (10/10 PASS) covers the API surface comprehensively. Use /app/backend/tests/test_iter34_supplemental.py as the regression for the dashboard bug — it'll go green once the fix lands.",
+  "rca of the issue": "BUG RCA: In /app/backend/routes/pro_invoicing_routes.py line 502 the storno_doc inserted into pro_invoices has `status: 'issued'` and NO payment_status field. In /app/backend/services/tax_reports.py revenue_summary() lines 80-94, the aggregator reads `pay_status = inv.get('payment_status') or inv.get('status') or 'issued'` and only excludes when `pay_status == 'cancelled'` — so the storno (with negative brutto_total) is treated as a normal open invoice and its negative brutto is summed into pending_brutto. Result: dashboard outstanding_brutto = (real open issued) + (negative storno bruttos) = -756 (negative) instead of +612 (positive). FIX (1 line, recommended): In services/tax_reports.py before the pending math (right after `if pay_status == 'cancelled': continue`), add `if inv.get('is_storno'): continue`. Alternative fix: in pro_invoicing_routes.py line 502 set `'payment_status': 'storno'` on creation and add 'storno' to the cancelled-equivalent exclusion list."
+}

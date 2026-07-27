@@ -1,0 +1,28 @@
+{
+  "summary": "E2E frontend validation of the rebuilt single combined Homeowner /find-pros page (pros cards + Leaflet directory map + GPS) plus admin CSV import. 22/22 critical UI checks passed. All requested data-testids render; trust badges appear only on Weber + Datenverarbeitung (2 verified, 2 certified, 2 insured) and NOT on the 3 TEST Trial GmbH pros; GPS toggle activates radius bar with all four radius buttons (10/25/50/100), produces pro-distance-<id> labels on 2 pros, and Clear restores the country-wide overview; directory contact modal opens & closes; group/city filter and search work; navigation cleanup confirmed (homeowner desktop-nav-more absent, mobile-more sheet contains no Pro Heatmap/business-map link, mobile-nav-find-pros still present); /find-pros has 0px horizontal overflow at 390px; admin CSV upload via native fetch path increased hm-admin-total from 8900 → 8902 (matches the 2 test rows uploaded).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Admin CSV import flash", "issue": "The 'Imported: X new, Y updated, Z skipped' toast disappears quickly so it wasn't captured by Playwright, but hm-admin-total correctly incremented by +2 confirming the native-fetch multipart upload succeeded. Consider keeping the flash visible longer (e.g. 5-6s) for better UX/observability.", "affected_selectors": ["csv-import-btn", "csv-file-input", "hm-admin-total"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_65.json"],
+  "action_items": [
+    "(Minor/optional) Increase the admin CSV import flash message duration so the 'Imported: X new, Y updated, Z skipped' text remains visible at least 4-5 seconds for clearer UX and easier automated verification."
+  ],
+  "critical_code_review_comments": [
+    "FindProsPage.jsx (446 lines) is approaching the 500-line soft limit — consider extracting ContactModal and BusinessRow into their own files for maintainability.",
+    "displayPros .filter keeps pros with distance_km === undefined (no service center) even when GPS is on; this is intentional (so 'TEST Trial GmbH' still appears in the verified-pros section) but could confuse homeowners expecting a strict radius filter — UX decision worth confirming with product.",
+    "Console warning: Leaflet canvas does multiple getImageData calls without willReadFrequently=true. Non-blocking but flagged by the browser; the BusinessHeatMap canvas renderer could opt in for better performance on large marker counts."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped per request)", "frontend": "100% (22/22 critical checks)"},
+  "test_credentials": "homeowner@test.com / Test123!, admin@servicemarket.eu / Admin123! (read from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Uploaded a 2-row in-memory CSV (TEST_AlphaShop, TEST_BetaShop) via the admin Heatmap Import CSV path. They now live in the directory collection — main agent may want to delete rows where osm_id starts with 'TEST_OSM_' for cleanup, although they will not show on the homeowner page unless searched.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend already covered by pytest tests/test_iter65_directory_geo.py (per main agent). Frontend /find-pros and admin Heatmap CSV upload validated end-to-end at iteration_65. Geolocation is granted at the browser-context level with origin scope; use page.context.grant_permissions(['geolocation'], origin='https://pro-toolkit-hub.preview.emergentagent.com') + set_geolocation({lat:48.2082, lng:16.3738}) for Vienna. Always dismiss the cookie banner ('Accept all') and the homeowner 'Quick reminder' modal ('Remind me later') before interacting. Never use wait_until='networkidle' on /find-pros — Leaflet tiles never go idle; use 'domcontentloaded' + explicit testid waits. The Admin CSV success flash is short-lived; verify via hm-admin-total delta instead.",
+  "rca of the issue": "No bugs found. The only minor observation is the short-lived admin CSV import flash — root cause is presumably the default flash auto-dismiss timeout in AdminHeatmap.jsx; verified via the +2 increment on hm-admin-total (8900 → 8902) that the native fetch multipart upload reached the backend, the pymongo bulk_write upsert succeeded, and the stats refetch ran. No mitigation required for functionality."
+}

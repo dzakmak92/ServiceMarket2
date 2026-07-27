@@ -1,0 +1,43 @@
+{
+  "summary": "Iter11 testing covered all backend + frontend cases for the new Pro Advanced Analytics endpoint and the dated weekly scheduler in Pro Settings. Backend 5/5 pytest green. Frontend: locked card on Standard, full pro card with 5 sub-cards after Mongo plan flip, dated scheduler prev/next/week-label working with PUT /api/availability network call confirmed, and /pros/<id> + /billing regressions clean.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter11_pro_analytics.py",
+    "/app/test_reports/pytest/iter11_results.xml"
+  ],
+  "verified_behaviors": [
+    "GET /api/analytics/pro-insights (pro@test.com) → 200 with all required keys (plan_tier, currency='eur', earnings_6m[6], funnel{quotes_sent,accepted,completed,rate_accept_pct,rate_complete_pct}, avg_response_minutes, category_conversion (<=5), peak_hours[24], totals{earned_6m,fees_6m,net_6m})",
+    "GET /api/analytics/pro-insights (homeowner@test.com) → 403",
+    "plan_tier field correctly reflects pro_profiles.plan_tier ('standard' → 'pro' → 'standard') via Mongo flip",
+    "GET /api/pros?country=AT returns Pro-tier first when pro@test.com flipped to 'pro' (verified via 'pro' in top 5 tiers)",
+    "/settings About Me tab: [data-testid=settings-avail-prev], [data-testid=settings-avail-next], [data-testid=settings-avail-week-label] all present",
+    "Clicking [data-testid=settings-avail-next] changed label from 'May 25 – May 31' to 'Jun 1 – Jun 7'",
+    "Clicking [data-testid=settings-avail-Mon-09:00-12:00-2026-06-01] toggled class (teal/cream) AND fired exactly 1 PUT /api/availability network call",
+    "/dashboard (Pro, plan_tier='standard'): [data-testid=adv-analytics-locked] visible, [data-testid=adv-analytics-upgrade-link] href='/billing', no adv-analytics-pro present",
+    "/dashboard (Pro, plan_tier='pro' via Mongo flip): [data-testid=adv-analytics-pro] visible with all 5 sub-cards (adv-earnings-card, adv-response-card, adv-funnel-card, adv-categories-card, adv-peak-hours-card); locked card hidden",
+    "Regression /pros/6a14b72e05a5dee99e39fd15 (Weber Installations) public profile (homeowner-logged): renders DatedAvailabilityMatrix with [data-testid=pro-cal-prev] and [data-testid=pro-cal-next]; 'Verified', 'Licensed', 'Insured' badges all now visible",
+    "Regression /billing: 8-benefit grid intact ('Featured placement', '30 portfolio', 'Advanced performance', 'Priority customer' all present in DOM)"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "analytics_routes.py L162-175: there is an unreachable fallback branch — `if not per_cat and all_quotes` re-fetches jobs with category projection, but the initial jobs_map was loaded with only {posted_at:1}, so the FIRST per_cat aggregation pass will always see job.get('category') == None and per_cat stays empty. Result: category_conversion will only ever be populated by the fallback re-fetch path. Suggest fixing initial projection to include 'category' OR removing the dead first pass.",
+    "analytics_routes.py L194: peak_hours filter uses `country: user.get('country', '')` (empty string fallback). If user has no country set, this matches jobs with empty-string country — could return misleading data. Consider skipping the filter entirely when user.country is missing.",
+    "AdvancedAnalytics.jsx L22: fetches /api/analytics/pro-insights even when the result will render the locked upgrade card. Wasted call for Standard pros — consider gating with plan_tier from /auth/me cache, or have backend return tiny payload when plan_tier='standard'."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter11_pro_analytics.py",
+    "/app/backend/tests/conftest.py (login timeout 30s → 90s to accommodate slow preview environment)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "homeowner@test.com / Test123!, pro@test.com / Test123!, admin@servicemarket.eu / Admin123! (all valid)",
+  "seed_data_creation": "None new. pro@test.com pro_profile.plan_tier was flipped 'standard' → 'pro' → 'standard' during tests and confirmed restored to 'standard'.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter11 entirely green. New endpoint /api/analytics/pro-insights validated end-to-end. AdvancedAnalytics widget + DatedAvailabilityMatrix shared component both render correctly. Note: the public profile uses testidPrefix='pro-cal' (so pro-cal-week-label, pro-cal-prev, pro-cal-next), while Pro Settings uses testidPrefix='settings-avail'. Initial preview login can take up to 60s — login timeout bumped to 90s in conftest.py. Minor code-review note for main agent: analytics_routes.py has a dead branch around line 162 in category_conversion logic (see critical_code_review_comments).",
+  "rca_of_the_issue": "N/A — no failing bugs found."
+}

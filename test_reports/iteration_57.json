@@ -1,0 +1,79 @@
+{
+  "summary": "Iteration 57 — full FRONTEND regression sweep across homeowner, pro (Explorer-active), and admin flows. Pre-check confirmed pro@test.com is Explorer-active with all toolkits unlocked (seed.py fix from iter56 is holding). Every major surface loads without 500/404, all toolkits (Invoice, Tax, PM) are unlocked end-to-end, the Send-Quote modal explicitly shows 'no contact fee' for the Explorer pro, the Pro Dashboard renders Cash-Flow and Win-Rate-by-Category KPIs WITHOUT pro-locked overlays, /billing has no horizontal overflow at 375px, and the admin Toolkits tab renders plan_tier='explorer' rows without crashing. A handful of minor cosmetic/labelling issues and one minor SPA-fallback issue found — no critical regressions.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Send Quote modal (Pro Browse Jobs)",
+        "issue": "Banner inside quote modal says 'PRO  Pro plan — no contact fee' for an Explorer-tier pro. Logic is correct (no fee is charged) but the label should reflect the Explorer tier, not 'Pro plan', to avoid confusing Explorer users about which plan they are on.",
+        "selector": "Send Quote modal banner ('Pro plan — no contact fee')",
+        "priority": "LOW"
+      },
+      {
+        "component": "Pro Settings (/settings) — Current Plan card",
+        "issue": "For Explorer-active pro, the Current Plan card reads 'PRO  Pro Your Plan  Pro plan active.' The pro is on the Explorer 3-month intro plan, not the standard Pro plan. Should display 'Explorer plan active' (or similar) with the days-remaining hint.",
+        "selector": "/settings page → CURRENT PLAN section",
+        "priority": "LOW"
+      },
+      {
+        "component": "SPA route fallback",
+        "issue": "Unknown SPA routes silently redirect to '/' (home) instead of showing a 404 page. Observed for /pro/dashboard, /pro/settings, /my-jobs (when navigated via direct goto before auth context warms up). Real routes are /dashboard, /settings, /dashboard (homeowner My Jobs). Add a catch-all 404 route for clarity.",
+        "selector": "react-router catch-all",
+        "priority": "LOW"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Homeowner — Post a PROJECT (not Task)",
+        "issue": "Filling the Project form (title, description, category=Painting, city=Vienna) and clicking the bottom submit button timed out — submit button did not become enabled / form did not submit within 30s. The TASK variant of the same form submitted successfully and redirected to /dashboard. Project form likely has additional required fields (e.g. budget or duration) without obvious validation feedback, leaving the submit button disabled silently. Add visible required-field hints / disabled-button tooltip on the Project form.",
+        "affected_selectors": ["/post-job page (Project tile)", "bottom button[type='submit']"]
+      },
+      {
+        "flow": "Homeowner — Accept a quote",
+        "issue": "Could not exercise the accept-quote → status=in_progress → chat/booking flow because no test homeowner job currently has a pending quote on it (existing open jobs show 'Quotes (0)'). Recommend pre-seeding at least one homeowner job with a pending pro quote so this critical flow is testable on every iteration."
+      }
+    ],
+    "design_issues": []
+  },
+  "verified_working_flows": [
+    "Homeowner login + Home (categories, search, post-job CTA) ✓",
+    "Homeowner Post a JOB (Quick Task) — fills, submits, redirects to /dashboard, new job appears in 'My Jobs' list ✓",
+    "Homeowner Find Pros — list renders, opens pro detail (Weber Installations) with PRO badge visible 3× ✓",
+    "Homeowner Messages/Inbox — conversation thread loads with appointment-booking calendar, message send works (TEST_iter57 hello from homeowner appears in thread) ✓",
+    "Pro login + Home (KPIs 3/2/47/4.0, Latest Jobs Near You) ✓",
+    "Pro Browse Jobs — Quick Tasks / Projects tabs, category filter, 18 quick tasks listed ✓",
+    "Pro Send-Quote modal — opens, shows 'no contact fee' for Explorer ✓",
+    "Pro Dashboard (/dashboard) — Revenue €222, Outstanding €222, Quote win rate 40%, Avg rating 4.0, Monthly activity chart, Cash flow timeline (PRO badge, UNLOCKED — no overlay), Win rate by category (PRO badge, UNLOCKED — no overlay), Recent quotes list ✓",
+    "Pro My Quotes — Applied (3) / Won (0) / Completed (2) / Complaints (0) / Lost (0) tabs ✓",
+    "Pro Settings (/settings) — About Me / Services & Areas / Portfolio & Reviews / Invoice details / Notifications / Account / Privacy sections all render ✓",
+    "INVOICE TOOLKIT (/my-invoices) — 3 invoices: RG-2026-0003 ISSUED €222 NON-ZERO, RG-2026-0002 STORNO, RG-2026-0001 CANCELLED. KPI tiles (Issued YTD €222 / Paid €0 / Pending €222 / This month €222). Tabs ALL/ISSUED/PARTIAL/PAID/STORNO/CANCELLED present. Sort+period filters present. Sequential numbering correct (0001→0002→0003). ✓",
+    "TAX TOOLKIT (/tax) — Dashboard with Revenue €222 / Outstanding €222 / Expenses €0 / Profit €0 / UST Due this quarter €37. Year selector 2024-2027. Sub-tabs DASHBOARD/UST-VA/EÜR/MILEAGE/SVS+EST/RECEIPTS/REPORTS. DATEV 2026 export panel. ✓",
+    "PM TOOLKIT (/projects) — Active Projects 1, Completed 0, Revenue/Pipeline tiles, 'Create project from a won job' picker with 3 won-job options, 1 active project listed (TEST_iter9 plumb fee). pm-pick-job select renders 3 options. ✓",
+    "/billing at 375px width — scrollWidth=375, NO horizontal overflow ✓",
+    "Admin login + /admin Overview — Total Users 7 / Active Pros 5 / MRR €0 / Pending Verifications 3, Revenue chart, Category Revenue chart, Recent Activity feed ✓",
+    "Admin Toolkits tab — renders WITHOUT CRASH for plan_tier='explorer' pro. Shows Invoice/Tax (BUNDLED, 20% adoption) with SUBS/MRR/STD-PRO breakdown ✓",
+    "Admin Billing tab — 108 invoices, status+year filters, INV rows for Markus Weber render ✓",
+    "Admin Invoicing tab — Subscriptions/Contact Fees/Online Payments/Invoice Data/Storno/Company Settings sub-tabs. Pro-membership invoice RG-2026-0001 listed with Austrian VAT breakdown (€29.99 net + €6.00 VAT = €35.99) ✓",
+    "Admin Verifications tab — 5 pros listed with licence/insurance status, View action present ✓"
+  ],
+  "test_report_links": ["/app/test_reports/iteration_57.json"],
+  "action_items": [
+    "[LOW] Update Send-Quote modal banner & Pro Settings Current-Plan card to display 'Explorer plan' (with days remaining) instead of 'Pro plan' when plan_tier='explorer'.",
+    "[LOW] Add a real 404 page (or at least redirect-with-toast) for unknown SPA routes so /pro/dashboard, /pro/settings etc. don't silently land on Home.",
+    "[MEDIUM] Investigate why the Post-a-PROJECT form submit stays disabled / doesn't submit after filling title+description+category+city. Likely a hidden required field (budget? duration?) — add inline validation messages so the user knows what's missing.",
+    "[MEDIUM] Seed at least one open homeowner job with a pending pro quote so the accept-quote → in_progress → chat/booking lifecycle can be regression-tested every iteration.",
+    "[Already known from iter56, non-critical] dev-time <span data-ve-dynamic> inside <option> on /projects produces a harmless hydration warning."
+  ],
+  "critical_code_review_comments": [
+    "Plan-label string ('Pro plan') is hard-coded in at least two places (Send-Quote modal banner, Settings Current-Plan card) — should be derived from plan_tier via a single helper (e.g. planLabel(plan_tier)) so Explorer/Standard/Pro all render correctly.",
+    "Missing React-Router catch-all <Route path='*' element={<NotFound/>}/> — every unknown URL currently lands on Home, masking bad links."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "n/a (frontend-only run)", "frontend": "~95% (3 minor labelling / fallback issues, 1 form-submit issue on Post-Project, 1 untestable flow due to seed gap; all other flows pass)" },
+  "test_credentials": "admin@servicemarket.eu / Admin123! ; homeowner@test.com / Test123! ; pro@test.com / Test123! (Explorer-active, all toolkits unlocked, 89 days remaining)",
+  "seed_data_creation": "Created 1 homeowner task during this run ('TEST_iter57 broken doorbell', Electrical, Vienna) which now appears in /dashboard My Jobs. Sent 1 message ('TEST_iter57 hello from homeowner') into existing Markus Weber conversation. Did NOT touch the Explorer dev controls (per instruction).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "pro@test.com is currently Explorer-active (89 days remaining, all 3 toolkits True, billing_mode='explorer_active') — the iter56 seed.py fix is holding across restarts. Real pro routes are /dashboard and /settings (NOT /pro/dashboard or /pro/settings — those silently redirect to /). Real homeowner 'My Jobs' route is /dashboard for the homeowner role too. Quote-accept flow is currently untestable because no open homeowner job has a pending pro quote — seed one before next regression. /my-invoices is the canonical invoice path, NOT /invoicing/pro/invoices. ve-dynamic hydration warning on /projects is dev-time noise — already documented, do NOT report as critical. Send-Quote modal shows 'Pro plan — no contact fee' for Explorer (correct logic, wrong label).",
+  "rca of the issue": "N/A — no critical regressions. Two cosmetic mislabels stem from a single root cause: there is no central planLabel(plan_tier) helper, so several UI surfaces still hard-code the string 'Pro plan' to mean 'subscribed pro' instead of branching on plan_tier ∈ {standard, pro, explorer}. Recommendation: introduce one helper in a shared utils file and reuse it everywhere a plan name is rendered."
+}

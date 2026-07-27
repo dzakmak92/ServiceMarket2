@@ -1,0 +1,75 @@
+{
+  "summary": "Comprehensive mobile 375px audit of all major pages. Tested 16 pages as homeowner, pro, and admin. Most pages render well at 375px with no horizontal overflow. Two key overflow issues found: (1) Messages/Inbox conversation pane overflows horizontally up to 476px when a thread is active, (2) Admin page header overflows at 407px. All other pages pass mobile layout check.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "InboxPage / ConversationArea",
+        "issue": "Horizontal overflow 476px (101px over 375px) when active conversation is open as Pro. ConversationTopPanel (flex-shrink-0) and its children push width beyond viewport. HO side: 388px (13px over). Visible: chat header cuts off, composer action buttons (phone/WA/live-location) overflow right edge, map tiles extend beyond viewport.",
+        "selector": "[data-testid='inbox-shell'] > div.flex-1",
+        "priority": "HIGH",
+        "file_ref": "/app/frontend/src/pages/shared/InboxPage.jsx line 378 - add min-w-0 overflow-x-hidden to conversation area div; /app/frontend/src/pages/shared/inbox/ConversationComposer.jsx - composer row with multiple w-11 buttons may need wrapping or smaller buttons on mobile"
+      },
+      {
+        "component": "AdminPage / admin-header",
+        "issue": "Admin header overflows at 407px (32px over 375px). Header has ServiceMarket logo + ADMIN badge text + notification bell + shield icon + avatar. Too many elements in flex row for 375px. admin-header-inner class missing overflow-hidden.",
+        "selector": ".admin-header-inner",
+        "priority": "MEDIUM",
+        "file_ref": "/app/frontend/src/pages/admin/AdminPage.jsx line 110 - admin-header-inner; /app/frontend/src/index.css admin-header-inner - consider hiding 'ServiceMarket' text or reducing ADMIN badge on xs screens"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Messages - ConversationComposer",
+        "issues": ["When contact is unlocked as Pro user, the composer shows: attachment icon + textarea + phone btn (w-11) + WhatsApp btn (w-11) + live-location btn (w-11) + send btn. At 375px with padding, this row is borderline tight. Consider wrapping action buttons into a secondary row on mobile or reducing their size to w-9."]
+      },
+      {
+        "screen": "Admin Header",
+        "issues": ["'ServiceMarket' text in admin header could be hidden on xs screens (show only logo mark), freeing ~90px. ADMIN badge is decorative; could be shown on sm+ only."]
+      },
+      {
+        "screen": "My Quotes tabs",
+        "issues": ["Tab bar 'Applied | Won | Completed | Com >' shows scroll indicator '>' on right - intentional overflow-x-auto behavior. Visually acceptable but the truncation of 'Completed' is slightly confusing. Minor."]
+      }
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Fix Messages/Inbox conversation area overflow: Add `min-w-0 overflow-x-hidden` to the conversation pane div in InboxPage.jsx (line 378). Also add `overflow-x-hidden` to InboxPage root div (line 365).",
+    "Investigate ConversationTopPanel (flex-shrink-0) and MonthBookingCalendar - ensure they respect container width with min-w-0 on all nested flex/grid children.",
+    "Fix Admin page header overflow: In AdminPage.jsx header, hide 'ServiceMarket' text on mobile (add `hidden sm:inline` to the text span, line ~113). The admin-header-inner should not need changes if text is hidden.",
+    "Consider making ConversationComposer action buttons smaller (w-9 instead of w-11) on mobile when multiple contact buttons are visible simultaneously."
+  ],
+  "critical_code_review_comments": [
+    "InboxPage.jsx line 378: `flex flex-1 flex-col bg-cream-soft` - missing `min-w-0`. Without min-w-0 on a flex child, the browser won't constrain it to parent width, causing the child's overflow children to push the page wider.",
+    "InboxPage.jsx line 365: Root inbox shell `flex h-[calc(100dvh-...)] bg-paper` - also missing `overflow-x-hidden`. Adding this would prevent horizontal scrolling even if children overflow.",
+    "ConversationComposer: The composer row has up to 4 fixed w-11 (44px) round buttons + 1 send button + uploader + textarea. On a 375px screen with p-3 padding, this is approximately: 12px + 40px + 6px + flex(auto) + 6px + 44px + 6px + 44px + 6px + 44px + 6px + 46px + 12px = ~272px minimum. Textarea gets ~103px which is borderline usable.",
+    "AdminPage header: The header structure (logo + 'ServiceMarket' text + ADMIN badge + 3 icon buttons) totals ~380px+ at 375px viewport before padding. Hidden text on xs would fix this."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A (frontend-only audit)",
+    "frontend": "87% - 14/16 pages pass mobile layout (Messages and Admin have overflow issues)"
+  },
+  "test_credentials": "homeowner@test.com / Test123!, pro@test.com / Test123!, admin@servicemarket.eu / Admin123!",
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Mobile 375px audit complete. Two overflow issues: (1) Inbox/Messages conversation pane overflows horizontally - fix by adding min-w-0 overflow-x-hidden to InboxPage flex-1 conversation area. (2) Admin header overflows - fix by hiding 'ServiceMarket' text on mobile. All other 14 pages look clean and professional at 375px. Pages tested: Auth, HO Home, HO Dashboard, Post Job, Find Pros, HO Job Detail, Pro Home, Pro Dashboard (My Quotes), Browse Jobs, Pro Calendar, Settings, My Invoices, My Quotes, Messages, MobileNav, Admin.",
+  "rca_of_issue": {
+    "Messages overflow": {
+      "root_cause": "InboxPage.jsx uses flex layout where the conversation pane is `flex-1 flex-col`. In CSS flexbox, `flex-1` alone does not set min-width:0, so the item can grow wider than its container when children have intrinsic/fixed widths. The ConversationTopPanel and MonthBookingCalendar have fixed-width cells and flex-shrink-0 wrappers that push the total scrollWidth to 476px.",
+      "fix": "Add `min-w-0 overflow-x-hidden` to the conversation area div (InboxPage.jsx line 378). Also add `overflow-x-hidden` to the root inbox-shell div (line 365).",
+      "reproduction": "Login as pro@test.com, navigate to /messages. Any active thread with contact info unlocked will show overflow."
+    },
+    "Admin header overflow": {
+      "root_cause": "Admin header contains: 32px logo + 8px gap + ~120px 'ServiceMarket' text + 8px gap + ~56px ADMIN badge + 8px + 36px bell + 8px + 36px shield + 8px + 36px avatar = ~372px + 32px padding = ~404px total. This exceeds 375px viewport.",
+      "fix": "Add `hidden sm:inline` to the 'ServiceMarket' text span in AdminPage.jsx. This reduces left side to ~100px, giving total ~240px + padding = ~272px, well within 375px.",
+      "reproduction": "Login as admin@servicemarket.eu, navigate to /admin."
+    }
+  }
+}

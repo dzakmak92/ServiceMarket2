@@ -1,0 +1,43 @@
+{
+  "summary": "First E2E test of ServiceMarket. Backend: 29/30 pytest passed (one real bug: /api/auth/me missing 'id' field). Frontend: all critical flows verified across homeowner/pro/admin roles. Stripe checkout button present, cookie consent works, language switcher visible, post-job wizard renders, dashboards/billing/admin tabs all load. ProtectedRoute redirects unauthenticated users correctly. Translate (deep-translator DE->EN) works.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "GET /api/auth/me", "issue": "Returns only '_id' — missing 'id' field. /api/auth/login DOES include both. The /me handler returns get_current_user dict directly without passing through serialize_doc(). Review request explicitly requires BOTH fields present everywhere.", "priority": "HIGH"}
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Admin Panel tabs", "issues": ["Tab label shows raw i18n key 'Admin_categories' instead of localized text 'Categories' — likely a missing translation key in LangContext for admin.categories tab"]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_servicemarket_api.py",
+    "/app/backend/tests/conftest.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Fix /api/auth/me to wrap response via serialize_doc(user) (or attach 'id' alongside '_id') so frontend receives both ids consistently",
+    "Add translation key for 'admin.categories' tab (currently rendering raw key 'Admin_categories' in EN)"
+  ],
+  "critical_code_review_comments": [
+    "/api/auth/me returns raw mongo doc (only '_id' string assigned). Should call serialize_doc() to expose both 'id' and '_id' — same pattern used in register/login.",
+    "Quote schema field is 'price' (int) not 'amount' — consider documenting in OpenAPI tags/descriptions.",
+    "Stripe checkout requires 'origin_url' body param — frontend BillingPage must send window.location.origin; verify implementation matches.",
+    "FRONTEND_URL in backend/.env is hardcoded to the preview URL; webhook callback uses it. Confirm this is intentional for dev/preview only."
+  ],
+  "updated_files": [
+    "/app/backend/tests/__init__.py (new)",
+    "/app/backend/tests/conftest.py (new)",
+    "/app/backend/tests/test_servicemarket_api.py (new)"
+  ],
+  "success_rate": {"backend": "96.7% (29/30)", "frontend": "100% of tested flows"},
+  "test_credentials": "homeowner@test.com / Test123!, pro@test.com / Test123!, admin@servicemarket.eu / Admin123! — all confirmed working",
+  "seed_data_creation": "Tests create TEST_-prefixed jobs (5 visible in dashboard) and a TEST_reg_<ts>@example.com user via /api/auth/register. No cleanup script attached — safe because all start with TEST_ prefix.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend pytest located at /app/backend/tests/test_servicemarket_api.py — run: cd /app/backend && pytest tests/ -v. Only failing assertion is test_me_endpoint_has_id_and_underscore_id. All other endpoints (auth, jobs, pros, quotes, messages, translate, billing checkout, admin, profile, saved-pros, availability, notifications) pass with correct payload schemas: Quote uses 'price' not 'amount'; Checkout requires 'origin_url'; Availability slots use {day, slot, is_available}. Frontend selectors confirmed: auth-email-input, auth-password-input, auth-submit-button, cookie-accept-all, cookie-accept-essential, toggle-auth-mode, upgrade-btn (billing). After re-test, verify /api/auth/me now exposes both 'id' and '_id'.",
+  "rca_of_the_issue": "Root cause of /me missing 'id': auth_routes.py:94-95 returns the user dict from get_current_user() directly. auth.py:70 only sets user['_id'] = str(...). Fix: change /me handler to `return serialize_doc(user)` (already imported in auth_routes.py line 6). The serialize_doc helper in utils.py was patched to emit both 'id' and '_id', but /me bypasses it."
+}

@@ -1,0 +1,50 @@
+{
+  "summary": "Iter26 (4 bug fixes round) tested end-to-end. Backend: 5/5 PASSED in /app/backend/tests/test_iter26_bug_round.py (homeowner sees all jobs by default, status filters work, share-location PATCH returns 200, draft-from-job blocks in_progress with 400/402). Frontend: all 4 user-reported asks are working visually — (1) Homeowner Dashboard /dashboard tabs all show non-zero counts (Active 12 / In Progress 3 / Completed 1) and switching tabs filters correctly; (2) MyQuotes Won tab and Inbox ConversationHeader both render the Click-to-Invoice button (greyed Invoice button with lock icon for in_progress, matching the 'locked' visual state); (3) share-location works — many '📍 Address shared: …' system messages render in conversations + new PATCH endpoint hit; the composer share-location button data-testid IS present in source (ConversationComposer.jsx line 78); (4) Pro Header AND MobileNav include 'My Invoices' link RIGHT AFTER 'My Quotes' (nav order verified: Home, Browse Jobs, My Quotes, My Invoices, Dashboard, Messages, Billing). HomeownerCompletionReminder: appears on login, body says 'You have 20 accepted quotes', 'Review my jobs' CTA navigates to /dashboard?tab=active, reload does NOT re-show modal (sessionStorage works). ONE NEW CRITICAL ISSUE FOUND: 'Maximum update depth exceeded' React infinite-render loop is triggered when switching to the Won tab on /my-quotes (≈67 won quotes render with ClickToInvoiceLink) — see frontend_issues.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "MyQuotesPage Won tab (ClickToInvoiceLink × 67)", "issue": "React error 'Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render.' fires repeatedly the moment the Won tab is opened (67 rows of ClickToInvoiceLink). The page still renders the rows visually, but the render is in a feedback loop. Likely cause: a useEffect in ClickToInvoiceLink (or a child) with an object/function dep that is rebuilt every render, or a parent passing a non-memoised prop. Triage: inspect ClickToInvoiceLink.jsx useEffect deps + the props passed from MyQuotesPage row map.", "selector": "[data-testid^=\"click-to-invoice\"]", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_results": {
+    "backend": {
+      "test_homeowner_sees_all_jobs_without_status_param": "PASS",
+      "test_homeowner_can_filter_in_progress": "PASS (20 in_progress jobs returned, all status=in_progress)",
+      "test_homeowner_can_filter_completed": "PASS (2 completed jobs returned)",
+      "test_share_location_endpoint": "PASS (PATCH /api/jobs/{id}/share-location returns 200, address_full echoed)",
+      "test_draft_from_job_blocks_in_progress": "PASS (400 or 402 as expected)"
+    },
+    "frontend": {
+      "ho_completion_reminder_modal_appears_once_per_session": "PASS (data-testid=ho-completion-reminder visible after login; body: 'You have 20 accepted quotes waiting to be marked complete.'; CTA data-testid=ho-completion-reminder-cta visible; click navigates to /dashboard?tab=active; page reload does NOT re-show modal)",
+      "ho_dashboard_three_tabs_with_counts": "PASS (data-testid=tab-open 'Active Jobs (12)', tab-in_progress 'In Progress (3)', tab-completed 'Completed (1)' — all non-zero, tab switching filters list)",
+      "pro_top_nav_has_my_invoices_after_my_quotes": "PASS (nav order: Home → Browse Jobs → My Quotes → My Invoices → Dashboard → Messages → Billing; data-testid=mobile-nav-my-invoices present and href=/my-invoices)",
+      "pro_my_quotes_won_tab_click_to_invoice_locked_state": "PASS visually (every Won row shows Open chat + an Invoice button with lock icon in greyed/disabled state — correct for in_progress + has_toolkit; data-testid suffixes -active/-locked/-needs-toolkit confirmed in ClickToInvoiceLink.jsx source) — BUT see HIGH priority infinite-render bug above",
+      "pro_inbox_conversation_header_click_to_invoice": "PASS visually (ConversationHeader on an IN PROGRESS conversation shows an 'Invoice' button with lock icon in top-right, indicating locked state)",
+      "pro_inbox_share_location_visible_in_messages": "PASS (multiple '📍 Address shared: Hauptstraße 12, 1010 Wien' + '📍 Address shared: Mariahilfer Straße 1, 1060 Wien' system messages render in many conversations — proves the new PATCH /api/jobs/{id}/share-location flow is wired and producing the 'location' message documents)",
+      "composer_share_location_btn_testid_in_source": "PASS (ConversationComposer.jsx:78 has data-testid=\"composer-share-location-btn\")"
+    }
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter26_bug_round.py",
+    "/app/test_reports/pytest/iter26_results.xml"
+  ],
+  "action_items": [
+    "HIGH PRIORITY: Fix 'Maximum update depth exceeded' infinite render on /my-quotes Won tab. Inspect ClickToInvoiceLink.jsx useEffect dep arrays — likely an object/function prop is rebuilt every render. Suggest wrapping props passed from MyQuotesPage in useMemo/useCallback, OR removing redundant useEffects in ClickToInvoiceLink that mirror props into state. Reproduce by logging in as pro@test.com → /my-quotes → click Won tab → console shows the error stacking.",
+    "OPTIONAL: After fixing the infinite-loop bug, re-run a Playwright pass to assert ClickToInvoiceLink data-testid='*-locked' is found on all 67 rows (currently the suffix is present in source but the JS error may pre-empt the render in some cases)."
+  ],
+  "critical_code_review_comments": [
+    "frontend/src/components/ClickToInvoiceLink.jsx — likely culprit for the infinite-render error. Audit any useEffect's dep array and the shape of props received from the parent (quote, job, hasToolkit). If quote.job is rebuilt on every parent re-render, depending on it in a useEffect will loop. Memoise the parent's row props or accept primitive ids only.",
+    "frontend/src/pages/pro/MyQuotesPage.jsx — already correctly memoises counts + filtered with useMemo. The parent itself is fine; the regression is almost certainly inside ClickToInvoiceLink.",
+    "Backend /api/jobs/{id}/share-location handler in routes/job_routes.py is well-defended (checks job.status in ('in_progress','completed') and posted_by_id), correctly inserts the 'location' message + notification — no changes needed."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (5/5)", "frontend": "95% (all 4 user-reported asks visibly working; 1 NEW HIGH bug: React infinite-render loop on /my-quotes Won tab)"},
+  "test_credentials": "Read from /app/memory/test_credentials.md — homeowner@test.com / Test123! (already has 20 in_progress jobs so the reminder modal shows '20 accepted quotes'), pro@test.com / Test123! (has_invoice_toolkit=true, 67 won quotes, ≈13 applied), admin@servicemarket.eu / Admin123!.",
+  "seed_data_creation": "test_share_location_endpoint added 'Hauptstraße 12, 1010 Wien' as the address_full on at least one homeowner@test.com job. No other test data was injected.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All iter26 backend tests pass. The 4 user-reported asks are functionally working in the UI. The ONE outstanding issue is a React 'Maximum update depth exceeded' error on /my-quotes Won tab caused by ClickToInvoiceLink (or its consumer). Trigger: login as pro@test.com, navigate to /my-quotes, click the 'Won' tab. The 67 rows still paint, so the visual contract for issue (2) is met, but the infinite-render warning is a release-blocker for performance. After the main agent fixes the dep array in ClickToInvoiceLink, re-test by counting [data-testid$='-locked'] occurrences = 67.",
+  "rca of the issue": "MyQuotesPage maps 67 won quotes to <ClickToInvoiceLink quote={q} job={...} hasToolkit={hasToolkit} />. Each render rebuilds the inline objects/job lookup, and any useEffect inside ClickToInvoiceLink that depends on the full object (rather than a stable id) will retrigger every render → setState → re-render → useEffect → … infinite loop. Fix: depend only on primitive ids (e.g., quote.id, quote.status, job.status), or memoise the row props in the parent's .map() with useMemo per id. Backend is unaffected; the loop is purely client-side."
+}

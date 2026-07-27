@@ -1,0 +1,4 @@
+name;group;segment;city;country;phone;email;website;lat;lng;osm_id;address
+Example Bau GmbH;Bauen & Renovieren;Bauunternehmen;Wien;AT;+43 1 1234567;office@example.at;https://example.at;48.2082;16.3738;node/123456;"Beispielgasse 1, 1010 Wien"
+Muster Elektrik;Elektrik;Elektriker;Graz;AT;+43 316 999000;;https://muster-elektrik.at;47.0707;15.4395;node/234567;"Hauptstraße 5, 8010 Graz"
+Garten Profi e.U.;Garten & Außenbereich;Garten- & Landschaftsbau;Linz;AT;;kontakt@gartenprofi.at;;48.3069;14.2858;node/345678;

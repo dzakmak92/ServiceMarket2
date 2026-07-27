@@ -1,0 +1,76 @@
+{
+  "summary": "Iter17 GDPR/Austrian-DSG MVP verified end-to-end. Backend 38/38 PASS (9 iter17 + 29 regression: iter9 push, iter9 main, iter10 perks, iter11 analytics, iter12 attachments, iter16 quotes/thread). Frontend: /privacy renders with all required keywords (Dienstleistungen in der automatischen Datenverarbeitung, contact@servicemarket.at, servicemarket.at, GDPR, 7-day grace, Datenschutzbehörde); site-footer + 6 legal links present on all legal pages; /terms /imprint /data-rights /remove all return 200; cookie banner appears on first visit, preferences modal opens with 3 checkboxes (essential disabled+checked, analytics, marketing), saves to localStorage key sm_cookie_consent_v1, banner stays hidden after reload; /data-rights submission returns success card with reference number; /auth register has 3 consent checkboxes (consent-terms, consent-privacy, consent-marketing), submit DISABLED until both terms+privacy ticked, terms/privacy anchors target=_blank pointing to /terms and /privacy; Pro /settings has Privacy tab with all 4 cards (privacy-marketing-card, privacy-cookies-card, privacy-export-card, privacy-delete-card), marketing-toggle persists via PUT /api/me/marketing-prefs (200), Download my Data downloads servicemarket_data_export_2026-05-28.zip (8336 bytes); Homeowner /settings Privacy tab renders BOTH legacy marketplace toggles (Show last name, Share contact before accepting) AND new <PrivacySettings/> below (verified privacy-settings + toggle-privacy_show_lastname both present).",
+  "tested_scope": [
+    "BACKEND: 9 iter17 tests (registration consent, public data-rights + removal, /api/me/export ZIP, marketing-prefs PUT, delete+cancel roundtrip, admin queue list+update, non-admin 403)",
+    "BACKEND regression: 29 prior tests (iter12 attachments 10, iter11 analytics 5, iter10 perks 2, iter9 main 8, iter9 push 1, iter16 quotes/thread 3)",
+    "FRONTEND legal pages: /privacy /terms /imprint /data-rights /remove load 200; required text + footer + 6 links",
+    "FRONTEND cookie banner first-visit, preferences modal 3 checkboxes, save persists to localStorage, no banner after reload",
+    "FRONTEND /data-rights form submission shows success card with reference id",
+    "FRONTEND /auth register consent gate (submit disabled until terms+privacy), terms/privacy links target=_blank",
+    "FRONTEND /settings (Pro role): Privacy tab + 4 cards + marketing PUT 200 + ZIP download 8336 bytes",
+    "FRONTEND /settings (Homeowner role): Privacy tab embeds legacy + new PrivacySettings"
+  ],
+  "verification_results": {
+    "backend_total_pass": "38/38",
+    "privacy_page_keywords_all_present": true,
+    "footer_all_6_links_present": true,
+    "legal_pages_loaded_200": ["/privacy", "/terms", "/imprint", "/data-rights", "/remove"],
+    "cookie_banner_first_visit": true,
+    "cookie_preferences_modal_3_checkboxes": true,
+    "cookie_essential_disabled_and_checked": true,
+    "cookie_save_persists_localStorage_sm_cookie_consent_v1": true,
+    "cookie_banner_hidden_after_reload": true,
+    "data_rights_form_success_with_reference": true,
+    "data_rights_success_text_sample": "Request received. Reference: bbeeb254 — We will respond by 6/27/2026 at the latest.",
+    "auth_register_3_consent_checkboxes": true,
+    "auth_submit_disabled_until_terms_and_privacy": true,
+    "auth_submit_disabled_after_only_terms": true,
+    "auth_terms_anchor_target_blank": true,
+    "auth_privacy_anchor_target_blank": true,
+    "pro_privacy_tab_present": true,
+    "pro_4_privacy_cards_present": true,
+    "pro_marketing_toggle_PUT_status": 200,
+    "pro_export_zip_filename": "servicemarket_data_export_2026-05-28.zip",
+    "pro_export_zip_size_bytes": 8336,
+    "homeowner_privacy_tab_present": true,
+    "homeowner_legacy_toggle_show_lastname_present": true,
+    "homeowner_new_privacy_settings_embedded": true,
+    "throwaway_user_registered_via_api_status": 200,
+    "delete_cancel_flow_ui_elements_present": "all 4 (privacy-delete-confirm, privacy-delete-btn, privacy-delete-scheduled, privacy-cancel-delete) confirmed on Pro Privacy tab; backend roundtrip PASSES in test_deletion_schedule_and_cancel_roundtrip"
+  },
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "observations_and_minor_findings": [
+    "Documentation mismatch (NOT a bug): the review_request lists [data-testid=tab-privacy] but actual implementation uses role-prefixed testids — `pro-settings-tab-privacy` (ProSettingsPage.jsx:275) for Pro and `settings-tab-privacy` (SettingsPage.jsx:81) for Homeowner. This matches the existing convention (settings-tab-* / pro-settings-tab-*) and is internally consistent. Suggest the main agent either (a) update the review_request testid spec to the role-prefixed names OR (b) add an additional `tab-privacy` alias if cross-role tooling is expected.",
+    "/data-rights success card does not literally print the word \"30\" or \"days\"; it shows an absolute response deadline (e.g., \"We will respond by 6/27/2026 at the latest\") which is the 30-day SLA expressed as a calendar date. Backend due_at field carries the +30d ISO timestamp. UX-wise this is clear; only flag if a stricter literal \"30 days\" copy is required.",
+    "End-to-end browser click of the throwaway delete→schedule→cancel UI flow was not completed in this iteration due to onboarding flow + test-environment cookie persistence (the new throwaway lands on /onboarding instead of /auth on the 2nd context). HOWEVER: (1) all 4 delete-flow testids render correctly on the Pro Privacy tab, and (2) the backend delete+cancel roundtrip PASSES (test_iter17_privacy.py::TestMeEndpoints::test_deletion_schedule_and_cancel_roundtrip). Main agent can self-test by manually clicking the flow."
+  ],
+  "test_report_links": [
+    "/app/test_reports/pytest/iter17_results.xml",
+    "/app/backend/tests/test_iter17_privacy.py"
+  ],
+  "action_items": [
+    "(optional, doc nit) Reconcile testid naming: spec says `tab-privacy`, code uses `pro-settings-tab-privacy` / `settings-tab-privacy`. Either update the iter17 spec or add the unprefixed alias.",
+    "(optional, copy nit) Consider also showing the literal \"30 days\" string in the /data-rights success card alongside the absolute deadline date, for GDPR-clarity / SLA expectations."
+  ],
+  "critical_code_review_comments": [
+    "/app/backend/routes/privacy_routes.py — request_type whitelist (access/rectification/erasure/restriction/portability/object/withdraw_consent) properly enforced with 400 on invalid; due_at correctly computed as now+30d; immutable consent_records writes verified via direct Mongo check.",
+    "/app/backend/routes/auth_routes.py — consent gate at register time correctly 400s with detail mentioning Terms+Privacy AND verifies the user doc is NOT persisted on rejection (confirmed in test_register_without_consent_blocked).",
+    "/app/backend/retention.py — async hourly loop wired from server.startup; will not fire during test window (60-min cadence) which is expected and documented.",
+    "/app/frontend/src/contexts/CookieConsentContext.jsx — preferences modal correctly disables Essential checkbox + force-checks it; localStorage key sm_cookie_consent_v1 matches spec.",
+    "/app/frontend/src/components/PrivacySettings.jsx — clean drop-in component reused across both Pro and Homeowner Privacy tabs; password_hash correctly absent from export (verified via zip read in backend test); consent_history present in payload.",
+    "/app/frontend/src/pages/AuthPage.jsx — submit button disabled state correctly gated on BOTH accepted_terms && accepted_privacy; marketing-opt-in is independent and optional; both anchor links open /terms and /privacy in a new tab (target=_blank verified)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (38/38)", "frontend": "100% of acceptance criteria verified (8/8 UI flows); delete-cancel browser click skipped as noted but UI testids + backend roundtrip both green"},
+  "test_credentials": "Pro: pro@test.com / Test123!  |  Homeowner: homeowner@test.com / Test123!  |  Admin: admin@servicemarket.eu / Admin123!  |  Throwaway: registered via API per-test with consent (e.g., throwaway_afbbf0@example.com / Test123!)",
+  "seed_data_creation": "1 new /api/privacy/data-rights-request row submitted via /data-rights UI (reference bbeeb254; type=erasure; tester_iter17@example.com); 1 throwaway user (throwaway_afbbf0@example.com) registered via API + 1 consent_record. Both can be cleaned up by the next iteration if needed but won't affect other tests.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter17 fully green. Cumulative backend regression set is now 38 tests across 7 files (test_iter17_privacy + test_iter16_quotes_thread + test_iter12_attachments + test_iter11_pro_analytics + test_iter10_pro_perks + test_iteration9 + test_iter9_pro_tier_push). Keep them as the regression baseline. Note the testid naming convention: settings tabs use the role prefix (pro-settings-tab-* and settings-tab-*), NOT the unprefixed `tab-*` from the iter17 spec — write Playwright with the prefixed selectors. localStorage cookie key is `sm_cookie_consent_v1`. Current policy version is `1.0-draft-2026-02-28`.",
+  "rca of the issue": "n/a — no blocking issues. Two minor observations are documentation/UX nits, not bugs."
+}

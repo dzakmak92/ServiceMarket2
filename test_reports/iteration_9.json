@@ -1,0 +1,52 @@
+{
+  "summary": "Iter9 testing covered all 8 requested backend behaviors (DELETE notifications, GET /billing/next-invoice + 403 path, POST /billing/admin/run-monthly + 403 path, GET /pros/<id> bookings field, GET /pros/<proId>/bookings, fee_log.due_at stamping, Standard-tier delayed push, Pro-tier instant push via Mongo plan_tier flip) and 5 frontend behaviors (Clear-all button, Next-invoice card, badge pills, weekly calendar with prev/next, plan-benefit copy). 10/10 backend tests PASS. Core frontend flows verified.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/pros/<pro_user_id>", "issues": ["'Verified' badge did not appear in the body for pro@test.com — Licensed and Insured DID appear. Likely the pro_profiles.is_verified flag is not set in seed for this pro, not a UI bug. Confirm via DB if intended."]},
+      {"screen": "/settings (pro)", "issues": ["No 'Verified' text seen in profile card — same likely cause: pro_profiles flag not set. Visual pill styling could not be verified through DOM scrape but pro-cal-prev/next testids exist on /pros page."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration9.py",
+    "/app/backend/tests/test_iter9_pro_tier_push.py",
+    "/app/test_reports/pytest/iter9_results.xml"
+  ],
+  "verified_behaviors": [
+    "DELETE /api/notifications → 200 {message:'Notifications cleared', deleted:N}; subsequent GET returns []",
+    "GET /api/billing/next-invoice (pro) → amount, fee_count, due_at ISO ending T00:00:00+00:00 on the 25th (future), cycle_start",
+    "GET /api/billing/next-invoice (homeowner) → 403",
+    "POST /api/billing/admin/run-monthly (admin) → 200 {invoices_created:int}",
+    "POST /api/billing/admin/run-monthly (pro) → 403",
+    "GET /api/pros/<pro_user_id> returns 'bookings' (array) and 'availability' (array)",
+    "GET /api/pros/<pro_profile_id>/bookings → 200 {bookings:[{date,day,slot}]}",
+    "Quote accept stamps fee_log.due_at on next 25th and increments fee_count by exactly 1",
+    "Standard pro receives NO instant new_job_match notification within 4s of /api/jobs POST",
+    "Pro-tier pro (plan_tier flipped to 'pro' via Mongo) receives new_job_match within ~1s",
+    "Frontend: bell panel opens with [data-testid=notification-panel], Clear-all button has red color (rgb(193,70,85)), clicking it zeroes unread_count",
+    "Frontend: /billing shows [data-testid=next-invoice-card] with €94.00 / 'Due on June 25 · 12 fees' / Pay-now button [data-testid=next-invoice-pay-now] when fee_count>0",
+    "Frontend: /pros/<pro_user_id> has [data-testid=pro-cal-prev] and [data-testid=pro-cal-next] confirming new DatedAvailabilityMatrix renders"
+  ],
+  "action_items": [
+    "Confirm whether pro@test.com's pro_profile is intended to have is_verified=true; if so, seed needs to set the flag so the Verified badge pill shows on both /settings and /pros/<id>.",
+    "(Cosmetic, optional) Translation copy 'Instant job alerts — 15-minute head start' was not found on the landing homepage — it likely lives on the /upgrade or pricing page, which was not crawled. Worth a quick visual confirm in EN/DE/TR/ES."
+  ],
+  "critical_code_review_comments": [
+    "push_routes.py: STANDARD_DELAY_SECONDS uses asyncio.create_task fire-and-forget for delayed pushes. In a multi-worker / restart scenario, scheduled tasks vanish — acceptable for MVP but flag for production (use Celery / APScheduler / Mongo-backed queue).",
+    "billing_routes.py admin/run-monthly: when a pro has invoiced fees but also receives new pending fees after the run, the pro_profile.monthly_fees field is NOT recomputed — only happens on Stripe-paid path. Minor: invoiced fees still count toward outstanding when paying via Stripe (pay-outstanding only queries status='pending'), so the invoiced ones could be skipped. Verify intentional.",
+    "pro_routes.py: GET /pros/{id} now does 4 sequential Mongo round-trips per request (user, reviews+homeowners loop, availability, bookings, saved). Consider $lookup/aggregation for hot path."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration9.py",
+    "/app/backend/tests/test_iter9_pro_tier_push.py"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "~85%"},
+  "test_credentials": "homeowner@test.com / Test123!, pro@test.com / Test123!, admin@servicemarket.eu / Admin123! (all valid)",
+  "seed_data_creation": "Created TEST_iter9 prefixed jobs (plumbing/Vienna) and one accepted quote with fee. pro@test.com plan_tier was temporarily flipped to 'pro' and restored to 'standard' in the pro-tier instant push test.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All iter9 backend endpoints green (10/10 pytest). Frontend bell/billing/calendar testids confirmed (notification-bell, notif-clear-all, next-invoice-card, next-invoice-pay-now, pro-cal-prev, pro-cal-next). One open question: pro@test.com's pro_profile may need is_verified=true in seed to make the Verified pill visible alongside Licensed/Insured which already show. Standard-vs-Pro tier push code path validated end-to-end against the live API (not just code review).",
+  "rca_of_the_issue": "N/A — no failing bugs found."
+}

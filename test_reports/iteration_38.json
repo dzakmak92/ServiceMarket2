@@ -1,0 +1,37 @@
+{
+  "summary": "Phase 2 UX overhaul (frontend-only) — scroll-snap tab strips + swipe gestures across 8 tabbed pages, plus collapsible AdminFilterBar on mobile. All 8 tab-strip components present with correct testid prefixes and auto-center the active tab on click. Filter bar mobile-toggle / active-count badge / responsive hide-on-md+ all working. Found and fixed 1 critical runtime bug in MyInvoicesPage (missing imports) — verified post-fix.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "MyInvoicesPage",
+        "issue": "[FIXED by tester] Missing imports caused uncaught runtime error 'ScrollSnapTabStrip is not defined' — entire /my-invoices route crashed with a red error overlay. ScrollSnapTabStrip, SwipeableTabPanel, and MYINV_TAB_KEYS were used but never imported/declared.",
+        "selector": "[data-testid=myinv-filter-strip]",
+        "priority": "CRITICAL (fixed)"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Verify tester's fix in /app/frontend/src/pages/pro/MyInvoicesPage.jsx (added `import ScrollSnapTabStrip, { SwipeableTabPanel } from '../../components/ScrollSnapTabStrip'` and `const MYINV_TAB_KEYS = ['all','issued','partial','paid','storno','cancelled']`).",
+    "Consider adding an ESLint rule (no-undef) or a CI build-time check to catch missing imports of locally-defined symbols before they reach runtime.",
+    "Consider running the production `yarn build` in CI — it would have caught the ReferenceError during compile."
+  ],
+  "critical_code_review_comments": [
+    "MyInvoicesPage.jsx had a runtime ReferenceError because ScrollSnapTabStrip + SwipeableTabPanel + MYINV_TAB_KEYS were referenced but never imported/defined — this would have been caught by a production build or a basic lint pass. Recommend adding `react/jsx-no-undef` enforcement.",
+    "ScrollSnapTabStrip auto-center logic in useEffect uses `strip.scrollTo({left: target, behavior: 'smooth'})` — works well on touch/desktop and active-tab centering was verified via measured scrollLeft change in 7/8 pages (FeedbackPage and MyQuotes don't overflow at 390px, which is expected).",
+    "AdminFilterBar mobile-toggle pattern is clean: chips hidden via `.md:block` class, mobile-toggle hidden via `.md:hidden`. Verified active-count badge correctly increments when search text or filter applied."
+  ],
+  "updated_files": [
+    "/app/frontend/src/pages/pro/MyInvoicesPage.jsx (added missing imports + MYINV_TAB_KEYS const)"
+  ],
+  "success_rate": { "backend": "n/a (frontend-only review)", "frontend": "100% after 1 fix" },
+  "test_credentials": "admin@servicemarket.eu/Admin123!, pro@test.com/Test123!, homeowner@test.com/Test123! (from /app/memory/test_credentials.md — all worked).",
+  "seed_data_creation": "None — used existing pro@test.com data which has invoices + 1 PM project.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Phase 2 testid prefixes verified: admin-tab-strip, pro-settings-tab-strip, tax-tab-strip, pm-tab-strip, my-quotes-tab-strip, myinv-filter-strip, tab-strip (homeowner dashboard), feedback-tab-strip. NOTE: Pro page routes are at top-level NOT under /pro/* — /settings, /tax, /my-quotes, /my-invoices, /projects, /projects/:id. Auto-center scroll verification: get [data-testid=<prefix>-strip].scrollLeft, click the last tab, assert scrollLeft increased. Avoid `wait_until='networkidle'` on this app — use `domcontentloaded` + explicit wait_for_timeout (long-polling endpoints keep the network busy).",
+  "rca_of_the_issue": "MyInvoicesPage crash: When Phase 2 refactored the filter-tab section to use ScrollSnapTabStrip + SwipeableTabPanel, the import statement was not added at the top of the file. The MYINV_TAB_KEYS constant referenced by SwipeableTabPanel was also never declared. React rendered the component which threw a ReferenceError immediately on mount, and the dev error-overlay covered the entire page. Reproduction: login as pro@test.com → navigate to /my-invoices on any viewport. Mitigation: added the two missing imports (default + named) and defined MYINV_TAB_KEYS as a module-level const matching the tabs array. Verified by reloading /my-invoices on 390x844 — page rendered, strip is scrollable (scrollWidth=519 vs clientWidth=150), and clicking 'cancelled' tab smooth-scrolled the strip from scrollLeft=0 to scrollLeft=369 (auto-center confirmed)."
+}

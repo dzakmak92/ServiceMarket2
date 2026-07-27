@@ -1,0 +1,46 @@
+{
+  "summary": "Tested iter51 fixes: ConversationComposer duplicate export, live_location_routes import fix, feedback admin notifications. 8/9 backend tests pass. Frontend compiles, loads, auth works for all 3 roles. Inbox works. ONE composer visible (no duplicate). Live location button visible and enabled for TP when HO has shared address.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "POST /api/feedback (admin notification)",
+        "issue": "Admin notifications for new feedback/issues are NOT visible in admin panel. Root cause: feedback_routes.py stores notification user_id as ObjectId (a['_id'] from db.users query), but misc_routes.get_notifications queries by string user['_id']. Mismatch causes notifications to be invisible. Fix: wrap with str() → `'user_id': str(a['_id'])` in the insert_many call in feedback_routes.py lines 94-105.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter51_fixes.py",
+    "/app/test_reports/pytest/iter51_results.xml"
+  ],
+  "action_items": [
+    "Fix feedback_routes.py admin notification user_id storage: change `'user_id': a['_id']` to `'user_id': str(a['_id'])` in the insert_many call (around line 97) so notifications are queryable by string user_id"
+  ],
+  "critical_code_review_comments": [
+    "feedback_routes.py line 97: notification stored with ObjectId user_id, but misc_routes queries by string. Same pattern bug as was previously fixed in support_admin_router.patch. Need to stringify: str(a['_id'])"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter51_fixes.py"
+  ],
+  "success_rate": {
+    "backend": "89% (8/9 tests pass)",
+    "frontend": "100% - compile OK, HO/Pro login OK, inbox OK, single composer, live location button visible"
+  },
+  "test_credentials": "homeowner@test.com / Test123!, pro@test.com / Test123!, admin@servicemarket.eu / Admin123!",
+  "seed_data_creation": "Created feedback and issue entries for testing",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "All iter51 fixes verified except admin notifications for feedback/issues are broken (ObjectId vs string mismatch in user_id storage). The live_location_routes.py import fix works (returns 404 not 500). ConversationComposer has exactly ONE export default - no duplicate. Live location button appears correctly in composer for TP and is enabled when HO has shared address. App uses cookie-based JWT auth.",
+  "rca_of_issue": {
+    "issue": "Admin notifications for feedback/issues not visible",
+    "root_cause": "feedback_routes.py stores notification user_id as ObjectId from `db.users.find({'role':'admin'}, {'_id':1})` result. misc_routes.get_notifications queries by string user['_id'] (auth.py converts _id to string). MongoDB won't match ObjectId vs string.",
+    "fix": "In feedback_routes.py, change the insert_many calls to use str(a['_id']) instead of a['_id'] for user_id field (around lines 94-105)",
+    "reproduction": "Submit feedback/issue as any user, then check admin notifications panel - shows 0 notifications"
+  }
+}

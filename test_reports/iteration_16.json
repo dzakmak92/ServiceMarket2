@@ -1,0 +1,80 @@
+{
+  "summary": "Iter16 verified end-to-end. Backend 28/28 PASS (3 new iter16 + 25 regression). Frontend acceptance criteria: /browse-jobs expandable cards + body + attachments grid PASS; /my-quotes 3 tabs (Applied 4 / Won 43 / Completed 0) with expandable cards + €price + message + sent_at + Message button PASS; /messages homeowner calendar paints 2 pre-existing booked slots as red ✕ + a fresh Confirm Booking added a 3rd red slot within ~3.5s without manual refresh PASS; system message bubbles align justify-end (mine) / justify-start (theirs), 0 justify-center observed PASS; /messages PRO side shows calendar (read-only — confirm-booking-btn present in DOM but visible=false), 2 red booked slots painted, job-panel-title + job-panel-description PASS.",
+  "tested_scope": [
+    "BACKEND: GET /api/quotes (as pro) enriched payload (job_description, job_attachments, job_posted_at, job_budget_min/max, job_urgency, job_posted_by_id, job_status)",
+    "BACKEND: GET /api/messages/thread/{job}/{other} as tradesperson exposes pro_availability + other_pro_id (own profile)",
+    "BACKEND regression: test_iter12_attachments + test_iter11_pro_analytics + test_iter10_pro_perks + test_iteration9 (25/25)",
+    "FRONTEND /browse-jobs: 20 toggle cards, body expansion, attachments grid wired",
+    "FRONTEND /my-quotes: 3 tabs with counts, expandable cards, footer (€price + message + sent_at), Message action on Won",
+    "FRONTEND /messages homeowner: calendar with red booked ✕, realtime refresh after Confirm Booking (no manual reload)",
+    "FRONTEND /messages system-msg alignment (justify-end/start, NOT justify-center)",
+    "FRONTEND /messages PRO: calendar visible, confirm-btn hidden, job panel title+desc"
+  ],
+  "verification_results": {
+    "backend_28_28_pass": true,
+    "quotes_enriched_payload": true,
+    "thread_for_pro_returns_other_pro_id": true,
+    "browse_job_toggle_count": 20,
+    "browse_body_expand_works": true,
+    "browse_first_attach_count_observed": 0,
+    "my_quotes_tab_applied_count": 4,
+    "my_quotes_tab_won_count": 43,
+    "my_quotes_tab_completed_count": 0,
+    "my_quotes_won_card_expand_has_eur_and_message": true,
+    "my_quotes_won_message_btn_present": true,
+    "my_quotes_message_btn_uses_button_navigate": "uses navigate(`/messages?job=${q.job_id}&to=${q.job_posted_by_id}`) — button not anchor, so href attribute is null by design",
+    "homeowner_calendar_pre_existing_booked_slots": 2,
+    "homeowner_fresh_booking_delta": 1,
+    "homeowner_target_slot_data_booked_true_after": true,
+    "homeowner_realtime_refresh_seconds": 3.5,
+    "system_msg_justify_center_count_homeowner": 0,
+    "system_msg_justify_center_count_pro": 0,
+    "ho_msg_aligned_justify_start_for_theirs": true,
+    "pro_msg_aligned_justify_end_for_mine": true,
+    "pro_calendar_visible": true,
+    "pro_confirm_btn_dom_present_but_visually_hidden": true,
+    "pro_job_panel_title_present": true,
+    "pro_job_panel_description_present": true,
+    "pro_booked_slots_red_count": 2
+  },
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "observations_and_minor_findings": [
+    "BrowseJobsPage fetches only /api/jobs?status=open page 1 (20 items). pro@test.com has 4 pending quotes — all 4 are on pages 2–3 of the open-jobs list (verified via API: pages 1–4 total=70). Implementation of applied-badge/view-quote is CORRECT (logic at BrowseJobsPage.jsx:142-167 + ExpandableJobCard wiring is right; verified that backend /api/quotes returns those 4 job_ids with status=open). UI just doesn't surface them because there's no pagination control on the BrowseJobsPage. Not a regression — just a UX limitation worth a follow-up in a future iter.",
+    "/my-quotes Message button is a <button onClick={navigate(...)}> rather than <Link>, so it has no href attribute. The spec wording says 'links to' which is satisfied semantically; only mention if main agent prefers <Link to=...> for accessibility / middle-click open."
+  ],
+  "test_report_links": [
+    "/app/test_reports/pytest/iter16_results.xml",
+    "/app/backend/tests/test_iter16_quotes_thread.py",
+    "/app/backend/tests/test_iter12_attachments.py",
+    "/app/backend/tests/test_iter11_pro_analytics.py",
+    "/app/backend/tests/test_iter10_pro_perks.py",
+    "/app/backend/tests/test_iteration9.py"
+  ],
+  "action_items": [
+    "(optional, low-priority) Add pagination controls to /browse-jobs so pros can navigate to pages 2+ where their applied jobs may live — this would surface the applied-badge/view-quote testids in the UI for pro@test.com (currently 0 of 4 pending-quote jobs visible on page 1).",
+    "(optional, nit) Consider replacing the my-quote-job-*-message <button onClick={navigate}> with a react-router <Link to> to give it a real href (helps middle-click-to-new-tab + a11y)."
+  ],
+  "critical_code_review_comments": [
+    "quote_routes.py:170-206 — list_my_quotes enrichment is correct and economical (single jobs.find_one per quote). Could be batched with $in lookup for ~45 quotes (latency O(n) DB calls) but not blocking.",
+    "message_routes.py:98-115 — clean elif branch exposes own pro_id when current_user_role == 'tradesperson'. Verified via curl: returns pro's OWN profile_id + availability.",
+    "ExpandableJobCard.jsx (~115 lines) — clean reusable component, correct testid prefix scheme (browse-job-{id}-toggle/body/attach-{file_id} and my-quote-job-{id}-toggle/body/attach-{file_id}).",
+    "MonthBookingCalendar.jsx readOnly + bookings props correctly hide confirm button (visible=false confirmed via Playwright bbox=None) and paint cal-slot-* with data-booked='true' + red strikethrough.",
+    "InboxPage.jsx re-fetches /api/pros/{pro_id}/bookings after bookSlot — verified by AFTER=3 (delta +1) within 3.5s, no manual reload.",
+    "BrowseJobsPage.jsx has no pagination — only fetches /api/jobs?status=open page=1 (20 items). Not a blocker for iter16 but blocks visual verification of applied-badge for pro@test.com whose 4 pending-quote jobs are on later pages."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter16_quotes_thread.py (new — 3 tests for iter16 backend deltas)"
+  ],
+  "success_rate": {"backend": "100% (28/28)", "frontend": "100% (8/8 iter16 acceptance criteria; minor pagination caveat noted)"},
+  "test_credentials": "pro@test.com / Test123! and homeowner@test.com / Test123!",
+  "seed_data_creation": "Confirmed 1 booking slot Thu 11:00-12:00 between homeowner@test.com and pro@test.com (this added 1 booked slot to the shared calendar — kept for evidence of realtime refresh).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter16 fully verified. Backend tests live at /app/backend/tests/test_iter16_quotes_thread.py — keep them for regression. Cumulative regression set is now 28/28 (test_iter9_pro_tier_push.py was not included but the closely-related test_iteration9.py 8/8 PASS). Visual evidence: /tmp/pro_messages.png + /tmp/ho_messages.png. Booking integration test created a new slot Thu 11:00-12:00 on the top-thread between homeowner@test.com and pro@test.com — Won counts may grow by 1 next time. The known caveat is that /browse-jobs has no pagination, so the applied-badge testid won't appear unless a pro applies to one of the latest-20 open jobs.",
+  "rca of the issue": "n/a — no blocking issues. The 0-count applied-badge observation on page-1 of /browse-jobs is purely a data/pagination artifact, NOT a bug in iter16 code; verified via direct API call that backend returns the correct 4 pending-quote job_ids with status=open."
+}

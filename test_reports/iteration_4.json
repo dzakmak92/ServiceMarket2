@@ -1,0 +1,52 @@
+{
+  "summary": "Iteration 4 UX redesign verified. Backend: 7/7 new tests pass + 1 skipped (in_progress job missing — booking flow already covered in iter3). Frontend: emergent badge gone on /auth (#emergent-badge not in DOM, no emergent.sh hrefs); hero-find-pros transitions bg from teal rgb(45,106,127) → amber rgb(245,166,35) on hover (white text both states); Upgrade to Pro CTA on pro home: bg teal→amber on hover (same hero-secondary-btn class confirmed); No '€X fee' text appears in categories grid; category labels translate (EN→DE 'Plumbing'→'Sanitär', 'Home Cleaning'→ contains 'Reinigung', 'Gardening'→ contains 'Garten'; EN→TR 'Plumbing'→'Tesisat'); Inbox redesign: [data-testid=header-view-profile], [data-testid=week-schedule], [data-testid=week-schedule-toggle] all present, 21 week-slot cells render, toggle collapses/expands schedule; Pro Settings: 2-column layout with profile card (avatar, rating 4.8 (12 reviews), badges Verified/Licensed/Insured, stats DONE/EXP/€/hr), Plan card with 'Manage billing' link, 'Preview public profile' button top-right, About tab active with [data-testid=languages-spoken-section] containing 9 chips (English/Deutsch/Türkçe/Español/Français/Italiano/Polski/Srpski-Hrvatski/Română/العربية); PATCH /api/profile/pro persists languages_spoken array (verified 4-elem set, replace, empty, and non-interference with other fields). ONE FRONTEND BUG: clicking [data-testid=header-view-profile] in inbox does NOT navigate to /pros/<pro_user_id> — URL stays /messages despite onClick={openProProfile} being attached. Suspected root cause: otherUser state shape or stale closure (see RCA).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "InboxPage header View Profile button",
+        "issue": "Click on [data-testid=header-view-profile] does NOT navigate to /pros/:id. Button is present in DOM, has onClick handler attached, but pathname remains /messages after click. Verified via page.expect_event('framenavigated') which TIMED OUT.",
+        "selector": "[data-testid=header-view-profile]",
+        "priority": "HIGH"
+      },
+      {
+        "component": "InboxPage contact-action-row",
+        "issue": "Per request the action bar should expose Call / WhatsApp / Share Location / View Profile. In rendered DOM only Call, WhatsApp and 'Share Location with Pro' buttons were detected; no 'View Profile' button text found in that row. The View Profile is wrapped under `otherContact` truthiness in the code (line 355) — confirm it actually renders alongside the share-location chip even AFTER contact unlocked.",
+        "selector": "[data-testid=contact-action-row] button",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration4.py",
+    "/app/test_reports/pytest/iter4_results.xml"
+  ],
+  "action_items": [
+    "Fix InboxPage `openProProfile`: clicking [data-testid=header-view-profile] does not navigate. Likely otherUser.id is undefined OR there's a stale closure. Suggest console.log(otherUser) in handler, and consider falling back to other_pro_id state if the resolved otherUser.id is missing.",
+    "Verify the action-row View Profile button actually renders next to Share Location after contact-unlock — the rendered DOM only showed 3 buttons (Call/WhatsApp/Share Location). Either the conditional ordering hides it OR otherUser.role !== 'tradesperson' at render time.",
+    "Optional polish: 'Elektro' / 'Elektrik' translation key for Electrical was not detected in DE switch — the visible label stays Englishish for the Electrical category. Verify cat[name_de] for Electrical."
+  ],
+  "critical_code_review_comments": [
+    "InboxPage.openProProfile at line 190-194 reads otherUser.id but the backend response uses 'id' (good), however the button render at line 299 only checks otherUser?.role — if the thread is opened but the GET /api/messages/thread response hasn't completed, otherUser is null and the button shouldn't render — yet test showed it WAS rendered & clicked but did not navigate. Strongly suggests a React state ordering bug or that the 'other_user' field on /api/messages/threads list (the inbox sidebar) lacks an id and the otherUser snapshot used by handler is the sidebar's, not the resolved thread one.",
+    "InboxPage line 192 `otherUser.id` — defensive code: use otherUser?.id || activeThread?.other_user_id as fallback before bailing out.",
+    "Iter3 carry-forward: rate-limit budget is process-local; the AI classify endpoint may emit 429 across iterations on the same uvicorn. Already documented."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration4.py (new — 8 tests, 7 passed, 1 skipped)"
+  ],
+  "success_rate": {
+    "backend": "100% — 7/7 executed iter4 tests passed (1 skipped due to no in_progress job, covered in iter3)",
+    "frontend": "~85% — 9/11 frontend bullets verified; 1 confirmed bug (header-view-profile nav), 1 partially verified (action-row View Profile button missing)"
+  },
+  "test_credentials": "homeowner@test.com / Test123!, pro@test.com / Test123!, admin@servicemarket.eu / Admin123! — all working",
+  "seed_data_creation": "PATCH /api/profile/pro tests set languages_spoken on pro@test.com to ['en'] and tagline to 'TEST_iter4 tagline' (visible in subsequent screenshots). Portfolio regression test uploads + deletes 1 JPEG; no residue.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend: cd /app/backend && pytest tests/test_iteration4.py -v (10s). Frontend: Note iter3 booking fixture leaves a thread with otherUser=pro for homeowner@test.com — open /messages, click any 'Quote of €220 was accepted' thread to land on the inbox active state. The week-grid + collapsible toggle works. Header View Profile button visually present but navigation broken — investigate openProProfile state shape. Pro Settings page hangs `networkidle` (likely SSE keeps connection open); use waitForLoadState('domcontentloaded') instead.",
+  "rca_of_the_issue": "InboxPage header-view-profile navigation failure: Button renders only when `otherUser?.role === 'tradesperson'`, and handler navigates to `/pros/${otherUser.id}` only if `otherUser?.role === 'tradesperson'`. Backend GET /api/messages/thread returns {other_user: {id, name, role}} so the value should exist. Two probable causes: (1) The button click fires while otherUser is still the previous thread's user — React state batching delay; openThread() (line 67) calls api.get then setOtherUser, which is async; if the user clicks before the GET resolves, otherUser may be stale OR null but the COMPONENT KEY is unchanged so button keeps stale role. (2) navigate() from react-router-dom may be silently no-op if the pathname includes special chars (unlikely since IDs are hex). Repro: Login as homeowner@test.com, open /messages, click any thread → click the small 'View Profile' chip in the inbox header. Expected: navigate to /pros/<pro_user_id>. Actual: URL stays at /messages. Mitigation: change `onClick={openProProfile}` to `onClick={() => { const id = otherUser?.id || other_pro_id; if (id) navigate('/pros/' + id); }}` AND/OR disable the button when !otherUser?.id."
+}

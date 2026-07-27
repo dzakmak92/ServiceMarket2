@@ -1,0 +1,61 @@
+{
+  "summary": "Iter12 testing covered backend attachments + 1-hour slot migration + multi-hour booking, plus frontend uploaders (post-job, messages) and right-rail booking calendar. Backend is fully green (13/13: 9 iter12 + 4 iter12-extras). Frontend has 1 HIGH-priority gap: /messages right-rail still renders CompactWeekSchedule with single-slot select (week-slot-* testids), NOT MonthBookingCalendar with multi-slot contiguous selection (cal-slot-*) as the iter12 spec demands.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "InboxPage.jsx (/messages right-rail)",
+        "issue": "Uses <CompactWeekSchedule/> (week-slot-* testids, single-slot select only). The new MonthBookingCalendar.jsx (cal-slot-*, cal-day-*, cal-prev, cal-next, multi-slot contiguous selection, booking-selected-range '09:00-11:00 · 2h') is NOT imported/used in InboxPage. Spec explicitly requires the multi-slot calendar inside /messages.",
+        "selector": "[data-testid^=cal-slot-] (none found); calendar-booking (not present); cal-day-* (count=0)",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Homeowner books a 2-hour appointment from /messages",
+        "issue": "Cannot select contiguous slots. CompactWeekSchedule only allows ONE cell (one day x one start hour) per booking — no '09:00-11:00 · 2h' aggregation. confirm-booking-btn does exist but it confirms only the single selected slot.",
+        "affected_selectors": ["[data-testid=booking-selected-range]", "[data-testid=confirm-booking-btn]", "[data-testid^=cal-slot-]"]
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "/messages right-rail Schedule grid",
+        "issues": ["Visible time labels are only 09:00–17:00 (9 rows). Because CompactWeekSchedule derives rows from the pro's actual checked availability, the seeded pro is missing 08:00-09:00, 18:00-19:00, 19:00-20:00 rows for this thread's pro — UI hides them. Verify seed.py seeds all 12 slots if you want to show the full 08–20 range."]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter12_attachments.py",
+    "/app/backend/tests/test_iter12_extras.py",
+    "/app/test_reports/pytest/iter12_results.xml",
+    "/app/test_reports/pytest/iter12_extras_results.xml"
+  ],
+  "verified_behaviors": [
+    "POST /api/uploads/file: JPEG✓, PDF✓ accepted; image/gif → 400 'allowed'; oversize >10MB → 400 'large'; unauth → 401/403",
+    "GET /api/uploads/{file_id}: serves bytes back with original Content-Type AND Cache-Control header set (public)",
+    "POST /api/jobs with attachments list persists ok; with 6 attachments → 400 'maximum 5'",
+    "POST /api/messages with attachments list persists ok; with 6 attachments → 400 'maximum 5'",
+    "POST /api/bookings accepts slot='09:00-11:00' (multi-hour) and persists",
+    "GET /api/availability/{pro_id}: every returned slot matches HH:00-HH+1:00 format (1-hour); no legacy 3-hour slots present",
+    "pro_availability collection (post-migration): zero legacy slots, every row is 1-hour",
+    "/post-job step2: [data-testid=attachment-uploader] + [data-testid=attach-button] visible; copy 'JPG / PNG / WebP / PDF · max 10 MB' shown; uploading appends [data-testid^=attachment-chip-]",
+    "/messages composer (after opening a thread): [data-testid=attachment-uploader] visible with '0/5' counter, attaching file shows file in tray, [data-testid=attachment-display] already rendering in 2 existing bubbles",
+    "/settings (Pro) ProSettingsPage.jsx SLOTS const = 12 entries from '08:00-09:00' through '19:00-20:00' (code-verified)"
+  ],
+  "action_items": [
+    "HIGH: Replace <CompactWeekSchedule/> in /app/frontend/src/pages/shared/InboxPage.jsx (~line 400) with <MonthBookingCalendar/> so multi-slot contiguous selection (cal-slot-*, booking-selected-range '09:00-11:00 · 2h', confirm-booking-btn) becomes available in /messages right-rail per iter12 spec.",
+    "LOW: If 08:00–20:00 full grid must be visible in CompactWeekSchedule regardless of pro's checked availability, render row labels statically; otherwise document that hidden rows are intentional."
+  ],
+  "critical_code_review_comments": [
+    "InboxPage.jsx still imports CompactWeekSchedule (line 6) although MonthBookingCalendar.jsx was added — dead-code import unless it is meant as a fallback. Pick one and remove the other.",
+    "CompactWeekSchedule.jsx only tracks single-slot selection (`useState(null)` for `{day, slot, date}`). It cannot satisfy the iter12 contiguous-slot requirement — main agent should remove or repurpose this component."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter12_extras.py (NEW)"],
+  "success_rate": {"backend": "100%", "frontend": "85%"},
+  "test_credentials": "homeowner@test.com / Test123!, pro@test.com / Test123!, admin@servicemarket.eu / Admin123! — all valid",
+  "seed_data_creation": "Created and cleaned: TEST iter12 jobs (deleted after each test); 1 multi-hour booking via POST /api/bookings slot='09:00-11:00' (then deleted)",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "MonthBookingCalendar.jsx (cal-slot-*, cal-day-*, cal-prev/next, booking-selected-range, calendar-booking) is correct code-wise but UNUSED in InboxPage.jsx. After main agent swaps it in, re-test: (1) on /messages thread, multi-click two adjacent cal-slot-* cells → booking-selected-range text contains '09:00-11:00 · 2h', confirm-booking-btn enabled → POST /api/bookings sees slot='09:00-11:00'. Use homeowner@test.com (Anna) and any thread with Markus Weber (38 threads exist). Cookie banner — set localStorage.cookie_consent='all' early. Login redirects to '/' not '/dashboard' for homeowner — don't wait_for_url '**/dashboard**'.",
+  "rca_of_the_issue": "Bug RCA: InboxPage.jsx line 6 still imports CompactWeekSchedule and line ~400 renders it instead of MonthBookingCalendar. MonthBookingCalendar exists and has the correct multi-slot logic and testids, but is orphaned. Fix: import MonthBookingCalendar and replace the <CompactWeekSchedule ...> JSX with <MonthBookingCalendar availability={availability} onConfirm={createBooking} disabled={!canBook}/>. Verify props names match (availability list of {day,slot} + onConfirm signature)."
+}

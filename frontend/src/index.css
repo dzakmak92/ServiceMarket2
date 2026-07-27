@@ -1,0 +1,331 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=Inter:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ServiceMarket brand tokens */
+    --cream: #fdf3e3;
+    --cream-soft: #fef7ea;
+    --cream-deep: #f9e9cf;
+    --paper: #ffffff;
+    --ink: #1a3a52;
+    --ink-soft: #4a5a6c;
+    --ink-muted: #7d8a9a;
+    --ink-faint: #b0b8c1;
+    --teal: #2d6a7f;
+    --teal-deep: #1f4d5e;
+    --amber: #f5a623;
+    --amber-deep: #e8941a;
+    --green-pos: #4a8b3f;
+    --red-warn: #c14655;
+    --sm-border: #f0e3c8;
+    --sm-border-soft: #f7ecd5;
+
+    /* Shadcn mapped to ServiceMarket palette */
+    --background: 38 85% 94%;
+    --foreground: 209 52% 21%;
+    --card: 0 0% 100%;
+    --card-foreground: 209 52% 21%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 209 52% 21%;
+    --primary: 195 48% 34%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 37 60% 88%;
+    --secondary-foreground: 209 52% 21%;
+    --muted: 37 70% 95%;
+    --muted-foreground: 210 20% 55%;
+    --accent: 37 91% 55%;
+    --accent-foreground: 209 52% 21%;
+    --destructive: 352 57% 53%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 37 60% 85%;
+    --input: 37 60% 85%;
+    --ring: 195 48% 34%;
+    --radius: 0.875rem;
+    --chart-1: 195 48% 34%;
+    --chart-2: 37 91% 55%;
+    --chart-3: 131 39% 40%;
+    --chart-4: 352 57% 53%;
+    --chart-5: 210 20% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    box-sizing: border-box;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--cream);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    color: var(--ink);
+  }
+  [data-debug-wrapper="true"] { display: contents !important; }
+  [data-debug-wrapper="true"] > * {
+    margin-left: inherit; margin-right: inherit; margin-top: inherit; margin-bottom: inherit;
+    padding: inherit; gap: inherit; border: inherit;
+  }
+}
+
+@layer components {
+  /* Hide horizontal scrollbar (used by ScrollSnapTabStrip) */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full font-medium px-6 py-3 text-sm
+           bg-teal text-paper hover:bg-teal-deep transition-colors duration-200
+           focus:outline-none focus:ring-2 focus:ring-teal focus:ring-offset-2
+           disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .btn-amber {
+    @apply inline-flex items-center justify-center gap-2 rounded-full font-bold px-6 py-3 text-sm
+           bg-amber text-ink hover:bg-amber-deep transition-colors duration-200
+           focus:outline-none focus:ring-2 focus:ring-amber focus:ring-offset-2
+           disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-full font-medium px-6 py-3 text-sm
+           bg-paper text-ink border border-sm-border hover:bg-cream-soft transition-colors duration-200
+           focus:outline-none focus:ring-2 focus:ring-teal focus:ring-offset-2
+           disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-full font-medium px-6 py-3 text-sm
+           bg-red-warn text-paper hover:opacity-90 transition-colors duration-200;
+  }
+  .card-lg {
+    @apply rounded-[18px] bg-paper border border-sm-border transition-shadow duration-300 hover:shadow-lg p-6;
+  }
+  .card-md {
+    @apply rounded-[14px] bg-paper border border-sm-border transition-shadow duration-300 hover:shadow-md p-4;
+  }
+  .sm-input {
+    @apply flex h-12 w-full rounded-[14px] border border-sm-border bg-paper px-4 py-2 text-sm text-ink
+           placeholder:text-ink-muted
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2
+           disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .sm-select {
+    @apply flex h-12 w-full rounded-[14px] border border-sm-border bg-paper px-4 py-2 text-sm text-ink
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal
+           disabled:cursor-not-allowed disabled:opacity-50 appearance-none;
+  }
+  .sm-textarea {
+    @apply flex w-full rounded-[14px] border border-sm-border bg-paper px-4 py-3 text-sm text-ink
+           placeholder:text-ink-muted resize-none
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2
+           disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .page-container {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+  .status-open {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide
+           bg-green-100 text-green-pos border border-green-200;
+  }
+  .status-in_progress {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide
+           bg-amber-100 text-amber-deep border border-amber-200;
+  }
+  .status-completed {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide
+           bg-teal/10 text-teal border border-teal/20;
+  }
+  .status-cancelled {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide
+           bg-gray-100 text-gray-500 border border-gray-200;
+  }
+  .status-pending {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide
+           bg-pink-50 text-pink-600 border border-pink-200;
+  }
+  .status-accepted {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide
+           bg-teal/10 text-teal border border-teal/20;
+  }
+  .status-declined {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide
+           bg-red-50 text-red-warn border border-red-200;
+  }
+  .bubble-mine {
+    @apply rounded-[18px] rounded-br-[4px] bg-teal text-paper shadow-sm;
+  }
+  .bubble-other {
+    @apply rounded-[18px] rounded-bl-[4px] bg-paper border border-sm-border text-ink shadow-sm;
+  }
+  .bubble-system {
+    @apply rounded-full bg-amber/15 border border-amber/30 text-ink-soft;
+  }
+  .pro-badge {
+    @apply inline-flex items-center bg-amber/15 text-amber-deep border border-amber/30 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider;
+  }
+  /* Hero "secondary" CTA: teal pill on dark hero by default, amber on hover/active */
+  .hero-secondary-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full font-medium px-5 py-2.5 text-sm
+           bg-teal text-paper border border-teal
+           hover:bg-amber hover:text-paper hover:border-amber
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber/50
+           transition-all duration-200;
+  }
+
+  /* ── ADMIN PANEL ────────────────────────────────────── */
+  .admin-shell { font-feature-settings: 'cv11', 'ss01'; }
+
+  .admin-header {
+    @apply sticky top-0 z-30 bg-paper/90 backdrop-blur-md border-b border-sm-border;
+  }
+  .admin-header-inner {
+    @apply max-w-[1320px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between;
+  }
+  .admin-logo-mark {
+    @apply w-8 h-8 rounded-[14px] bg-teal text-paper flex items-center justify-center shadow-sm;
+  }
+  .admin-badge {
+    @apply inline-flex items-center bg-ink text-paper text-[10px] font-bold uppercase tracking-[0.08em] rounded-full px-2 py-0.5;
+  }
+  .admin-icon-btn {
+    @apply w-9 h-9 rounded-full flex items-center justify-center transition-colors;
+  }
+  .admin-icon-btn-dark {
+    @apply bg-ink text-paper hover:bg-ink-soft;
+  }
+  .admin-user-chip {
+    @apply flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full border border-sm-border bg-paper;
+  }
+
+  .admin-container {
+    @apply max-w-[1320px] mx-auto px-4 sm:px-6 py-6 md:py-8;
+  }
+
+  .admin-sec-head { @apply mb-6 flex items-end justify-between gap-3 flex-wrap; }
+  .admin-sec-title { @apply text-2xl md:text-3xl font-headings font-bold text-ink; }
+  .admin-sec-sub { @apply text-sm text-ink-muted mt-1; }
+
+  .admin-tabs {
+    @apply flex items-center gap-1 mb-5 overflow-x-auto pb-1 border-b border-sm-border;
+  }
+  .admin-tab {
+    @apply px-3.5 py-2.5 text-sm whitespace-nowrap rounded-t-[12px] border-b-2 border-transparent
+           text-ink-soft hover:text-ink hover:bg-cream-soft/60 transition-colors font-medium;
+  }
+  .admin-tab.active { @apply text-teal border-teal bg-cream-soft/40 font-semibold; }
+
+  .admin-panel {
+    @apply bg-paper border border-sm-border rounded-[18px] p-5 md:p-6;
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02);
+  }
+
+  .admin-stat-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4;
+  }
+  .admin-stat {
+    @apply bg-paper border border-sm-border rounded-[16px] p-4 hover:shadow-md transition-shadow;
+  }
+  .admin-stat-label { @apply text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-muted; }
+  .admin-stat-value { @apply font-headings text-2xl md:text-3xl font-bold text-ink leading-none; }
+  .admin-stat-trend { @apply text-[11px] text-ink-muted mt-2 truncate; }
+  .admin-stat-trend.neg { @apply text-red-warn; }
+
+  .admin-table {
+    @apply w-full border-collapse text-sm;
+  }
+  .admin-table thead th {
+    @apply text-left text-[10px] font-bold uppercase tracking-[0.08em] text-ink-muted
+           border-b border-sm-border px-3 py-2.5;
+  }
+  .admin-table tbody td {
+    @apply px-3 py-3 border-b border-sm-border align-middle;
+  }
+  .admin-table tbody tr:hover { @apply bg-cream-soft/40; }
+  .admin-table tbody tr:last-child td { @apply border-b-0; }
+
+  /* Mobile: stack admin tables into readable cards — no horizontal scroll, no swipe hijack */
+  @media (max-width: 767px) {
+    .admin-table thead, .stack-table thead { display: none; }
+    .admin-table, .admin-table tbody, .stack-table, .stack-table tbody { display: block; width: 100%; }
+    .admin-table tbody tr, .stack-table tbody tr {
+      @apply block bg-paper border border-sm-border rounded-[12px] px-3.5 py-3 mb-2.5;
+    }
+    .admin-table tbody tr:hover { @apply bg-paper; }
+    .admin-table tbody td, .stack-table tbody td {
+      @apply block w-full px-0 py-1 border-b-0 text-left;
+    }
+    .admin-table tbody td[data-label]::before, .stack-table tbody td[data-label]::before {
+      content: attr(data-label);
+      @apply block text-[10px] uppercase tracking-[0.06em] font-bold text-ink-muted mb-0.5;
+    }
+    /* action / button cells: keep buttons inline and full-width */
+    .admin-table tbody td .flex, .stack-table tbody td .flex { @apply justify-start flex-wrap; }
+    .admin-table tbody td[colspan], .stack-table tbody td[colspan] { @apply pt-2; }
+    .admin-table tbody td.truncate, .admin-table tbody td .truncate { @apply max-w-full whitespace-normal break-words; }
+    .stack-table tbody td input { @apply w-full; }
+  }
+
+  .admin-tag {
+    @apply inline-flex items-center px-2 py-0.5 rounded-md bg-cream-deep text-ink-soft text-[11px] font-semibold;
+  }
+  .admin-chip-row { @apply flex items-center gap-1.5 flex-wrap; }
+  .admin-chip {
+    @apply px-3 py-1 rounded-full border border-sm-border bg-paper text-xs font-medium text-ink-soft
+           hover:bg-cream-soft transition-colors;
+  }
+  .admin-chip.active { @apply bg-teal text-paper border-teal; }
+
+  .admin-btn {
+    @apply inline-flex items-center justify-center gap-1.5 font-medium rounded-full transition-colors
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/40;
+  }
+  .admin-btn-sm { @apply px-2.5 py-1.5 text-xs; }
+  .admin-btn-primary { @apply bg-teal text-paper hover:bg-teal-deep; }
+  .admin-btn-ghost { @apply bg-paper text-ink border border-sm-border hover:bg-cream-soft; }
+  .admin-btn-danger { @apply bg-red-warn text-paper hover:opacity-90; }
+
+  .admin-input-sm {
+    @apply h-9 px-2.5 rounded-[10px] border border-sm-border bg-paper text-sm w-24
+           focus:outline-none focus:ring-2 focus:ring-teal/40;
+  }
+
+  .admin-input {
+    @apply h-9 px-3 rounded-[10px] border border-sm-border bg-paper text-sm text-ink
+           focus:outline-none focus:ring-2 focus:ring-teal/40;
+  }
+  textarea.admin-input { @apply h-auto py-2 leading-snug; }
+
+  .admin-card {
+    @apply bg-cream-soft border border-sm-border rounded-[12px] overflow-hidden;
+  }
+
+  .admin-toast {
+    @apply fixed bottom-6 left-1/2 -translate-x-1/2 z-50
+           bg-ink text-paper text-sm font-medium rounded-full px-4 py-2.5 shadow-lg shadow-ink/30 animate-fade-in;
+  }
+
+  /* status pills (used across admin) */
+  .status-pill { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-[0.08em] border; }
+  .status-pill.status-open { @apply bg-amber/10 text-amber-deep border-amber/30; }
+  .status-pill.status-in_progress { @apply bg-teal/10 text-teal border-teal/30; }
+  .status-pill.status-completed,
+  .status-pill.status-done { @apply bg-green-pos/10 text-green-pos border-green-pos/30; }
+  .status-pill.status-cancelled { @apply bg-red-50 text-red-warn border-red-200; }
+  .status-pill.status-pending { @apply bg-cream-deep text-ink-soft border-sm-border; }
+  .status-pill.status-active { @apply bg-teal/10 text-teal border-teal/30; }
+}

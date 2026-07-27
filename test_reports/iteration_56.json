@@ -1,0 +1,62 @@
+{
+  "summary": "Iteration 56 — backend + frontend testing for the new 3-month Explorer intro plan and full regression. 18/22 backend tests passing once test pro is in correct seed state. CRITICAL ROOT CAUSE FOUND: backend/seed.py forcibly resets pro@test.com plan_tier='standard' on every startup, which breaks the documented pre-seeded Explorer-active state immediately when the backend hot-reloads. Lifecycle endpoints (simulate-expiry, simulate-reset, choose-standard, checkout/subscription, checkout/explorer) all work correctly. BillingPage UI renders the right card per state (ExplorerOfferCard observed live with €1/mo + €3-billed-once benefits + activate btn + dev controls, no Pro-upgrade/toolkit sections leaking). No INCONSISTENT (mode=gate but toolkit flags True) state was reproduced during the entire run.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "backend/seed.py::seed_test_users() (lines 107-117)",
+        "issue": "On every backend startup, the seed forcibly $set plan_tier='standard' on the test pro's pro_profiles document. This permanently overrides the migrate_explorer_testpro.py script and immediately breaks the agreed 'pro@test.com is pre-seeded as Explorer-active' contract any time the backend hot-reloads or restarts. Result: GET /api/billing/subscription-status returns billing_mode='gate' with stale explorer_started_at/ends_at left over and explorer_used=True, instead of 'explorer_active'. Two backend tests that assert explorer_active fail purely because of this. RCA: the comment on line 105 'testing agent relies on plan_tier=standard' is stale and conflicts with the new Explorer pre-seed requirement.",
+        "priority": "CRITICAL"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "POST /api/billing/explorer/simulate-expiry",
+        "issue": "Returns 400 'No active Explorer plan to expire' when called from gate/standard state. Acceptable as a guard, but UI must hide the 'Force-expire Explorer' button when not in explorer_active state (otherwise test agents and demoers hit a confusing 400)."
+      },
+      {
+        "endpoint": "POST /api/billing/explorer/choose-standard",
+        "issue": "After success, subscription-status still returns billing_mode='gate' with explorer_gate_dismissed=True. Frontend derives the hidden-gate state from gate_dismissed correctly, but the response is slightly inconsistent — backend could compute mode='standard' once gate is dismissed for cleaner API contract."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "PMProjectsPage (/projects)",
+        "issue": "React hydration warning: <span> cannot be a child of <option> at PMProjectsPage line 174 (pm-pick-job <select>). A dynamic ve-overlay <span data-ve-dynamic='true'> is being stamped INSIDE each <option> element, which is invalid HTML and produces a console error. Likely from a dev-time instrumentation wrapper rendering option label expressions.",
+        "selector": "[data-testid=\"pm-pick-job\"] > option",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter56_explorer_plan.py",
+    "/app/test_reports/pytest/iter56_results.xml"
+  ],
+  "action_items": [
+    "FIX backend/seed.py seed_test_users(): stop forcibly setting plan_tier='standard' for pro@test.com on every startup. Either (a) set plan_tier='explorer' + explorer_started_at=now + explorer_ends_at=now+90d + has_invoice_toolkit=has_tax_toolkit=has_pm_toolkit=True so the Explorer-active pre-seed survives restarts (preferred per problem statement), or (b) only initialise plan_tier on first insert via $setOnInsert. The current $set wipes out migrate_explorer_testpro.py every time the backend reloads.",
+    "After fixing seed.py, re-run /app/backend/tests/test_iter56_explorer_plan.py — the 3 currently-failing tests (test_subscription_status_explorer_active, test_pricing_mode_matches, test_simulate_expiry_revokes_flags) should pass without further changes.",
+    "Hide the 'Force-expire Explorer' dev control button when current state != 'explorer_active' to avoid the 400 'No active Explorer plan to expire' error path.",
+    "Investigate dev-time ve-dynamic span instrumentation polluting <option> elements in PMProjectsPage (hydration warning).",
+    "Consider returning billing_mode='standard' (instead of 'gate' with explorer_gate_dismissed=True) once the user explicitly chose Standard, for a cleaner contract."
+  ],
+  "critical_code_review_comments": [
+    "seed.py overrides plan_tier with $set on every startup — same anti-pattern that bit the previous billing iteration. Use $setOnInsert for tier-like fields that other code (or migrations) may legitimately mutate.",
+    "billing_routes.py /subscription-status leaks explorer_started_at/ends_at even when plan_tier=='standard' and explorer_active=False (stale fields not cleared on _downgrade_explorer). The data is harmless but confusing for debugging and was the source of the original 'pre-seeded as Explorer' assumption seeming to be true initially."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter56_explorer_plan.py (new)"
+  ],
+  "success_rate": {
+    "backend": "82% (18 passed / 22 collected, 1 skipped, 3 failed — all 3 failures caused by the single seed.py root cause)",
+    "frontend": "90% (BillingPage ExplorerOfferCard renders correctly with all data-testids present; dev controls work; one console hydration warning on /projects)"
+  },
+  "test_credentials": "admin@servicemarket.eu/Admin123!, homeowner@test.com/Test123!, pro@test.com/Test123! (cookie-based auth via POST /api/auth/login)",
+  "seed_data_creation": "Created 2 jobs as homeowner@test.com (TEST_iter56 leaky tap task, TEST_iter56 bathroom renovation project). Ran backend/migrate_explorer_testpro.py once mid-test, but it was immediately reverted by the seed.py bug noted above.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "ROOT CAUSE FOUND: backend/seed.py::seed_test_users (lines 107-117) forcibly resets pro@test.com plan_tier to 'standard' on every backend startup. Migration backend/migrate_explorer_testpro.py works correctly but is immediately undone by seed_all() on next hot-reload. After main agent fixes seed.py the pro will actually be Explorer-active across restarts. Useful endpoint mappings discovered: pro invoices = /api/pro-invoices (NOT /invoicing/pro/invoices), cashflow = /api/pro-invoices/cashflow, tax dashboard = /api/tax/dashboard, PM = /api/pm/projects, quotes mine = GET /api/quotes (no /mine suffix). /api/analytics returns 404 — pro dashboard KPIs are computed client-side from /api/pro-invoices/cashflow. Subscription-status leaves stale explorer_started_at/explorer_ends_at fields populated even after _downgrade_explorer; only plan_tier and explorer_active are authoritative. The transient race-condition state (mode='gate' + has_*_toolkit==true) was NOT reproduced in this run. End state of pro@test.com after this run: billing_mode='explorer_offer', explorer_used=False (last test was simulate-reset followed by checkout/explorer which does not consume Stripe).",
+  "rca of the issue": "RCA — Test pro never enters Explorer-active state in tests:\n  1. migrate_explorer_testpro.py writes plan_tier='explorer', explorer_started_at=now, explorer_ends_at=now+90d to pro_profiles.\n  2. Any backend code change (or a supervisor restart) triggers FastAPI auto-reload.\n  3. server.py startup() → seed_all() → seed.py::seed_test_users() runs.\n  4. seed_test_users() unconditionally `$set: { plan_tier: 'standard' }` for the test pro (lines 109-117).\n  5. Now the pro_profile has plan_tier='standard' but explorer_started_at/ends_at/explorer_used still set from the migration → billing_mode() evaluates to 'gate' (because plan != 'explorer' and explorer_used == True so the within-window offer branch is skipped).\n  6. UI shows the upgrade-gate state and the test agent observes mode='gate' instead of the expected 'explorer_active'.\nMitigation: Either change the $set to $setOnInsert for plan_tier, or update the seed to set plan_tier='explorer' with proper dates so the pre-seed survives restarts."
+}

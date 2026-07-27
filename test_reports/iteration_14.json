@@ -1,0 +1,55 @@
+{
+  "summary": "Iter14 UX redesign of /messages booking calendar + inline attachment composer fully verified. All 9 acceptance criteria from the review request PASS. /post-job form-mode uploader regression also PASSES (chip pill + helper text + attachment-list still present). Backend regression not executed (frontend-only request).",
+  "tested_scope": [
+    "FRONTEND /messages calendar collapse/expand toggle",
+    "FRONTEND /messages two-column layout (month grid LEFT, slots RIGHT)",
+    "FRONTEND /messages multi-slot booking range '09:00-11:00 · 2h'",
+    "FRONTEND /messages composer row layout (attach LEFT, textarea, send RIGHT)",
+    "FRONTEND /messages composer NO 'WebP', NO '(0/5)', NO 'max 10' helper text",
+    "FRONTEND /messages thumbnail strip + attach-only send",
+    "FRONTEND /messages attachment-img bubble after send",
+    "REGRESSION /post-job step 2 form-mode uploader still shows pill + helper + attachment-list"
+  ],
+  "verification_results": {
+    "calendar-toggle present": true,
+    "initial expanded cal-day count": 42,
+    "after collapse cal-day count": 0,
+    "after re-expand cal-day count": 42,
+    "two_column_side_by_side": "day x=724 vs slot x=1248 (slot right of day)",
+    "booking-selected-range text": "09:00-11:00 · 2h",
+    "attach LEFT of textarea": true,
+    "send RIGHT of textarea": true,
+    "composer contains 'WebP'": false,
+    "composer contains '(0/5)'": false,
+    "composer contains 'max 10'": false,
+    "attachment-thumb-strip after upload": true,
+    "send enabled with only attachment": true,
+    "attachment-img bubble rendered after send": true,
+    "post-job step2 'JPG / PNG / WebP / PDF' present": true,
+    "post-job step2 'max 10 MB' present": true,
+    "post-job step2 attach-button text": "Attach\n(0/5)",
+    "post-job step2 attachment-uploader wrapper present": true
+  },
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "MonthBookingCalendar.jsx clean and well-structured (~275 lines, single responsibility)",
+    "AttachmentUploader.jsx dual-mode design (form|inline) is appropriate — exports AttachmentThumbStrip and AttachmentDisplay for separation of concerns",
+    "All interactive elements have data-testid attributes (calendar-toggle, cal-day-*, cal-slot-*, attach-button, attach-input, attachment-thumb-strip, attachment-thumb-*, message-input, send-message-btn, booking-selected-range)",
+    "Composer correctly disables send when both newMsg and newAttachments are empty"
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (not in scope)", "frontend": "100%"},
+  "test_credentials": "homeowner@test.com / Test123! (used)",
+  "seed_data_creation": "Sent one image-only message in the top thread (acceptable test artifact)",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter14 UI redesign of /messages calendar (collapsible + two-column) and inline composer (paperclip/plus left of textarea, inline 40x40 thumb strip, no WebP/max-10MB helper) verified end-to-end on viewport 1440x1080. /post-job step 2 form-mode uploader still uses the legacy 'Attach (0/5)' pill + helper + attachment-list chips. Top thread on Anna's inbox already had availability data so cal-slot tests worked first try. Backend regression suite (test_iter12_attachments / test_iter11_pro_analytics / test_iter10_pro_perks / test_iteration9) was not requested as part of frontend-only scope and was NOT executed in this iteration.",
+  "rca of the issue": "n/a — no issues found"
+}

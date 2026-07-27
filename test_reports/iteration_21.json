@@ -1,0 +1,76 @@
+{
+  "summary": "Iter25 (Pricing fix + Invoice Toolkit + Geo-fence + Admin/Pro dead-end fixes) tested end-to-end. Backend: 14 PASSED + 1 intentional skip across two test files (existing test_iter25_toolkit_geofence.py + new test_iter25_extras.py). Frontend: ALL 20+ critical flows in the request passed including Stripe toolkit checkout URL generation, Pro Billing pricing display (29.99 + excl-VAT footnote + 35.99 brutto), Toolkit card + upgrade button, Kleinunternehmer toggle, Invoice details sub-tab via ?tab=invoice_details deep link, geo-fence Leaflet map + slider + value testids, /my-invoices listing, click-to-invoice from completed job, Admin Verifications modal with Approve/Reject, Admin Users + Reviews inline detail expansion, Admin Billing disabled-button state when no hosted_invoice_url, Pro Delete Account routing to Privacy tab. One MINOR DX issue and one cosmetic backend response bug found (DB writes are correct, only response shape misleading).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "PATCH /api/admin/pros/{id}/verify", "issue": "Response body returns {is_licensed: null, is_insured: <new>} when only insurance_status is in the payload (and vice versa). The DB write is correct (verified via re-fetch from /api/admin/verifications) and only sets the supplied fields, but the response misrepresents the cross-field as null. Frontend should refetch state from DB or backend should return the merged current state."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Pro Settings deep-link", "issue": "?tab=invoice_details DOES open Invoice details sub-tab (✓ per spec). But ?tab=services does NOT auto-open the Services & Areas tab — page lands on default About Me. Inconsistent with the invoice_details deep-link behaviour. Geo-fence map + slider + value all render correctly when user clicks the Services & Areas tab manually.", "affected_selectors": ["[data-testid=geo-fence-map]", "[data-testid=geo-radius-slider]", "[data-testid=geo-radius-value]"]}
+    ],
+    "design_issues": []
+  },
+  "test_results": {
+    "backend": {
+      "test_pricing_returns_net_and_brutto": "PASS (vat=20, pro net=29.99/brutto=35.99, toolkit net=14.99/brutto=17.99)",
+      "test_pricing_has_toolkit_and_pro_flags": "PASS (is_pro, has_toolkit, nested toolkit.is_pro_price)",
+      "test_pro_can_save_kleinunternehmer_and_bank": "PASS (PATCH /api/profile/pro persists IBAN/BIC/holder/footer/tax_id/Klein)",
+      "test_pro_can_save_geofence": "PASS (service_center_lat/lng + service_radius_km persist)",
+      "test_checkout_subscription_returns_stripe_url": "PASS (Stripe URL returned, charges brutto=35.99)",
+      "test_checkout_toolkit_for_pro_returns_url": "PASS (Stripe URL returned)",
+      "test_checkout_toolkit_blocks_non_pros": "PASS (homeowner gets 403)",
+      "test_pro_invoice_endpoints_require_toolkit": "SKIP (toolkit already on for pro@test.com — gating verified earlier)",
+      "test_draft_from_job_402_without_toolkit_or_404": "PASS",
+      "test_pro_invoice_list_returns_only_my_invoices": "PASS",
+      "test_pro_invoice_create_and_pdf_with_epc_qr": "PASS (RG- numbering, net=120 confirmed, PDF >2KB, EPC-QR embedded, mark-paid flips status to 'paid' on re-fetch)",
+      "test_admin_can_update_licence_status_independently": "PASS",
+      "test_admin_verify_no_cross_contamination": "PASS via DB re-fetch (DB state preserves licence when insurance is set — see backend minor issue about response shape)",
+      "test_geofence_filters_far_jobs_for_pro": "PASS (Graz hidden, Wien visible when center=Vienna radius=20km)",
+      "test_geofence_off_shows_all_jobs": "PASS"
+    },
+    "frontend": {
+      "billing_pricing_29.99_and_excl_VAT_footnote": "PASS ('Upgrade to Pro — €29,99* / mo' visible; footnote: '* excl. 20% VAT — €35,99 incl. VAT')",
+      "toolkit_card_present": "PASS (data-testid=toolkit-card, €14,99* per month, brutto €17,99 in italics, benefit list)",
+      "toolkit_upgrade_or_open_btn": "PASS (toolkit-open-invoices since toolkit is ACTIVE; for inactive shows toolkit-upgrade-btn)",
+      "kleinunternehmer_toggle_on_about_me": "PASS (data-testid=kleinunternehmer-toggle present)",
+      "invoice_details_sub_tab_deep_link": "PASS (/settings?tab=invoice_details opens the sub-tab; data-testid=invoice-details-tab + IBAN field present)",
+      "geo_fence_in_services_areas": "PASS when Services & Areas tab is clicked manually (Leaflet map + Vienna marker + radius slider 'Off (show all)' + live value all render with correct data-testids). Deep-link ?tab=services FAILS to switch tab — see integration_issues.",
+      "my_invoices_page": "PASS (/my-invoices renders 'My customer invoices' list with RG-2026-0004 PAID example)",
+      "click_to_invoice_from_completed_job": "PASS (data-testid=click-to-invoice-btn on /jobs/{id} when status=completed + role=pro, click navigates to /jobs/{id}/invoice editor)",
+      "admin_verifications_view_modal": "PASS (data-testid=verif-modal opens with Approve/Reject controls and public profile link)",
+      "admin_users_inline_detail": "PASS (21 user-view-{id} buttons, click expands user-detail-{id} row)",
+      "admin_reviews_inline_detail": "PASS (review-view-{id} -> review-detail-{id} expanded)",
+      "admin_billing_view_invoice_disabled_when_no_stripe_url": "PASS (button disabled — could not exercise the active link path because no Stripe txn in this env has hosted_invoice_url yet; disabled tooltip behaviour confirmed)",
+      "pro_delete_account_routes_to_privacy": "PASS (data-testid=pro-delete-account-btn click navigates to Privacy section; page shows privacy/delete content)"
+    }
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter25_toolkit_geofence.py",
+    "/app/backend/tests/test_iter25_extras.py",
+    "/app/test_reports/pytest/iter25_results.xml",
+    "/app/test_reports/pytest/iter25_extras.xml"
+  ],
+  "action_items": [
+    "MINOR: PATCH /api/admin/pros/{id}/verify should return the FULL merged verification state (read from DB after $set), not just the fields that were in the request payload. Currently returns null for the field that was not in the payload, which could mislead the admin UI (DB write itself is correct).",
+    "MINOR DX: Pro Settings tab routing accepts ?tab=invoice_details but ignores ?tab=services (and likely other tab keys). Either honour all tab keys in the routing useEffect, or document that only invoice_details supports deep-linking."
+  ],
+  "critical_code_review_comments": [
+    "backend/routes/admin_routes.py:132 — return statement returns updates.get('is_licensed') which is None when only insurance was updated. Either re-fetch the doc post-update or accumulate fields properly: e.g., return {'is_licensed': updates.get('is_licensed', raw.get('is_licensed')), 'is_insured': updates.get('is_insured', raw.get('is_insured'))}.",
+    "backend/routes/pro_invoicing_routes.py — POST /api/pro-invoices/{id}/mark-paid returns {message: 'Marked paid'} instead of the updated invoice object. Less RESTful; frontend has to re-GET to know the new status. Suggest returning the updated invoice.",
+    "backend/services/pro_invoicing.py:91 — _split_lines reads li.get('unit_net') but Pydantic schema requires field name 'unit_net'. The /pro-invoices test file initially failed with 'unit_price_net' — naming is consistent in code but undocumented; consider exposing a friendlier alias.",
+    "Frontend ProSettingsPage useEffect that reads ?tab= only fires for 'invoice_details' — generalise to all known tab keys (about_me, services, portfolio, invoice_details, notifications, account, privacy) for consistent deep-linking."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter25_extras.py (new)"
+  ],
+  "success_rate": {"backend": "100% (14/14 + 1 intentional skip)", "frontend": "100% on functional behaviour (2 MINOR items)"},
+  "test_credentials": "admin@servicemarket.eu / Admin123!, pro@test.com / Test123!, homeowner@test.com / Test123! (read from /app/memory/test_credentials.md). pro@test.com already has has_invoice_toolkit=true + bank data set up + Vienna service_center.",
+  "seed_data_creation": "test_iter25_extras::test_pro_invoice_create_and_pdf_with_epc_qr created RG-2026-NNNN invoices for the pro. test_geofence_filters_far_jobs_for_pro created Graz+Wien plumbing jobs as homeowner@test.com. All test data is harmless and prefixed/identifiable.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter25 fully green. The Pro user pro@test.com is mutated by the geo-fence test (radius set back to 0 at end). The toolkit gating test SKIPS because pro@test.com has has_invoice_toolkit=true in this env; to exercise the 402 path you would need a different pro without toolkit, OR an admin endpoint to revoke. Stripe checkout endpoints DO hit the live Stripe API and return real checkout.stripe.com URLs (we never actually pay). Backend regression file: /app/backend/tests/test_iter25_extras.py is the new addition; original /app/backend/tests/test_iter25_toolkit_geofence.py is unchanged.",
+  "rca of the issue": "Issue 1 (admin verify response): the verify_pro endpoint sets only the fields supplied in `data` (correct DB behaviour) but returns `updates.get('is_licensed')` / `updates.get('is_insured')` which is None for whichever field was not in the payload. Fix: merge with `raw` (the pre-update doc) when constructing the response. Issue 2 (geo-fence deep link): the ?tab= query param logic in ProSettingsPage only handles the 'invoice_details' key; other tab keys are silently ignored. Fix: generalise the URL-→state effect to a switch over all valid tab keys."
+}

@@ -1,0 +1,1590 @@
+// ============================================================
+// PM TOOLKIT — COMPLETE CODE REFERENCE
+// Generated: $(date)
+// Files included:
+//   1. PMProjectsPage.jsx
+//   2. PMProjectDetailPage.jsx (includes MaterialsTab, DiaryTab, ShareTab)
+//   3. pm/OverviewTab.jsx
+//   4. pm/GanttTab.jsx
+//   5. pm/KanbanTab.jsx
+// ============================================================
+
+
+// ============================================================
+// FILE 1: /src/pages/pro/PMProjectsPage.jsx
+// ============================================================
+// FILE 1: PMProjectsPage.jsx
+import React, { useEffect, useState, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '../../api/client';
+import { useLang } from '../../contexts/LangContext';
+import {
+  Briefcase, Loader2, Plus, ChevronRight, CheckCircle, Clock, Pause, Archive,
+  TrendingUp, AlertTriangle, Search, Filter, Calendar as CalendarIcon,
+} from 'lucide-react';
+
+const fmtEur = (v) => new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
+
+const STATUS_META = {
+  active:    { i: Clock,         cls: 'text-amber-deep bg-amber/10',         dot: 'bg-amber',         key: 'pm_status_active' },
+  on_hold:   { i: Pause,         cls: 'text-ink-muted bg-cream-deep',        dot: 'bg-ink-muted',     key: 'pm_status_on_hold' },
+  done:      { i: CheckCircle,   cls: 'text-green-pos bg-green-pos/10',      dot: 'bg-green-pos',     key: 'pm_status_done' },
+  archived:  { i: Archive,       cls: 'text-ink-muted bg-cream-deep',        dot: 'bg-ink-muted',     key: 'pm_status_archived' },
+};
+
+export default function PMProjectsPage() {
+  const { t } = useLang();
+  const navigate = useNavigate();
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [needsToolkit, setNeedsToolkit] = useState(false);
+
+  const [wonQuotes, setWonQuotes] = useState([]);
+  const [creating, setCreating] = useState(false);
+  const [pickJob, setPickJob] = useState('');
+
+  // Filter / search state
+  const [statusFilter, setStatusFilter] = useState('active');
+  const [search, setSearch] = useState('');
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get('/api/pm/projects');
+      setProjects(data.projects || []);
+    } catch (e) {
+      if (e?.response?.status === 402) setNeedsToolkit(true);
+    } finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    if (needsToolkit) return;
+    api.get('/api/quotes').then((r) => {
+      const wins = (r.data?.quotes || []).filter((q) => q.status === 'accepted');
+      setWonQuotes(wins);
+    }).catch(() => {});
+  }, [needsToolkit]);
+
+  const eligibleJobs = useMemo(() => {
+    const existing = new Set(projects.map((p) => p.job_id));
+    return wonQuotes.filter((q) => !existing.has(q.job_id));
+  }, [wonQuotes, projects]);
+
+  const createProject = async () => {
+    if (!pickJob) return;
+    setCreating(true);
+    try {
+      const { data } = await api.post('/api/pm/projects', { job_id: pickJob });
+      setPickJob('');
+      await load();
+      if (data?.id) navigate(`/projects/${data.id}`);
+    } catch (e) {
+      console.error(e);
+    } finally { setCreating(false); }
+  };
+
+  // ─── Aggregate stats across all visible projects ───
+  const stats = useMemo(() => {
+    const acc = { active: 0, on_hold: 0, done: 0, archived: 0, totalRevenue: 0, totalPotential: 0 };
+    for (const p of projects) {
+      acc[p.status || 'active'] = (acc[p.status || 'active'] || 0) + 1;
+      const rev = Number(p.quote_price_eur || 0);
+      if (p.status === 'done') acc.totalRevenue += rev;
+      else if (p.status === 'active') acc.totalPotential += rev;
+    }
+    return acc;
+  }, [projects]);
+
+  const filtered = useMemo(() => {
+    let arr = projects;
+    if (statusFilter !== 'all') arr = arr.filter((p) => (p.status || 'active') === statusFilter);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      arr = arr.filter((p) =>
+        (p.title || '').toLowerCase().includes(q) ||
+        (p.customer?.name || '').toLowerCase().includes(q) ||
+        (p.job_category || '').toLowerCase().includes(q),
+      );
+    }
+    return arr;
+  }, [projects, statusFilter, search]);
+
+  if (needsToolkit) {
+    return (
+      <div className="min-h-screen bg-cream pb-24 md:pb-12">
+        <div className="page-container py-10 max-w-2xl text-center">
+          <Briefcase size={48} className="mx-auto text-teal mb-3" />
+          <h1 className="text-3xl font-headings font-bold text-ink">{t('pm_needs_toolkit_title')}</h1>
+          <p className="text-ink-muted mt-2 mb-6">{t('pm_needs_toolkit_body')}</p>
+          <Link to="/billing" className="btn-primary inline-flex" data-testid="pm-get-toolkit-btn">{t('pm_get_toolkit_btn')}</Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-cream pb-24 md:pb-12">
+      <div className="page-container py-8 max-w-6xl">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
+          <div className="flex items-center gap-3">
+            <Briefcase size={26} className="text-teal" />
+            <div>
+              <h1 className="text-3xl font-headings font-bold text-ink">{t('pm_title')}</h1>
+              <p className="text-ink-muted text-sm">{t('pm_subtitle')}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* KPI strip */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+          <StatTile
+            icon={Clock}
+            iconCls="text-amber-deep"
+            label={t('pm_stat_active')}
+            value={stats.active}
+            data-testid="pm-stat-active"
+          />
+          <StatTile
+            icon={CheckCircle}
+            iconCls="text-green-pos"
+            label={t('pm_stat_done')}
+            value={stats.done}
+            data-testid="pm-stat-done"
+          />
+          <StatTile
+            icon={TrendingUp}
+            iconCls="text-teal"
+            label={t('pm_stat_revenue')}
+            value={fmtEur(stats.totalRevenue)}
+            sub={t('pm_stat_revenue_sub')}
+            data-testid="pm-stat-revenue"
+          />
+          <StatTile
+            icon={AlertTriangle}
+            iconCls="text-amber"
+            label={t('pm_stat_pipeline')}
+            value={fmtEur(stats.totalPotential)}
+            sub={t('pm_stat_pipeline_sub')}
+            data-testid="pm-stat-pipeline"
+          />
+        </div>
+
+        {/* Bootstrap row */}
+        <div className="card-lg mb-5 border-l-4 border-teal" data-testid="pm-bootstrap">
+          <p className="text-xs uppercase font-bold text-ink-muted tracking-wider mb-2 flex items-center gap-2"><Plus size={12} /> {t('pm_create_from_job')}</p>
+          {eligibleJobs.length === 0 ? (
+            <p className="text-sm text-ink-muted">{t('pm_pick_job_none')}</p>
+          ) : (
+            <div className="flex items-center gap-2 flex-wrap">
+              <select
+                value={pickJob}
+                onChange={(e) => setPickJob(e.target.value)}
+                className="sm-select text-sm flex-1 min-w-[240px]"
+                data-testid="pm-pick-job"
+              >
+                <option value="">{t('pm_pick_job')}</option>
+                {eligibleJobs.map((q) => (
+                  <option key={q.job_id} value={q.job_id}>
+                    {q.job_title || `Job ${q.job_id.slice(-6)}`} · €{q.price}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={createProject}
+                disabled={!pickJob || creating}
+                className="btn-primary text-sm"
+                data-testid="pm-create-project"
+              >
+                {creating ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} {t('pm_create_btn')}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Filters */}
+        <div className="flex items-center gap-2 mb-3 flex-wrap" data-testid="pm-filters">
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('pm_search_ph')}
+              className="sm-input text-xs pl-8 w-full md:w-80"
+              data-testid="pm-search"
+            />
+          </div>
+          <div className="flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-hide flex-nowrap">
+            <Filter size={12} className="text-ink-muted flex-shrink-0" />
+            {['all', 'active', 'on_hold', 'done', 'archived'].map((s) => (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={`text-[11px] px-2 py-1 rounded-[8px] transition-colors capitalize flex-shrink-0 whitespace-nowrap ${statusFilter === s ? 'bg-teal text-paper' : 'text-ink-muted hover:bg-cream-deep'}`}
+                data-testid={`pm-filter-${s}`}
+              >
+                {s === 'all' ? t('pm_filter_all') : t(`pm_status_${s}`)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Projects list */}
+        {loading ? (
+          <div className="flex justify-center py-10"><Loader2 size={24} className="text-teal animate-spin" /></div>
+        ) : filtered.length === 0 ? (
+          <div className="card-lg text-center py-10" data-testid="pm-empty">
+            <Briefcase size={36} className="mx-auto text-ink-muted mb-2" />
+            <p className="text-ink font-medium">{projects.length === 0 ? t('pm_empty_title') : t('pm_no_match_title')}</p>
+            <p className="text-ink-muted text-sm mt-1">{projects.length === 0 ? t('pm_empty_help') : t('pm_no_match_help')}</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3" data-testid="pm-project-list">
+            {filtered.map((p) => <ProjectCard key={p.id} p={p} t={t} />)}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StatTile({ icon: Icon, iconCls, label, value, sub, ...rest }) {
+  return (
+    <div className="card-lg p-4" {...rest}>
+      <div className="flex items-center gap-1.5 mb-1">
+        <Icon size={12} className={iconCls} />
+        <p className="text-[10px] uppercase font-bold text-ink-muted tracking-wider">{label}</p>
+      </div>
+      <p className="text-2xl font-headings font-bold text-ink">{value}</p>
+      {sub && <p className="text-[10px] text-ink-muted">{sub}</p>}
+    </div>
+  );
+}
+
+function ProjectCard({ p, t }) {
+  const meta = STATUS_META[p.status] || STATUS_META.active;
+  const Icon = meta.i;
+  const revenue = Number(p.quote_price_eur || 0);
+  return (
+    <Link
+      to={`/projects/${p.id}`}
+      className="card-lg flex flex-col gap-3 hover:shadow-md hover:border-teal/40 transition-all relative"
+      data-testid={`pm-project-${p.id}`}
+    >
+      <div className="flex items-start gap-2">
+        <span className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${meta.dot}`} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <h3 className="font-headings font-bold text-ink text-base truncate">{p.title}</h3>
+            <span className={`inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${meta.cls}`}>
+              <Icon size={10} /> {t(meta.key)}
+            </span>
+          </div>
+          <p className="text-xs text-ink-muted truncate mt-0.5">
+            {p.customer?.name || '—'} · {p.job_category || '—'}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-end justify-between gap-2 border-t border-sm-border pt-3">
+        <div>
+          {revenue > 0 && (
+            <>
+              <p className="text-[10px] uppercase font-bold text-ink-muted tracking-wider">{t('pm_overview_revenue')}</p>
+              <p className="text-lg font-headings font-bold text-ink">{fmtEur(revenue)}</p>
+            </>
+          )}
+          {p.customer?.city && (
+            <p className="text-[11px] text-ink-muted mt-1 inline-flex items-center gap-1">
+              <CalendarIcon size={10} /> {p.customer.city}
+            </p>
+          )}
+        </div>
+        <ChevronRight size={16} className="text-ink-muted flex-shrink-0" />
+      </div>
+    </Link>
+  );
+}
+
+
+// ============================================================
+// FILE 2: PMProjectDetailPage.jsx
+// ============================================================
+
+import React, { useEffect, useState, useMemo } from 'react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import api from '../../api/client';
+import { useLang } from '../../contexts/LangContext';
+import {
+  ArrowLeft, Loader2, Plus, Trash2, Briefcase, KanbanSquare, Boxes, BookOpen, Share2,
+  Copy, RefreshCw, ExternalLink, Save, LayoutDashboard, CalendarDays, UserPlus, X, Eye,
+} from 'lucide-react';
+import OverviewTab from './pm/OverviewTab';
+import KanbanTab from './pm/KanbanTab';
+import GanttTab from './pm/GanttTab';
+import ScrollSnapTabStrip, { SwipeableTabPanel } from '../../components/ScrollSnapTabStrip';
+
+const fmtEur = (v) => new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
+
+const TABS = [
+  { key: 'overview', icon: LayoutDashboard, labelKey: 'pm_tab_overview' },
+  { key: 'kanban', icon: KanbanSquare, labelKey: 'pm_tab_kanban' },
+  { key: 'gantt', icon: CalendarDays, labelKey: 'pm_tab_gantt' },
+  { key: 'materials', icon: Boxes, labelKey: 'pm_tab_materials' },
+  { key: 'diary', icon: BookOpen, labelKey: 'pm_tab_diary' },
+  { key: 'share', icon: Share2, labelKey: 'pm_tab_share' },
+];
+
+export default function PMProjectDetailPage() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { t } = useLang();
+  const [project, setProject] = useState(null);
+  const [tab, setTab] = useState('overview');
+  const [loading, setLoading] = useState(true);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get(`/api/pm/projects/${id}`);
+      setProject(data);
+    } catch (e) {
+      if (e?.response?.status === 404) navigate('/projects');
+    } finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [id]);
+
+  if (loading) return <div className="min-h-screen bg-cream flex items-center justify-center"><Loader2 size={28} className="text-teal animate-spin" /></div>;
+  if (!project) return null;
+
+  return (
+    <div className="min-h-screen bg-cream pb-24 md:pb-12">
+      <div className="page-container py-8 max-w-6xl">
+        <div className="mb-6">
+          <Link to="/projects" className="inline-flex items-center gap-1 text-xs text-ink-muted hover:text-teal mb-3" data-testid="pm-back">
+            <ArrowLeft size={12} /> {t('pm_back')}
+          </Link>
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="flex items-start gap-3 min-w-0">
+              <Briefcase size={26} className="text-teal mt-1 flex-shrink-0" />
+              <div className="min-w-0">
+                <h1 className="text-2xl font-headings font-bold text-ink truncate">{project.title}</h1>
+                <p className="text-ink-muted text-sm">
+                  {project.customer?.name || '—'} · {project.job_category} · {project.customer?.city || '—'}
+                </p>
+              </div>
+            </div>
+            <ProjectStatusSelect project={project} reload={load} t={t} />
+          </div>
+        </div>
+
+        {/* Tab strip — horizontally scrollable on mobile with scroll-snap */}
+        <ScrollSnapTabStrip
+          tabs={TABS.map(({ key, labelKey }) => ({ key, label: t(labelKey) }))}
+          activeKey={tab}
+          onChange={setTab}
+          testidPrefix="pm-tab"
+          variant="pills"
+          className="mb-5"
+        />
+
+        <SwipeableTabPanel tabKeys={TABS.map((t2) => t2.key)} activeKey={tab} onChange={setTab}>
+          {tab === 'overview' && <OverviewTab projectId={id} t={t} onJumpTab={setTab} />}
+          {tab === 'kanban' && <KanbanTab projectId={id} t={t} />}
+          {tab === 'gantt' && <GanttTab projectId={id} t={t} />}
+          {tab === 'materials' && <MaterialsTab projectId={id} t={t} />}
+          {tab === 'diary' && <DiaryTab projectId={id} t={t} />}
+          {tab === 'share' && <ShareTab project={project} reload={load} t={t} />}
+        </SwipeableTabPanel>
+      </div>
+    </div>
+  );
+}
+
+
+// ──────────────────────────────────────────────
+// Status dropdown + hourly rate input
+// ──────────────────────────────────────────────
+function ProjectStatusSelect({ project, reload, t }) {
+  const [busy, setBusy] = useState(false);
+  const onChange = async (e) => {
+    setBusy(true);
+    try {
+      await api.patch(`/api/pm/projects/${project.id}`, { status: e.target.value });
+      await reload();
+    } finally { setBusy(false); }
+  };
+  return (
+    <div className="flex items-center gap-2">
+      <select
+        defaultValue={project.status}
+        onChange={onChange}
+        disabled={busy}
+        className="sm-select text-xs"
+        data-testid="pm-status-select"
+      >
+        <option value="active">{t('pm_status_active')}</option>
+        <option value="on_hold">{t('pm_status_on_hold')}</option>
+        <option value="done">{t('pm_status_done')}</option>
+        <option value="archived">{t('pm_status_archived')}</option>
+      </select>
+      {busy && <Loader2 size={14} className="text-teal animate-spin" />}
+    </div>
+  );
+}
+
+
+// ──────────────────────────────────────────────
+// Materials tab (unchanged from prior P0)
+// ──────────────────────────────────────────────
+function MaterialsTab({ projectId, t }) {
+  const [items, setItems] = useState([]);
+  const [totals, setTotals] = useState({ planned: 0, actual: 0, variance: 0 });
+  const [loading, setLoading] = useState(true);
+  const [draft, setDraft] = useState({ name: '', qty: 1, unit: 'pcs', planned_cost: 0, actual_cost: '', supplier: '' });
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get(`/api/pm/projects/${projectId}/materials`);
+      setItems(data.materials || []);
+      setTotals(data.totals || { planned: 0, actual: 0, variance: 0 });
+    } finally { setLoading(false); }
+  };
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [projectId]);
+
+  const add = async () => {
+    if (!draft.name.trim()) return;
+    await api.post(`/api/pm/projects/${projectId}/materials`, {
+      name: draft.name.trim(),
+      qty: Number(draft.qty) || 1,
+      unit: draft.unit || 'pcs',
+      planned_cost: Number(draft.planned_cost) || 0,
+      actual_cost: draft.actual_cost === '' ? null : Number(draft.actual_cost),
+      supplier: draft.supplier || null,
+    });
+    setDraft({ name: '', qty: 1, unit: 'pcs', planned_cost: 0, actual_cost: '', supplier: '' });
+    await load();
+  };
+
+  const updateField = async (id, field, val) => {
+    await api.patch(`/api/pm/projects/${projectId}/materials/${id}`, { [field]: val });
+    await load();
+  };
+
+  const remove = async (id) => {
+    await api.delete(`/api/pm/projects/${projectId}/materials/${id}`);
+    await load();
+  };
+
+  if (loading) return <div className="flex justify-center py-10"><Loader2 size={20} className="text-teal animate-spin" /></div>;
+
+  return (
+    <div className="space-y-4" data-testid="pm-materials">
+      <div className="grid grid-cols-3 gap-3">
+        <div className="card-lg p-4"><p className="text-[10px] uppercase font-bold text-ink-muted">{t('pm_material_planned')}</p><p className="text-xl font-headings font-bold text-ink">{fmtEur(totals.planned)}</p></div>
+        <div className="card-lg p-4"><p className="text-[10px] uppercase font-bold text-ink-muted">{t('pm_material_actual')}</p><p className="text-xl font-headings font-bold text-ink">{fmtEur(totals.actual)}</p></div>
+        <div className="card-lg p-4">
+          <p className="text-[10px] uppercase font-bold text-ink-muted">{t('pm_material_variance')}</p>
+          <p className={`text-xl font-headings font-bold ${totals.variance > 0 ? 'text-red-warn' : 'text-green-pos'}`}>{fmtEur(totals.variance)}</p>
+        </div>
+      </div>
+
+      <div className="card-lg">
+        <p className="text-xs uppercase font-bold text-ink-muted tracking-wider mb-2 flex items-center gap-2"><Plus size={12} /> {t('pm_material_add')}</p>
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+          <input className="sm-input text-xs col-span-2" placeholder={t('pm_material_name')} value={draft.name} onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))} data-testid="pm-material-name" />
+          <input className="sm-input text-xs" type="number" step="0.01" placeholder={t('pm_material_qty')} value={draft.qty} onChange={(e) => setDraft((d) => ({ ...d, qty: e.target.value }))} data-testid="pm-material-qty" />
+          <input className="sm-input text-xs" placeholder={t('pm_material_unit')} value={draft.unit} onChange={(e) => setDraft((d) => ({ ...d, unit: e.target.value }))} />
+          <input className="sm-input text-xs" type="number" step="0.01" placeholder={t('pm_material_planned')} value={draft.planned_cost} onChange={(e) => setDraft((d) => ({ ...d, planned_cost: e.target.value }))} data-testid="pm-material-planned" />
+          <input className="sm-input text-xs" type="number" step="0.01" placeholder={t('pm_material_actual')} value={draft.actual_cost} onChange={(e) => setDraft((d) => ({ ...d, actual_cost: e.target.value }))} data-testid="pm-material-actual" />
+        </div>
+        <div className="flex items-center gap-2 mt-2 flex-wrap">
+          <input className="sm-input text-xs flex-1" placeholder={t('pm_material_supplier')} value={draft.supplier} onChange={(e) => setDraft((d) => ({ ...d, supplier: e.target.value }))} />
+          <button onClick={add} className="btn-primary text-xs" data-testid="pm-material-create"><Plus size={12} /> {t('pm_material_add')}</button>
+        </div>
+      </div>
+
+      <div className="card-lg overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="text-[10px] uppercase text-ink-muted">
+            <tr>
+              <th className="text-left p-2">{t('pm_material_name')}</th>
+              <th className="text-right p-2">{t('pm_material_qty')}</th>
+              <th className="text-right p-2">{t('pm_material_planned')}</th>
+              <th className="text-right p-2">{t('pm_material_actual')}</th>
+              <th className="text-left p-2">{t('pm_material_supplier')}</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {items.length === 0 ? (
+              <tr><td colSpan="6" className="text-center text-ink-muted py-4 text-xs">{t('pm_material_empty')}</td></tr>
+            ) : items.map((m) => (
+              <tr key={m.id} className="border-t border-sm-border" data-testid={`pm-material-${m.id}`}>
+                <td className="p-2 font-medium text-ink">{m.name}</td>
+                <td className="p-2 text-right">{m.qty} {m.unit}</td>
+                <td className="p-2 text-right">{fmtEur(m.planned_cost)}</td>
+                <td className="p-2 text-right">
+                  <input
+                    type="number"
+                    defaultValue={m.actual_cost ?? ''}
+                    onBlur={(e) => {
+                      const v = e.target.value === '' ? null : Number(e.target.value);
+                      if (v !== m.actual_cost) updateField(m.id, 'actual_cost', v);
+                    }}
+                    className="sm-input text-xs w-24 text-right"
+                  />
+                </td>
+                <td className="p-2 text-ink-soft text-xs">{m.supplier || '—'}</td>
+                <td className="p-2 text-right">
+                  <button onClick={() => remove(m.id)} className="text-ink-muted hover:text-red-warn"><Trash2 size={12} /></button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+
+// ──────────────────────────────────────────────
+// Diary tab — with running-timer awareness
+// ──────────────────────────────────────────────
+function DiaryTab({ projectId, t }) {
+  const [entries, setEntries] = useState([]);
+  const [totalHours, setTotalHours] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [draft, setDraft] = useState({ note: '', hours: '' });
+  const [timer, setTimer] = useState(null);
+  const [now, setNow] = useState(Date.now());
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get(`/api/pm/projects/${projectId}/diary`);
+      setEntries(data.entries || []);
+      setTotalHours(data.total_hours || 0);
+    } finally { setLoading(false); }
+  };
+  const loadTimer = async () => {
+    try {
+      const { data: r } = await api.get('/api/pm/timer');
+      setTimer(r.running);
+    } catch { setTimer(null); }
+  };
+  useEffect(() => { load(); loadTimer(); /* eslint-disable-next-line */ }, [projectId]);
+  useEffect(() => {
+    if (!timer || timer.project_id !== projectId) return;
+    const i = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(i);
+  }, [timer, projectId]);
+
+  const isTimerOnThis = timer && timer.project_id === projectId;
+  const elapsedSec = isTimerOnThis ? Math.floor((now - new Date(timer.started_at).getTime()) / 1000) : 0;
+  const hh = String(Math.floor(elapsedSec / 3600)).padStart(2, '0');
+  const mm = String(Math.floor((elapsedSec % 3600) / 60)).padStart(2, '0');
+  const ss = String(elapsedSec % 60).padStart(2, '0');
+
+  const toggleTimer = async () => {
+    if (isTimerOnThis) {
+      await api.post(`/api/pm/projects/${projectId}/timer/stop`);
+    } else {
+      await api.post(`/api/pm/projects/${projectId}/timer/start`);
+    }
+    await loadTimer();
+    await load();
+  };
+
+  const add = async () => {
+    if (!draft.note.trim()) return;
+    await api.post(`/api/pm/projects/${projectId}/diary`, {
+      note: draft.note.trim(),
+      hours: Number(draft.hours) || 0,
+    });
+    setDraft({ note: '', hours: '' });
+    await load();
+  };
+
+  const remove = async (entryId) => {
+    await api.delete(`/api/pm/projects/${projectId}/diary/${entryId}`);
+    await load();
+  };
+
+  if (loading) return <div className="flex justify-center py-10"><Loader2 size={20} className="text-teal animate-spin" /></div>;
+
+  return (
+    <div className="space-y-4" data-testid="pm-diary">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="card-lg">
+          <p className="text-[10px] uppercase font-bold text-ink-muted">{t('pm_diary_total')}</p>
+          <p className="text-2xl font-headings font-bold text-ink">{totalHours.toFixed(1)} h</p>
+        </div>
+        <div className={`card-lg flex items-center gap-3 ${isTimerOnThis ? 'border-amber bg-amber/5' : ''}`}>
+          <div>
+            <p className="text-[10px] uppercase font-bold text-ink-muted">{t('pm_timer_title')}</p>
+            <p className="text-2xl font-headings font-bold text-ink tabular-nums">{isTimerOnThis ? `${hh}:${mm}:${ss}` : '00:00:00'}</p>
+          </div>
+          <button
+            onClick={toggleTimer}
+            className={`btn-primary text-xs ml-auto ${isTimerOnThis ? 'bg-red-warn hover:bg-red-warn/90' : ''}`}
+            data-testid="pm-diary-timer-toggle"
+          >
+            {isTimerOnThis ? t('pm_timer_stop') : t('pm_timer_start')}
+          </button>
+        </div>
+      </div>
+
+      <div className="card-lg">
+        <p className="text-xs uppercase font-bold text-ink-muted tracking-wider mb-2 flex items-center gap-2"><Plus size={12} /> {t('pm_diary_add')}</p>
+        <textarea
+          rows={3}
+          value={draft.note}
+          onChange={(e) => setDraft((d) => ({ ...d, note: e.target.value }))}
+          placeholder={t('pm_diary_note')}
+          className="sm-textarea text-sm w-full"
+          data-testid="pm-diary-note"
+        />
+        <div className="mt-2 flex items-center gap-2 flex-wrap">
+          <label className="text-xs text-ink-muted flex items-center gap-1">{t('pm_diary_hours')}:
+            <input type="number" step="0.25" value={draft.hours} onChange={(e) => setDraft((d) => ({ ...d, hours: e.target.value }))} className="sm-input text-xs w-20" data-testid="pm-diary-hours" />
+          </label>
+          <button onClick={add} className="btn-primary text-xs ml-auto" data-testid="pm-diary-create"><Plus size={12} /> {t('pm_diary_add')}</button>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {entries.length === 0 ? (
+          <p className="text-center text-ink-muted py-6 text-sm">{t('pm_diary_empty')}</p>
+        ) : entries.map((e) => (
+          <div key={e.id} className="card-lg" data-testid={`pm-diary-${e.id}`}>
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-ink whitespace-pre-wrap">{e.note}</p>
+                <p className="text-xs text-ink-muted mt-1">
+                  {new Date(e.entry_date).toLocaleString('de-AT')}
+                  {e.hours > 0 && <span className="ml-2">· {e.hours.toFixed(1)} h</span>}
+                  {e.source === 'timer' && <span className="ml-2 inline-block bg-amber/15 text-amber-deep text-[9px] uppercase px-1 rounded">timer</span>}
+                  {e.source === 'sub' && <span className="ml-2 inline-block bg-teal/15 text-teal text-[9px] uppercase px-1 rounded">sub</span>}
+                </p>
+              </div>
+              <button onClick={() => remove(e.id)} className="text-ink-muted hover:text-red-warn" data-testid={`pm-diary-delete-${e.id}`}><Trash2 size={14} /></button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
+// ──────────────────────────────────────────────
+// Share tab — customer link + sub-contractor invite + hourly-rate / settings
+// ──────────────────────────────────────────────
+function ShareTab({ project, reload, t }) {
+  const [note, setNote] = useState(project.customer_status_note || '');
+  const [hourlyRate, setHourlyRate] = useState(project.hourly_rate_eur || 65);
+  const [saving, setSaving] = useState(false);
+  const [copied, setCopied] = useState({ share: false, sub: false });
+  const [rotating, setRotating] = useState(false);
+  const [subBusy, setSubBusy] = useState(false);
+  const [subToken, setSubToken] = useState(project.sub_token || null);
+
+  const publicUrl = `${window.location.origin}/p/${project.share_token}`;
+  const subUrl = subToken ? `${window.location.origin}/sub/${subToken}` : null;
+
+  const saveSettings = async () => {
+    setSaving(true);
+    try {
+      await api.patch(`/api/pm/projects/${project.id}`, {
+        customer_status_note: note,
+        hourly_rate_eur: Number(hourlyRate) || 65,
+      });
+      await reload();
+    } finally { setSaving(false); }
+  };
+
+  const copy = async (kind, url) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied((c) => ({ ...c, [kind]: true }));
+      setTimeout(() => setCopied((c) => ({ ...c, [kind]: false })), 1500);
+    } catch { /* noop */ }
+  };
+
+  const rotate = async () => {
+    setRotating(true);
+    try {
+      await api.post(`/api/pm/projects/${project.id}/rotate-share-token`);
+      await reload();
+    } finally { setRotating(false); }
+  };
+
+  const issueSub = async () => {
+    setSubBusy(true);
+    try {
+      const { data } = await api.post(`/api/pm/projects/${project.id}/sub-invite`);
+      setSubToken(data.sub_token);
+    } finally { setSubBusy(false); }
+  };
+
+  const revokeSub = async () => {
+    setSubBusy(true);
+    try {
+      await api.post(`/api/pm/projects/${project.id}/sub-revoke`);
+      setSubToken(null);
+    } finally { setSubBusy(false); }
+  };
+
+  return (
+    <div className="space-y-4" data-testid="pm-share-tab">
+      {/* Customer link */}
+      <div className="card-lg">
+        <div className="flex items-center gap-2 mb-1">
+          <Eye size={16} className="text-teal" />
+          <h3 className="font-headings font-bold text-ink text-base">{t('pm_share_title')}</h3>
+        </div>
+        <p className="text-sm text-ink-muted mb-3">{t('pm_share_help')}</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <code className="text-xs bg-cream-soft px-3 py-2 rounded-[10px] border border-sm-border flex-1 min-w-[260px] break-all" data-testid="pm-share-url">{publicUrl}</code>
+          <button onClick={() => copy('share', publicUrl)} className="btn-ghost text-xs" data-testid="pm-share-copy"><Copy size={12} /> {copied.share ? '✓' : t('pm_share_copy')}</button>
+          <a href={publicUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs" data-testid="pm-share-open"><ExternalLink size={12} /> {t('pm_share_open_public')}</a>
+          <button onClick={rotate} disabled={rotating} className="btn-ghost text-xs" data-testid="pm-share-rotate">
+            {rotating ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />} {t('pm_share_rotate')}
+          </button>
+        </div>
+      </div>
+
+      {/* Sub-contractor magic link */}
+      <div className="card-lg" data-testid="pm-sub-card">
+        <div className="flex items-center gap-2 mb-1">
+          <UserPlus size={16} className="text-amber-deep" />
+          <h3 className="font-headings font-bold text-ink text-base">{t('pm_sub_invite_title')}</h3>
+        </div>
+        <p className="text-sm text-ink-muted mb-3">{t('pm_sub_invite_help')}</p>
+        {subUrl ? (
+          <div className="flex items-center gap-2 flex-wrap">
+            <code className="text-xs bg-cream-soft px-3 py-2 rounded-[10px] border border-sm-border flex-1 min-w-[260px] break-all" data-testid="pm-sub-url">{subUrl}</code>
+            <button onClick={() => copy('sub', subUrl)} className="btn-ghost text-xs" data-testid="pm-sub-copy"><Copy size={12} /> {copied.sub ? '✓' : t('pm_share_copy')}</button>
+            <a href={subUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs"><ExternalLink size={12} /> {t('pm_share_open_public')}</a>
+            <button onClick={revokeSub} disabled={subBusy} className="btn-ghost text-xs text-red-warn" data-testid="pm-sub-revoke">
+              {subBusy ? <Loader2 size={12} className="animate-spin" /> : <X size={12} />} {t('pm_sub_revoke')}
+            </button>
+          </div>
+        ) : (
+          <button onClick={issueSub} disabled={subBusy} className="btn-primary text-xs" data-testid="pm-sub-issue">
+            {subBusy ? <Loader2 size={12} className="animate-spin" /> : <UserPlus size={12} />} {t('pm_sub_issue')}
+          </button>
+        )}
+      </div>
+
+      {/* Customer status note + hourly rate */}
+      <div className="card-lg space-y-4">
+        <div>
+          <label className="block">
+            <p className="text-xs uppercase font-bold text-ink-muted tracking-wider mb-2">{t('pm_status_note_label')}</p>
+            <textarea
+              rows={3}
+              maxLength={280}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="sm-textarea text-sm w-full"
+              data-testid="pm-status-note"
+            />
+            <p className="text-[11px] text-ink-muted mt-1">{t('pm_status_note_help')}</p>
+          </label>
+        </div>
+        <div>
+          <label className="block">
+            <p className="text-xs uppercase font-bold text-ink-muted tracking-wider mb-2">{t('pm_hourly_rate')}</p>
+            <input
+              type="number"
+              step="0.5"
+              value={hourlyRate}
+              onChange={(e) => setHourlyRate(e.target.value)}
+              className="sm-input text-sm w-32"
+              data-testid="pm-hourly-rate"
+            />
+            <p className="text-[11px] text-ink-muted mt-1">{t('pm_hourly_rate_help')}</p>
+          </label>
+        </div>
+        <div className="flex justify-end">
+          <button onClick={saveSettings} disabled={saving} className="btn-primary text-xs" data-testid="pm-status-note-save">
+            {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />} {t('btn_save')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ============================================================
+// FILE 3: pm/OverviewTab.jsx
+// ============================================================
+
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import api from '../../../api/client';
+import {
+  Loader2, MessageSquare, Phone, Mail, MapPin, FileText, Receipt, Clock,
+  TrendingUp, AlertTriangle, Sparkles, CheckCircle2, FileSignature, Image as ImageIcon,
+  Play, Square, Calendar as CalendarIcon,
+} from 'lucide-react';
+
+const fmtEur = (v) => new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString('de-AT', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+
+const ACTIVITY_ICON = {
+  project_created: Sparkles,
+  quote_accepted: CheckCircle2,
+  invoice: Receipt,
+  diary: FileText,
+};
+
+export default function OverviewTab({ projectId, t, onJumpTab }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [timer, setTimer] = useState(null);
+  const [now, setNow] = useState(Date.now());
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const { data: d } = await api.get(`/api/pm/projects/${projectId}/overview`);
+      setData(d);
+    } finally { setLoading(false); }
+  };
+  const loadTimer = async () => {
+    try {
+      const { data: t2 } = await api.get('/api/pm/timer');
+      setTimer(t2.running);
+    } catch { setTimer(null); }
+  };
+
+  useEffect(() => { load(); loadTimer(); /* eslint-disable-next-line */ }, [projectId]);
+
+  // Tick every second while a timer for THIS project is running
+  useEffect(() => {
+    if (!timer || timer.project_id !== projectId) return;
+    const i = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(i);
+  }, [timer, projectId]);
+
+  const toggleTimer = async () => {
+    if (timer && timer.project_id === projectId) {
+      await api.post(`/api/pm/projects/${projectId}/timer/stop`);
+    } else {
+      await api.post(`/api/pm/projects/${projectId}/timer/start`);
+      setNow(Date.now()); // reset tick baseline immediately
+    }
+    await loadTimer();
+    await load();
+  };
+
+  if (loading || !data) return <div className="flex justify-center py-10"><Loader2 size={24} className="text-teal animate-spin" /></div>;
+
+  const isTimerOnThis = timer && timer.project_id === projectId;
+  const timerElapsedSec = isTimerOnThis ? Math.floor((now - new Date(timer.started_at).getTime()) / 1000) : 0;
+  const hh = String(Math.floor(timerElapsedSec / 3600)).padStart(2, '0');
+  const mm = String(Math.floor((timerElapsedSec % 3600) / 60)).padStart(2, '0');
+  const ss = String(timerElapsedSec % 60).padStart(2, '0');
+
+  const pl = data.pl;
+  const job = data.job || {};
+  const cust = data.customer || {};
+  const profitPositive = pl.profit_eur > 0;
+
+  return (
+    <div className="space-y-4" data-testid="pm-overview-tab">
+      {/* ─── KPI strip ─── */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="card-lg p-4">
+          <p className="text-[10px] uppercase font-bold text-ink-muted tracking-wider">{t('pm_progress')}</p>
+          <p className="text-2xl font-headings font-bold text-ink mt-0.5">{data.progress_pct}%</p>
+          <div className="h-1 bg-cream-deep rounded-full overflow-hidden mt-2">
+            <div className="h-full bg-teal transition-all" style={{ width: `${data.progress_pct}%` }} />
+          </div>
+          <p className="text-[11px] text-ink-muted mt-1">{data.tasks_done}/{data.tasks_total} {t('pm_tasks_total').toLowerCase()}</p>
+        </div>
+
+        <div className="card-lg p-4" data-testid="pm-overview-revenue">
+          <p className="text-[10px] uppercase font-bold text-ink-muted tracking-wider">{t('pm_overview_revenue')}</p>
+          <p className="text-2xl font-headings font-bold text-ink mt-0.5">{fmtEur(pl.revenue_eur)}</p>
+          <p className="text-[11px] text-ink-muted mt-1">{t('pm_overview_quote_base')}</p>
+        </div>
+
+        <div className="card-lg p-4" data-testid="pm-overview-materials">
+          <p className="text-[10px] uppercase font-bold text-ink-muted tracking-wider">{t('pm_overview_materials')}</p>
+          <p className="text-2xl font-headings font-bold text-ink mt-0.5">{fmtEur(pl.materials_actual_eur)}</p>
+          <p className="text-[11px] text-ink-muted mt-1">{t('pm_material_planned')}: {fmtEur(pl.materials_planned_eur)}</p>
+        </div>
+
+        <div className="card-lg p-4" data-testid="pm-overview-hours">
+          <p className="text-[10px] uppercase font-bold text-ink-muted tracking-wider">{t('pm_overview_labour')}</p>
+          <p className="text-2xl font-headings font-bold text-ink mt-0.5">{pl.labour_hours.toFixed(1)} h</p>
+          <p className="text-[11px] text-ink-muted mt-1">× {fmtEur(pl.labour_rate_eur)}/h = {fmtEur(pl.labour_cost_eur)}</p>
+        </div>
+
+        <div className={`card-lg p-4 col-span-2 lg:col-span-1 ${profitPositive ? 'bg-green-pos/5 border-green-pos/30' : 'bg-red-warn/5 border-red-warn/30'}`} data-testid="pm-overview-profit">
+          <p className="text-[10px] uppercase font-bold text-ink-muted tracking-wider flex items-center gap-1">
+            <TrendingUp size={10} /> {t('pm_overview_profit')}
+          </p>
+          <p className={`text-2xl font-headings font-bold mt-0.5 ${profitPositive ? 'text-green-pos' : 'text-red-warn'}`}>
+            {fmtEur(pl.profit_eur)}
+          </p>
+          <p className="text-[11px] text-ink-muted mt-1">{t('pm_overview_margin')} {pl.margin_pct}%</p>
+        </div>
+      </div>
+
+      {/* ─── Timer widget ─── */}
+      <div className={`card-lg flex items-center gap-4 ${isTimerOnThis ? 'border-amber bg-amber/5' : ''}`} data-testid="pm-timer-widget">
+        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isTimerOnThis ? 'bg-amber/20' : 'bg-cream-deep'}`}>
+          <Clock size={22} className={isTimerOnThis ? 'text-amber-deep' : 'text-ink-muted'} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] uppercase font-bold text-ink-muted tracking-wider">{t('pm_timer_title')}</p>
+          <p className="text-2xl font-headings font-bold text-ink tabular-nums" data-testid="pm-timer-elapsed">
+            {isTimerOnThis ? `${hh}:${mm}:${ss}` : '00:00:00'}
+          </p>
+        </div>
+        <button
+          onClick={toggleTimer}
+          className={`btn-primary text-sm ${isTimerOnThis ? 'bg-red-warn hover:bg-red-warn/90' : ''}`}
+          data-testid="pm-timer-toggle"
+        >
+          {isTimerOnThis ? <><Square size={14} /> {t('pm_timer_stop')}</> : <><Play size={14} /> {t('pm_timer_start')}</>}
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* ─── Original Job ─── */}
+        <div className="card-lg" data-testid="pm-overview-job">
+          <div className="flex items-center gap-2 mb-2">
+            <FileSignature size={16} className="text-teal" />
+            <p className="text-xs uppercase font-bold text-ink-muted tracking-wider">{t('pm_overview_job_title')}</p>
+          </div>
+          <h3 className="font-headings font-bold text-ink text-base mb-1">{job.title || '—'}</h3>
+          <p className="text-[11px] text-ink-muted mb-3">
+            {job.category} · {job.postal_code} {job.city}
+          </p>
+          {job.description && (
+            <div className="bg-cream-soft rounded-[10px] p-3 mb-3 max-h-32 overflow-y-auto">
+              <p className="text-sm text-ink whitespace-pre-wrap">{job.description}</p>
+            </div>
+          )}
+          {job.photos && job.photos.length > 0 && (
+            <div className="grid grid-cols-4 gap-1.5 mb-2" data-testid="pm-overview-photos">
+              {job.photos.slice(0, 4).map((url, i) => (
+                <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="aspect-square block rounded-[8px] overflow-hidden bg-cream-deep">
+                  <img src={url} alt={`job ${i}`} className="w-full h-full object-cover hover:opacity-90 transition-opacity" />
+                </a>
+              ))}
+            </div>
+          )}
+          {(!job.photos || job.photos.length === 0) && (
+            <p className="text-xs text-ink-muted inline-flex items-center gap-1"><ImageIcon size={11} /> {t('pm_overview_no_photos')}</p>
+          )}
+          {job.lat && job.lng && (
+            <a href={`https://www.google.com/maps?q=${job.lat},${job.lng}`} target="_blank" rel="noopener noreferrer" className="text-xs text-teal hover:underline inline-flex items-center gap-1 mt-2">
+              <MapPin size={11} /> {t('pm_overview_open_map')}
+            </a>
+          )}
+        </div>
+
+        {/* ─── Customer ─── */}
+        <div className="card-lg" data-testid="pm-overview-customer">
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles size={16} className="text-teal" />
+            <p className="text-xs uppercase font-bold text-ink-muted tracking-wider">{t('pm_overview_customer_title')}</p>
+          </div>
+          <h3 className="font-headings font-bold text-ink text-base">{cust.name || '—'}</h3>
+          <div className="text-sm text-ink-soft mt-1 space-y-1">
+            {cust.address && <p>{cust.address}</p>}
+            {(cust.postal_code || cust.city) && <p>{cust.postal_code} {cust.city}</p>}
+          </div>
+          <div className="flex items-center gap-2 mt-3 flex-wrap">
+            {cust.email && (
+              <a href={`mailto:${cust.email}`} className="btn-ghost text-xs" data-testid="pm-overview-email">
+                <Mail size={11} /> {cust.email}
+              </a>
+            )}
+            {cust.phone && (
+              <a href={`tel:${cust.phone}`} className="btn-ghost text-xs" data-testid="pm-overview-call">
+                <Phone size={11} /> {cust.phone}
+              </a>
+            )}
+          </div>
+
+          {/* Chat snippet */}
+          {data.chat.thread_id && (
+            <div className="mt-3 pt-3 border-t border-sm-border">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] uppercase font-bold text-ink-muted tracking-wider flex items-center gap-1"><MessageSquare size={10} /> {t('pm_overview_chat_recent')}</p>
+                <Link to={`/messages?thread=${data.chat.thread_id}`} className="text-[11px] text-teal hover:underline" data-testid="pm-overview-open-chat">{t('pm_overview_open_chat')}</Link>
+              </div>
+              {data.chat.messages.length === 0 ? (
+                <p className="text-xs text-ink-muted italic">{t('pm_overview_chat_empty')}</p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {data.chat.messages.map((m) => (
+                    <li key={m.id} className={`text-xs rounded-[8px] px-2 py-1.5 ${m.sent_by_me ? 'bg-teal/10 text-ink' : 'bg-cream-soft text-ink'}`}>
+                      <span className="font-semibold text-[10px] uppercase">{m.sent_by_me ? t('pm_overview_chat_me') : (cust.name || 'Customer')}: </span>
+                      {m.body}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ─── Quote + Invoices ─── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="card-lg" data-testid="pm-overview-quote">
+          <div className="flex items-center gap-2 mb-2">
+            <CheckCircle2 size={16} className="text-green-pos" />
+            <p className="text-xs uppercase font-bold text-ink-muted tracking-wider">{t('pm_overview_quote')}</p>
+          </div>
+          <p className="text-2xl font-headings font-bold text-ink">{fmtEur(data.quote.price_eur)}</p>
+          {data.quote.travel_cost_eur > 0 && (
+            <p className="text-xs text-ink-muted">+ {fmtEur(data.quote.travel_cost_eur)} {t('pm_overview_travel')}</p>
+          )}
+          {data.quote.message && <p className="text-sm text-ink-soft mt-2 italic">"{data.quote.message}"</p>}
+          {data.quote.accepted_at && (
+            <p className="text-[11px] text-ink-muted mt-2 inline-flex items-center gap-1"><CalendarIcon size={10} /> {t('pm_overview_accepted')} {fmtDate(data.quote.accepted_at)}</p>
+          )}
+        </div>
+
+        <div className="card-lg" data-testid="pm-overview-invoices">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Receipt size={16} className="text-teal" />
+              <p className="text-xs uppercase font-bold text-ink-muted tracking-wider">{t('pm_overview_invoices')}</p>
+            </div>
+            <Link
+              to={`/invoice-from-project/${projectId}`}
+              className="text-[11px] text-teal hover:underline inline-flex items-center gap-1"
+              data-testid="pm-overview-create-invoice"
+            >
+              {t('pm_overview_create_invoice')} →
+            </Link>
+          </div>
+          {data.invoices.length === 0 ? (
+            <p className="text-xs text-ink-muted py-2 italic">{t('pm_overview_no_invoices')}</p>
+          ) : (
+            <ul className="space-y-1.5">
+              {data.invoices.map((inv) => (
+                <li key={inv.id} className="flex items-center justify-between text-sm py-1.5 px-2 rounded-[8px] hover:bg-cream-soft" data-testid={`pm-overview-invoice-${inv.id}`}>
+                  <Link to={`/my-invoices?new=${inv.id}`} className="font-mono text-xs text-teal hover:underline">{inv.invoice_number}</Link>
+                  <div className="flex items-center gap-2">
+                    <span className="text-ink font-medium">{fmtEur(inv.brutto_total)}</span>
+                    <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full ${inv.status === 'paid' ? 'bg-green-pos/15 text-green-pos' : 'bg-amber/15 text-amber-deep'}`}>{inv.status}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      {/* ─── Activity timeline ─── */}
+      <div className="card-lg" data-testid="pm-overview-activity">
+        <div className="flex items-center gap-2 mb-3">
+          <AlertTriangle size={16} className="text-ink-soft rotate-180" />
+          <p className="text-xs uppercase font-bold text-ink-muted tracking-wider">{t('pm_overview_activity')}</p>
+        </div>
+        {data.activity.length === 0 ? (
+          <p className="text-xs text-ink-muted italic">{t('pm_overview_no_activity')}</p>
+        ) : (
+          <ul className="space-y-2.5">
+            {data.activity.map((a, i) => {
+              const Icon = ACTIVITY_ICON[a.kind] || FileText;
+              return (
+                <li key={i} className="flex items-start gap-3" data-testid={`pm-overview-activity-${i}`}>
+                  <div className="w-7 h-7 rounded-full bg-cream-deep flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Icon size={11} className="text-ink-soft" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-ink leading-tight">{a.label}</p>
+                    <p className="text-[11px] text-ink-muted mt-0.5">{a.ts && new Date(a.ts).toLocaleString('de-AT')}</p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+// ============================================================
+// FILE 4: pm/GanttTab.jsx
+// ============================================================
+
+import React, { useEffect, useRef, useState } from 'react';
+import api from '../../../api/client';
+import { Loader2, CalendarDays, AlertCircle } from 'lucide-react';
+import Gantt from 'frappe-gantt';
+import '../../../vendor/frappe-gantt.css';
+
+const isoDay = (d) => new Date(d).toISOString().slice(0, 10);
+
+export default function GanttTab({ projectId, t }) {
+  const containerRef = useRef(null);
+  const ganttRef = useRef(null);
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState('Week');
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get(`/api/pm/projects/${projectId}/tasks`);
+      setTasks(data.tasks || []);
+    } finally { setLoading(false); }
+  };
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [projectId]);
+
+  // Map our tasks → frappe-gantt format. Fall back to spreading any
+  // un-dated tasks across the next 30 days so the timeline isn't empty.
+  useEffect(() => {
+    if (loading || !containerRef.current) return;
+    // Clear previous Gantt
+    containerRef.current.innerHTML = '';
+    ganttRef.current = null;
+
+    if (tasks.length === 0) return;
+
+    const today = new Date();
+    const fallbackStart = new Date(today);
+    const gTasks = tasks.map((tk, i) => {
+      const start = tk.start_at
+        ? new Date(tk.start_at)
+        : (() => { const d = new Date(fallbackStart); d.setDate(today.getDate() + i * 2); return d; })();
+      const end = tk.due_at
+        ? new Date(tk.due_at)
+        : (() => { const d = new Date(start); d.setDate(start.getDate() + 2); return d; })();
+      return {
+        id: tk.id,
+        name: tk.title,
+        start: isoDay(start),
+        end: isoDay(end),
+        progress: tk.column === 'done' ? 100 : tk.column === 'doing' ? 50 : 0,
+        custom_class: tk.column === 'done' ? 'bar-done' : tk.column === 'doing' ? 'bar-doing' : 'bar-todo',
+      };
+    });
+
+    try {
+      ganttRef.current = new Gantt(containerRef.current, gTasks, {
+        view_mode: viewMode,
+        bar_height: 22,
+        bar_corner_radius: 4,
+        padding: 16,
+        date_format: 'YYYY-MM-DD',
+        custom_popup_html: (task) => `
+          <div class="gantt-popup">
+            <strong>${task.name}</strong>
+            <p>${task.start} → ${task.end}</p>
+            <p>Progress: ${task.progress}%</p>
+          </div>
+        `,
+        on_date_change: async (task, start, end) => {
+          // Persist the new dates back to MongoDB
+          try {
+            await api.patch(`/api/pm/projects/${projectId}/tasks/${task.id}`, {
+              start_at: new Date(start).toISOString(),
+              due_at: new Date(end).toISOString(),
+            });
+          } catch (e) { console.error('failed to save date', e); }
+        },
+      });
+    } catch (e) {
+      console.error('Gantt render failed', e);
+    }
+  }, [tasks, loading, viewMode, projectId]);
+
+  if (loading) return <div className="flex justify-center py-10"><Loader2 size={20} className="text-teal animate-spin" /></div>;
+
+  return (
+    <div className="space-y-4" data-testid="pm-gantt-tab">
+      <div className="card-lg flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          <CalendarDays size={18} className="text-teal" />
+          <p className="text-sm font-headings font-bold text-ink">{t('pm_gantt_title')}</p>
+        </div>
+        <div className="flex items-center gap-1">
+          {['Quarter Day', 'Half Day', 'Day', 'Week', 'Month'].map((v) => (
+            <button
+              key={v}
+              onClick={() => setViewMode(v)}
+              className={`text-[11px] px-2 py-1 rounded-[8px] transition-colors ${viewMode === v ? 'bg-teal text-paper' : 'text-ink-muted hover:bg-cream-deep'}`}
+              data-testid={`pm-gantt-view-${v.replace(/\s/g, '').toLowerCase()}`}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {tasks.length === 0 ? (
+        <div className="card-lg flex items-center gap-3" data-testid="pm-gantt-empty">
+          <AlertCircle size={18} className="text-amber-deep" />
+          <p className="text-sm text-ink-muted">{t('pm_gantt_empty')}</p>
+        </div>
+      ) : (
+        <div className="card-lg overflow-x-auto">
+          <p className="text-[11px] text-ink-muted italic mb-2">{t('pm_gantt_hint')}</p>
+          <div ref={containerRef} className="gantt-target" />
+        </div>
+      )}
+
+      {/* Inline overrides for frappe-gantt colors so it matches our design system */}
+      <style>{`
+        .gantt .bar-todo .bar  { fill: #cbd5d3; }
+        .gantt .bar-doing .bar { fill: #f5b942; }
+        .gantt .bar-done .bar  { fill: #18a999; }
+        .gantt .bar-progress  { fill: rgba(255,255,255,0.6); }
+        .gantt-popup {
+          background: #1f2937;
+          color: #fff;
+          padding: 10px 12px;
+          border-radius: 8px;
+          font-family: inherit;
+          font-size: 12px;
+          line-height: 1.4;
+        }
+        .gantt-popup strong { font-weight: 700; display: block; margin-bottom: 4px; }
+        .gantt-popup p { margin: 2px 0; }
+        .gantt .grid-header  { fill: #faf8f4; }
+        .gantt .lower-text, .gantt .upper-text { fill: #5a5a5a; font-size: 11px; }
+        .gantt .row-line, .gantt .tick { stroke: #e5e0d6; }
+      `}</style>
+    </div>
+  );
+}
+
+
+// ============================================================
+// FILE 5: pm/KanbanTab.jsx
+// ============================================================
+
+import React, { useEffect, useMemo, useState } from 'react';
+import api from '../../../api/client';
+import {
+  DndContext, DragOverlay, PointerSensor, useSensor, useSensors, closestCorners,
+} from '@dnd-kit/core';
+import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { useDroppable } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
+import { Plus, Trash2, Loader2, FileTextIcon, ChevronDown, Sparkles, BookCopy } from 'lucide-react';
+
+const COLUMNS = [
+  { key: 'todo', labelKey: 'pm_col_todo', cls: 'border-cream-deep' },
+  { key: 'doing', labelKey: 'pm_col_doing', cls: 'border-amber' },
+  { key: 'done', labelKey: 'pm_col_done', cls: 'border-green-pos' },
+];
+
+export default function KanbanTab({ projectId, t }) {
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [newTitle, setNewTitle] = useState({ todo: '', doing: '', done: '' });
+  const [activeId, setActiveId] = useState(null);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get(`/api/pm/projects/${projectId}/tasks`);
+      setTasks(data.tasks || []);
+    } finally { setLoading(false); }
+  };
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [projectId]);
+
+  // Group tasks by column with stable ordering
+  const byColumn = useMemo(() => {
+    const out = { todo: [], doing: [], done: [] };
+    for (const tk of tasks) (out[tk.column] || out.todo).push(tk);
+    for (const k of Object.keys(out)) {
+      out[k].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    }
+    return out;
+  }, [tasks]);
+
+  const addTask = async (column) => {
+    const title = (newTitle[column] || '').trim();
+    if (!title) return;
+    await api.post(`/api/pm/projects/${projectId}/tasks`, { title, column });
+    setNewTitle((s) => ({ ...s, [column]: '' }));
+    await load();
+  };
+
+  const deleteTask = async (taskId) => {
+    await api.delete(`/api/pm/projects/${projectId}/tasks/${taskId}`);
+    await load();
+  };
+
+  const findTaskColumn = (taskId) => {
+    for (const col of COLUMNS) {
+      if (byColumn[col.key].find((tk) => tk.id === taskId)) return col.key;
+    }
+    return null;
+  };
+
+  // Optimistic local-state move on dragOver so the user gets instant feedback
+  const onDragOver = ({ active, over }) => {
+    if (!over) return;
+    const activeCol = findTaskColumn(active.id);
+    let overCol = findTaskColumn(over.id);
+    if (!overCol && COLUMNS.find((c) => c.key === over.id)) overCol = over.id;
+    if (!activeCol || !overCol) return;
+    if (activeCol === overCol) return;
+    setTasks((prev) => prev.map((tk) => (tk.id === active.id ? { ...tk, column: overCol } : tk)));
+  };
+
+  const onDragEnd = async ({ active, over }) => {
+    setActiveId(null);
+    if (!over) return;
+
+    const activeIdStr = active.id;
+    const activeCol = findTaskColumn(activeIdStr);
+
+    // If user dropped onto a column container (no over.id == any task), treat overCol as the col itself
+    let overCol = findTaskColumn(over.id);
+    let overIndex = -1;
+    if (!overCol) {
+      // dropping into empty column droppable
+      overCol = COLUMNS.find((c) => c.key === over.id) ? over.id : activeCol;
+      overIndex = byColumn[overCol]?.length || 0;
+    } else {
+      overIndex = byColumn[overCol].findIndex((tk) => tk.id === over.id);
+    }
+    if (!activeCol || !overCol) return;
+
+    let newOrder;
+    if (activeCol === overCol) {
+      const oldIndex = byColumn[activeCol].findIndex((tk) => tk.id === activeIdStr);
+      newOrder = arrayMove(byColumn[activeCol], oldIndex, overIndex);
+    } else {
+      // remove from active col, insert into over col
+      newOrder = [...byColumn[overCol]];
+      newOrder.splice(overIndex, 0, tasks.find((tk) => tk.id === activeIdStr));
+    }
+
+    // Compute bulk-reorder payload — every card in newOrder gets its index as order
+    const reorderPayload = newOrder
+      .filter(Boolean)
+      .map((tk, i) => ({ id: tk.id, column: overCol, order: i }));
+
+    // Optimistic update
+    setTasks((prev) => prev.map((tk) => {
+      const m = reorderPayload.find((p) => p.id === tk.id);
+      return m ? { ...tk, column: m.column, order: m.order } : tk;
+    }));
+
+    try {
+      await api.post(`/api/pm/projects/${projectId}/tasks/reorder`, { tasks: reorderPayload });
+    } catch (e) {
+      console.error('reorder failed', e);
+      load(); // revert via reload
+    }
+  };
+
+  if (loading) return <div className="flex justify-center py-10"><Loader2 size={20} className="text-teal animate-spin" /></div>;
+
+  const draggingTask = activeId ? tasks.find((tk) => tk.id === activeId) : null;
+
+  return (
+    <div data-testid="pm-kanban">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs text-ink-muted italic">{t('pm_kanban_dnd_hint')}</p>
+        <button
+          onClick={() => setTemplatesOpen(true)}
+          className="btn-ghost text-xs"
+          data-testid="pm-apply-template-btn"
+        >
+          <BookCopy size={12} /> {t('pm_apply_template')}
+        </button>
+      </div>
+
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={({ active }) => setActiveId(active.id)}
+        onDragOver={onDragOver}
+        onDragEnd={onDragEnd}
+        onDragCancel={() => setActiveId(null)}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {COLUMNS.map(({ key, labelKey, cls }) => (
+            <ColumnDroppable
+              key={key}
+              colKey={key}
+              labelKey={labelKey}
+              cls={cls}
+              tasks={byColumn[key]}
+              onDelete={deleteTask}
+              t={t}
+              newTitle={newTitle}
+              setNewTitle={setNewTitle}
+              addTask={addTask}
+            />
+          ))}
+        </div>
+
+        <DragOverlay>
+          {draggingTask ? <CardShell task={draggingTask} dragging /> : null}
+        </DragOverlay>
+      </DndContext>
+
+      {templatesOpen && (
+        <TemplatesModal projectId={projectId} onClose={() => setTemplatesOpen(false)} onApplied={() => { setTemplatesOpen(false); load(); }} t={t} />
+      )}
+    </div>
+  );
+}
+
+function ColumnDroppable({ colKey, labelKey, cls, tasks, onDelete, t, newTitle, setNewTitle, addTask }) {
+  const { setNodeRef, isOver } = useDroppable({ id: colKey });
+  return (
+    <div
+      ref={setNodeRef}
+      className={`card-lg border-t-4 ${cls} ${isOver ? 'ring-2 ring-teal/40' : ''}`}
+      data-testid={`pm-kanban-col-${colKey}`}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs uppercase font-bold tracking-wider text-ink-muted">{t(labelKey)}</p>
+        <span className="text-[10px] font-bold rounded-full px-2 py-0.5 bg-cream-deep text-ink-muted">{tasks.length}</span>
+      </div>
+
+      <SortableContext items={tasks.map((tk) => tk.id)} strategy={verticalListSortingStrategy}>
+        <div className="space-y-2 mb-3 min-h-[40px]">
+          {tasks.length === 0 ? (
+            <p className="text-xs text-ink-muted py-4 text-center">{t('pm_task_empty')}</p>
+          ) : tasks.map((task) => (
+            <SortableCard key={task.id} task={task} onDelete={() => onDelete(task.id)} />
+          ))}
+        </div>
+      </SortableContext>
+
+      <div className="flex items-center gap-1.5">
+        <input
+          type="text"
+          value={newTitle[colKey]}
+          onChange={(e) => setNewTitle((s) => ({ ...s, [colKey]: e.target.value }))}
+          onKeyDown={(e) => e.key === 'Enter' && addTask(colKey)}
+          placeholder={t('pm_task_placeholder')}
+          className="sm-input text-xs flex-1"
+          data-testid={`pm-task-input-${colKey}`}
+        />
+        <button
+          onClick={() => addTask(colKey)}
+          className="btn-ghost text-xs px-2"
+          data-testid={`pm-task-add-${colKey}`}
+          aria-label={t('pm_task_add')}
+        >
+          <Plus size={12} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SortableCard({ task, onDelete }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+    opacity: isDragging ? 0.3 : 1,
+  };
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} data-testid={`pm-task-${task.id}`}>
+      <CardShell task={task} onDelete={onDelete} />
+    </div>
+  );
+}
+
+function CardShell({ task, onDelete, dragging }) {
+  return (
+    <div className={`rounded-[10px] border bg-paper p-2.5 select-none ${dragging ? 'border-teal shadow-xl rotate-1' : 'border-sm-border'}`}>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-sm text-ink flex-1 min-w-0 break-words">{task.title}</p>
+        {onDelete && (
+          <button
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="text-ink-muted hover:text-red-warn flex-shrink-0"
+            aria-label="delete"
+            data-testid={`pm-task-delete-${task.id}`}
+          >
+            <Trash2 size={12} />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────
+// Templates modal
+// ────────────────────────────────────────
+function TemplatesModal({ projectId, onClose, onApplied, t }) {
+  const [templates, setTemplates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [applying, setApplying] = useState(null);
+
+  useEffect(() => {
+    api.get('/api/pm/templates').then((r) => setTemplates(r.data.templates || [])).finally(() => setLoading(false));
+  }, []);
+
+  const apply = async (tpl) => {
+    setApplying(tpl.id);
+    try {
+      await api.post(`/api/pm/projects/${projectId}/apply-template?template_id=${encodeURIComponent(tpl.id)}`);
+      onApplied();
+    } finally { setApplying(null); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-paper rounded-[14px] max-w-lg w-full p-5 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()} data-testid="pm-templates-modal">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Sparkles size={18} className="text-teal" />
+            <h3 className="font-headings font-bold text-ink text-lg">{t('pm_templates_title')}</h3>
+          </div>
+          <button onClick={onClose} className="btn-ghost text-xs">✕</button>
+        </div>
+        <p className="text-sm text-ink-muted mb-4">{t('pm_templates_subtitle')}</p>
+        {loading ? (
+          <div className="flex justify-center py-6"><Loader2 size={20} className="text-teal animate-spin" /></div>
+        ) : (
+          <ul className="space-y-2">
+            {templates.map((tpl) => (
+              <li key={tpl.id} className="rounded-[10px] border border-sm-border p-3 flex items-center justify-between gap-3" data-testid={`pm-template-${tpl.id}`}>
+                <div className="flex-1 min-w-0">
+                  <p className="font-headings font-bold text-ink text-sm">{tpl.name}</p>
+                  <p className="text-[11px] text-ink-muted">{tpl.tasks?.length || 0} {t('pm_tasks_total').toLowerCase()} · {tpl.category || '—'}</p>
+                </div>
+                <button onClick={() => apply(tpl)} disabled={applying === tpl.id} className="btn-primary text-xs">
+                  {applying === tpl.id ? <Loader2 size={12} className="animate-spin" /> : <FileTextIcon size={12} />} {t('pm_apply_template')}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
