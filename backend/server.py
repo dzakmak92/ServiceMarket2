@@ -13,6 +13,9 @@ from seed import seed_all
 from routes.auth_routes import router as auth_router
 from routes.customer_routes import router as customer_router
 from routes.job_routes import router as job_router
+from routes.quote_routes import (router as quote_router,
+                                 public_router as portal_router,
+                                 invoice_router as quote_invoice_router)
 from routes.billing_routes import router as billing_router
 from routes.admin_routes import router as admin_router
 from routes.admin_invoicing_routes import router as admin_invoicing_router
@@ -55,6 +58,7 @@ app.add_middleware(
 # both share the `/pro-invoices` prefix. The pro_invoicing_router has a catch-all
 # `/{invoice_id}` route that would otherwise swallow `/export.pdf` and 404 it.
 for router in [auth_router, customer_router, job_router,
+               quote_router, quote_invoice_router, portal_router,
                billing_router, admin_router, admin_invoicing_router, admin_advanced_router,
                iter45_admin_router, iter45_pro_router,
                pro_invoicing_router, tax_router, public_tax_router, pm_router, pm_public_router,
