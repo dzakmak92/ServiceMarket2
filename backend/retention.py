@@ -43,7 +43,6 @@ async def _hard_delete_expired():
             await db.notifications.delete_many({"user_id": uid})
             await db.push_subscriptions.delete_many({"user_id": uid})
             await db.pro_profiles.delete_many({"user_id": uid})
-            await db.bookings.delete_many({"homeowner_id": uid})
 
             # Finally remove the user doc itself
             await db.users.delete_one({"_id": ObjectId(uid)})
