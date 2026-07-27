@@ -60,25 +60,20 @@ still serves the routes that have not been ported yet.
 ```bash
 cd backend
 pip install -r requirements.txt          # asyncpg is new
-python -c "
-import asyncio, sys; sys.path.insert(0,'.')
-from db.pg import init_pool, fetchval, close_pool
-async def go():
-    await init_pool()
-    print('tables:', await fetchval(
-        \"select count(*) from information_schema.tables where table_schema='public'\"))
-    await close_pool()
-asyncio.run(go())"
+python tools/check_db.py
 ```
 
-**Expected:** `tables: 30`
+**Expected:**
 
-If it fails:
-| Error | Cause |
-|---|---|
-| `password authentication failed` | wrong password — reset it (1.1 step 6) |
-| `could not translate host name` | you copied the Direct tab, not the pooler |
-| `DATABASE_URL is not set` | `.env` is in the wrong directory — it must be `backend/.env` |
+```
+✓ connected
+  PostgreSQL 17.6
+  public tables: 30
+```
+
+The script diagnoses rather than throwing a stack trace — it catches an
+unencoded password character, a quoted value, the wrong port, and an
+IPv6-only pooler, and tells you which one it is.
 
 ### 1.4 Tell me it's done
 
