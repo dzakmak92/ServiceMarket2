@@ -18,6 +18,7 @@ count is limited. Fine for migrations and scripts, not for a web process.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -28,6 +29,11 @@ import asyncpg
 logger = logging.getLogger(__name__)
 
 _pool: Optional[asyncpg.Pool] = None
+
+# Remembered so a lazy re-init uses the same sizing as the original call —
+# a serverless instance wants (0, 1); a long-lived dev server wants (1, 10).
+_pool_config: dict[str, int] = {"min_size": 1, "max_size": 10}
+_init_lock = asyncio.Lock()
 
 # Transaction-mode pooler ports. Session mode (5432) keeps prepared statements.
 _POOLER_PORTS = {"6543"}
@@ -46,6 +52,7 @@ async def init_pool(dsn: Optional[str] = None, *, min_size: int = 1, max_size: i
     if _pool is not None:
         return _pool
 
+    _pool_config.update(min_size=min_size, max_size=max_size)
     dsn = dsn or os.environ.get("DATABASE_URL")
     if not dsn:
         raise RuntimeError(
@@ -76,28 +83,46 @@ def pool() -> asyncpg.Pool:
     return _pool
 
 
+async def get_pool() -> asyncpg.Pool:
+    """The pool, creating it on first use.
+
+    Startup is the normal place to open it, but on a serverless platform
+    startup can fail for reasons that later resolve — a variable added after
+    the first cold start, a pooler that was briefly unreachable. Raising for
+    the life of the instance in that case turns a transient fault into a
+    permanent one, so every query re-attempts instead.
+    """
+    if _pool is not None:
+        return _pool
+    async with _init_lock:
+        # Another coroutine may have won the race while we waited.
+        if _pool is None:
+            await init_pool(**_pool_config)
+        return _pool
+
+
 # ── Query helpers ──────────────────────────────────────────────────────
 # asyncpg returns Record objects; routes and repositories want plain dicts
 # so FastAPI can serialise them without a custom encoder.
 
 async def fetch(sql: str, *args: Any) -> list[dict]:
-    async with pool().acquire() as con:
+    async with (await get_pool()).acquire() as con:
         return [dict(r) for r in await con.fetch(sql, *args)]
 
 
 async def fetchrow(sql: str, *args: Any) -> Optional[dict]:
-    async with pool().acquire() as con:
+    async with (await get_pool()).acquire() as con:
         row = await con.fetchrow(sql, *args)
         return dict(row) if row else None
 
 
 async def fetchval(sql: str, *args: Any) -> Any:
-    async with pool().acquire() as con:
+    async with (await get_pool()).acquire() as con:
         return await con.fetchval(sql, *args)
 
 
 async def execute(sql: str, *args: Any) -> str:
-    async with pool().acquire() as con:
+    async with (await get_pool()).acquire() as con:
         return await con.execute(sql, *args)
 
 
@@ -113,7 +138,7 @@ async def transaction() -> AsyncIterator[asyncpg.Connection]:
             inv = await con.fetchrow("insert into invoices ... returning *")
             await con.executemany("insert into invoice_lines ...", rows)
     """
-    async with pool().acquire() as con:
+    async with (await get_pool()).acquire() as con:
         async with con.transaction():
             yield con
 

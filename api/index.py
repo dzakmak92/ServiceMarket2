@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -54,6 +55,15 @@ for r in (auth_router, customer_router, job_router, quote_router,
     app.include_router(r, prefix="/api")
 
 
+def _scrub(text: str) -> str:
+    """Strip credentials out of anything derived from the connection string.
+
+    Diagnostics get returned over HTTP, and a DSN carries the database
+    password. Never let one reach a response body or a log line.
+    """
+    return re.sub(r"://[^@\s/]+@", "://***@", text)
+
+
 @app.on_event("startup")
 async def startup() -> None:
     """Serverless startup: open a small pool and nothing else.
@@ -62,11 +72,20 @@ async def startup() -> None:
     cold start, and a serverless function is killed as soon as the response
     is sent, so a background asyncio task would simply never finish.
     Scheduled work belongs in Vercel Cron or pg_cron.
+
+    A failure here is logged, never raised. Raising in a startup handler
+    aborts ASGI lifespan, which takes down every route — including /api/health,
+    the one endpoint whose purpose is to report that the database is
+    misconfigured. The pool is opened lazily on first query instead, so the
+    app boots without a database and says so.
     """
     from db.pg import init_pool
-    # One connection per instance. Vercel may run many instances concurrently,
-    # and each holding ten connections would exhaust the pooler quickly.
-    await init_pool(min_size=0, max_size=1)
+    try:
+        # One connection per instance. Vercel may run many instances
+        # concurrently, and each holding ten would exhaust the pooler.
+        await init_pool(min_size=0, max_size=1)
+    except Exception as exc:  # noqa: BLE001 — must not propagate
+        logger.error("startup: Postgres pool unavailable: %s", _scrub(str(exc)))
 
 
 @app.on_event("shutdown")
@@ -78,14 +97,24 @@ async def shutdown() -> None:
 @app.get("/api/health")
 async def health():
     from db.pg import fetchval
+    detail = None
     try:
         await fetchval("select 1")
         db_ok = True
     except Exception as exc:
-        logger.error("health: database unreachable: %s", exc)
         db_ok = False
-    return {"status": "ok" if db_ok else "degraded", "database": db_ok,
-            "version": "2.0.0", "region": os.environ.get("VERCEL_REGION")}
+        detail = _scrub(f"{type(exc).__name__}: {exc}")
+        logger.error("health: database unreachable: %s", detail)
+    body = {
+        "status": "ok" if db_ok else "degraded",
+        "database": "connected" if db_ok else "unavailable",
+        "database_url_set": bool(os.environ.get("DATABASE_URL")),
+        "version": "2.0.0",
+        "region": os.environ.get("VERCEL_REGION"),
+    }
+    if detail:
+        body["detail"] = detail
+    return body
 
 
 @app.post("/api/webhook/stripe")
