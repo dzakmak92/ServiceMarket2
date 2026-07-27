@@ -1,6 +1,12 @@
 import axios from 'axios';
 
-const API_BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+// On Vercel the API is same-origin under /api, so the base must be ''. A
+// plain `||` would treat '' as falsy and fall back to localhost, which is
+// exactly the bug that only shows up once deployed.
+const RAW_BASE = process.env.REACT_APP_BACKEND_URL;
+const API_BASE = RAW_BASE !== undefined && RAW_BASE !== null
+  ? RAW_BASE
+  : (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8001');
 
 const api = axios.create({
   baseURL: API_BASE,

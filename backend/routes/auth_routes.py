@@ -1,238 +1,241 @@
-from fastapi import APIRouter, HTTPException, Depends, Response, Request
-from database import db
-from auth import (hash_password, verify_password, create_access_token, create_refresh_token,
-                  set_auth_cookies, get_current_user)
-from models import RegisterRequest, LoginRequest, OnboardingRequest
-from services.turnstile import verify_turnstile_token
-from utils import serialize_doc
-from datetime import datetime, timezone
-import jwt
+"""Auth endpoints (Postgres).
+
+Single-sided: the only self-service role is the tradesperson. Admins are
+created out of band.
+"""
+from __future__ import annotations
+
 import os
+from datetime import datetime, timedelta, timezone
+from typing import Optional
 
-router = APIRouter(prefix="/auth")
+import jwt
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel, EmailStr, Field
+
+from auth import (JWT_ALGORITHM, clear_auth_cookies, create_access_token,
+                  create_refresh_token, get_current_user, get_jwt_secret,
+                  hash_password, load_user, set_auth_cookies, verify_password)
+from db import pg
+from services.turnstile import verify_turnstile_token
+
+router = APIRouter(prefix="/auth", tags=["auth"])
+
+MAX_FAILED_LOGINS = 5
+LOCKOUT = timedelta(minutes=15)
 
 
-@router.post("/register")
-async def register(data: RegisterRequest, response: Response, request: Request):
+class RegisterIn(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8)
+    name: str = Field(min_length=2, max_length=200)
+    accepted_terms: bool = False
+    accepted_privacy: bool = False
+    policy_version: Optional[str] = None
+    marketing_opt_in: bool = False
+
+
+class LoginIn(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class OnboardingIn(BaseModel):
+    country: str = Field(default="AT", pattern="^[A-Z]{2}$")
+    name: Optional[str] = None
+    surname: Optional[str] = None
+    phone: str = Field(min_length=4)
+    address: str = Field(min_length=2)
+    postal_code: str = Field(min_length=2)
+    city: str = Field(min_length=2)
+    contact_person: str = Field(min_length=2)
+    company_name: str = Field(min_length=2)
+    licence_file_id: str = Field(min_length=1)
+    insurance_file_id: Optional[str] = None
+    turnstile_token: Optional[str] = None
+
+
+async def _record_consent(user_id: str, kind: str, data: dict, request: Request) -> None:
+    """Audit-grade consent record. Separate from the user row on purpose:
+    consent is a point-in-time fact and must survive later profile edits."""
+    await pg.execute(
+        """
+        insert into audit_log (user_id, entity, entity_id, action, detail, ip)
+        values ($1, 'consent', $1, $2, $3::jsonb, $4)
+        """,
+        user_id, kind,
+        __import__("json").dumps(data, default=str),
+        request.client.host if request.client else None)
+
+
+@router.post("/register", status_code=201)
+async def register(data: RegisterIn, response: Response, request: Request):
     email = data.email.lower().strip()
-    if await db.users.find_one({"email": email}):
-        raise HTTPException(status_code=400, detail="Email already registered")
 
-    # GDPR consent gate — users MUST accept terms + privacy policy to sign up.
+    # GDPR consent gate — both must be affirmative, and the record is kept.
     if not (data.accepted_terms and data.accepted_privacy):
         raise HTTPException(
-            status_code=400,
-            detail="You must accept the Terms of Service and Privacy Policy to create an account.",
-        )
+            400, "You must accept the Terms of Service and Privacy Policy to create an account.")
 
-    # NB: Cloudflare Turnstile is verified at the END of onboarding (iter24),
-    # not here on signup. Signup form stays clean and a clear "human" challenge
-    # happens right before the user can start posting jobs / browsing.
+    if await pg.fetchval("select 1 from users where email = $1", email):
+        raise HTTPException(400, "Email already registered")
 
-    now = datetime.now(timezone.utc)
-    user_doc = {
-        "email": email,
-        "password_hash": hash_password(data.password),
-        "name": data.name,
-        "role": None,
-        "country": None,
-        "lang": "en",
-        "city": "",
-        "phone": "",
-        "onboarding_complete": False,
-        "is_email_verified": True,
-        "notif_email": True,
-        "notif_email_marketing": bool(data.marketing_opt_in),
-        "notif_sms": False,
-        "privacy_show_lastname": True,
-        "privacy_share_contact_pre_accept": False,
-        "notif_categories": [],
-        "policy_version_accepted": data.policy_version or "1.0-draft-2026-02-28",
-        "policy_accepted_at": now,
-        "created_at": now,
-    }
-    result = await db.users.insert_one(user_doc)
-    user_id = str(result.inserted_id)
+    policy_version = data.policy_version or "1.0"
+    row = await pg.fetchrow(
+        """
+        insert into users (email, password_hash, name, role,
+                           notif_email_marketing, policy_version_accepted, policy_accepted_at)
+        values ($1, $2, $3, 'tradesperson', $4, $5, now())
+        returning id::text as id, email, name, role
+        """,
+        email, hash_password(data.password), data.name.strip(),
+        bool(data.marketing_opt_in), policy_version)
 
-    # Audit-grade consent record (immutable history)
-    ip = request.client.host if request.client else "unknown"
-    await db.consent_records.insert_one({
-        "user_id": user_id,
-        "kind": "registration",
-        "accepted_terms": True,
-        "accepted_privacy": True,
+    await _record_consent(row["id"], "registration", {
+        "accepted_terms": True, "accepted_privacy": True,
         "marketing_emails": bool(data.marketing_opt_in),
-        "policy_version": user_doc["policy_version_accepted"],
-        "ip": ip,
+        "policy_version": policy_version,
         "user_agent": request.headers.get("user-agent", ""),
-        "recorded_at": now,
-    })
+    }, request)
 
-    access_token = create_access_token(user_id, email)
-    refresh_token = create_refresh_token(user_id)
-    set_auth_cookies(response, access_token, refresh_token)
-
-    user_doc["_id"] = user_id
-    user_doc.pop("password_hash", None)
-    return serialize_doc(user_doc)
+    set_auth_cookies(response, create_access_token(row["id"], email),
+                     create_refresh_token(row["id"]))
+    return await load_user(row["id"])
 
 
 @router.post("/login")
-async def login(data: LoginRequest, response: Response, request: Request):
+async def login(data: LoginIn, response: Response, request: Request):
     email = data.email.lower().strip()
-    ip = request.client.host or "unknown"
+    ip = request.client.host if request.client else "unknown"
     identifier = f"{ip}:{email}"
 
-    # Check brute force
-    attempts = await db.login_attempts.find_one({"identifier": identifier})
-    if attempts and attempts.get("count", 0) >= 5:
-        from datetime import timedelta
-        locked_at = attempts.get("last_attempt")
-        if locked_at and (datetime.now(timezone.utc) - locked_at.replace(tzinfo=timezone.utc)).seconds < 900:
-            raise HTTPException(status_code=429, detail="Too many failed attempts. Try again in 15 minutes.")
+    # Brute-force throttle, keyed on ip+email so one attacker cannot lock out
+    # a legitimate user by hammering their address from elsewhere.
+    attempt = await pg.fetchrow(
+        "select value from platform_settings where key = $1", f"login_attempt:{identifier}")
+    if attempt:
+        v = attempt["value"] if isinstance(attempt["value"], dict) else __import__("json").loads(attempt["value"])
+        if int(v.get("count", 0)) >= MAX_FAILED_LOGINS:
+            last = datetime.fromisoformat(v["last"])
+            if datetime.now(timezone.utc) - last < LOCKOUT:
+                raise HTTPException(429, "Too many failed attempts. Try again in 15 minutes.")
 
-    user = await db.users.find_one({"email": email})
-    if not user or not verify_password(data.password, user.get("password_hash", "")):
-        await db.login_attempts.update_one(
-            {"identifier": identifier},
-            {"$inc": {"count": 1}, "$set": {"last_attempt": datetime.now(timezone.utc)}},
-            upsert=True
-        )
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+    row = await pg.fetchrow(
+        "select id::text as id, email, password_hash, banned from users "
+        "where email = $1 and deleted_at is null", email)
 
-    # Clear failed attempts
-    await db.login_attempts.delete_one({"identifier": identifier})
+    if not row or not verify_password(data.password, row["password_hash"] or ""):
+        await pg.execute(
+            """
+            insert into platform_settings (key, value)
+            values ($1, jsonb_build_object('count', 1, 'last', $2::text))
+            on conflict (key) do update
+              set value = jsonb_build_object(
+                    'count', coalesce((platform_settings.value->>'count')::int, 0) + 1,
+                    'last', $2::text),
+                  updated_at = now()
+            """,
+            f"login_attempt:{identifier}", datetime.now(timezone.utc).isoformat())
+        raise HTTPException(401, "Invalid email or password")
 
-    user_id = str(user["_id"])
-    access_token = create_access_token(user_id, email)
-    refresh_token = create_refresh_token(user_id)
-    set_auth_cookies(response, access_token, refresh_token)
+    if row["banned"]:
+        raise HTTPException(403, "This account has been suspended.")
 
-    user["_id"] = user_id
-    user.pop("password_hash", None)
-    out = serialize_doc(user)
-    if user.get("role") == "tradesperson":
-        pp = await db.pro_profiles.find_one({"user_id": user_id}, {"plan_tier": 1})
-        out["plan_tier"] = (pp or {}).get("plan_tier") or "standard"
-    return out
+    await pg.execute("delete from platform_settings where key = $1",
+                     f"login_attempt:{identifier}")
+    set_auth_cookies(response, create_access_token(row["id"], row["email"]),
+                     create_refresh_token(row["id"]))
+
+    user = await load_user(row["id"])
+    if user and user.get("role") == "tradesperson":
+        user["plan_tier"] = await pg.fetchval(
+            "select plan_tier from pro_profiles where user_id::text = $1", row["id"]) or "standard"
+    return user
 
 
 @router.post("/logout")
 async def logout(response: Response):
-    response.delete_cookie("access_token")
-    response.delete_cookie("refresh_token")
+    clear_auth_cookies(response)
     return {"message": "Logged out"}
 
 
 @router.get("/me")
 async def me(user: dict = Depends(get_current_user)):
-    out = serialize_doc(user)
-    # Attach pro plan_tier so the front-end can gate Pro-only UX (e.g. instant
-    # push alerts) without a second round-trip.
     if user.get("role") == "tradesperson":
-        pp = await db.pro_profiles.find_one({"user_id": user["_id"]}, {"plan_tier": 1})
-        out["plan_tier"] = (pp or {}).get("plan_tier") or "standard"
-    return out
+        user["plan_tier"] = await pg.fetchval(
+            "select plan_tier from pro_profiles where user_id::text = $1", user["id"]) or "standard"
+    return user
 
 
 @router.post("/refresh")
-async def refresh_token(request: Request, response: Response):
+async def refresh(request: Request, response: Response):
     token = request.cookies.get("refresh_token")
     if not token:
-        raise HTTPException(status_code=401, detail="No refresh token")
+        raise HTTPException(401, "No refresh token")
     try:
-        payload = jwt.decode(token, os.environ["JWT_SECRET"], algorithms=["HS256"])
-        if payload.get("type") != "refresh":
-            raise HTTPException(status_code=401, detail="Invalid token")
-        user = await db.users.find_one({"_id": __import__("bson").ObjectId(payload["sub"])})
-        if not user:
-            raise HTTPException(status_code=401, detail="User not found")
-        user_id = str(user["_id"])
-        access_token = create_access_token(user_id, user["email"])
-        response.set_cookie(key="access_token", value=access_token, httponly=True, secure=False, samesite="lax", max_age=3600, path="/")
-        return {"message": "Token refreshed"}
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid refresh token")
+        payload = jwt.decode(token, get_jwt_secret(), algorithms=[JWT_ALGORITHM])
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(401, "Refresh token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(401, "Invalid refresh token")
+    if payload.get("type") != "refresh":
+        raise HTTPException(401, "Invalid token type")
+
+    user = await load_user(payload.get("sub", ""))
+    if not user:
+        raise HTTPException(401, "User not found")
+    # Rotate both: a refresh token that outlives its use is a stolen session
+    # with a seven-day lifetime.
+    set_auth_cookies(response, create_access_token(user["id"], user["email"]),
+                     create_refresh_token(user["id"]))
+    return {"message": "Token refreshed"}
 
 
 @router.post("/onboarding")
-async def complete_onboarding(data: OnboardingRequest, response: Response, request: Request, user: dict = Depends(get_current_user)):
-    from bson import ObjectId
+async def onboarding(data: OnboardingIn, request: Request,
+                     user: dict = Depends(get_current_user)):
     if user.get("onboarding_complete"):
-        raise HTTPException(status_code=400, detail="Onboarding already complete")
+        raise HTTPException(400, "Onboarding already complete")
 
-    # Anti-bot — Turnstile is the LAST step of onboarding (iter24 — moved from signup form)
+    # Turnstile sits at the END of onboarding rather than on the signup form:
+    # the challenge lands right before the account becomes able to do anything.
     ip = request.client.host if request.client else "unknown"
     if not await verify_turnstile_token(data.turnstile_token or "", remote_ip=ip):
         raise HTTPException(
-            status_code=400,
-            detail="Unable to verify you are human. Please complete the security check and try again.",
-        )
+            400, "Unable to verify you are human. Please complete the security check.")
 
-    # Single-sided product: the only self-service role is the tradesperson.
-    if data.role != "tradesperson":
-        raise HTTPException(status_code=400, detail="Invalid role")
-    required = {"contact_person": data.contact_person, "company_name": data.company_name,
-                "address": data.address, "postal_code": data.postal_code, "city": data.city,
-                "phone": data.phone, "licence_file_id": data.licence_file_id}
-    for k, v in required.items():
-        if not (v or "").strip():
-            raise HTTPException(status_code=400, detail=f"Missing required field: {k}")
+    full_name = " ".join(filter(None, [(data.name or "").strip(),
+                                       (data.surname or "").strip()])) or user.get("name", "")
 
-    # Build user update payload
-    full_name = ((data.name or "").strip() + " " + (data.surname or "").strip()).strip() or user.get("name", "")
-    user_update = {
-        "role": data.role,
-        "country": data.country,
-        "onboarding_complete": True,
-        "name": full_name,
-        "given_name": (data.name or "").strip() or None,
-        "family_name": (data.surname or "").strip() or None,
-        "phone": (data.phone or "").strip() or None,
-        "address": (data.address or "").strip() or None,
-        "postal_code": (data.postal_code or "").strip() or None,
-        "city": (data.city or "").strip() or None,
-    }
-    await db.users.update_one({"_id": ObjectId(user["_id"])}, {"$set": user_update})
+    async with pg.transaction() as con:
+        await con.execute(
+            """
+            update users set country=$2, name=$3, given_name=$4, family_name=$5,
+              phone=$6, address=$7, postal_code=$8, city=$9, onboarding_complete=true
+            where id::text = $1
+            """,
+            user["id"], data.country, full_name,
+            (data.name or "").strip() or None, (data.surname or "").strip() or None,
+            data.phone.strip(), data.address.strip(),
+            data.postal_code.strip(), data.city.strip())
 
-    # Create / fill the service-provider profile
-    now = datetime.now(timezone.utc)
-    pro_update = {
-        "business_name": (data.company_name or "").strip(),
-        "company_name": (data.company_name or "").strip(),
-        "contact_person": (data.contact_person or "").strip(),
-        # Documents (admin verifies in queue)
-        "licence_file_id": data.licence_file_id,
-        "licence_status": "pending",     # pending | verified | rejected
-        "insurance_file_id": data.insurance_file_id,
-        "insurance_status": "pending" if data.insurance_file_id else "missing",
-        # Badges derive from the statuses above (computed on read)
-        "is_verified": False,
-        "is_licensed": False,
-        "is_insured": False,
-    }
-    existing_profile = await db.pro_profiles.find_one({"user_id": user["_id"]})
-    if existing_profile:
-        await db.pro_profiles.update_one(
-            {"_id": existing_profile["_id"]},
-            {"$set": pro_update},
-        )
-    else:
-        await db.pro_profiles.insert_one({
-            "user_id": user["_id"],
-            "tagline": "", "description": "",
-            "hourly_rate": 0, "years_experience": 0,
-            "service_categories": [], "service_areas": [],
-            "portfolio_photos": [],
-            "plan_tier": "standard", "card_last4": "",
-            "monthly_fees": 0.0, "rating_avg": 0.0,
-            "reviews_count": 0, "completed_jobs_count": 0,
-            "response_time_minutes": None,
-            "created_at": now,
-            **pro_update,
-        })
+        await con.execute(
+            """
+            insert into pro_profiles (user_id, business_name, contact_person,
+                                      licence_file_id, licence_status,
+                                      insurance_file_id, insurance_status,
+                                      invoice_country, business_country)
+            values ($1::uuid, $2, $3, $4, 'pending', $5, $6, $7, $7)
+            on conflict (user_id) do update
+              set business_name = excluded.business_name,
+                  contact_person = excluded.contact_person,
+                  licence_file_id = excluded.licence_file_id,
+                  licence_status = 'pending',
+                  insurance_file_id = excluded.insurance_file_id,
+                  insurance_status = excluded.insurance_status
+            """,
+            user["id"], data.company_name.strip(), data.contact_person.strip(),
+            data.licence_file_id, data.insurance_file_id,
+            "pending" if data.insurance_file_id else "missing", data.country)
 
-    updated_user = await db.users.find_one({"_id": ObjectId(user["_id"])})
-    updated_user["_id"] = str(updated_user["_id"])
-    updated_user.pop("password_hash", None)
-    return serialize_doc(updated_user)
+    return await load_user(user["id"])

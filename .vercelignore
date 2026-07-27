@@ -1,0 +1,54 @@
+# Keep the function bundle under Vercel's 250 MB unzipped limit and out of
+# reach of anything that only makes sense on a developer machine.
+backend/tools/
+backend/tests/
+backend/backups/
+backend/db/migrations/
+backend/seed.py
+backend/seed_directory.py
+backend/reseed_clean.py
+backend/migrate_explorer_testpro.py
+backend/database.py
+backend/stripe_simulation.py.DISABLED
+
+# MongoDB-backed modules, not yet ported. Excluding them keeps a stray import
+# from breaking a cold start.
+backend/routes/pm_routes.py
+backend/routes/tax_routes.py
+backend/routes/pro_invoicing_routes.py
+backend/routes/billing_routes.py
+backend/routes/admin_routes.py
+backend/routes/admin_advanced_routes.py
+backend/routes/admin_invoicing_routes.py
+backend/routes/admin_insights_routes.py
+backend/routes/misc_routes.py
+backend/routes/directory_routes.py
+backend/routes/feedback_routes.py
+backend/routes/privacy_routes.py
+backend/routes/analytics_routes.py
+backend/routes/live_location_routes.py
+backend/routes/payment_link_routes.py
+backend/routes/payout_routes.py
+backend/routes/push_routes.py
+backend/routes/iter45_routes.py
+backend/routes/ai_routes.py
+backend/services/invoicing.py
+backend/services/invoice_templates.py
+backend/services/pro_invoicing.py
+backend/services/tax_reports.py
+backend/services/tax_pdf.py
+backend/services/pm_pdf_export.py
+backend/services/billing_service.py
+backend/services/platform_settings.py
+backend/retention.py
+backend/push.py
+backend/billing_cycle.py
+backend/rate_limit.py
+backend/utils.py
+backend/models.py
+backend/server.py
+
+memory/
+test_reports/
+tests/
+*.zip
