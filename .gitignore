@@ -143,3 +143,7 @@ credentials.json
 
 # Pre-migration database dumps — contain personal data, never commit
 backend/backups/
+
+# Stray wheels from local dependency testing
+*.whl
+*.tar.gz
