@@ -3,7 +3,6 @@ from database import db
 from auth import get_current_user, require_admin
 from models import CheckoutRequest
 from utils import serialize_doc
-from billing_cycle import next_billing_date, current_cycle_start
 from datetime import datetime, timezone, timedelta
 from bson import ObjectId
 import os
@@ -555,27 +554,6 @@ async def get_subscription_status(user: dict = Depends(get_current_user)):
     }
 
 
-@router.get("/fee-log")
-async def get_fee_log(user: dict = Depends(get_current_user), status_filter: str = "all"):
-    if user["role"] != "tradesperson":
-        raise HTTPException(status_code=403, detail="Only pros can view fee log")
-
-    pro_profile = await db.pro_profiles.find_one({"user_id": user["_id"]})
-    if not pro_profile:
-        return {"fees": [], "total": 0}
-
-    query = {"pro_id": str(pro_profile["_id"])}
-    if status_filter in ("pending", "paid", "invoiced"):
-        query["status"] = status_filter
-
-    fees = await db.fee_log.find(query).sort("incurred_at", -1).limit(50).to_list(50)
-
-    return {
-        "fees": [serialize_doc(f) for f in fees],
-        "total": pro_profile.get("monthly_fees", 0)
-    }
-
-
 @router.get("/transactions")
 async def get_transactions(user: dict = Depends(get_current_user)):
     from services.billing_service import transaction_label
@@ -588,66 +566,6 @@ async def get_transactions(user: dict = Depends(get_current_user)):
         doc["display_label"] = transaction_label(t)
         result.append(doc)
     return {"transactions": result}
-
-
-@router.post("/pay-outstanding")
-async def pay_outstanding_fees(data: CheckoutRequest, user: dict = Depends(get_current_user)):
-    """Create a Stripe Checkout for all unpaid contact fees this month."""
-    if user["role"] != "tradesperson":
-        raise HTTPException(status_code=403, detail="Only pros can pay fees")
-
-    pro_profile = await db.pro_profiles.find_one({"user_id": user["_id"]})
-    if not pro_profile:
-        raise HTTPException(status_code=404, detail="Pro profile not found")
-    pro_id = str(pro_profile["_id"])
-
-    outstanding = await db.fee_log.find(
-        {"pro_id": pro_id, "status": "pending"}
-    ).to_list(200)
-    total = round(sum(f.get("amount", 0) for f in outstanding), 2)
-    if total <= 0:
-        raise HTTPException(status_code=400, detail="No outstanding fees")
-
-    from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest
-    api_key = os.environ.get("STRIPE_API_KEY")
-    origin = data.origin_url.rstrip("/")
-    success_url = f"{origin}/billing?session_id={{CHECKOUT_SESSION_ID}}"
-    cancel_url = f"{origin}/billing"
-
-    stripe_checkout = StripeCheckout(
-        api_key=api_key,
-        webhook_url=f"{origin}/api/webhook/stripe",
-        webhook_secret=os.environ.get("STRIPE_WEBHOOK_SECRET") or None,
-    )
-    fee_ids = [str(f["_id"]) for f in outstanding]
-    checkout_req = CheckoutSessionRequest(
-        amount=total,
-        currency="eur",
-        success_url=success_url,
-        cancel_url=cancel_url,
-        metadata={
-            "user_id": user["_id"],
-            "type": "contact_fees",
-            "fee_ids": ",".join(fee_ids),
-        },
-    )
-    session = await stripe_checkout.create_checkout_session(checkout_req)
-
-    await db.payment_transactions.update_one(
-        {"session_id": session.session_id},
-        {"$setOnInsert": {
-            "user_id": user["_id"],
-            "session_id": session.session_id,
-            "amount": total,
-            "currency": "eur",
-            "status": "pending",
-            "payment_status": "unpaid",
-            "metadata": {"type": "contact_fees", "fee_ids": fee_ids},
-            "created_at": datetime.now(timezone.utc),
-        }},
-        upsert=True,
-    )
-    return {"url": session.url, "session_id": session.session_id, "amount": total}
 
 
 @router.post("/cancel-subscription")
@@ -761,33 +679,6 @@ async def customer_portal(data: CheckoutRequest, user: dict = Depends(get_curren
     return {"url": portal.url}
 
 
-# ──────────────────────────────────────────────
-# Monthly invoice on the 25th
-# ──────────────────────────────────────────────
-@router.get("/next-invoice")
-async def next_invoice(user: dict = Depends(get_current_user)):
-    """Show the pro how much they owe right now + when the invoice is sent."""
-    if user["role"] != "tradesperson":
-        raise HTTPException(status_code=403, detail="Only pros have invoices")
-
-    pro_profile = await db.pro_profiles.find_one({"user_id": user["_id"]})
-    if not pro_profile:
-        raise HTTPException(status_code=404, detail="Pro profile not found")
-    pro_id = str(pro_profile["_id"])
-
-    pending = await db.fee_log.find({"pro_id": pro_id, "status": "pending"}).to_list(500)
-    total = round(sum(f.get("amount", 0) for f in pending), 2)
-    due = next_billing_date()
-    cycle_start = current_cycle_start()
-    return {
-        "amount": total,
-        "fee_count": len(pending),
-        "due_at": due.isoformat(),
-        "cycle_start": cycle_start.isoformat(),
-        "currency": "eur",
-    }
-
-
 @router.post("/cancel-toolkit")
 async def cancel_toolkit(user: dict = Depends(get_current_user), kind: str = "invoice"):
     """Immediately deactivate a purchased toolkit (invoice / tax / pm)."""
@@ -822,72 +713,3 @@ async def cancel_toolkit(user: dict = Depends(get_current_user), kind: str = "in
         "created_at": now,
     })
     return {"message": f"{label} Toolkit cancelled.", "kind": kind}
-
-
-@router.post("/admin/run-monthly")
-async def run_monthly_billing(user: dict = Depends(require_admin)):
-    """Admin-triggered monthly invoice run.
-
-    For each pro with status='pending' fee_log entries due on/before today,
-    mark them as 'invoiced' and create a payment_transactions row recording
-    the monthly invoice amount. The pro then pays via /api/billing/pay-outstanding.
-
-    In production this would be triggered by a daily cron on the 25th.
-    """
-    today = datetime.now(timezone.utc)
-    # Aggregate pending fees per pro that are due now or earlier
-    pipeline = [
-        {"$match": {"status": "pending", "due_at": {"$lte": today}}},
-        {"$group": {
-            "_id": "$pro_id",
-            "total": {"$sum": "$amount"},
-            "fee_ids": {"$push": "$_id"},
-        }},
-    ]
-    agg = await db.fee_log.aggregate(pipeline).to_list(2000)
-
-    invoices_created = 0
-    for row in agg:
-        pro_id = row["_id"]
-        total = round(row.get("total", 0), 2)
-        fee_ids = row.get("fee_ids", [])
-        if total <= 0 or not fee_ids:
-            continue
-
-        pro_profile = await db.pro_profiles.find_one({"_id": ObjectId(pro_id)})
-        if not pro_profile:
-            continue
-
-        invoice_id = ObjectId()
-        await db.payment_transactions.insert_one({
-            "_id": invoice_id,
-            "user_id": pro_profile["user_id"],
-            "amount": total,
-            "currency": "eur",
-            "status": "pending",
-            "payment_status": "unpaid",
-            "metadata": {
-                "type": "monthly_invoice",
-                "fee_ids": [str(f) for f in fee_ids],
-                "cycle_start": current_cycle_start().isoformat(),
-                "cycle_end": today.isoformat(),
-            },
-            "created_at": today,
-        })
-        await db.fee_log.update_many(
-            {"_id": {"$in": fee_ids}},
-            {"$set": {"status": "invoiced", "invoice_id": str(invoice_id)}}
-        )
-        # Notify the pro
-        await db.notifications.insert_one({
-            "user_id": pro_profile["user_id"],
-            "kind": "invoice",
-            "title": f"Monthly invoice — €{total:.2f}",
-            "body": "Your monthly contact-fee invoice is ready.",
-            "link_to": "/billing",
-            "is_read": False,
-            "created_at": today,
-        })
-        invoices_created += 1
-
-    return {"invoices_created": invoices_created}
