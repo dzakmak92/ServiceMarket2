@@ -1,0 +1,195 @@
+"""Invoice endpoints (Postgres).
+
+Mounted at /api/invoices. The legacy /api/pro-invoices routes stay live until
+the MongoDB import has run and been verified; both can coexist because they
+serve different stores and different prefixes.
+"""
+from __future__ import annotations
+
+from datetime import date
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from pydantic import BaseModel, Field
+
+from auth import get_current_user
+from repositories import invoices as repo
+from routes._pro import require_pro_id
+from services.invoice_pdf import render_invoice_pdf
+
+router = APIRouter(prefix="/invoices", tags=["invoices"])
+
+
+class InvoiceLineIn(BaseModel):
+    position: Optional[int] = None
+    kind: str = Field(default="labor", pattern="^(labor|material|travel|other)$")
+    description: str = Field(min_length=1, max_length=300)
+    qty: float = 1
+    unit: str = "pcs"
+    unit_price: float = 0
+    discount_pct: float = Field(default=0, ge=0, le=100)
+    tax_treatment: Optional[str] = None
+    vat_rate: Optional[float] = None
+
+
+class InvoiceIn(BaseModel):
+    job_id: Optional[str] = None
+    customer_id: Optional[str] = None
+    type: str = Field(default="standard", pattern="^(standard|abschlag|schluss)$")
+    service_date_start: Optional[date] = None
+    service_date_end: Optional[date] = None
+    payment_terms_days: int = Field(default=14, ge=0, le=180)
+    note: Optional[str] = None
+    lines: list[InvoiceLineIn] = []
+
+
+class LinesIn(BaseModel):
+    lines: list[InvoiceLineIn]
+
+
+class IssueIn(BaseModel):
+    service_date_start: Optional[date] = None
+    service_date_end: Optional[date] = None
+    payment_terms_days: Optional[int] = Field(default=None, ge=0, le=180)
+
+
+class StornoIn(BaseModel):
+    reason: str = Field(min_length=3, max_length=500)
+
+
+class PaymentIn(BaseModel):
+    amount: float
+    method: str = Field(default="transfer",
+                        pattern="^(transfer|card|sepa|sofort|cash|other)$")
+    paid_on: Optional[date] = None
+    reference: Optional[str] = None
+    note: Optional[str] = None
+    # Austrian Belegerteilungspflicht: a cash payment still owes the customer
+    # a receipt. From 1 Oct 2026 a digital Beleg counts the same as paper.
+    beleg_ref: Optional[str] = None
+
+
+def _lines(items) -> list[dict]:
+    return [i.model_dump(exclude_none=True) for i in (items or [])]
+
+
+@router.get("")
+async def list_invoices(status: Optional[str] = None, payment_state: Optional[str] = None,
+                        job_id: Optional[str] = None, customer_id: Optional[str] = None,
+                        limit: int = Query(default=50, le=200), offset: int = 0,
+                        user: dict = Depends(get_current_user)):
+    pro_id = await require_pro_id(user)
+    return await repo.list_for_pro(pro_id, status=status, payment_state=payment_state,
+                                   job_id=job_id, customer_id=customer_id,
+                                   limit=limit, offset=offset)
+
+
+@router.get("/overdue")
+async def overdue(user: dict = Depends(get_current_user)):
+    """Feeds the dunning ladder. Needs no PSP — a reminder carrying the
+    existing GiroCode PDF is already actionable."""
+    return {"invoices": await repo.overdue_for_pro(await require_pro_id(user))}
+
+
+@router.post("", status_code=201)
+async def create_invoice(body: InvoiceIn, user: dict = Depends(get_current_user)):
+    pro_id = await require_pro_id(user)
+    data = body.model_dump(exclude={"lines", "type"}, exclude_none=True)
+    inv = await repo.create_draft(pro_id, invoice_type=body.type,
+                                  lines=_lines(body.lines), **data)
+    return await repo.get(pro_id, str(inv["id"]))
+
+
+@router.get("/{invoice_id}")
+async def get_invoice(invoice_id: str, user: dict = Depends(get_current_user)):
+    inv = await repo.get(await require_pro_id(user), invoice_id)
+    if not inv:
+        raise HTTPException(404, "Invoice not found")
+    return inv
+
+
+@router.put("/{invoice_id}/lines")
+async def replace_lines(invoice_id: str, body: LinesIn,
+                        user: dict = Depends(get_current_user)):
+    pro_id = await require_pro_id(user)
+    try:
+        return await repo.replace_lines(pro_id, invoice_id, _lines(body.lines))
+    except LookupError as e:
+        raise HTTPException(404, str(e))
+    except PermissionError as e:
+        raise HTTPException(409, str(e))
+
+
+@router.post("/{invoice_id}/issue")
+async def issue_invoice(invoice_id: str, body: IssueIn = IssueIn(),
+                        user: dict = Depends(get_current_user)):
+    """Freeze and issue.
+
+    One transaction: the number is allocated by a database trigger in the
+    same statement, so a failure anywhere rolls the counter back and the
+    series stays gap-free (GoBD / RKSV).
+    """
+    pro_id = await require_pro_id(user)
+    try:
+        await repo.issue(pro_id, invoice_id,
+                         service_date_start=body.service_date_start,
+                         service_date_end=body.service_date_end,
+                         payment_terms_days=body.payment_terms_days)
+    except LookupError as e:
+        raise HTTPException(404, str(e))
+    except PermissionError as e:
+        raise HTTPException(409, str(e))
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return await repo.get(pro_id, invoice_id)
+
+
+@router.post("/{invoice_id}/storno", status_code=201)
+async def storno_invoice(invoice_id: str, body: StornoIn,
+                         user: dict = Depends(get_current_user)):
+    """Cancel by credit note. An issued invoice is never edited or deleted —
+    both it and its Storno stay in the series."""
+    pro_id = await require_pro_id(user)
+    try:
+        st = await repo.storno(pro_id, invoice_id, body.reason)
+    except LookupError as e:
+        raise HTTPException(404, str(e))
+    except ValueError as e:
+        raise HTTPException(409, str(e))
+    return await repo.get(pro_id, str(st["id"]))
+
+
+@router.post("/{invoice_id}/payments", status_code=201)
+async def record_payment(invoice_id: str, body: PaymentIn,
+                         user: dict = Depends(get_current_user)):
+    pro_id = await require_pro_id(user)
+    try:
+        await repo.record_payment(pro_id, invoice_id, body.model_dump(exclude_none=True))
+    except LookupError as e:
+        raise HTTPException(404, str(e))
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return await repo.get(pro_id, invoice_id)
+
+
+@router.delete("/{invoice_id}/payments/{payment_id}")
+async def delete_payment(invoice_id: str, payment_id: str,
+                         user: dict = Depends(get_current_user)):
+    pro_id = await require_pro_id(user)
+    if not await repo.delete_payment(pro_id, invoice_id, payment_id):
+        raise HTTPException(404, "Payment not found")
+    return await repo.get(pro_id, invoice_id)
+
+
+@router.get("/{invoice_id}/pdf")
+async def invoice_pdf(invoice_id: str, user: dict = Depends(get_current_user)):
+    pro_id = await require_pro_id(user)
+    inv = await repo.get(pro_id, invoice_id)
+    if not inv:
+        raise HTTPException(404, "Invoice not found")
+    pdf = render_invoice_pdf(inv)
+    name = (inv.get("invoice_number") or "entwurf").replace("/", "-")
+    return Response(
+        content=pdf, media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="{name}.pdf"'},
+    )
