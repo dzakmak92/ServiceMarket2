@@ -390,7 +390,10 @@ function ReceiptsTab({ year, t }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const load = () => api.get(`/api/tax/receipts?year=${year}`).then((r) => setReceipts(r.data.receipts || [])).catch(() => {});
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [year]);
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [year]);
   const handleFile = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;

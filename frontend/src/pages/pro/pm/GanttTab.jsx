@@ -20,7 +20,10 @@ export default function GanttTab({ projectId, t }) {
       setTasks(data.tasks || []);
     } finally { setLoading(false); }
   };
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [projectId]);
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
 
   // Map our tasks → frappe-gantt format. Fall back to spreading any
   // un-dated tasks across the next 30 days so the timeline isn't empty.

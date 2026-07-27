@@ -25,7 +25,10 @@ export default function KanbanTab({ projectId, t }) {
       setTasks(data.tasks || []);
     } finally { setLoading(false); }
   };
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [projectId]);
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
 
   // Group tasks by column with stable ordering
   const byColumn = useMemo(() => {

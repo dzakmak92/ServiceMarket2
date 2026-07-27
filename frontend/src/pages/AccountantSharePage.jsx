@@ -26,7 +26,10 @@ export default function AccountantSharePage() {
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { load(year); /* eslint-disable-next-line */ }, [token, year]);
+  useEffect(() => {
+    load(year);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, year]);
 
   if (loading) return <div className="min-h-screen bg-cream flex items-center justify-center"><Loader2 size={28} className="text-teal animate-spin" /></div>;
   if (error) return (

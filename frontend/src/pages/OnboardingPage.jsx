@@ -50,7 +50,7 @@ export default function OnboardingPage() {
     const filled = req.filter((k) => (form[k] || '').toString().trim()).length;
     // Last 10% reserved for Turnstile pass
     return Math.round(10 + (filled / req.length) * (turnstileToken ? 90 : 80));
-  }, [role, form, turnstileToken]);
+  }, [form, turnstileToken]);
 
   const detailsValid = () => {
     const req = PRO_REQUIRED.filter(k => k !== 'licence_file_id');

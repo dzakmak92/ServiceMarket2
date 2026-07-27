@@ -37,7 +37,10 @@ export default function OverviewTab({ projectId, t, onJumpTab }) {
     } catch { setTimer(null); }
   };
 
-  useEffect(() => { load(); loadTimer(); /* eslint-disable-next-line */ }, [projectId]);
+  useEffect(() => {
+    load(); loadTimer();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
 
   // Tick every second while a timer for THIS project is running
   useEffect(() => {

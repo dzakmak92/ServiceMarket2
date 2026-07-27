@@ -58,7 +58,10 @@ export default function MyInvoicesPage() {
       setTotal(data.total ?? (data.invoices || []).length);
     } finally { setLoading(false); }
   };
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [statusFilter, sourceFilter, search, year, month, page, perPage, sortBy, sortOrder]);
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, sourceFilter, search, year, month, page, perPage, sortBy, sortOrder]);
 
   // Fetch aggregated KPI stats once + whenever the year filter changes
   useEffect(() => {

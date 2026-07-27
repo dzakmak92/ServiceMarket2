@@ -48,7 +48,10 @@ export default function PMProjectDetailPage() {
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [id]);
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   if (loading) return <div className="min-h-screen bg-cream flex items-center justify-center"><Loader2 size={28} className="text-teal animate-spin" /></div>;
   if (!project) return null;
@@ -170,7 +173,10 @@ function MaterialsTab({ projectId, t }) {
       setTotals(data.totals || { planned: 0, actual: 0, variance: 0 });
     } finally { setLoading(false); }
   };
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [projectId]);
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
 
   const handleScanned = async (code) => {
     setScanOpen(false);
@@ -367,7 +373,10 @@ function DiaryTab({ projectId, t }) {
       setTimer(r.running);
     } catch { setTimer(null); }
   };
-  useEffect(() => { load(); loadTimer(); /* eslint-disable-next-line */ }, [projectId]);
+  useEffect(() => {
+    load(); loadTimer();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
   useEffect(() => {
     if (!timer || timer.project_id !== projectId) return;
     const i = setInterval(() => setNow(Date.now()), 1000);

@@ -30,7 +30,10 @@ export default function SubContractorPage() {
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [subToken]);
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subToken]);
 
   const byColumn = useMemo(() => {
     const out = { todo: [], doing: [], done: [] };
