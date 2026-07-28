@@ -2,12 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "regions": ["fra1"],
   "framework": "create-react-app",
-  "buildCommand": "cd frontend && npm install && npm run build",
+  "buildCommand": "cd frontend && npm install && GENERATE_SOURCEMAP=false npm run build",
   "outputDirectory": "frontend/build",
   "functions": {
     "api/index.py": {
-      "runtime": "@vercel/python@4.3.1",
-      "memory": 1024,
       "maxDuration": 60,
       "includeFiles": "backend/**"
     }
