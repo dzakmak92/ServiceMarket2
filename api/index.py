@@ -165,12 +165,13 @@ def _build_app():
     return app
 
 
-try:
-    app = _build_app()
-except Exception as exc:  # noqa: BLE001 — must never propagate
-    logger.error("FATAL: the application could not be built\n%s", traceback.format_exc())
+def _build_fallback(exc: BaseException):
+    """A bare ASGI app that reports why the real one could not be built.
 
-    _body = json.dumps({
+    Standard library only, by design — it has to work in the case where
+    fastapi itself is what failed to import.
+    """
+    body = json.dumps({
         "status": "boot_failed",
         "error": f"{type(exc).__name__}: {exc}",
         "python": sys.version.split()[0],
@@ -181,9 +182,7 @@ except Exception as exc:  # noqa: BLE001 — must never propagate
                 "backend/ is missing from the function bundle.",
     }, indent=2).encode()
 
-    async def app(scope, receive, send):  # type: ignore[misc]
-        """Minimal ASGI application. Standard library only, by design — it has
-        to work in the case where fastapi itself is what failed to import."""
+    async def fallback(scope, receive, send):
         if scope.get("type") == "lifespan":
             # Answer the protocol properly; an unanswered lifespan message
             # leaves some servers waiting rather than serving.
@@ -202,4 +201,21 @@ except Exception as exc:  # noqa: BLE001 — must never propagate
             "headers": [(b"content-type", b"application/json"),
                         (b"cache-control", b"no-store")],
         })
-        await send({"type": "http.response.body", "body": _body})
+        await send({"type": "http.response.body", "body": body})
+
+    return fallback
+
+
+try:
+    _resolved = _build_app()
+except Exception as _exc:  # noqa: BLE001 — must never propagate
+    logger.error("FATAL: the application could not be built\n%s", traceback.format_exc())
+    _resolved = _build_fallback(_exc)
+
+# Bound at module level, unindented, unconditionally. Vercel's Python builder
+# scans the file for a top-level `app` (or `handler`) symbol to decide it is a
+# Serverless Function at all. Assigning it inside the try above hid it from
+# that scan, and the deployment was rejected before building with "The pattern
+# api/index.py defined in `functions` doesn't match any Serverless Functions
+# inside the `api` directory" — an error about discovery, not about the code.
+app = _resolved
