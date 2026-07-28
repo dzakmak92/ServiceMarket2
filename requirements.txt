@@ -1,0 +1,5 @@
+# Vercel's Python builder resolves dependencies from the project root as well
+# as from beside the entry point, and which one it picks has varied by version.
+# Pointing one at the other means the function gets the same set either way,
+# with no second list to drift out of sync.
+-r api/requirements.txt
