@@ -125,16 +125,35 @@ async def _open_pool(dsn: str, kwargs: dict[str, Any]) -> asyncpg.Pool:
             raise
         await pool_.close()
 
-    resolved, host, ip = _resolve_dsn_host(dsn)
+    # Each failure below is labelled distinctly. The original ValueError is
+    # what the platform raises, so re-emitting it unchanged would make three
+    # different situations look identical from /api/health: a stale deployment
+    # still running the old code, a resolver that is itself shimmed, and a
+    # resolved address that simply cannot be reached.
+    try:
+        resolved, host, ip = _resolve_dsn_host(dsn)
+    except Exception as exc:
+        raise RuntimeError(
+            f"hostname rejected by the runtime, and resolving it locally failed "
+            f"too ({type(exc).__name__}: {exc}) — getaddrinfo is unusable here, "
+            f"so a direct Postgres connection is not possible from this runtime"
+        ) from exc
+
     logger.warning("runtime rejected the hostname %r; retrying against %s", host, ip)
     # The certificate is issued for the hostname, which is no longer what we
     # present, so full verification cannot succeed. 'require' keeps the
     # connection encrypted without verifying the name — libpq's own semantics
     # for that mode, and what most Postgres clients default to.
     kwargs.setdefault("ssl", "require")
-    pool_ = await asyncpg.create_pool(resolved, **kwargs)
-    async with pool_.acquire() as con:
-        await con.fetchval("select 1")
+    try:
+        pool_ = await asyncpg.create_pool(resolved, **kwargs)
+        async with pool_.acquire() as con:
+            await con.fetchval("select 1")
+    except Exception as exc:
+        raise RuntimeError(
+            f"hostname {host!r} rejected by the runtime; resolved it to {ip} and "
+            f"that connection failed as well ({type(exc).__name__}: {exc})"
+        ) from exc
     return pool_
 
 
