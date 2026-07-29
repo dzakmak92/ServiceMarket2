@@ -70,6 +70,7 @@ def _build_app():
         from routes.customer_routes import router as customer_router
         from routes.invoice_routes import router as invoice_router
         from routes.job_routes import router as job_router
+        from routes.profile_routes import router as profile_router
         from routes.pm_pg_routes import (portal_router as pm_portal_router,
                                          router as pm_router,
                                          timer_router as pm_timer_router)
@@ -81,6 +82,7 @@ def _build_app():
                                           router as upload_router)
 
         for r in (auth_router, customer_router, job_router, quote_router,
+                  profile_router,
                   quote_invoice_router, invoice_router, tax_router,
                   pm_router, pm_timer_router, upload_router,
                   portal_router, pm_portal_router, upload_portal_router):
