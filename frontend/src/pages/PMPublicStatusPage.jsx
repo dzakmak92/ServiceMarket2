@@ -172,7 +172,7 @@ export default function PMPublicStatusPage() {
             <ul className="space-y-3">
               {data.diary_recent.map((d) => (
                 <li key={d.id} className="border-l-2 border-cream-deep pl-3">
-                  <p className="text-sm text-ink whitespace-pre-wrap">{d.note}</p>
+                  <p className="text-sm text-ink whitespace-pre-wrap">{d.text}</p>
                   <p className="text-[11px] text-ink-muted mt-0.5">{new Date(d.entry_date).toLocaleDateString('de-AT', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                 </li>
               ))}

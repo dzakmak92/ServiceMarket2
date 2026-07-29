@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import api from '../../api/client';
+import { sendOrQueue, newId } from '../../offline/queue';
 import { useLang } from '../../contexts/LangContext';
 import {
   ArrowLeft, Loader2, Plus, Trash2, Briefcase, KanbanSquare, Boxes, BookOpen, Share2,
@@ -356,6 +357,8 @@ function DiaryTab({ projectId, t }) {
   const [totalHours, setTotalHours] = useState(0);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState({ note: '', hours: '' });
+  // True when the entry went to the offline queue rather than the server.
+  const [pending, setPending] = useState(false);
   const [timer, setTimer] = useState(null);
   const [now, setNow] = useState(Date.now());
 
@@ -401,12 +404,20 @@ function DiaryTab({ projectId, t }) {
 
   const add = async () => {
     if (!draft.note.trim()) return;
-    await api.post(`/api/jobs/${projectId}/diary`, {
-      note: draft.note.trim(),
-      hours: Number(draft.hours) || 0,
+    // client_id is chosen here, before the request leaves the device, so a
+    // replay from the offline queue lands once instead of twice.
+    const { queued } = await sendOrQueue(api, {
+      url: `/api/jobs/${projectId}/diary`,
+      body: {
+        client_id: newId(),
+        text: draft.note.trim(),
+        hours: Number(draft.hours) || 0,
+      },
+      label: 'Bautagebuch',
     });
     setDraft({ note: '', hours: '' });
-    await load();
+    setPending(queued);
+    if (!queued) await load();
   };
 
   const remove = async (entryId) => {
@@ -418,6 +429,11 @@ function DiaryTab({ projectId, t }) {
 
   return (
     <div className="space-y-4" data-testid="pm-diary">
+      {pending && (
+        <div className="card text-sm text-ink-muted" data-testid="diary-queued">
+          Offline gespeichert — wird gesendet, sobald wieder Verbindung besteht.
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div className="card-lg">
           <p className="text-[10px] uppercase font-bold text-ink-muted">{t('pm_diary_total')}</p>
@@ -463,7 +479,7 @@ function DiaryTab({ projectId, t }) {
           <div key={e.id} className="card-lg" data-testid={`pm-diary-${e.id}`}>
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-ink whitespace-pre-wrap">{e.note}</p>
+                <p className="text-sm text-ink whitespace-pre-wrap">{e.text}</p>
                 <p className="text-xs text-ink-muted mt-1">
                   {new Date(e.entry_date).toLocaleString('de-AT')}
                   {e.hours > 0 && <span className="ml-2">· {e.hours.toFixed(1)} h</span>}

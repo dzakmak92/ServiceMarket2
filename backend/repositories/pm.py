@@ -118,13 +118,37 @@ async def list_diary(pro_id: str, job_id: str) -> list[dict]:
 
 
 async def add_diary(pro_id: str, job_id: str, data: dict) -> dict:
+    """Insert a diary entry, idempotently when the caller names the row.
+
+    Field capture happens where the signal does not reach — Sanitaer cellars,
+    new-build sites — so a write is retried by the offline queue and the same
+    entry can arrive twice. When the client supplies the id it chose before
+    going offline, a replay is a no-op returning the row that already exists.
+    Without it a retry is indistinguishable from a genuine second entry.
+    """
     await _guard(pro_id, job_id)
     payload = {k: v for k, v in data.items()
                if k in {"entry_date", "text", "hours", "weather", "author", "photos"}
                and v is not None}
     payload["job_id"] = job_id
-    sql, args = pg.build_insert("job_diary", payload)
-    return await pg.fetchrow(sql, *args)
+
+    client_id = data.get("client_id")
+    if not client_id:
+        sql, args = pg.build_insert("job_diary", payload)
+        return await pg.fetchrow(sql, *args)
+
+    payload["id"] = client_id
+    cols = list(payload)
+    sql = (f"insert into job_diary ({', '.join(cols)}) "
+           f"values ({pg.placeholders(len(cols))}) "
+           f"on conflict (id) do nothing returning *")
+    row = await pg.fetchrow(sql, *payload.values())
+    if row:
+        return row
+    # Already stored by an earlier attempt — scoped to this job so a guessed
+    # id cannot read someone else's entry.
+    return await pg.fetchrow(
+        "select * from job_diary where id = $1 and job_id = $2", client_id, job_id)
 
 
 async def delete_diary(pro_id: str, job_id: str, entry_id: str) -> bool:

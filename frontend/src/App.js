@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-route
 import "@/App.css";
 
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import api from "./api/client";
+import { startAutoFlush } from "./offline/queue";
 import { LangProvider } from "./contexts/LangContext";
 import { CookieConsentProvider } from "./contexts/CookieConsentContext";
 
@@ -90,6 +92,8 @@ function OnboardingRoute() {
 
 function AppShell() {
   const { user, loading } = useAuth();
+  // Replay anything captured offline as soon as the connection returns.
+  React.useEffect(() => startAutoFlush(api), []);
   const location = useLocation();
 
   if (loading) return <Loader />;

@@ -48,6 +48,10 @@ class MaterialIn(BaseModel):
 
 
 class DiaryIn(BaseModel):
+    # Supplied by the offline queue so a replayed entry lands once. Without an
+    # id chosen before the request leaves the device, a retry after a flaky
+    # cellar connection cannot be told apart from a genuine second entry.
+    client_id: Optional[str] = Field(default=None, pattern=r"^[0-9a-fA-F-]{36}$")
     entry_date: Optional[date] = None
     text: str = ""
     hours: Optional[float] = None
