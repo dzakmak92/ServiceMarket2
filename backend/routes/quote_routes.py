@@ -148,6 +148,33 @@ async def revise(quote_id: str, body: LinesIn, user: dict = Depends(get_current_
         raise HTTPException(409, str(e))
 
 
+@router.get("/{quote_id}/pdf")
+async def quote_pdf(quote_id: str, user: dict = Depends(get_current_user)):
+    """The branded Angebot the customer actually receives."""
+    from fastapi.responses import Response
+
+    from services.quote_pdf import render_quote_pdf
+
+    pro_id = await require_pro_id(user)
+    quote = await repo.get(pro_id, quote_id)
+    if not quote:
+        raise HTTPException(404, "Quote not found")
+
+    pro = await pg.fetchrow("select * from pro_profiles where id = $1", pro_id)
+    customer = await pg.fetchrow(
+        "select * from customers where id = $1", quote.get("customer_id")) \
+        if quote.get("customer_id") else {}
+
+    pdf = render_quote_pdf(dict(quote), pro=dict(pro or {}), customer=dict(customer or {}))
+    name = f"Angebot-{quote.get('quote_number') or quote_id[:8]}.pdf"
+    return Response(
+        content=pdf, media_type="application/pdf",
+        # inline: a tradesperson checks it on the phone before sending, and a
+        # forced download makes that two taps and a file manager.
+        headers={"Content-Disposition": f'inline; filename="{name}"'},
+    )
+
+
 @router.post("/{quote_id}/send")
 async def send_quote(quote_id: str, user: dict = Depends(get_current_user)):
     pro_id = await require_pro_id(user)
