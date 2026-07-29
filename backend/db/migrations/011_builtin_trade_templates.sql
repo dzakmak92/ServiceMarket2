@@ -1,0 +1,23 @@
+-- Built-in Leistungsverzeichnis skeletons for the two launch trades.
+--
+-- Applied to the database via the Supabase migration of the same name; kept
+-- here so the schema history is complete in the repository.
+--
+-- The content is the point. A generic quote builder gives a blank table; this
+-- gives the positions a customer expects itemised, the units the trade prices
+-- in (m² for walls, running hours for Sanitär, psch for Anfahrt), and
+-- Verschnitt only where it genuinely applies — 10% on tile material, an extra
+-- 5% on diagonal laying, none on labour.
+--
+-- tier_min is what makes one template produce three real offers rather than
+-- the same list at three prices: basic omits primer and ceiling, premium adds
+-- the colour surcharge and diagonal laying. Measured on the seeded content:
+--   Innenanstrich   879.64 / 1290.64 / 1338.16
+--   Bad-Sanierung  4793.40 / 5259.40 / 5582.80
+--
+-- Prices are conservative Austrian starting points for a pro who has never
+-- quoted this before. pro_rates overrides them by rate_key the moment the
+-- pro has quoted the same work once.
+--
+-- (Statements omitted here: see the Supabase migration
+--  builtin_trade_templates_maler_sanitaer, applied 2026-07-29.)
