@@ -150,3 +150,6 @@ backend/backups/
 
 # Local build output
 frontend/build/
+
+# Directory dataset: business contact data, kept out of git history.
+data/
