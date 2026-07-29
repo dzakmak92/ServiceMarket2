@@ -160,42 +160,57 @@ def _build_app():
         out or a dead end, and that is not worth guessing at one deploy per
         attempt. Returns no secrets — hostnames and error strings only.
         """
-        import socket as s
+        out: dict = {}
 
-        def probe(fn, *a):
+        def record(key, fn, *a):
+            """Run anything and store either its value or its failure.
+
+            Every field is individually guarded, including repr() and
+            attribute access: whatever replaced getaddrinfo is an unknown
+            object, and asking it to describe itself can raise just as easily
+            as calling it. A diagnostic that can 500 tells us nothing.
+            """
             try:
-                return {"ok": True, "result": str(fn(*a))[:160]}
-            except Exception as exc:  # noqa: BLE001 — reporting, not handling
-                return {"ok": False, "error": f"{type(exc).__name__}: {exc}"[:200]}
+                out[key] = {"ok": True, "result": str(fn(*a))[:200]}
+            except BaseException as exc:  # noqa: BLE001 — reporting, not handling
+                out[key] = {"ok": False, "error": f"{type(exc).__name__}: {exc}"[:250]}
 
-        out = {
-            # If this is not the stdlib function, the module it comes from
-            # names whatever is doing the patching.
-            "getaddrinfo_repr": repr(s.getaddrinfo)[:160],
-            "getaddrinfo_module": getattr(s.getaddrinfo, "__module__", None),
-            "gethostbyname_repr": repr(s.gethostbyname)[:160],
-            "probe_public_host": probe(s.getaddrinfo, "example.com", 443),
-            "probe_ip_literal": probe(s.getaddrinfo, "93.184.216.34", 443),
-        }
-
-        dsn = os.environ.get("DATABASE_URL")
-        if dsn:
-            from urllib.parse import urlsplit
-            host = urlsplit(dsn).hostname
-            out["db_host"] = host
-            out["probe_db_getaddrinfo"] = probe(s.getaddrinfo, host, 6543)
-            out["probe_db_gethostbyname"] = probe(s.gethostbyname, host)
-
-        # Does outbound HTTPS work at all? If it does, Supabase's REST API is
-        # a viable route to the same data without raw TCP.
         try:
-            import httpx
+            import socket as s
+
+            # If these are not the stdlib functions, the module they come from
+            # names whatever is patching them.
+            record("getaddrinfo_repr", lambda: repr(s.getaddrinfo))
+            record("getaddrinfo_module", lambda: getattr(s.getaddrinfo, "__module__", "?"))
+            record("gethostbyname_repr", lambda: repr(s.gethostbyname))
+            record("socket_module_file", lambda: getattr(s, "__file__", "?"))
+            record("probe_public_host", lambda: s.getaddrinfo("example.com", 443))
+            record("probe_ip_literal", lambda: s.getaddrinfo("93.184.216.34", 443))
+            record("probe_create_connection",
+                   lambda: s.create_connection(("93.184.216.34", 443), timeout=5).close())
+
+            dsn = os.environ.get("DATABASE_URL")
+            if dsn:
+                from urllib.parse import urlsplit
+                host = urlsplit(dsn).hostname
+                out["db_host"] = host
+                record("probe_db_getaddrinfo", lambda: s.getaddrinfo(host, 6543))
+                record("probe_db_gethostbyname", lambda: s.gethostbyname(host))
+
+            # Does outbound HTTPS work at all? If it does, Supabase's REST API
+            # is a viable route to the same data without raw TCP.
             url = os.environ.get("SUPABASE_URL") or "https://supabase.com"
-            async with httpx.AsyncClient(timeout=10) as client:
-                resp = await client.get(url)
-            out["probe_https"] = {"ok": True, "url": url, "status": resp.status_code}
-        except Exception as exc:  # noqa: BLE001 — reporting, not handling
-            out["probe_https"] = {"ok": False, "error": f"{type(exc).__name__}: {exc}"[:200]}
+            out["https_url"] = url
+            try:
+                import httpx
+                async with httpx.AsyncClient(timeout=10) as client:
+                    resp = await client.get(url)
+                out["probe_https"] = {"ok": True, "status": resp.status_code}
+            except BaseException as exc:  # noqa: BLE001 — reporting, not handling
+                out["probe_https"] = {"ok": False,
+                                      "error": f"{type(exc).__name__}: {exc}"[:250]}
+        except BaseException as exc:  # noqa: BLE001 — return what we collected
+            out["diagnostic_error"] = f"{type(exc).__name__}: {exc}"[:250]
 
         return out
 
