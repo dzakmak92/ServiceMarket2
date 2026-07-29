@@ -150,6 +150,55 @@ def _build_app():
             body["import_error"] = _scrub(import_error)
         return body
 
+    @app.get("/api/diag/net")
+    async def diag_net():
+        """Temporary. Establishes what this runtime can actually reach.
+
+        getaddrinfo is raising a ValueError the standard library never raises,
+        so it has been replaced. Whether DNS is broken for everything or only
+        for the database path decides whether an HTTPS-based data API is a way
+        out or a dead end, and that is not worth guessing at one deploy per
+        attempt. Returns no secrets — hostnames and error strings only.
+        """
+        import socket as s
+
+        def probe(fn, *a):
+            try:
+                return {"ok": True, "result": str(fn(*a))[:160]}
+            except Exception as exc:  # noqa: BLE001 — reporting, not handling
+                return {"ok": False, "error": f"{type(exc).__name__}: {exc}"[:200]}
+
+        out = {
+            # If this is not the stdlib function, the module it comes from
+            # names whatever is doing the patching.
+            "getaddrinfo_repr": repr(s.getaddrinfo)[:160],
+            "getaddrinfo_module": getattr(s.getaddrinfo, "__module__", None),
+            "gethostbyname_repr": repr(s.gethostbyname)[:160],
+            "probe_public_host": probe(s.getaddrinfo, "example.com", 443),
+            "probe_ip_literal": probe(s.getaddrinfo, "93.184.216.34", 443),
+        }
+
+        dsn = os.environ.get("DATABASE_URL")
+        if dsn:
+            from urllib.parse import urlsplit
+            host = urlsplit(dsn).hostname
+            out["db_host"] = host
+            out["probe_db_getaddrinfo"] = probe(s.getaddrinfo, host, 6543)
+            out["probe_db_gethostbyname"] = probe(s.gethostbyname, host)
+
+        # Does outbound HTTPS work at all? If it does, Supabase's REST API is
+        # a viable route to the same data without raw TCP.
+        try:
+            import httpx
+            url = os.environ.get("SUPABASE_URL") or "https://supabase.com"
+            async with httpx.AsyncClient(timeout=10) as client:
+                resp = await client.get(url)
+            out["probe_https"] = {"ok": True, "url": url, "status": resp.status_code}
+        except Exception as exc:  # noqa: BLE001 — reporting, not handling
+            out["probe_https"] = {"ok": False, "error": f"{type(exc).__name__}: {exc}"[:200]}
+
+        return out
+
     @app.post("/api/webhook/stripe")
     async def stripe_webhook(request: Request):
         """Placeholder until the Stripe SDK replaces emergentintegrations.
