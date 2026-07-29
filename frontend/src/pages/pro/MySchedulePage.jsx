@@ -18,7 +18,7 @@ export default function MySchedulePage() {
   const [crewFilter, setCrewFilter] = useState('all');
 
   useEffect(() => {
-    api.get('/api/pm/schedule').then((r) => setData(r.data)).finally(() => setLoading(false));
+    api.get('/api/jobs/schedule').then((r) => setData(r.data)).finally(() => setLoading(false));
   }, []);
 
   const colorFor = useMemo(() => {

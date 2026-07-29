@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, EmailStr, Field
 
 from auth import get_current_user
+from db import pg
 from repositories import jobs as repo
 from routes._pro import require_pro_id
 
@@ -95,6 +96,45 @@ async def list_jobs(
 async def job_counts(user: dict = Depends(get_current_user)):
     """Dashboard tiles. Declared before /{job_id} so it is not swallowed."""
     return await repo.dashboard_counts(await require_pro_id(user))
+
+
+@router.get("/schedule")
+async def schedule(days: int = Query(default=60, ge=1, le=365),
+                   user: dict = Depends(get_current_user)):
+    """Every dated task across open jobs, for the week planner.
+
+    Declared before /{job_id} for the same reason as /counts — FastAPI matches
+    in declaration order and the dynamic route would read "schedule" as an id.
+
+    Closed, cancelled and deleted jobs are excluded: a planner showing work
+    that is already finished is worse than one showing nothing, because it
+    hides the rows that still need doing.
+    """
+    pro_id = await require_pro_id(user)
+    rows = await pg.fetch(
+        """
+        select t.id::text          as id,
+               t.job_id::text      as project_id,
+               j.title             as project_title,
+               j.job_number,
+               t.title,
+               t.assignee,
+               t.due_date          as due_at,
+               t.done_at,
+               t.column_key
+          from job_tasks t
+          join jobs j on j.id = t.job_id
+         where j.pro_id = $1
+           and j.deleted_at is null
+           and j.status not in ('closed', 'cancelled')
+           and t.due_date is not null
+           and t.due_date between current_date - interval '7 days'
+                              and current_date + ($2 || ' days')::interval
+         order by t.due_date, j.job_number nulls last, t.sort_order
+        """,
+        pro_id, str(days),
+    )
+    return {"tasks": rows}
 
 
 @router.post("", status_code=201)
