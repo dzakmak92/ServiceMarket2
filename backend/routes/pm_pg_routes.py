@@ -79,6 +79,21 @@ class ChangeOrderIn(BaseModel):
     kind: str = Field(default="labor", pattern="^(labor|material|travel|other)$")
 
 
+class TimeLogIn(BaseModel):
+    """A completed interval, timed on the device.
+
+    Queuing timer start/stop would be wrong rather than merely late: the
+    server would stamp the moment the replay arrived, so an hour logged in a
+    cellar at 09:00 would land as an hour at 17:00 when signal returned. The
+    device knows when the work happened, so it sends both ends.
+    """
+    client_id: str = Field(pattern=r"^[0-9a-fA-F-]{36}$")
+    started_at: datetime
+    stopped_at: datetime
+    note: Optional[str] = None
+    billable: bool = True
+
+
 class TimerIn(BaseModel):
     note: Optional[str] = None
 
@@ -226,6 +241,19 @@ async def stop_timer(job_id: str, user: dict = Depends(get_current_user)):
     if not row:
         raise HTTPException(404, "No running timer on this job")
     return row
+
+
+@router.post("/{job_id}/time-logs", status_code=201)
+async def add_time_log(job_id: str, body: TimeLogIn,
+                       user: dict = Depends(get_current_user)):
+    """Record an interval that was timed offline. Idempotent on client_id."""
+    pro_id = await require_pro_id(user)
+    if body.stopped_at <= body.started_at:
+        raise HTTPException(400, "stopped_at must be after started_at")
+    try:
+        return await repo.add_time_log(pro_id, job_id, body.model_dump())
+    except LookupError as e:
+        raise _nf(e)
 
 
 @router.get("/{job_id}/time-logs")

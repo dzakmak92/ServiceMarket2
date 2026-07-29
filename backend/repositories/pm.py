@@ -343,3 +343,34 @@ async def overview(pro_id: str, job_id: str) -> dict:
             "margin_net": float(inv["invoiced_net"] or 0) - float(mat["actual"] or 0),
         },
     }
+
+
+async def add_time_log(pro_id: str, job_id: str, data: dict) -> dict:
+    """Insert a device-timed interval, idempotently on the client's id.
+
+    seconds is not sent: the column is generated from the two timestamps, so
+    the database derives it. That is the right place for it — this figure
+    reaches an invoice, and a device with a drifted clock cannot inflate it
+    independently of the interval it claims to have worked.
+    """
+    await _guard(pro_id, job_id)
+    started, stopped = data["started_at"], data["stopped_at"]
+    payload = {
+        "id": data["client_id"],
+        "job_id": job_id,
+        "started_at": started,
+        "stopped_at": stopped,
+        "note": data.get("note"),
+        "billable": data.get("billable", True),
+    }
+    cols = [k for k, v in payload.items() if v is not None]
+    vals = [payload[k] for k in cols]
+    row = await pg.fetchrow(
+        f"insert into job_time_logs ({', '.join(cols)}) "
+        f"values ({pg.placeholders(len(cols))}) "
+        f"on conflict (id) do nothing returning *", *vals)
+    if row:
+        return row
+    return await pg.fetchrow(
+        "select * from job_time_logs where id = $1 and job_id = $2",
+        data["client_id"], job_id)
