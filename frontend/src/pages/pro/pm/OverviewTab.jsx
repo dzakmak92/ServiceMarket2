@@ -26,13 +26,13 @@ export default function OverviewTab({ projectId, t, onJumpTab }) {
   const load = async () => {
     setLoading(true);
     try {
-      const { data: d } = await api.get(`/api/pm/projects/${projectId}/overview`);
+      const { data: d } = await api.get(`/api/jobs/${projectId}/overview`);
       setData(d);
     } finally { setLoading(false); }
   };
   const loadTimer = async () => {
     try {
-      const { data: t2 } = await api.get('/api/pm/timer');
+      const { data: t2 } = await api.get('/api/timer');
       setTimer(t2.running);
     } catch { setTimer(null); }
   };
@@ -51,9 +51,9 @@ export default function OverviewTab({ projectId, t, onJumpTab }) {
 
   const toggleTimer = async () => {
     if (timer && timer.project_id === projectId) {
-      await api.post(`/api/pm/projects/${projectId}/timer/stop`);
+      await api.post(`/api/jobs/${projectId}/timer/stop`);
     } else {
-      await api.post(`/api/pm/projects/${projectId}/timer/start`);
+      await api.post(`/api/jobs/${projectId}/timer/start`);
       setNow(Date.now()); // reset tick baseline immediately
     }
     await loadTimer();

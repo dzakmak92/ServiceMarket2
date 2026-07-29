@@ -871,7 +871,7 @@ function WhiteLabelSection({ t, proProfile, reload }) {
   const [previewKey, setPreviewKey] = useState(null);
 
   useEffect(() => {
-    api.get('/api/pro-invoices/templates/list').then((r) => {
+    api.get('/api/invoices/templates/list').then((r) => {
       setTplList(r.data.templates || []);
       setCurrentTpl(r.data.current || 'classic');
       setLogoUrl(r.data.logo_url || null);
@@ -993,7 +993,7 @@ function WhiteLabelSection({ t, proProfile, reload }) {
               <button onClick={() => setPreviewKey(null)} className="btn-ghost text-xs">✕</button>
             </div>
             <iframe
-              src={`${process.env.REACT_APP_BACKEND_URL}/api/pro-invoices/templates/${previewKey}/preview`}
+              src={`${process.env.REACT_APP_BACKEND_URL}/api/invoices/templates/${previewKey}/preview`}
               title="preview"
               className="flex-1 w-full"
               data-testid="template-preview-iframe"

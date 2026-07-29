@@ -16,7 +16,7 @@ export default function GanttTab({ projectId, t }) {
   const load = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get(`/api/pm/projects/${projectId}/tasks`);
+      const { data } = await api.get(`/api/jobs/${projectId}/tasks`);
       setTasks(data.tasks || []);
     } finally { setLoading(false); }
   };
@@ -71,7 +71,7 @@ export default function GanttTab({ projectId, t }) {
         on_date_change: async (task, start, end) => {
           // Persist the new dates back to MongoDB
           try {
-            await api.patch(`/api/pm/projects/${projectId}/tasks/${task.id}`, {
+            await api.patch(`/api/jobs/${projectId}/tasks/${task.id}`, {
               start_at: new Date(start).toISOString(),
               due_at: new Date(end).toISOString(),
             });
@@ -153,7 +153,7 @@ function CrewDependencyEditor({ projectId, tasks, reload, t }) {
   const patch = async (id, body) => {
     setSavingId(id);
     try {
-      await api.patch(`/api/pm/projects/${projectId}/tasks/${id}`, body);
+      await api.patch(`/api/jobs/${projectId}/tasks/${id}`, body);
       await reload();
     } finally { setSavingId(null); }
   };

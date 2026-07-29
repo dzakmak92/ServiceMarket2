@@ -15,7 +15,7 @@ export default function InvoiceFromProjectRedirect() {
   useEffect(() => {
     let cancelled = false;
     const co = new URLSearchParams(window.location.search).get('co');
-    api.get(`/api/pm/projects/${id}`)
+    api.get(`/api/jobs/${id}`)
       .then((r) => {
         if (cancelled) return;
         const jobId = r.data?.job_id || 'none';

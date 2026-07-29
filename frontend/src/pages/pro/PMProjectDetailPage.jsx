@@ -41,7 +41,7 @@ export default function PMProjectDetailPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get(`/api/pm/projects/${id}`);
+      const { data } = await api.get(`/api/jobs/${id}`);
       setProject(data);
     } catch (e) {
       if (e?.response?.status === 404) navigate('/projects');
@@ -112,7 +112,7 @@ export default function PMProjectDetailPage() {
       <ExportJobFileModal
         open={exportOpen}
         onClose={() => setExportOpen(false)}
-        exportPath={`/api/pm/projects/${id}/export-pdf`}
+        exportPath={`/api/jobs/${id}/export-pdf`}
         fileName={project.title || project.job_title}
       />
     </div>
@@ -128,7 +128,7 @@ function ProjectStatusSelect({ project, reload, t }) {
   const onChange = async (e) => {
     setBusy(true);
     try {
-      await api.patch(`/api/pm/projects/${project.id}`, { status: e.target.value });
+      await api.patch(`/api/jobs/${project.id}`, { status: e.target.value });
       await reload();
     } finally { setBusy(false); }
   };
@@ -168,7 +168,7 @@ function MaterialsTab({ projectId, t }) {
   const load = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get(`/api/pm/projects/${projectId}/materials`);
+      const { data } = await api.get(`/api/jobs/${projectId}/materials`);
       setItems(data.materials || []);
       setTotals(data.totals || { planned: 0, actual: 0, variance: 0 });
     } finally { setLoading(false); }
@@ -199,7 +199,7 @@ function MaterialsTab({ projectId, t }) {
 
   const add = async () => {
     if (!draft.name.trim()) return;
-    await api.post(`/api/pm/projects/${projectId}/materials`, {
+    await api.post(`/api/jobs/${projectId}/materials`, {
       name: draft.name.trim(),
       qty: Number(draft.qty) || 1,
       unit: draft.unit || 'pcs',
@@ -214,7 +214,7 @@ function MaterialsTab({ projectId, t }) {
   };
 
   const updateField = async (id, field, val) => {
-    await api.patch(`/api/pm/projects/${projectId}/materials/${id}`, { [field]: val });
+    await api.patch(`/api/jobs/${projectId}/materials/${id}`, { [field]: val });
     await load();
   };
 
@@ -227,7 +227,7 @@ function MaterialsTab({ projectId, t }) {
       fd.append('file', file);
       const { data } = await api.post('/api/uploads/file', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       const photos = [...(mat.photos || []), data.url];
-      await api.patch(`/api/pm/projects/${projectId}/materials/${mat.id}`, { photos });
+      await api.patch(`/api/jobs/${projectId}/materials/${mat.id}`, { photos });
       await load();
       toast.success(t('pm_mat_photo_added'));
     } catch (e) {
@@ -237,12 +237,12 @@ function MaterialsTab({ projectId, t }) {
 
   const removePhoto = async (mat, url) => {
     const photos = (mat.photos || []).filter((p) => p !== url);
-    await api.patch(`/api/pm/projects/${projectId}/materials/${mat.id}`, { photos });
+    await api.patch(`/api/jobs/${projectId}/materials/${mat.id}`, { photos });
     await load();
   };
 
   const remove = async (id) => {
-    await api.delete(`/api/pm/projects/${projectId}/materials/${id}`);
+    await api.delete(`/api/jobs/${projectId}/materials/${id}`);
     await load();
   };
 
@@ -362,14 +362,14 @@ function DiaryTab({ projectId, t }) {
   const load = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get(`/api/pm/projects/${projectId}/diary`);
+      const { data } = await api.get(`/api/jobs/${projectId}/diary`);
       setEntries(data.entries || []);
       setTotalHours(data.total_hours || 0);
     } finally { setLoading(false); }
   };
   const loadTimer = async () => {
     try {
-      const { data: r } = await api.get('/api/pm/timer');
+      const { data: r } = await api.get('/api/timer');
       setTimer(r.running);
     } catch { setTimer(null); }
   };
@@ -391,9 +391,9 @@ function DiaryTab({ projectId, t }) {
 
   const toggleTimer = async () => {
     if (isTimerOnThis) {
-      await api.post(`/api/pm/projects/${projectId}/timer/stop`);
+      await api.post(`/api/jobs/${projectId}/timer/stop`);
     } else {
-      await api.post(`/api/pm/projects/${projectId}/timer/start`);
+      await api.post(`/api/jobs/${projectId}/timer/start`);
     }
     await loadTimer();
     await load();
@@ -401,7 +401,7 @@ function DiaryTab({ projectId, t }) {
 
   const add = async () => {
     if (!draft.note.trim()) return;
-    await api.post(`/api/pm/projects/${projectId}/diary`, {
+    await api.post(`/api/jobs/${projectId}/diary`, {
       note: draft.note.trim(),
       hours: Number(draft.hours) || 0,
     });
@@ -410,7 +410,7 @@ function DiaryTab({ projectId, t }) {
   };
 
   const remove = async (entryId) => {
-    await api.delete(`/api/pm/projects/${projectId}/diary/${entryId}`);
+    await api.delete(`/api/jobs/${projectId}/diary/${entryId}`);
     await load();
   };
 
@@ -499,7 +499,7 @@ function ShareTab({ project, reload, t }) {
   const saveSettings = async () => {
     setSaving(true);
     try {
-      await api.patch(`/api/pm/projects/${project.id}`, {
+      await api.patch(`/api/jobs/${project.id}`, {
         customer_status_note: note,
         hourly_rate_eur: Number(hourlyRate) || 65,
       });
@@ -518,7 +518,7 @@ function ShareTab({ project, reload, t }) {
   const rotate = async () => {
     setRotating(true);
     try {
-      await api.post(`/api/pm/projects/${project.id}/rotate-share-token`);
+      await api.post(`/api/jobs/${project.id}/rotate-share-token`);
       await reload();
     } finally { setRotating(false); }
   };
@@ -526,7 +526,7 @@ function ShareTab({ project, reload, t }) {
   const issueSub = async () => {
     setSubBusy(true);
     try {
-      const { data } = await api.post(`/api/pm/projects/${project.id}/sub-invite`);
+      const { data } = await api.post(`/api/jobs/${project.id}/sub-invite`);
       setSubToken(data.sub_token);
     } finally { setSubBusy(false); }
   };
@@ -534,7 +534,7 @@ function ShareTab({ project, reload, t }) {
   const revokeSub = async () => {
     setSubBusy(true);
     try {
-      await api.post(`/api/pm/projects/${project.id}/sub-revoke`);
+      await api.post(`/api/jobs/${project.id}/sub-revoke`);
       setSubToken(null);
     } finally { setSubBusy(false); }
   };

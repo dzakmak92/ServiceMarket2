@@ -18,7 +18,7 @@ export default function PMPublicStatusPage() {
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(() => {
-    return api.get(`/api/pm/public/${shareToken}`)
+    return api.get(`/api/portal/${shareToken}`)
       .then((r) => setData(r.data))
       .catch((e) => setError(e?.response?.data?.detail || 'Not found'))
       .finally(() => setLoading(false));
@@ -193,7 +193,7 @@ function ChangeOrderApproval({ co, shareToken, onDone, t }) {
     if (name.trim().length < 2) { setErr(t('portal_co_sign_hint')); return; }
     setBusy(true); setErr('');
     try {
-      await api.post(`/api/pm/public/${shareToken}/change-orders/${co.id}/${decision}`, { name: name.trim() });
+      await api.post(`/api/portal/${shareToken}/change-orders/${co.id}/${decision}`, { name: name.trim() });
       await onDone();
     } catch (e) { setErr(e?.response?.data?.detail || 'Failed'); setBusy(false); }
   };
@@ -258,7 +258,7 @@ function PaymentRow({ pay, shareToken, onDone, t }) {
   const marked = pay.status === 'client_marked_paid';
   const markPaid = async () => {
     setBusy(true);
-    try { await api.post(`/api/pm/public/${shareToken}/payments/${pay.id}/client-paid`); await onDone(); }
+    try { await api.post(`/api/portal/${shareToken}/payments/${pay.id}/client-paid`); await onDone(); }
     finally { setBusy(false); }
   };
   return (

@@ -21,7 +21,7 @@ export default function KanbanTab({ projectId, t }) {
   const load = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get(`/api/pm/projects/${projectId}/tasks`);
+      const { data } = await api.get(`/api/jobs/${projectId}/tasks`);
       setTasks(data.tasks || []);
     } finally { setLoading(false); }
   };
@@ -41,7 +41,7 @@ export default function KanbanTab({ projectId, t }) {
   const addTask = async (column) => {
     const title = (newTitle[column] || '').trim();
     if (!title) return;
-    await api.post(`/api/pm/projects/${projectId}/tasks`, { title, column });
+    await api.post(`/api/jobs/${projectId}/tasks`, { title, column });
     setNewTitle((s) => ({ ...s, [column]: '' }));
     await load();
   };
@@ -49,7 +49,7 @@ export default function KanbanTab({ projectId, t }) {
   const deleteTask = async (taskId) => {
     setTasks((prev) => prev.filter((tk) => tk.id !== taskId));
     try {
-      await api.delete(`/api/pm/projects/${projectId}/tasks/${taskId}`);
+      await api.delete(`/api/jobs/${projectId}/tasks/${taskId}`);
     } catch (e) { console.error('delete failed', e); load(); }
   };
 
@@ -61,7 +61,7 @@ export default function KanbanTab({ projectId, t }) {
     setMovingId(task.id);
     setTasks((prev) => prev.map((tk) => (tk.id === task.id ? { ...tk, column: target } : tk))); // optimistic
     try {
-      await api.patch(`/api/pm/projects/${projectId}/tasks/${task.id}`, { column: target });
+      await api.patch(`/api/jobs/${projectId}/tasks/${task.id}`, { column: target });
     } catch (e) {
       console.error('move failed', e);
       load(); // revert
@@ -216,7 +216,7 @@ function TemplatesModal({ projectId, onClose, onApplied, t }) {
     try {
       const base = Number(baseAmounts[tpl.id]) || 0;
       const { data } = await api.post(
-        `/api/pm/projects/${projectId}/apply-template?template_id=${encodeURIComponent(tpl.id)}&base_amount=${base}`
+        `/api/jobs/${projectId}/apply-template?template_id=${encodeURIComponent(tpl.id)}&base_amount=${base}`
       );
       const parts = [`${data.tasks_created || data.created || 0} ${t('pm_tab_kanban').toLowerCase()}`];
       if (data.materials_created) parts.push(`${data.materials_created} ${t('pm_tab_materials').toLowerCase()}`);

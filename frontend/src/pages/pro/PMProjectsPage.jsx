@@ -34,7 +34,7 @@ export default function PMProjectsPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/api/pm/projects');
+      const { data } = await api.get('/api/jobs');
       setProjects(data.projects || []);
     } catch (e) {
       if (e?.response?.status === 402) setNeedsToolkit(true);
@@ -59,7 +59,7 @@ export default function PMProjectsPage() {
     if (!pickJob) return;
     setCreating(true);
     try {
-      const { data } = await api.post('/api/pm/projects', { job_id: pickJob });
+      const { data } = await api.post('/api/jobs', { job_id: pickJob });
       setPickJob('');
       await load();
       if (data?.id) navigate(`/projects/${data.id}`);

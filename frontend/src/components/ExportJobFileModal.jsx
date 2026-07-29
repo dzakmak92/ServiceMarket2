@@ -15,7 +15,7 @@ const LANG_OPTIONS = [
  * Job File PDF export modal with a language picker.
  * Shared by the Pro project detail and Homeowner project detail pages.
  *
- * @param {string} exportPath  e.g. `/api/pm/projects/<id>/export-pdf`
+ * @param {string} exportPath  e.g. `/api/jobs/<id>/export-pdf`
  * @param {string} fileName    base filename (project title)
  */
 export default function ExportJobFileModal({ open, onClose, exportPath, fileName }) {

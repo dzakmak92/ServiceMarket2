@@ -7,12 +7,14 @@ serve different stores and different prefixes.
 from __future__ import annotations
 
 from datetime import date
+from decimal import Decimal
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 
 from auth import get_current_user
+from db import pg
 from repositories import invoices as repo
 from routes._pro import require_pro_id
 from services.invoice_pdf import render_invoice_pdf
@@ -98,6 +100,113 @@ async def create_invoice(body: InvoiceIn, user: dict = Depends(get_current_user)
     inv = await repo.create_draft(pro_id, invoice_type=body.type,
                                   lines=_lines(body.lines), **data)
     return await repo.get(pro_id, str(inv["id"]))
+
+
+@router.get("/stats")
+async def stats(year: Optional[int] = None, user: dict = Depends(get_current_user)):
+    """Headline figures for the invoice list.
+
+    Declared before /{invoice_id} — FastAPI matches in declaration order, and
+    the dynamic route would otherwise swallow "stats" and try to read it as an
+    id.
+
+    Gross, not net: these sit next to a bank balance, and a tradesperson
+    reconciles against what actually arrives.
+    """
+    pro_id = await require_pro_id(user)
+    row = await pg.fetchrow(
+        """
+        with scope as (
+          select * from invoices
+           where pro_id = $1
+             and status <> 'draft'
+             and extract(year from issue_date) = coalesce($2, extract(year from current_date))
+        )
+        select
+          coalesce(sum(gross_total), 0)                                   as issued_brutto,
+          count(*)                                                        as issued_count,
+          coalesce(sum(paid_total), 0)                                    as paid_brutto,
+          count(*) filter (where payment_state = 'paid')                  as paid_count,
+          coalesce(sum(outstanding) filter (where outstanding > 0), 0)    as pending_brutto,
+          count(*) filter (where outstanding > 0)                         as pending_count,
+          coalesce(sum(gross_total) filter (
+            where date_trunc('month', issue_date) = date_trunc('month', current_date)
+          ), 0)                                                           as this_month_brutto
+        from scope
+        """,
+        pro_id, year,
+    )
+    return {k: float(v) if isinstance(v, Decimal) else v for k, v in (row or {}).items()}
+
+
+@router.get("/cashflow")
+async def cashflow(user: dict = Depends(get_current_user)):
+    """Expected receipts by due date over the next twelve weeks.
+
+    Keyed off what is still outstanding rather than what was invoiced, so an
+    invoice already paid early stops occupying a future week it will not
+    actually land in.
+    """
+    pro_id = await require_pro_id(user)
+    rows = await pg.fetch(
+        """
+        with weeks as (
+          select generate_series(
+                   date_trunc('week', current_date),
+                   date_trunc('week', current_date) + interval '11 weeks',
+                   interval '1 week')::date as week_start
+        )
+        select w.week_start,
+               coalesce(sum(i.outstanding), 0) as amount
+          from weeks w
+          left join invoices i
+            on i.pro_id = $1
+           and i.status <> 'draft'
+           and i.outstanding > 0
+           and date_trunc('week', i.due_date) = w.week_start
+         group by w.week_start
+         order by w.week_start
+        """,
+        pro_id,
+    )
+    overdue = await pg.fetchval(
+        "select coalesce(sum(outstanding), 0) from invoices "
+        "where pro_id = $1 and status <> 'draft' and outstanding > 0 "
+        "and due_date < current_date",
+        pro_id,
+    )
+    return {
+        "weeks": [{"label": r["week_start"].strftime("%d.%m"),
+                   "amount": float(r["amount"])} for r in rows],
+        "overdue": float(overdue or 0),
+    }
+
+
+@router.post("/{invoice_id}/mark-paid")
+async def mark_paid(invoice_id: str, user: dict = Depends(get_current_user)):
+    """Settle the remaining balance in one action.
+
+    Records a real payment for exactly what is outstanding rather than
+    flipping a status flag, so the payment ledger stays the single source of
+    truth and the rollup trigger derives the state as it does for every other
+    payment.
+    """
+    pro_id = await require_pro_id(user)
+    inv = await repo.get(pro_id, invoice_id)
+    if not inv:
+        raise HTTPException(404, "Invoice not found")
+    outstanding = Decimal(str(inv.get("outstanding") or 0))
+    if outstanding <= 0:
+        return inv
+    try:
+        await repo.record_payment(pro_id, invoice_id,
+                                  {"amount": outstanding, "method": "manual"})
+    except LookupError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    except ValueError as exc:
+        # An unissued invoice has nothing to settle — say which, not "500".
+        raise HTTPException(400, str(exc)) from exc
+    return await repo.get(pro_id, invoice_id)
 
 
 @router.get("/{invoice_id}")

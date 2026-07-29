@@ -53,7 +53,7 @@ export default function MyInvoicesPage() {
       params.set('order', sortOrder);
       params.set('page', page);
       params.set('per_page', perPage);
-      const { data } = await api.get(`/api/pro-invoices?${params.toString()}`);
+      const { data } = await api.get(`/api/invoices?${params.toString()}`);
       setRows(data.invoices || []);
       setTotal(data.total ?? (data.invoices || []).length);
     } finally { setLoading(false); }
@@ -66,7 +66,7 @@ export default function MyInvoicesPage() {
   // Fetch aggregated KPI stats once + whenever the year filter changes
   useEffect(() => {
     const params = year ? `?year=${year}` : '';
-    api.get(`/api/pro-invoices/stats${params}`)
+    api.get(`/api/invoices/stats${params}`)
       .then((r) => setStats(r.data))
       .catch(() => {});
   }, [year, rows.length]);
@@ -76,7 +76,7 @@ export default function MyInvoicesPage() {
 
   // ── Actions ──────────────────────────────────────────────
   const pdfUrl = (inv) =>
-    `${process.env.REACT_APP_BACKEND_URL}/api/pro-invoices/${inv.id}/pdf`;
+    `${process.env.REACT_APP_BACKEND_URL}/api/invoices/${inv.id}/pdf`;
 
   const openPreview = (inv) => {
     // On mobile browsers, iframes can't render PDFs — open in a new tab instead
@@ -90,7 +90,7 @@ export default function MyInvoicesPage() {
   const downloadPdf = async (inv) => {
     setBusy(inv.id);
     try {
-      const r = await api.get(`/api/pro-invoices/${inv.id}/pdf`, { responseType: 'blob' });
+      const r = await api.get(`/api/invoices/${inv.id}/pdf`, { responseType: 'blob' });
       const blob = new Blob([r.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -101,7 +101,7 @@ export default function MyInvoicesPage() {
   };
   const markPaid = async (inv) => {
     setBusy(inv.id);
-    try { await api.post(`/api/pro-invoices/${inv.id}/mark-paid`); await load(); }
+    try { await api.post(`/api/invoices/${inv.id}/mark-paid`); await load(); }
     finally { setBusy(null); }
   };
 
@@ -230,7 +230,7 @@ export default function MyInvoicesPage() {
               if (month) params.set('month', month);
               if (statusFilter !== 'all') params.set('payment_status', statusFilter);
               try {
-                const r = await api.get(`/api/pro-invoices/export.zip?${params.toString()}`, { responseType: 'blob' });
+                const r = await api.get(`/api/invoices/export.zip?${params.toString()}`, { responseType: 'blob' });
                 const blob = new Blob([r.data], { type: 'application/zip' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -376,7 +376,7 @@ function ExternalInvoiceModal({ onClose, onCreated, t }) {
     if (cleanItems.length === 0) { toast.error(t('myinv_ext_err_items')); return; }
     setSaving(true);
     try {
-      await api.post('/api/pro-invoices', {
+      await api.post('/api/invoices', {
         source: 'external',
         customer,
         line_items: cleanItems,
@@ -662,7 +662,7 @@ function ShareModal({ invoice, onClose, onDownload, t }) {
   const shareWhatsapp = async () => {
     setSending(true);
     try {
-      const r = await api.get(`/api/pro-invoices/${invoice.id}/pdf`, { responseType: 'blob' });
+      const r = await api.get(`/api/invoices/${invoice.id}/pdf`, { responseType: 'blob' });
       const file = new File([r.data], `${invoice.invoice_number}.pdf`, { type: 'application/pdf' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
@@ -777,7 +777,7 @@ function PaymentsModal({ invoice, onClose, reload, t }) {
     if (!amount || Number(amount) <= 0) return;
     setBusy(true);
     try {
-      const { data } = await api.post(`/api/pro-invoices/${invoice.id}/payments`, {
+      const { data } = await api.post(`/api/invoices/${invoice.id}/payments`, {
         amount_eur: Number(amount),
         method,
         note,
@@ -792,8 +792,8 @@ function PaymentsModal({ invoice, onClose, reload, t }) {
   const remove = async (pid) => {
     setBusy(true);
     try {
-      await api.delete(`/api/pro-invoices/${invoice.id}/payments/${pid}`);
-      const { data } = await api.get(`/api/pro-invoices/${invoice.id}`);
+      await api.delete(`/api/invoices/${invoice.id}/payments/${pid}`);
+      const { data } = await api.get(`/api/invoices/${invoice.id}`);
       refresh(data);
       if (reload) await reload();
     } finally { setBusy(false); }
@@ -924,7 +924,7 @@ function StornoModal({ invoice, onClose, reload, t }) {
   const issue = async () => {
     setBusy(true);
     try {
-      const { data } = await api.post(`/api/pro-invoices/${invoice.id}/storno`, { reason });
+      const { data } = await api.post(`/api/invoices/${invoice.id}/storno`, { reason });
       setDone(data.invoice_number);
       if (reload) await reload();
     } finally { setBusy(false); }

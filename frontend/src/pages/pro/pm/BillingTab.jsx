@@ -30,8 +30,8 @@ export default function BillingTab({ projectId, t }) {
     setLoading(true);
     try {
       const [c, p] = await Promise.all([
-        api.get(`/api/pm/projects/${projectId}/change-orders`),
-        api.get(`/api/pm/projects/${projectId}/payments`),
+        api.get(`/api/jobs/${projectId}/change-orders`),
+        api.get(`/api/jobs/${projectId}/payments`),
       ]);
       setCos(c.data || []);
       setPays(p.data || []);
@@ -73,15 +73,15 @@ function ChangeOrdersSection({ projectId, cos, reload, setErr, t }) {
     if (!clean.length) { setErr(t('pm_co_need_item')); return; }
     setBusy(true);
     try {
-      await api.post(`/api/pm/projects/${projectId}/change-orders`, { title: title.trim(), description: desc.trim(), items: clean, vat_rate: 20 });
+      await api.post(`/api/jobs/${projectId}/change-orders`, { title: title.trim(), description: desc.trim(), items: clean, vat_rate: 20 });
       setTitle(''); setDesc(''); setItems([{ description: '', qty: 1, unit_net: '' }]); setOpen(false);
       await reload();
     } catch (e) { setErr(e?.response?.data?.detail || 'Failed'); }
     finally { setBusy(false); }
   };
 
-  const send = async (id) => { setErr(''); try { await api.post(`/api/pm/projects/${projectId}/change-orders/${id}/send`); await reload(); } catch (e) { setErr(e?.response?.data?.detail || 'Failed'); } };
-  const del = async (id) => { try { await api.delete(`/api/pm/projects/${projectId}/change-orders/${id}`); await reload(); } catch (e) { setErr(e?.response?.data?.detail || 'Failed'); } };
+  const send = async (id) => { setErr(''); try { await api.post(`/api/jobs/${projectId}/change-orders/${id}/send`); await reload(); } catch (e) { setErr(e?.response?.data?.detail || 'Failed'); } };
+  const del = async (id) => { try { await api.delete(`/api/jobs/${projectId}/change-orders/${id}`); await reload(); } catch (e) { setErr(e?.response?.data?.detail || 'Failed'); } };
 
   return (
     <div className="card-lg" data-testid="pm-changeorders">
@@ -158,13 +158,13 @@ function PaymentsSection({ projectId, pays, reload, setErr, t }) {
     if (!label.trim() || !(parseFloat(amount) > 0)) { setErr(t('pm_pay_need')); return; }
     setBusy(true);
     try {
-      await api.post(`/api/pm/projects/${projectId}/payments`, { label: label.trim(), amount_eur: parseFloat(amount), source: 'milestone' });
+      await api.post(`/api/jobs/${projectId}/payments`, { label: label.trim(), amount_eur: parseFloat(amount), source: 'milestone' });
       setLabel(''); setAmount(''); await reload();
     } catch (e) { setErr(e?.response?.data?.detail || 'Failed'); }
     finally { setBusy(false); }
   };
-  const markPaid = async (id) => { try { await api.post(`/api/pm/projects/${projectId}/payments/${id}/mark-paid`); await reload(); } catch (e) { setErr(e?.response?.data?.detail || 'Failed'); } };
-  const del = async (id) => { try { await api.delete(`/api/pm/projects/${projectId}/payments/${id}`); await reload(); } catch (e) { setErr(e?.response?.data?.detail || 'Failed'); } };
+  const markPaid = async (id) => { try { await api.post(`/api/jobs/${projectId}/payments/${id}/mark-paid`); await reload(); } catch (e) { setErr(e?.response?.data?.detail || 'Failed'); } };
+  const del = async (id) => { try { await api.delete(`/api/jobs/${projectId}/payments/${id}`); await reload(); } catch (e) { setErr(e?.response?.data?.detail || 'Failed'); } };
 
   return (
     <div className="card-lg" data-testid="pm-payments">

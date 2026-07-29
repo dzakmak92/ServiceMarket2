@@ -65,8 +65,8 @@ export default function ProDashboard() {
   useEffect(() => {
     Promise.all([
       api.get('/api/profile/pro'),
-      api.get('/api/pro-invoices/stats').catch(() => ({ data: null })),
-      api.get('/api/pro-invoices/cashflow').catch(() => ({ data: null })),
+      api.get('/api/invoices/stats').catch(() => ({ data: null })),
+      api.get('/api/invoices/cashflow').catch(() => ({ data: null })),
     ]).then(([p, s, cf]) => {
       setProProfile(p.data);
       // TODO(Phase 3): win-rate + monthly-activity charts repoint at the new

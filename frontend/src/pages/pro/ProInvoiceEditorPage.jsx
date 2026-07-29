@@ -32,15 +32,15 @@ export default function ProInvoiceEditorPage() {
         // load a job-independent draft so it works even if the original Job was
         // removed/archived. Otherwise fall back to the job-based draft.
         const draftUrl = fromProject
-          ? `/api/pro-invoices/draft-from-project/${fromProject}`
-          : `/api/pro-invoices/draft-from-job/${jobId}`;
+          ? `/api/invoices/draft-from-project/${fromProject}`
+          : `/api/invoices/draft-from-job/${jobId}`;
         const { data } = await api.get(draftUrl);
         setDraft(data);
         let prefilled = data.line_items;
         // Optional pre-fill from PM project (materials + labour) or a change order
         if (fromProject && fromCo) {
           try {
-            const { data: co } = await api.post(`/api/pm/projects/${fromProject}/change-orders/${fromCo}/to-invoice`);
+            const { data: co } = await api.post(`/api/jobs/${fromProject}/change-orders/${fromCo}/draft-invoice`);
             if (co.line_items && co.line_items.length) {
               prefilled = co.line_items;
               if (co.note) setNote(co.note);
@@ -50,7 +50,7 @@ export default function ProInvoiceEditorPage() {
           }
         } else if (fromProject) {
           try {
-            const { data: pj } = await api.post(`/api/pm/projects/${fromProject}/to-invoice`);
+            const { data: pj } = await api.post(`/api/jobs/${fromProject}/draft-invoice`);
             if (pj.line_items && pj.line_items.length) {
               prefilled = pj.line_items;
               if (pj.note) setNote(pj.note);
@@ -103,7 +103,7 @@ export default function ProInvoiceEditorPage() {
         note: note || null,
         payment_due_days: parseInt(dueDays, 10) || 14,
       };
-      const { data } = await api.post('/api/pro-invoices', payload);
+      const { data } = await api.post('/api/invoices', payload);
       navigate(`/my-invoices?new=${data.id}`);
     } catch (e) {
       setError(e?.response?.data?.detail || e?.message || t('error_generic'));
