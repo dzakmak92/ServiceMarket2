@@ -51,6 +51,10 @@ export default function QuotesPage() {
   const [validUntil, setValidUntil] = useState('');
   const [lines, setLines] = useState([{ ...BLANK_LINE }]);
   const [saving, setSaving] = useState(false);
+  const [templates, setTemplates] = useState([]);
+  const [templateId, setTemplateId] = useState('');
+  const [tier, setTier] = useState('standard');
+  const [loadingTpl, setLoadingTpl] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -58,12 +62,14 @@ export default function QuotesPage() {
     try {
       const params = {};
       if (statusFilter) params.status = statusFilter;
-      const [{ data: q }, { data: j }] = await Promise.all([
+      const [{ data: q }, { data: j }, { data: tpl }] = await Promise.all([
         api.get('/api/quotes', { params }),
         api.get('/api/jobs', { params: { limit: 100 } }).catch(() => ({ data: { jobs: [] } })),
+        api.get('/api/templates').catch(() => ({ data: { templates: [] } })),
       ]);
       setQuotes(q.quotes || []);
       setJobs(j.jobs || []);
+      setTemplates(tpl.templates || []);
     } catch (e) {
       setError(e?.response?.data?.detail || 'Could not load quotes');
     } finally {
@@ -72,6 +78,29 @@ export default function QuotesPage() {
   }, [statusFilter]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Preview into the form rather than calling /apply directly: the pro sees
+  // and edits every line before anything is created. A template is a starting
+  // point, not a finished offer — the substrate is always different.
+  const applyTemplate = async (id, forTier) => {
+    setTemplateId(id);
+    if (!id) return;
+    setLoadingTpl(true);
+    setError('');
+    try {
+      const { data } = await api.get(`/api/templates/${id}/preview`, { params: { tier: forTier } });
+      if ((data.lines || []).length) setLines(data.lines);
+      const tpl = templates.find((x) => x.id === id);
+      if (tpl) {
+        if (!title) setTitle(tpl.name);
+        if (tpl.assumptions) setAssumptions(tpl.assumptions);
+      }
+    } catch (e) {
+      setError(e?.response?.data?.detail || 'Could not load the template');
+    } finally {
+      setLoadingTpl(false);
+    }
+  };
 
   const setLine = (i, k, v) =>
     setLines((ls) => ls.map((l, idx) => (idx === i ? { ...l, [k]: v } : l)));
@@ -96,6 +125,7 @@ export default function QuotesPage() {
     try {
       await api.post('/api/quotes', {
         job_id: jobId,
+        tier,
         title: title || undefined,
         assumptions: assumptions || undefined,
         valid_until: validUntil || undefined,
@@ -111,6 +141,7 @@ export default function QuotesPage() {
       setShowForm(false);
       setJobId(''); setTitle(''); setAssumptions(''); setValidUntil('');
       setLines([{ ...BLANK_LINE }]);
+      setTemplateId(''); setTier('standard');
       await load();
     } catch (e2) {
       setError(e2?.response?.data?.detail || 'Could not create the quote');
@@ -182,6 +213,37 @@ export default function QuotesPage() {
             {jobs.length === 0 && (
               <p className="text-xs text-ink-muted">
                 {t('no_jobs_for_quote') || 'Sie brauchen zuerst einen Auftrag.'}
+              </p>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <select className="input" value={templateId}
+                      onChange={(e) => applyTemplate(e.target.value, tier)}
+                      data-testid="quote-template">
+                <option value="">{t('no_template') || 'Ohne Vorlage'}</option>
+                {templates.map((tp) => (
+                  <option key={tp.id} value={tp.id}>
+                    {tp.name}{tp.trade ? ` · ${tp.trade}` : ''}
+                  </option>
+                ))}
+              </select>
+              <select className="input" value={tier}
+                      onChange={(e) => { setTier(e.target.value); if (templateId) applyTemplate(templateId, e.target.value); }}
+                      data-testid="quote-tier">
+                <option value="basic">{t('tier_basic') || 'Basis'}</option>
+                <option value="standard">{t('tier_standard') || 'Standard'}</option>
+                <option value="premium">{t('tier_premium') || 'Premium'}</option>
+              </select>
+            </div>
+            {loadingTpl && (
+              <p className="text-xs text-ink-muted flex items-center gap-1">
+                <Loader2 size={12} className="animate-spin" />{t('loading_template') || 'Vorlage wird geladen…'}
+              </p>
+            )}
+            {templateId && !loadingTpl && (
+              <p className="text-xs text-ink-muted">
+                {t('template_editable_note')
+                  || 'Positionen aus der Vorlage — alles frei änderbar. Preise stammen aus Ihren eigenen Sätzen, sofern vorhanden.'}
               </p>
             )}
 
