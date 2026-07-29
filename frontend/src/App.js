@@ -24,6 +24,7 @@ import ProHomePage from "./pages/pro/ProHomePage";
 import ProDashboard from "./pages/pro/ProDashboardPage";
 import BillingPage from "./pages/pro/BillingPage";
 import MyInvoicesPage from "./pages/pro/MyInvoicesPage";
+import CustomersPage from "./pages/pro/CustomersPage";
 import ProCalendarPage from "./pages/pro/ProCalendarPage";
 import ProInvoiceEditorPage from "./pages/pro/ProInvoiceEditorPage";
 import TaxToolkitPage from "./pages/pro/TaxToolkitPage";
@@ -154,6 +155,14 @@ function AppShell() {
           element={
             <ProtectedRoute roles={["tradesperson"]}>
               <BillingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/customers"
+          element={
+            <ProtectedRoute roles={["tradesperson"]}>
+              <CustomersPage />
             </ProtectedRoute>
           }
         />

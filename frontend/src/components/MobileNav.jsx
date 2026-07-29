@@ -3,11 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLang } from '../contexts/LangContext';
 import api from '../api/client';
-import {
-  Home, Briefcase, MessageSquare, PlusCircle, Search, LayoutDashboard,
-  ListChecks, Receipt, MoreHorizontal, X, CreditCard, Settings as SettingsIcon,
-  CalendarDays, Building2,
-} from 'lucide-react';
+import { Briefcase, Building2, CalendarDays, CreditCard, Home, LayoutDashboard, ListChecks, MessageSquare, MoreHorizontal, PlusCircle, Receipt, Search, Settings as SettingsIcon, Users, X } from 'lucide-react';
 
 /**
  * Mobile bottom nav — always 4 anchors + 1 right-corner "More" button that
@@ -50,6 +46,7 @@ export default function MobileNav() {
   const primaryPro = [
     { to: '/', icon: Home, label: t('nav_home') },
     { to: '/dashboard', icon: LayoutDashboard, label: t('nav_dashboard') },
+    { to: '/customers', icon: Users, label: t('nav_customers') || 'Kunden' },
     ...(hasPm ? [{ to: '/projects', icon: Briefcase, label: t('nav_projects') }] : []),
     { to: '/pro-calendar', icon: CalendarDays, label: t('nav_pro_calendar') || 'My Calendar' },
   ];
