@@ -151,5 +151,5 @@ backend/backups/
 # Local build output
 frontend/build/
 
-# Directory dataset: business contact data, kept out of git history.
-data/
+# Working copy of the directory dataset at the repo root (not the bundled seed).
+/data/
