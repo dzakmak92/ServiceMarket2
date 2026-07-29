@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from auth import get_current_user
+from db import pg
 from repositories import pm as repo
 from routes._pro import require_pro_id
 
@@ -303,6 +304,40 @@ async def send_change_order(job_id: str, co_id: str, user: dict = Depends(get_cu
 
 
 # ── Overview ───────────────────────────────────────────────────────────
+class AbnahmeIn(BaseModel):
+    """Formal handover. §634 BGB / §1167 ABGB start running from acceptance,
+    and a dispute two years later turns on whether it happened and who said
+    so — which is why the name is required rather than optional."""
+    signed_by: str = Field(min_length=2, max_length=200)
+    note: Optional[str] = None
+    signature_ref: Optional[str] = None
+
+
+@router.post("/{job_id}/abnahme")
+async def record_abnahme(job_id: str, body: AbnahmeIn,
+                         user: dict = Depends(get_current_user)):
+    """Pro-side record of an on-site handover."""
+    pro_id = await require_pro_id(user)
+    row = await pg.fetchrow(
+        """
+        update jobs
+           set abnahme_at = coalesce(abnahme_at, now()),
+               abnahme_signed_by = $3,
+               abnahme_note = $4,
+               abnahme_signature_ref = coalesce($5, abnahme_signature_ref),
+               status = case when status in ('closed','cancelled','invoiced')
+                             then status else 'completed'::job_status end,
+               completed_at = coalesce(completed_at, now()),
+               updated_at = now()
+         where id = $1 and pro_id = $2 and deleted_at is null
+        returning id::text, abnahme_at, abnahme_signed_by, abnahme_note, status
+        """,
+        job_id, pro_id, body.signed_by.strip(), body.note, body.signature_ref)
+    if not row:
+        raise HTTPException(404, "Job not found")
+    return row
+
+
 @router.get("/{job_id}/overview")
 async def overview(job_id: str, user: dict = Depends(get_current_user)):
     try:
@@ -368,3 +403,43 @@ async def portal_reject_co(share_token: str, co_id: str, body: CoDecisionIn):
     if not row:
         raise HTTPException(409, "This change order has already been decided.")
     return row
+
+
+class PortalAbnahmeIn(BaseModel):
+    """The customer's own sign-off. A typed name is the e-signature."""
+    name: str = Field(min_length=2, max_length=200)
+    note: Optional[str] = None
+
+
+@portal_router.post("/{share_token}/abnahme")
+async def portal_abnahme(share_token: str, body: PortalAbnahmeIn):
+    """Customer signs off completion from the share link.
+
+    Recorded once and never overwritten: a second submission returns the
+    existing record rather than moving the date. The acceptance date starts
+    the warranty period, so letting a later click push it forward would
+    quietly extend the pro's liability.
+    """
+    row = await pg.fetchrow(
+        """
+        update jobs
+           set abnahme_at = now(),
+               abnahme_signed_by = $2,
+               abnahme_note = $3,
+               status = case when status in ('closed','cancelled','invoiced')
+                             then status else 'completed'::job_status end,
+               completed_at = coalesce(completed_at, now()),
+               updated_at = now()
+         where share_token = $1 and deleted_at is null and abnahme_at is null
+        returning id::text, abnahme_at, abnahme_signed_by
+        """,
+        share_token, body.name.strip(), body.note)
+    if row:
+        return {"abnahme": row, "recorded": True}
+
+    existing = await pg.fetchrow(
+        "select id::text, abnahme_at, abnahme_signed_by from jobs "
+        "where share_token = $1 and deleted_at is null", share_token)
+    if not existing:
+        raise HTTPException(404, "Not found")
+    return {"abnahme": existing, "recorded": False}

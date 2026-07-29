@@ -161,6 +161,10 @@ export default function PMPublicStatusPage() {
           </div>
         )}
 
+        {/* Formal handover. §634 BGB / §1167 ABGB run from acceptance, so this
+            is the record that settles a defect dispute two years later. */}
+        <AbnahmeBlock job={data.job || data} shareToken={shareToken} onDone={load} t={t} />
+
         {/* Diary */}
         {data.diary_recent && data.diary_recent.length > 0 && (
           <div className="card-lg" data-testid="pm-public-diary">
@@ -292,6 +296,71 @@ function PaymentRow({ pay, shareToken, onDone, t }) {
           <p className="text-[10px] text-ink-muted mt-1 text-center">{t('portal_pay_qr_hint')}</p>
         </div>
       )}
+    </div>
+  );
+}
+
+
+/* ── Digital Abnahme ─────────────────────────────────────────── */
+function AbnahmeBlock({ job, shareToken, onDone, t }) {
+  const [name, setName] = useState('');
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+
+  const signedAt = job?.abnahme_at;
+  const signedBy = job?.abnahme_signed_by;
+
+  const sign = async () => {
+    if (name.trim().length < 2) return;
+    setBusy(true); setErr('');
+    try {
+      await api.post(`/api/portal/${shareToken}/abnahme`, {
+        name: name.trim(), note: note.trim() || undefined,
+      });
+      onDone();
+    } catch (e) {
+      setErr(e?.response?.data?.detail || 'Could not record the handover');
+    } finally { setBusy(false); }
+  };
+
+  if (signedAt) {
+    return (
+      <div className="card-lg" data-testid="pm-public-abnahme-done">
+        <p className="text-xs uppercase font-bold text-ink-muted tracking-wider mb-2">
+          {t('portal_abnahme_title') || 'Abnahme'}
+        </p>
+        <p className="text-sm text-ink">
+          {t('portal_abnahme_signed') || 'Abgenommen von'} <strong>{signedBy}</strong>
+          {' · '}
+          {new Date(signedAt).toLocaleDateString('de-AT', { day: 'numeric', month: 'long', year: 'numeric' })}
+        </p>
+        {job?.abnahme_note && (
+          <p className="text-sm text-ink-muted mt-1 whitespace-pre-wrap">{job.abnahme_note}</p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="card-lg" data-testid="pm-public-abnahme">
+      <p className="text-xs uppercase font-bold text-ink-muted tracking-wider mb-2">
+        {t('portal_abnahme_title') || 'Abnahme'}
+      </p>
+      <p className="text-sm text-ink-muted mb-3">
+        {t('portal_abnahme_hint')
+          || 'Mit Ihrem Namen bestätigen Sie, dass die Arbeiten abgenommen sind. Die Gewährleistungsfrist beginnt mit diesem Datum.'}
+      </p>
+      <input className="input w-full mb-2" value={name} onChange={(e) => setName(e.target.value)}
+             placeholder={t('portal_your_name') || 'Ihr Name'} data-testid="abnahme-name" />
+      <textarea className="input w-full mb-2" rows={2} value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder={t('portal_abnahme_note') || 'Anmerkungen (optional)'} />
+      {err && <p className="text-sm text-red-warn mb-2">{err}</p>}
+      <button className="btn-primary w-full" disabled={busy || name.trim().length < 2}
+              onClick={sign} data-testid="abnahme-submit">
+        {busy ? '…' : (t('portal_abnahme_confirm') || 'Abnahme bestätigen')}
+      </button>
     </div>
   );
 }
