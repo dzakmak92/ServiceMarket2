@@ -90,7 +90,12 @@ async def init_pool(dsn: Optional[str] = None, *, min_size: int = 1, max_size: i
 
     _check_dsn(dsn)
 
-    kwargs: dict[str, Any] = {"min_size": min_size, "max_size": max_size, "command_timeout": 30}
+    # command_timeout bounds a running query; timeout bounds establishing the
+    # connection. Without the latter an unreachable database hangs until the
+    # platform kills the request — on Vercel that is the full maxDuration
+    # spent doing nothing, on every request, instead of failing quickly.
+    kwargs: dict[str, Any] = {"min_size": min_size, "max_size": max_size,
+                              "command_timeout": 30, "timeout": 10}
     if _is_transaction_pooler(dsn):
         # pgbouncer in transaction mode cannot hold prepared statements.
         kwargs["statement_cache_size"] = 0

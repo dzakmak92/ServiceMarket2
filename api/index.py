@@ -145,6 +145,30 @@ def _build_app():
         }
         if detail:
             body["detail"] = detail
+            # Show what the connection string actually contains when it fails.
+            # Supabase's pooler reports the underlying role in its error
+            # regardless of the tenant sent, so "user postgres" alone cannot
+            # distinguish a missing project ref from a wrong password. Never
+            # includes the password itself.
+            dsn = os.environ.get("DATABASE_URL")
+            if dsn:
+                from urllib.parse import urlsplit
+                try:
+                    u = urlsplit(dsn)
+                    pw = u.password or ""
+                    body["dsn"] = {
+                        "user": u.username,
+                        "host": u.hostname,
+                        "port": u.port,
+                        "database": (u.path or "").lstrip("/"),
+                        "password_present": bool(pw),
+                        "password_is_placeholder":
+                            pw.lower().replace("-", "") in ("yourpassword", "password"),
+                        "password_needs_encoding":
+                            any(c in pw for c in "@:/?#[]"),
+                    }
+                except Exception as exc:  # noqa: BLE001 — reporting only
+                    body["dsn"] = {"parse_error": f"{type(exc).__name__}: {exc}"[:160]}
         if import_error:
             body["status"] = "degraded"
             body["import_error"] = _scrub(import_error)
