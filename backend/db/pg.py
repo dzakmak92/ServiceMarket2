@@ -21,10 +21,9 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-import socket
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator, Optional, Sequence
-from urllib.parse import urlsplit, urlunsplit
+from urllib.parse import urlsplit
 
 import asyncpg
 
@@ -41,40 +40,32 @@ _init_lock = asyncio.Lock()
 _POOLER_PORTS = {"6543"}
 
 
-# Raised by Vercel's Fluid compute runtime, which instruments outbound
-# connections and expects a literal address rather than a hostname. Nothing in
-# asyncpg or anyio raises this on the connection path — anyio's own
-# ip_address() call is wrapped in try/except ValueError — so it cannot be
-# fixed in our dependencies, only worked around.
-_HOSTNAME_NOT_IP = "does not appear to be an IPv4 or IPv6 address"
+def _check_dsn(dsn: str) -> None:
+    """Reject a DSN Python cannot parse, with an explanation.
 
+    Square brackets in the netloc mark an IPv6 literal, so urlsplit validates
+    whatever is inside them and raises
 
-def _resolve_dsn_host(dsn: str) -> tuple[str, str, str]:
-    """Rewrite a DSN to point at a resolved address. Returns (dsn, host, ip)."""
-    parts = urlsplit(dsn)
-    host = parts.hostname
-    if not host:
-        raise ValueError("DATABASE_URL has no host component")
-    port = parts.port or 5432
+        ValueError: '<host>' does not appear to be an IPv4 or IPv6 address
 
-    infos = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
-    # Prefer IPv4. Supabase's pooler answers on both, and an environment with
-    # no IPv6 route would otherwise pick an address it cannot reach.
-    infos.sort(key=lambda i: 0 if i[0] == socket.AF_INET else 1)
-    ip = infos[0][4][0]
-
-    # Carry the credentials across verbatim. urlsplit does NOT decode them, so
-    # re-quoting would double-encode: a password of 'p%40ss' becomes
-    # 'p%2540ss' and authentication fails. Slicing the original netloc keeps
-    # whatever encoding the connection string already had.
-    userinfo = ""
-    if "@" in parts.netloc:
-        userinfo = parts.netloc.rsplit("@", 1)[0] + "@"
-
-    literal = f"[{ip}]" if ":" in ip else ip
-    netloc = f"{userinfo}{literal}:{port}"
-    return urlunsplit((parts.scheme, netloc, parts.path, parts.query,
-                       parts.fragment)), host, ip
+    naming the *host* even when the brackets are actually around the password.
+    asyncpg parses DSNs with the same parser, so the pool fails the same way.
+    Supabase presents its connection string with the password shown as the
+    placeholder [YOUR-PASSWORD], and the brackets have to be deleted along
+    with the text — keeping them produces exactly this error, which points at
+    the hostname and reads like a DNS fault.
+    """
+    try:
+        urlsplit(dsn).hostname
+    except ValueError as exc:
+        raise RuntimeError(
+            f"DATABASE_URL cannot be parsed ({exc}). Square brackets are only "
+            f"valid around an IPv6 address. If you copied the connection "
+            f"string from Supabase, delete the brackets along with the "
+            f"placeholder text so it reads "
+            f"...:yourpassword@host:6543/postgres — not "
+            f"...:[YOUR-PASSWORD]@host:6543/postgres."
+        ) from exc
 
 
 def _is_transaction_pooler(dsn: str) -> bool:
@@ -97,6 +88,8 @@ async def init_pool(dsn: Optional[str] = None, *, min_size: int = 1, max_size: i
             "DATABASE_URL is not set. Add the Supabase connection string to backend/.env."
         )
 
+    _check_dsn(dsn)
+
     kwargs: dict[str, Any] = {"min_size": min_size, "max_size": max_size, "command_timeout": 30}
     if _is_transaction_pooler(dsn):
         # pgbouncer in transaction mode cannot hold prepared statements.
@@ -109,51 +102,15 @@ async def init_pool(dsn: Optional[str] = None, *, min_size: int = 1, max_size: i
 
 
 async def _open_pool(dsn: str, kwargs: dict[str, Any]) -> asyncpg.Pool:
-    """Open a pool, falling back to a resolved address if the host is rejected.
+    """Open a pool and prove it with a real query.
 
-    With min_size=0 asyncpg does not connect during create_pool, so the pool is
-    proven with a real query — otherwise a broken DSN would only surface on the
-    first request, past the point where we can retry.
+    With min_size=0 asyncpg does not connect during create_pool at all, so a
+    bad connection string would otherwise surface on the first request rather
+    than at startup where it is logged and reported by /api/health.
     """
     pool_ = await asyncpg.create_pool(dsn, **kwargs)
-    try:
-        async with pool_.acquire() as con:
-            await con.fetchval("select 1")
-        return pool_
-    except ValueError as exc:
-        if _HOSTNAME_NOT_IP not in str(exc):
-            raise
-        await pool_.close()
-
-    # Each failure below is labelled distinctly. The original ValueError is
-    # what the platform raises, so re-emitting it unchanged would make three
-    # different situations look identical from /api/health: a stale deployment
-    # still running the old code, a resolver that is itself shimmed, and a
-    # resolved address that simply cannot be reached.
-    try:
-        resolved, host, ip = _resolve_dsn_host(dsn)
-    except Exception as exc:
-        raise RuntimeError(
-            f"hostname rejected by the runtime, and resolving it locally failed "
-            f"too ({type(exc).__name__}: {exc}) — getaddrinfo is unusable here, "
-            f"so a direct Postgres connection is not possible from this runtime"
-        ) from exc
-
-    logger.warning("runtime rejected the hostname %r; retrying against %s", host, ip)
-    # The certificate is issued for the hostname, which is no longer what we
-    # present, so full verification cannot succeed. 'require' keeps the
-    # connection encrypted without verifying the name — libpq's own semantics
-    # for that mode, and what most Postgres clients default to.
-    kwargs.setdefault("ssl", "require")
-    try:
-        pool_ = await asyncpg.create_pool(resolved, **kwargs)
-        async with pool_.acquire() as con:
-            await con.fetchval("select 1")
-    except Exception as exc:
-        raise RuntimeError(
-            f"hostname {host!r} rejected by the runtime; resolved it to {ip} and "
-            f"that connection failed as well ({type(exc).__name__}: {exc})"
-        ) from exc
+    async with pool_.acquire() as con:
+        await con.fetchval("select 1")
     return pool_
 
 

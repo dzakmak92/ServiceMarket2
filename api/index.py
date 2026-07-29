@@ -192,10 +192,14 @@ def _build_app():
             dsn = os.environ.get("DATABASE_URL")
             if dsn:
                 from urllib.parse import urlsplit
-                host = urlsplit(dsn).hostname
-                out["db_host"] = host
-                record("probe_db_getaddrinfo", lambda: s.getaddrinfo(host, 6543))
-                record("probe_db_gethostbyname", lambda: s.gethostbyname(host))
+                # Guarded: urlsplit raises on a DSN with brackets in the
+                # netloc, which is precisely the fault this endpoint exists to
+                # find. Parsing it unguarded took the whole response down once.
+                record("db_host", lambda: urlsplit(dsn).hostname)
+                host = out["db_host"].get("result") if out["db_host"]["ok"] else None
+                if host:
+                    record("probe_db_getaddrinfo", lambda: s.getaddrinfo(host, 6543))
+                    record("probe_db_gethostbyname", lambda: s.gethostbyname(host))
 
             # Does outbound HTTPS work at all? If it does, Supabase's REST API
             # is a viable route to the same data without raw TCP.
