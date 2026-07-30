@@ -1,0 +1,2473 @@
+{
+  "version": 1,
+  "countries": [
+    "AT",
+    "DE"
+  ],
+  "modifiers": {
+    "condition_uplift": {
+      "neubau": [
+        0.0,
+        0.0
+      ],
+      "renovierung_leer": [
+        0.12,
+        0.25
+      ],
+      "renovierung_bewohnt": [
+        0.3,
+        0.5
+      ],
+      "altbau_bewohnt": [
+        0.45,
+        0.75
+      ]
+    },
+    "condition_setup_add": {
+      "neubau": [
+        0.0,
+        0.0
+      ],
+      "renovierung_leer": [
+        0.4,
+        0.8
+      ],
+      "renovierung_bewohnt": [
+        1.2,
+        2.0
+      ],
+      "altbau_bewohnt": [
+        1.5,
+        2.5
+      ]
+    },
+    "access_uplift": {
+      "eg_oder_lift": [
+        0.0,
+        0.0
+      ],
+      "og_ohne_lift": [
+        0.08,
+        0.18
+      ],
+      "enge_treppe": [
+        0.15,
+        0.3
+      ]
+    }
+  },
+  "hourly_rates": {
+    "AT": {
+      "maler": [
+        38,
+        55
+      ],
+      "fliesen": [
+        42,
+        62
+      ],
+      "sanitaer": [
+        55,
+        80
+      ],
+      "elektrik": [
+        55,
+        85
+      ],
+      "trockenbau": [
+        40,
+        60
+      ],
+      "abriss": [
+        35,
+        55
+      ]
+    },
+    "DE": {
+      "maler": [
+        35,
+        60
+      ],
+      "fliesen": [
+        40,
+        65
+      ],
+      "sanitaer": [
+        55,
+        85
+      ],
+      "elektrik": [
+        55,
+        90
+      ],
+      "trockenbau": [
+        38,
+        62
+      ],
+      "abriss": [
+        35,
+        58
+      ]
+    }
+  },
+  "disposal_per_tonne": {
+    "AT": [
+      75,
+      130
+    ],
+    "DE": [
+      70,
+      140
+    ]
+  },
+  "regie_threshold": 2.6,
+  "notes": {
+    "asbest_vor_1990": {
+      "severity": "critical",
+      "de": "Bei Bauteilen vor 1990 kann der Kleber bzw. Bodenbelag Asbest enthalten. Vor Abbruch ist eine Materialanalyse erforderlich; Arbeiten nach TRGS 519 sind nicht im Angebot enthalten."
+    },
+    "statik_nicht_tragend": {
+      "severity": "critical",
+      "de": "Angebot gilt für nichttragende Bauteile. Die Tragfähigkeit ist bauseits bzw. durch einen Statiker zu bestätigen."
+    },
+    "e_befund": {
+      "severity": "high",
+      "de": "Elektrobefund bzw. Anlagenprüfung nicht enthalten. Bestehende Leitungen werden als normgerecht angenommen."
+    },
+    "rauchfangkehrer": {
+      "severity": "high",
+      "de": "Behördliche Abnahme und Rauchfangkehrer-Befund sind nicht enthalten."
+    },
+    "gasleitung_normgerecht": {
+      "severity": "high",
+      "de": "Bestehende Gasleitung, Abgasführung und Elektroanschluss werden als normgerecht und weiterverwendbar angenommen."
+    },
+    "dickbett_mehraufwand": {
+      "severity": "high",
+      "de": "Aufbau nicht einsehbar. Bei Dickbett-Verlegung entsteht Mehraufwand, der nach tatsächlichem Aufwand verrechnet wird."
+    },
+    "abdichtung_nassbereich": {
+      "severity": "high",
+      "de": "Verbundabdichtung im Nassbereich nach ÖNORM B 3407 / DIN 18534 ist enthalten."
+    },
+    "untergrund_tragfaehig": {
+      "severity": "medium",
+      "de": "Angebot gilt für tragfähigen, trockenen Untergrund. Risse, Schimmel oder nicht tragfähige Altanstriche sind nicht enthalten."
+    },
+    "untergrund_eben": {
+      "severity": "medium",
+      "de": "Untergrund wird als eben und tragfähig angenommen. Ausgleichsarbeiten sind nicht enthalten."
+    },
+    "altbau_untergrund": {
+      "severity": "medium",
+      "de": "Bei Altbauten ist der Untergrund oft nicht lot- und fluchtgerecht. Ausgleich nach Aufwand."
+    },
+    "geruest_nicht_enthalten": {
+      "severity": "medium",
+      "de": "Gerüst ist nicht im Angebot enthalten und wird bauseits beigestellt."
+    },
+    "moebel_bauseits": {
+      "severity": "low",
+      "de": "Möbel werden bauseits ausgeräumt bzw. mittig gestellt und abgedeckt."
+    },
+    "staub": {
+      "severity": "low",
+      "de": "Staubschutz und tägliche Grobreinigung sind enthalten. Feinreinigung nicht enthalten."
+    },
+    "altgeraet_entsorgung": {
+      "severity": "low",
+      "de": "Entsorgung des Altgeräts ist enthalten."
+    },
+    "witterung": {
+      "severity": "low",
+      "de": "Ausführung witterungsabhängig; Verzögerungen begründen keinen Preisnachlass."
+    },
+    "verschnitt_muster": {
+      "severity": "low",
+      "de": "Verschnitt ist mit dem angegebenen Prozentsatz kalkuliert. Diagonal- oder Musterverlegung erhöht den Verschnitt."
+    },
+    "dehnungsfuge": {
+      "severity": "low",
+      "de": "Dehnungsfugen werden nach Herstellervorgabe ausgeführt."
+    },
+    "raumklima": {
+      "severity": "low",
+      "de": "Raumklima 18-24 °C und 45-65 % rel. Luftfeuchte sind bauseits sicherzustellen."
+    },
+    "absperrventil": {
+      "severity": "low",
+      "de": "Funktionsfähiges Absperrventil wird vorausgesetzt."
+    },
+    "folgeschaeden": {
+      "severity": "medium",
+      "de": "Trocknung und Folgeschäden (Maler, Boden) sind nicht enthalten."
+    },
+    "oeffnung_wand": {
+      "severity": "medium",
+      "de": "Öffnen und Verschließen von Wand bzw. Boden ist enthalten; Oberflächenwiederherstellung nicht."
+    },
+    "abtransport": {
+      "severity": "low",
+      "de": "Abtransport und Deponiegebühren sind kalkuliert; Mulde bauseits stellplatzpflichtig."
+    },
+    "abschaltung": {
+      "severity": "medium",
+      "de": "Zeitweise Abschaltung der Stromversorgung ist erforderlich."
+    },
+    "foerderung": {
+      "severity": "low",
+      "de": "Förderungsabwicklung ist nicht enthalten."
+    }
+  },
+  "jobs": [
+    {
+      "key": "maler.innenanstrich",
+      "trade": "maler",
+      "label_de": "Innenanstrich Wände, 2 Anstriche",
+      "unit": "m2",
+      "setup_hours": [
+        0.8,
+        1.5
+      ],
+      "typical_size": [
+        25,
+        90
+      ],
+      "market_band_at": [
+        7,
+        15
+      ],
+      "market_band_de": [
+        7,
+        20
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "fixbuddy.at/was-kostet-maler",
+        "daibau.at/baukostenrechner/maler"
+      ],
+      "note_keys": [
+        "moebel_bauseits"
+      ],
+      "uncertainty_spread": 2.42,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.35,
+      "operations": [
+        {
+          "key": "abdecken",
+          "label_de": "Abdecken und Abkleben",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.03,
+            0.05
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "anstrich2",
+          "label_de": "Wandanstrich, zwei Anstriche",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.055,
+            0.085
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "farbe",
+          "label_de": "Dispersionsfarbe",
+          "unit": "m2",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            1.1,
+            1.9
+          ],
+          "waste_factor": 0.08,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "maler.decke",
+      "trade": "maler",
+      "label_de": "Deckenanstrich, 2 Anstriche",
+      "unit": "m2",
+      "setup_hours": [
+        0.6,
+        1.2
+      ],
+      "typical_size": [
+        12,
+        40
+      ],
+      "market_band_at": [
+        9,
+        18
+      ],
+      "market_band_de": [
+        9,
+        22
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "daibau.at"
+      ],
+      "note_keys": [],
+      "uncertainty_spread": 2.49,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.52,
+      "operations": [
+        {
+          "key": "abdecken",
+          "label_de": "Abdecken",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.03,
+            0.05
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "anstrich2",
+          "label_de": "Deckenanstrich, zwei Anstriche",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.07,
+            0.11
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "farbe",
+          "label_de": "Deckenfarbe",
+          "unit": "m2",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            1.1,
+            1.8
+          ],
+          "waste_factor": 0.08,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "maler.spachteln_q3",
+      "trade": "maler",
+      "label_de": "Spachteln Q3 (glatt, streiffrei)",
+      "unit": "m2",
+      "setup_hours": [
+        0.8,
+        1.5
+      ],
+      "typical_size": [
+        25,
+        90
+      ],
+      "market_band_at": [
+        12,
+        25
+      ],
+      "market_band_de": [
+        12,
+        28
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "profirechner.de/malerarbeiten-kosten-rechner"
+      ],
+      "note_keys": [
+        "untergrund_tragfaehig"
+      ],
+      "uncertainty_spread": 2.56,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.19,
+      "operations": [
+        {
+          "key": "grundierung",
+          "label_de": "Grundierung",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.02,
+            0.035
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "spachtel_arbeit",
+          "label_de": "Flächenspachtelung Q3",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.11,
+            0.18
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "schleifen",
+          "label_de": "Schleifen und entstauben",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.035,
+            0.06
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "spachtel_mat",
+          "label_de": "Spachtelmasse und Grundierung",
+          "unit": "m2",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            1.4,
+            2.6
+          ],
+          "waste_factor": 0.1,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "maler.tapete_entfernen",
+      "trade": "maler",
+      "label_de": "Tapete entfernen",
+      "unit": "m2",
+      "setup_hours": [
+        0.6,
+        1.2
+      ],
+      "typical_size": [
+        20,
+        70
+      ],
+      "market_band_at": [
+        5,
+        12
+      ],
+      "market_band_de": [
+        5,
+        14
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "handwerksratgeber.de/maler-kosten"
+      ],
+      "note_keys": [
+        "altbau_untergrund"
+      ],
+      "uncertainty_spread": 3.45,
+      "quote_mode": "regie",
+      "small_job_premium": 1.31,
+      "operations": [
+        {
+          "key": "loesen",
+          "label_de": "Tapete lösen und abziehen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.07,
+            0.16
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.4,
+            1.2
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "reste",
+          "label_de": "Kleisterreste waschen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.03,
+            0.06
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "maler.fassade",
+      "trade": "maler",
+      "label_de": "Fassadenanstrich",
+      "unit": "m2",
+      "setup_hours": [
+        3.0,
+        6.0
+      ],
+      "typical_size": [
+        80,
+        300
+      ],
+      "market_band_at": [
+        18,
+        44
+      ],
+      "market_band_de": [
+        20,
+        48
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "hausbau-magazin.at/malerkosten-oesterreich"
+      ],
+      "note_keys": [
+        "geruest_nicht_enthalten",
+        "witterung"
+      ],
+      "uncertainty_spread": 2.58,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.15,
+      "operations": [
+        {
+          "key": "reinigen",
+          "label_de": "Fassade reinigen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.035,
+            0.07
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "grundierung",
+          "label_de": "Tiefengrund",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.025,
+            0.045
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "anstrich2",
+          "label_de": "Fassadenanstrich, zwei Anstriche",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.09,
+            0.15
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "fassadenfarbe",
+          "label_de": "Fassadenfarbe",
+          "unit": "m2",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            3.2,
+            6.5
+          ],
+          "waste_factor": 0.1,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "fliesen.entfernen_duennbett",
+      "trade": "fliesen",
+      "label_de": "Fliesen entfernen (Dünnbett)",
+      "unit": "m2",
+      "setup_hours": [
+        1.0,
+        1.8
+      ],
+      "typical_size": [
+        6,
+        30
+      ],
+      "market_band_at": [
+        15,
+        30
+      ],
+      "market_band_de": [
+        15,
+        32
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "my-hammer.at/bauschutt-entsorgen",
+        "baucheck.io"
+      ],
+      "note_keys": [
+        "asbest_vor_1990",
+        "staub"
+      ],
+      "uncertainty_spread": 2.76,
+      "quote_mode": "regie",
+      "small_job_premium": 1.68,
+      "operations": [
+        {
+          "key": "abschlagen",
+          "label_de": "Fliesen abschlagen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.16,
+            0.27
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            20,
+            26
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "kleberreste",
+          "label_de": "Kleberreste abschleifen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.06,
+            0.11
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "entsorgung",
+          "label_de": "Entsorgung Bauschutt",
+          "unit": "m2",
+          "kind": "disposal",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "fliesen.entfernen_dickbett",
+      "trade": "fliesen",
+      "label_de": "Fliesen entfernen (Dickbett, Altbau)",
+      "unit": "m2",
+      "setup_hours": [
+        1.2,
+        2.2
+      ],
+      "typical_size": [
+        6,
+        25
+      ],
+      "market_band_at": [
+        25,
+        55
+      ],
+      "market_band_de": [
+        25,
+        58
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "baucheck.io",
+        "fliesenlegung.de"
+      ],
+      "note_keys": [
+        "asbest_vor_1990",
+        "staub",
+        "dickbett_mehraufwand"
+      ],
+      "uncertainty_spread": 2.88,
+      "quote_mode": "regie",
+      "small_job_premium": 1.39,
+      "operations": [
+        {
+          "key": "abschlagen",
+          "label_de": "Fliesen und Mörtelbett abschlagen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.34,
+            0.58
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            45,
+            75
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "untergrund",
+          "label_de": "Untergrund nacharbeiten",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.08,
+            0.16
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "entsorgung",
+          "label_de": "Entsorgung Bauschutt",
+          "unit": "m2",
+          "kind": "disposal",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "fliesen.verlegen_boden",
+      "trade": "fliesen",
+      "label_de": "Bodenfliesen verlegen",
+      "unit": "m2",
+      "setup_hours": [
+        1.2,
+        2.0
+      ],
+      "typical_size": [
+        8,
+        40
+      ],
+      "market_band_at": [
+        35,
+        60
+      ],
+      "market_band_de": [
+        35,
+        65
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "fixbuddy.at/was-kostet-fliesen-verlegen"
+      ],
+      "note_keys": [
+        "untergrund_eben",
+        "verschnitt_muster"
+      ],
+      "uncertainty_spread": 2.53,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.27,
+      "operations": [
+        {
+          "key": "grundierung",
+          "label_de": "Grundierung",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.03,
+            0.05
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verlegen",
+          "label_de": "Fliesen verlegen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.35,
+            0.55
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verfugen",
+          "label_de": "Verfugen und Silikon",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.1,
+            0.18
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "kleber",
+          "label_de": "Kleber und Fugenmasse",
+          "unit": "m2",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            4.5,
+            8.0
+          ],
+          "waste_factor": 0.05,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "fliesen.verlegen_wand",
+      "trade": "fliesen",
+      "label_de": "Wandfliesen verlegen",
+      "unit": "m2",
+      "setup_hours": [
+        1.2,
+        2.0
+      ],
+      "typical_size": [
+        8,
+        30
+      ],
+      "market_band_at": [
+        40,
+        70
+      ],
+      "market_band_de": [
+        40,
+        75
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "fixbuddy.at"
+      ],
+      "note_keys": [
+        "abdichtung_nassbereich"
+      ],
+      "uncertainty_spread": 2.51,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.2,
+      "operations": [
+        {
+          "key": "abdichtung",
+          "label_de": "Verbundabdichtung Nassbereich",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.1,
+            0.18
+          ],
+          "material_per_unit": [
+            3.0,
+            5.5
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verlegen",
+          "label_de": "Wandfliesen verlegen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.4,
+            0.62
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verfugen",
+          "label_de": "Verfugen und Silikon",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.1,
+            0.18
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "kleber",
+          "label_de": "Kleber und Fugenmasse",
+          "unit": "m2",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            4.5,
+            8.0
+          ],
+          "waste_factor": 0.05,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "boden.laminat",
+      "trade": "fliesen",
+      "label_de": "Laminat verlegen",
+      "unit": "m2",
+      "setup_hours": [
+        0.8,
+        1.5
+      ],
+      "typical_size": [
+        15,
+        60
+      ],
+      "market_band_at": [
+        15,
+        30
+      ],
+      "market_band_de": [
+        15,
+        32
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "note_keys": [
+        "untergrund_eben",
+        "dehnungsfuge"
+      ],
+      "uncertainty_spread": 2.6,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.2,
+      "operations": [
+        {
+          "key": "unterlage",
+          "label_de": "Trittschalldämmung verlegen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.03,
+            0.06
+          ],
+          "material_per_unit": [
+            2.0,
+            4.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verlegen",
+          "label_de": "Laminat verlegen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.14,
+            0.24
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "leisten",
+          "label_de": "Sockelleisten montieren",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.06,
+            0.1
+          ],
+          "material_per_unit": [
+            2.5,
+            4.5
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "boden.parkett",
+      "trade": "fliesen",
+      "label_de": "Parkett verlegen (verklebt)",
+      "unit": "m2",
+      "setup_hours": [
+        1.0,
+        1.8
+      ],
+      "typical_size": [
+        15,
+        60
+      ],
+      "market_band_at": [
+        30,
+        60
+      ],
+      "market_band_de": [
+        32,
+        65
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "note_keys": [
+        "untergrund_eben",
+        "raumklima"
+      ],
+      "uncertainty_spread": 2.51,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.12,
+      "operations": [
+        {
+          "key": "spachteln",
+          "label_de": "Untergrund spachteln",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.08,
+            0.14
+          ],
+          "material_per_unit": [
+            2.0,
+            3.5
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verkleben",
+          "label_de": "Parkett vollflächig verkleben",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.28,
+            0.45
+          ],
+          "material_per_unit": [
+            4.0,
+            7.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "schleifen",
+          "label_de": "Schleifen und versiegeln",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.12,
+            0.22
+          ],
+          "material_per_unit": [
+            2.5,
+            4.5
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "standard",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "sanitaer.wc_tauschen",
+      "trade": "sanitaer",
+      "label_de": "WC tauschen (wandhängend)",
+      "unit": "Stk",
+      "setup_hours": [
+        0.6,
+        1.0
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        280,
+        650
+      ],
+      "market_band_de": [
+        300,
+        700
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "note_keys": [
+        "absperrventil",
+        "altgeraet_entsorgung"
+      ],
+      "uncertainty_spread": 2.69,
+      "quote_mode": "regie",
+      "small_job_premium": 1.14,
+      "operations": [
+        {
+          "key": "demontage",
+          "label_de": "Altgerät demontieren",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.5,
+            0.9
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            20,
+            35
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "montage",
+          "label_de": "WC montieren und anschließen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.3,
+            2.2
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "dichtheit",
+          "label_de": "Dichtheitsprüfung",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.2,
+            0.4
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "material",
+          "label_de": "Kleinmaterial, Dichtungen, Silikon",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            35,
+            80
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "sanitaer.waschtisch",
+      "trade": "sanitaer",
+      "label_de": "Waschtisch mit Armatur tauschen",
+      "unit": "Stk",
+      "setup_hours": [
+        0.5,
+        0.9
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        220,
+        520
+      ],
+      "market_band_de": [
+        240,
+        560
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "note_keys": [
+        "altgeraet_entsorgung"
+      ],
+      "uncertainty_spread": 2.67,
+      "quote_mode": "regie",
+      "small_job_premium": 1.16,
+      "operations": [
+        {
+          "key": "demontage",
+          "label_de": "Altgerät demontieren",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.4,
+            0.7
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            15,
+            30
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "montage",
+          "label_de": "Waschtisch und Armatur montieren",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.0,
+            1.8
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "material",
+          "label_de": "Eckventile, Siphon, Kleinmaterial",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            45,
+            95
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "sanitaer.therme_tausch",
+      "trade": "sanitaer",
+      "label_de": "Gastherme tauschen",
+      "unit": "Stk",
+      "setup_hours": [
+        1.0,
+        1.8
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        2600,
+        4800
+      ],
+      "market_band_de": [
+        2800,
+        5200
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "note_keys": [
+        "rauchfangkehrer",
+        "gasleitung_normgerecht",
+        "foerderung"
+      ],
+      "uncertainty_spread": 1.84,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.02,
+      "operations": [
+        {
+          "key": "demontage",
+          "label_de": "Altgerät demontieren, Anlage entleeren",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.5,
+            2.5
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            35,
+            60
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "geraet",
+          "label_de": "Gastherme inkl. Montagezubehör",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            1800,
+            2900
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "montage",
+          "label_de": "Montage, Anschluss Gas/Wasser/Strom",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            4.5,
+            7.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "inbetriebnahme",
+          "label_de": "Inbetriebnahme und Einregulierung",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.2,
+            2.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "sanitaer.rohrbruch",
+      "trade": "sanitaer",
+      "label_de": "Rohrbruch orten und reparieren",
+      "unit": "psch",
+      "setup_hours": [
+        0.8,
+        1.5
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        350,
+        1200
+      ],
+      "market_band_de": [
+        380,
+        1300
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "note_keys": [
+        "folgeschaeden",
+        "oeffnung_wand"
+      ],
+      "uncertainty_spread": 3.68,
+      "quote_mode": "regie",
+      "small_job_premium": 1.08,
+      "operations": [
+        {
+          "key": "ortung",
+          "label_de": "Leckortung",
+          "unit": "psch",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.0,
+            2.5
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "oeffnen",
+          "label_de": "Wand/Boden öffnen",
+          "unit": "psch",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.0,
+            2.5
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            30,
+            90
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "reparatur",
+          "label_de": "Rohr reparieren, Dichtheitsprüfung",
+          "unit": "psch",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.5,
+            3.5
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "material",
+          "label_de": "Rohrmaterial, Fittings",
+          "unit": "psch",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            60,
+            220
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "elektrik.steckdose",
+      "trade": "elektrik",
+      "label_de": "Steckdose setzen (Unterputz, Bestand)",
+      "unit": "Stk",
+      "setup_hours": [
+        0.5,
+        0.9
+      ],
+      "typical_size": [
+        1,
+        6
+      ],
+      "market_band_at": [
+        70,
+        180
+      ],
+      "market_band_de": [
+        75,
+        190
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "note_keys": [
+        "e_befund",
+        "altbau_leitungen"
+      ],
+      "uncertainty_spread": 3.27,
+      "quote_mode": "regie",
+      "small_job_premium": 1.63,
+      "operations": [
+        {
+          "key": "dose",
+          "label_de": "Dose setzen, Schlitz stemmen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.5,
+            1.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            2,
+            6
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "anschluss",
+          "label_de": "Verdrahten und anschließen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.3,
+            0.6
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "material",
+          "label_de": "Dose, Einsatz, Abdeckung",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            12,
+            35
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "elektrik.leitung_verlegen",
+      "trade": "elektrik",
+      "label_de": "Leitung verlegen (Unterputz)",
+      "unit": "lfm",
+      "setup_hours": [
+        0.8,
+        1.4
+      ],
+      "typical_size": [
+        10,
+        60
+      ],
+      "market_band_at": [
+        15,
+        35
+      ],
+      "market_band_de": [
+        16,
+        38
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "note_keys": [
+        "e_befund",
+        "staub"
+      ],
+      "uncertainty_spread": 2.88,
+      "quote_mode": "regie",
+      "small_job_premium": 1.46,
+      "operations": [
+        {
+          "key": "schlitz",
+          "label_de": "Schlitz fräsen",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.06,
+            0.11
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            3,
+            8
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verlegen",
+          "label_de": "Leitung verlegen",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.035,
+            0.065
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verschliessen",
+          "label_de": "Schlitz verschließen",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.05,
+            0.09
+          ],
+          "material_per_unit": [
+            1.2,
+            2.5
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "kabel",
+          "label_de": "Kabel NYM",
+          "unit": "lfm",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            1.8,
+            3.5
+          ],
+          "waste_factor": 0.08,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "elektrik.verteiler",
+      "trade": "elektrik",
+      "label_de": "Verteiler erneuern (Wohnung)",
+      "unit": "Stk",
+      "setup_hours": [
+        1.0,
+        1.8
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        900,
+        2200
+      ],
+      "market_band_de": [
+        950,
+        2400
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "note_keys": [
+        "e_befund",
+        "abschaltung"
+      ],
+      "uncertainty_spread": 2.85,
+      "quote_mode": "regie",
+      "small_job_premium": 1.05,
+      "operations": [
+        {
+          "key": "demontage",
+          "label_de": "Altverteiler demontieren",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.0,
+            1.8
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            8,
+            18
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "montage",
+          "label_de": "Verteiler montieren und verdrahten",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            5.0,
+            9.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "pruefung",
+          "label_de": "Prüfung und Protokoll",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.0,
+            2.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "material",
+          "label_de": "Verteiler, LS-Schalter, FI",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            320,
+            780
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "trockenbau.staenderwand",
+      "trade": "trockenbau",
+      "label_de": "Ständerwand (doppelt beplankt)",
+      "unit": "m2",
+      "setup_hours": [
+        1.0,
+        1.8
+      ],
+      "typical_size": [
+        8,
+        30
+      ],
+      "market_band_at": [
+        45,
+        85
+      ],
+      "market_band_de": [
+        45,
+        90
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "note_keys": [
+        "statik_nicht_tragend"
+      ],
+      "uncertainty_spread": 2.39,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.14,
+      "operations": [
+        {
+          "key": "staender",
+          "label_de": "Ständerwerk stellen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.2,
+            0.35
+          ],
+          "material_per_unit": [
+            6.0,
+            10.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "daemmung",
+          "label_de": "Dämmung einlegen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.06,
+            0.12
+          ],
+          "material_per_unit": [
+            3.5,
+            6.5
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "beplankung",
+          "label_de": "Doppelt beplanken",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.24,
+            0.38
+          ],
+          "material_per_unit": [
+            8.0,
+            13.0
+          ],
+          "waste_factor": 0.08,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "spachteln",
+          "label_de": "Spachteln Q2",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.1,
+            0.17
+          ],
+          "material_per_unit": [
+            1.2,
+            2.2
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "abriss.estrich",
+      "trade": "abriss",
+      "label_de": "Estrich entfernen",
+      "unit": "m2",
+      "setup_hours": [
+        1.5,
+        2.5
+      ],
+      "typical_size": [
+        15,
+        60
+      ],
+      "market_band_at": [
+        20,
+        45
+      ],
+      "market_band_de": [
+        20,
+        48
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "note_keys": [
+        "asbest_vor_1990",
+        "staub",
+        "abtransport"
+      ],
+      "uncertainty_spread": 2.87,
+      "quote_mode": "regie",
+      "small_job_premium": 1.2,
+      "operations": [
+        {
+          "key": "abbruch",
+          "label_de": "Estrich abbrechen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.28,
+            0.5
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            100,
+            145
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "entsorgung",
+          "label_de": "Entsorgung Bauschutt",
+          "unit": "m2",
+          "kind": "disposal",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "abriss.nichttragende_wand",
+      "trade": "abriss",
+      "label_de": "Nichttragende Wand abbrechen",
+      "unit": "m2",
+      "setup_hours": [
+        1.2,
+        2.2
+      ],
+      "typical_size": [
+        6,
+        25
+      ],
+      "market_band_at": [
+        30,
+        70
+      ],
+      "market_band_de": [
+        30,
+        75
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "note_keys": [
+        "statik_nicht_tragend",
+        "asbest_vor_1990",
+        "staub"
+      ],
+      "uncertainty_spread": 2.81,
+      "quote_mode": "regie",
+      "small_job_premium": 1.34,
+      "operations": [
+        {
+          "key": "abbruch",
+          "label_de": "Wand abbrechen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.35,
+            0.65
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            140,
+            175
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "entsorgung",
+          "label_de": "Entsorgung Bauschutt",
+          "unit": "m2",
+          "kind": "disposal",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    }
+  ]
+}
