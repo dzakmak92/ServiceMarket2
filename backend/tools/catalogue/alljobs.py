@@ -6,6 +6,7 @@ from wide2 import GARTEN, FENSTER, DACH
 from wide3 import HEIZUNG, UMZUG, REINIGUNG, POLSTER, SOLAR, MONTAGE, GUTACHTER
 from wide4 import FAHRZEUGE
 from sanitaer_deep import SANITAER_DEEP
+from elektrik_deep import ELEKTRIK_DEEP
 
 # Groups the core file predates the group/segment fields; tag them here so the
 # catalogue lines up with business_directory."group" for prospect matching.
@@ -21,6 +22,6 @@ for j in MALER + CORE:
     if not j.group:
         j.group, j.segment = GROUP_FIX.get(j.trade, ("", ""))
 
-ALL_JOBS = (MALER + CORE + SANITAER_DEEP + BAUEN + TISCHLER + KUECHE + GARTEN + FENSTER +
+ALL_JOBS = (MALER + CORE + SANITAER_DEEP + ELEKTRIK_DEEP + BAUEN + TISCHLER + KUECHE + GARTEN + FENSTER +
             DACH + HEIZUNG + UMZUG + REINIGUNG + POLSTER + SOLAR + MONTAGE +
             GUTACHTER + FAHRZEUGE)

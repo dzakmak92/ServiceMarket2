@@ -71,8 +71,8 @@
         112
       ],
       "elektrik": [
-        55,
-        85
+        62,
+        110
       ],
       "trockenbau": [
         40,
@@ -153,8 +153,8 @@
         115
       ],
       "elektrik": [
-        55,
-        90
+        62,
+        112
       ],
       "trockenbau": [
         38,
@@ -703,6 +703,94 @@
     "silikon_wartungsfuge": {
       "severity": "low",
       "de": "Silikonfugen sind Wartungsfugen und von der Gewährleistung ausgenommen (ÖNORM B 2207 / IVD)."
+    },
+    "klassische_nullung": {
+      "severity": "critical",
+      "de": "Klassische Nullung ohne getrennten Schutzleiter entspricht nicht dem Stand der Technik. Ein Weiterbetrieb nach Eingriff ist unzulässig; die betroffenen Stromkreise sind zu sanieren. Nicht im Angebot enthalten."
+    },
+    "altanlage_unbekannt": {
+      "severity": "high",
+      "de": "Der Zustand der Bestandsanlage ist nicht bekannt. Zeigt sich beim Öffnen eine nicht normgerechte Ausführung, sind Zusatzarbeiten erforderlich, die nach Aufwand verrechnet werden."
+    },
+    "fi_typ_b": {
+      "severity": "high",
+      "de": "Für Ladeeinrichtungen ist ein FI Typ B bzw. Typ A EV erforderlich. Ist keiner vorhanden, wird er ergänzt und gesondert verrechnet."
+    },
+    "netzbetreiber_meldung": {
+      "severity": "high",
+      "de": "Ladeeinrichtungen sind beim Netzbetreiber zu melden, ab 11 kW genehmigungspflichtig. Die Meldung ist enthalten, eine allfällige Netzverstärkung nicht."
+    },
+    "neutralleiter_noetig": {
+      "severity": "high",
+      "de": "Viele Smart-Home-Aktoren benötigen einen Neutralleiter in der Schalterdose. Fehlt er, ist eine Leitungsergänzung nötig; Mehraufwand nach Aufwand."
+    },
+    "anschluss_konzessioniert": {
+      "severity": "high",
+      "de": "Der Anschluss darf nur durch ein konzessioniertes Elektrounternehmen erfolgen."
+    },
+    "neue_zuleitung_noetig": {
+      "severity": "high",
+      "de": "Ohne vorhandene Anschlussdose ist eine neue Zuleitung vom Verteiler erforderlich; nicht im Angebot enthalten."
+    },
+    "verteiler_erweiterung": {
+      "severity": "medium",
+      "de": "Im Verteiler ist kein Platz frei. Erweiterung oder Tausch wird gesondert angeboten."
+    },
+    "befund_maengel_extra": {
+      "severity": "medium",
+      "de": "Der Befund dokumentiert den Ist-Zustand. Die Behebung festgestellter Mängel ist nicht enthalten."
+    },
+    "befund_intervall": {
+      "severity": "medium",
+      "de": "Prüfintervalle richten sich nach Nutzung und Landesrecht (Wohnung meist 10 Jahre, Gewerbe kürzer)."
+    },
+    "befund_uebergabe": {
+      "severity": "medium",
+      "de": "Für Verkauf oder Vermietung wird der Befund auf den Übergabestichtag ausgestellt."
+    },
+    "rauchmelder_pflicht": {
+      "severity": "medium",
+      "de": "Rauchwarnmelderpflicht besteht in allen österreichischen Bundesländern und deutschen Ländern; Wartung obliegt je nach Landesrecht Eigentümer oder Mieter."
+    },
+    "erdarbeiten_extra": {
+      "severity": "medium",
+      "de": "Erdarbeiten für eine erdverlegte Zuleitung sind nicht enthalten."
+    },
+    "lastmanagement": {
+      "severity": "medium",
+      "de": "Bei mehreren Ladepunkten oder begrenztem Hausanschluss ist ein Lastmanagement erforderlich."
+    },
+    "bestandsleitung_nutzbar": {
+      "severity": "medium",
+      "de": "Angebot geht von einer nutzbaren Bestandsleitung aus. Ist sie es nicht, wird eine neue Leitung nach Aufwand verrechnet."
+    },
+    "neue_leitung_noetig": {
+      "severity": "medium",
+      "de": "Eine neue Steuerleitung ist erforderlich und gesondert kalkuliert."
+    },
+    "folgearbeiten_nach_aufwand": {
+      "severity": "medium",
+      "de": "Die Erstmaßnahme umfasst Eingrenzung und Sofortbehebung. Weitergehende Instandsetzung wird nach Aufwand verrechnet."
+    },
+    "mauerdurchbruch": {
+      "severity": "medium",
+      "de": "Wanddurchführung wird fachgerecht abgedichtet; Putz- und Malerarbeiten sind nicht enthalten."
+    },
+    "arbeitsbuehne": {
+      "severity": "medium",
+      "de": "Ab 3 m Raumhöhe ist eine Arbeitsbühne oder ein Gerüst erforderlich; nicht enthalten."
+    },
+    "system_bindung": {
+      "severity": "low",
+      "de": "Die Auswahl bindet an ein Hersteller-Ökosystem; ein späterer Wechsel bedeutet Austausch der Aktoren."
+    },
+    "messprotokoll_netzwerk": {
+      "severity": "low",
+      "de": "Ein Messprotokoll der Strecken ist enthalten."
+    },
+    "pruefplakette": {
+      "severity": "low",
+      "de": "Geprüfte Geräte erhalten eine Prüfplakette mit Datum der nächsten Prüfung."
     },
     "abschaltung": {
       "severity": "medium",
@@ -2508,8 +2596,8 @@
       "label_de": "Steckdose setzen (Unterputz, Bestand)",
       "unit": "Stk",
       "setup_hours": [
-        0.3,
-        0.6
+        0.2,
+        0.35
       ],
       "typical_size": [
         1,
@@ -2535,10 +2623,10 @@
         "e_befund",
         "altbau_leitungen"
       ],
-      "labour_variance": 3.05,
+      "labour_variance": 3.37,
       "site_visit_required": false,
       "quote_mode": "fixed",
-      "small_job_premium": 1.82,
+      "small_job_premium": 1.73,
       "operations": [
         {
           "key": "dose",
@@ -2644,10 +2732,10 @@
         "e_befund",
         "staub"
       ],
-      "labour_variance": 2.88,
+      "labour_variance": 3.26,
       "site_visit_required": true,
       "quote_mode": "regie",
-      "small_job_premium": 1.46,
+      "small_job_premium": 1.48,
       "operations": [
         {
           "key": "schlitz",
@@ -2776,7 +2864,7 @@
         "e_befund",
         "abschaltung"
       ],
-      "labour_variance": 2.85,
+      "labour_variance": 3.17,
       "site_visit_required": true,
       "quote_mode": "regie",
       "small_job_premium": 1.05,
@@ -5834,6 +5922,2148 @@
           "hours_per_unit": [
             10,
             18
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "elektrik.stoerungssuche",
+      "trade": "elektrik",
+      "label_de": "Störungssuche und Behebung",
+      "unit": "Stk",
+      "setup_hours": [
+        0.5,
+        0.9
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        140,
+        380
+      ],
+      "market_band_de": [
+        150,
+        400
+      ],
+      "band_basis": "total",
+      "sources": [
+        "fixbuddy.at/was-kostet-elektriker",
+        "werkflow.at/elektriker-kosten",
+        "daibau.at/baukostenrechner/elektroinstallationen"
+      ],
+      "confidence": "medium",
+      "group": "Elektrik",
+      "segment": "Elektriker",
+      "messy": false,
+      "emergency_capable": true,
+      "guided_form": [
+        {
+          "key": "symptom",
+          "label_de": "Symptom",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "fi_faellt",
+              "FI fällt"
+            ],
+            [
+              "kein_strom",
+              "Kein Strom in einem Raum"
+            ],
+            [
+              "teilausfall",
+              "Teilausfall"
+            ],
+            [
+              "flackern",
+              "Flackern"
+            ]
+          ],
+          "affects": "variant",
+          "default": "fi_faellt",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "zeit",
+          "label_de": "Einsatzzeit",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "regulaer",
+              "Werktag"
+            ],
+            [
+              "nacht_sonntag",
+              "Nacht/Sonntag"
+            ]
+          ],
+          "affects": "variant",
+          "default": "regulaer",
+          "note_if": {
+            "nacht_sonntag": "nacht_zuschlag"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "altanlage",
+          "label_de": "Zustand der Bestandsanlage",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "modern",
+              "Modern, mit FI"
+            ],
+            [
+              "mit_pe",
+              "Älter, aber mit Schutzleiter"
+            ],
+            [
+              "klassisch_null",
+              "Klassische Nullung / kein PE"
+            ],
+            [
+              "unbekannt",
+              "Unbekannt"
+            ]
+          ],
+          "affects": "note",
+          "default": "unbekannt",
+          "note_if": {
+            "klassisch_null": "klassische_nullung",
+            "unbekannt": "altanlage_unbekannt"
+          },
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "e_befund",
+        "folgearbeiten_nach_aufwand"
+      ],
+      "labour_variance": 3.84,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.11,
+      "operations": [
+        {
+          "key": "anfahrt",
+          "label_de": "Anfahrt",
+          "unit": "Stk",
+          "kind": "travel",
+          "hours_per_unit": [
+            0.3,
+            0.6
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "messung",
+          "label_de": "Messtechnische Eingrenzung",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.6,
+            1.2
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "behebung",
+          "label_de": "Behebung im Rahmen der Erstmaßnahme",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.4,
+            0.85
+          ],
+          "material_per_unit": [
+            15,
+            60
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "elektrik.e_befund",
+      "trade": "elektrik",
+      "label_de": "E-Befund / Anlagenüberprüfung",
+      "unit": "Stk",
+      "setup_hours": [
+        0.3,
+        0.6
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        150,
+        350
+      ],
+      "market_band_de": [
+        160,
+        380
+      ],
+      "band_basis": "total",
+      "sources": [
+        "fixbuddy.at/was-kostet-elektriker",
+        "werkflow.at/elektriker-kosten",
+        "daibau.at/baukostenrechner/elektroinstallationen"
+      ],
+      "confidence": "high",
+      "group": "Elektrik",
+      "segment": "Elektriker",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "objekt",
+          "label_de": "Objekt",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "wohnung",
+              "Wohnung"
+            ],
+            [
+              "haus",
+              "Einfamilienhaus"
+            ],
+            [
+              "gewerbe",
+              "Gewerbeobjekt"
+            ]
+          ],
+          "affects": "variant",
+          "default": "wohnung",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "stromkreise",
+          "label_de": "Anzahl Stromkreise",
+          "type": "number",
+          "unit": "Stk",
+          "options": [],
+          "affects": "qty",
+          "default": 12,
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "anlass",
+          "label_de": "Anlass",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "verkauf",
+              "Verkauf/Vermietung"
+            ],
+            [
+              "periodisch",
+              "Periodisch"
+            ],
+            [
+              "schaden",
+              "Nach Schaden"
+            ]
+          ],
+          "affects": "note",
+          "default": null,
+          "note_if": {
+            "verkauf": "befund_uebergabe"
+          },
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "befund_maengel_extra",
+        "befund_intervall"
+      ],
+      "labour_variance": 3.67,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.08,
+      "operations": [
+        {
+          "key": "sichtpruefung",
+          "label_de": "Sichtprüfung",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.4,
+            0.8
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "messung",
+          "label_de": "Messungen nach ÖVE/ÖNORM E 8001 bzw. DIN VDE 0100-600",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.8,
+            1.4
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "protokoll",
+          "label_de": "Befund und Protokoll",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.3,
+            0.6
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "elektrik.geraetepruefung",
+      "trade": "elektrik",
+      "label_de": "Prüfung ortsveränderlicher Geräte",
+      "unit": "Stk",
+      "setup_hours": [
+        0.4,
+        0.8
+      ],
+      "typical_size": [
+        10,
+        60
+      ],
+      "market_band_at": [
+        6,
+        18
+      ],
+      "market_band_de": [
+        6,
+        20
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "fixbuddy.at/was-kostet-elektriker",
+        "werkflow.at/elektriker-kosten",
+        "daibau.at/baukostenrechner/elektroinstallationen"
+      ],
+      "confidence": "medium",
+      "group": "Elektrik",
+      "segment": "Elektriker",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "anzahl",
+          "label_de": "Anzahl Geräte",
+          "type": "number",
+          "unit": "Stk",
+          "options": [],
+          "affects": "qty",
+          "default": 25,
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "befund_intervall",
+        "pruefplakette"
+      ],
+      "labour_variance": 4.65,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.35,
+      "operations": [
+        {
+          "key": "pruefung",
+          "label_de": "Prüfung und Kennzeichnung",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.06,
+            0.14
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "protokoll",
+          "label_de": "Prüfprotokoll",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.01,
+            0.03
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "elektrik.schalter_tauschen",
+      "trade": "elektrik",
+      "label_de": "Schalter oder Steckdose tauschen",
+      "unit": "Stk",
+      "setup_hours": [
+        0.3,
+        0.6
+      ],
+      "typical_size": [
+        1,
+        8
+      ],
+      "market_band_at": [
+        45,
+        120
+      ],
+      "market_band_de": [
+        48,
+        130
+      ],
+      "band_basis": "total",
+      "sources": [
+        "fixbuddy.at/was-kostet-elektriker",
+        "werkflow.at/elektriker-kosten",
+        "daibau.at/baukostenrechner/elektroinstallationen"
+      ],
+      "confidence": "medium",
+      "group": "Elektrik",
+      "segment": "Elektriker",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "anzahl",
+          "label_de": "Anzahl",
+          "type": "number",
+          "unit": "Stk",
+          "options": [],
+          "affects": "qty",
+          "default": 1,
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "altanlage",
+          "label_de": "Zustand der Bestandsanlage",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "modern",
+              "Modern, mit FI"
+            ],
+            [
+              "mit_pe",
+              "Älter, aber mit Schutzleiter"
+            ],
+            [
+              "klassisch_null",
+              "Klassische Nullung / kein PE"
+            ],
+            [
+              "unbekannt",
+              "Unbekannt"
+            ]
+          ],
+          "affects": "note",
+          "default": "unbekannt",
+          "note_if": {
+            "klassisch_null": "klassische_nullung",
+            "unbekannt": "altanlage_unbekannt"
+          },
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "e_befund"
+      ],
+      "labour_variance": 3.43,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.65,
+      "operations": [
+        {
+          "key": "tausch",
+          "label_de": "Einsatz tauschen und prüfen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.25,
+            0.45
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "material",
+          "label_de": "Einsatz und Abdeckung",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            9,
+            28
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "elektrik.leuchte_montieren",
+      "trade": "elektrik",
+      "label_de": "Leuchte montieren",
+      "unit": "Stk",
+      "setup_hours": [
+        0.3,
+        0.6
+      ],
+      "typical_size": [
+        1,
+        6
+      ],
+      "market_band_at": [
+        55,
+        160
+      ],
+      "market_band_de": [
+        58,
+        170
+      ],
+      "band_basis": "total",
+      "sources": [
+        "fixbuddy.at/was-kostet-elektriker",
+        "werkflow.at/elektriker-kosten",
+        "daibau.at/baukostenrechner/elektroinstallationen"
+      ],
+      "confidence": "medium",
+      "group": "Elektrik",
+      "segment": "Elektriker",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "art",
+          "label_de": "Art",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "deckenleuchte",
+              "Deckenleuchte"
+            ],
+            [
+              "haengeleuchte",
+              "Hängeleuchte"
+            ],
+            [
+              "spots",
+              "Einbauspots"
+            ]
+          ],
+          "affects": "variant",
+          "default": "deckenleuchte",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "anzahl",
+          "label_de": "Anzahl",
+          "type": "number",
+          "unit": "Stk",
+          "options": [],
+          "affects": "qty",
+          "default": 1,
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "hoehe",
+          "label_de": "Raumhöhe über 3 m?",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": false,
+          "note_if": {
+            "True": "arbeitsbuehne"
+          },
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "untergrund_tragfaehig"
+      ],
+      "labour_variance": 4.22,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.43,
+      "operations": [
+        {
+          "key": "montage",
+          "label_de": "Montieren und anschließen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.4,
+            0.9
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "material",
+          "label_de": "Kleinmaterial",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            5,
+            18
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "elektrik.rauchmelder",
+      "trade": "elektrik",
+      "label_de": "Rauchwarnmelder montieren",
+      "unit": "Stk",
+      "setup_hours": [
+        0.18,
+        0.32
+      ],
+      "typical_size": [
+        2,
+        8
+      ],
+      "market_band_at": [
+        35,
+        95
+      ],
+      "market_band_de": [
+        38,
+        100
+      ],
+      "band_basis": "total",
+      "sources": [
+        "fixbuddy.at/was-kostet-elektriker",
+        "werkflow.at/elektriker-kosten",
+        "daibau.at/baukostenrechner/elektroinstallationen"
+      ],
+      "confidence": "medium",
+      "group": "Elektrik",
+      "segment": "Elektriker",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "anzahl",
+          "label_de": "Anzahl Räume",
+          "type": "number",
+          "unit": "Stk",
+          "options": [],
+          "affects": "qty",
+          "default": 3,
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "vernetzt",
+          "label_de": "Funkvernetzt?",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": false,
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "rauchmelder_pflicht"
+      ],
+      "labour_variance": 3.26,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.17,
+      "operations": [
+        {
+          "key": "montage",
+          "label_de": "Montage und Funktionstest",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.14,
+            0.26
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "melder",
+          "label_de": "Rauchwarnmelder",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            18,
+            55
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "elektrik.aussensteckdose",
+      "trade": "elektrik",
+      "label_de": "Außensteckdose setzen (IP44)",
+      "unit": "Stk",
+      "setup_hours": [
+        0.4,
+        0.8
+      ],
+      "typical_size": [
+        1,
+        3
+      ],
+      "market_band_at": [
+        180,
+        450
+      ],
+      "market_band_de": [
+        190,
+        480
+      ],
+      "band_basis": "total",
+      "sources": [
+        "fixbuddy.at/was-kostet-elektriker",
+        "werkflow.at/elektriker-kosten",
+        "daibau.at/baukostenrechner/elektroinstallationen"
+      ],
+      "confidence": "low",
+      "group": "Elektrik",
+      "segment": "Elektriker",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "durchbruch",
+          "label_de": "Wanddurchführung nötig?",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": true,
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "entfernung",
+          "label_de": "Entfernung zum Verteiler",
+          "type": "number",
+          "unit": "lfm",
+          "options": [],
+          "affects": "qty",
+          "default": 6,
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "e_befund",
+        "mauerdurchbruch"
+      ],
+      "labour_variance": 3.5,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.29,
+      "operations": [
+        {
+          "key": "durchfuehrung",
+          "label_de": "Wanddurchführung herstellen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.5,
+            1.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            3,
+            10
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "leitung",
+          "label_de": "Zuleitung verlegen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.55,
+            1.0
+          ],
+          "material_per_unit": [
+            15,
+            40
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "dose",
+          "label_de": "Dose setzen und anschließen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.4,
+            0.8
+          ],
+          "material_per_unit": [
+            22,
+            55
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "elektrik.herdanschluss",
+      "trade": "elektrik",
+      "label_de": "Herd- oder Kochfeldanschluss",
+      "unit": "Stk",
+      "setup_hours": [
+        0.3,
+        0.6
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        90,
+        260
+      ],
+      "market_band_de": [
+        95,
+        280
+      ],
+      "band_basis": "total",
+      "sources": [
+        "fixbuddy.at/was-kostet-elektriker",
+        "werkflow.at/elektriker-kosten",
+        "daibau.at/baukostenrechner/elektroinstallationen"
+      ],
+      "confidence": "medium",
+      "group": "Elektrik",
+      "segment": "Elektriker",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "vorhanden",
+          "label_de": "Herdanschlussdose vorhanden?",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": true,
+          "note_if": {
+            "False": "neue_zuleitung_noetig"
+          },
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "e_befund",
+        "anschluss_konzessioniert"
+      ],
+      "labour_variance": 3.68,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.14,
+      "operations": [
+        {
+          "key": "anschluss",
+          "label_de": "Anschließen und prüfen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.6,
+            1.2
+          ],
+          "material_per_unit": [
+            12,
+            35
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "elektrik.datendose",
+      "trade": "elektrik",
+      "label_de": "Netzwerkdose setzen (Cat 6a)",
+      "unit": "Stk",
+      "setup_hours": [
+        0.3,
+        0.55
+      ],
+      "typical_size": [
+        1,
+        8
+      ],
+      "market_band_at": [
+        120,
+        320
+      ],
+      "market_band_de": [
+        130,
+        340
+      ],
+      "band_basis": "total",
+      "sources": [
+        "fixbuddy.at/was-kostet-elektriker",
+        "werkflow.at/elektriker-kosten",
+        "daibau.at/baukostenrechner/elektroinstallationen"
+      ],
+      "confidence": "low",
+      "group": "Elektrik",
+      "segment": "Elektriker",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "anzahl",
+          "label_de": "Anzahl Dosen",
+          "type": "number",
+          "unit": "Stk",
+          "options": [],
+          "affects": "qty",
+          "default": 2,
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "laenge",
+          "label_de": "Durchschnittliche Leitungslänge",
+          "type": "number",
+          "unit": "lfm",
+          "options": [],
+          "affects": "qty",
+          "default": 12,
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, leer"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leer"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "messprotokoll_netzwerk"
+      ],
+      "labour_variance": 3.33,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.42,
+      "operations": [
+        {
+          "key": "leitung",
+          "label_de": "Datenleitung verlegen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.45,
+            0.85
+          ],
+          "material_per_unit": [
+            14,
+            35
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "dose",
+          "label_de": "Dose setzen und auflegen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.28,
+            0.5
+          ],
+          "material_per_unit": [
+            18,
+            45
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "messung",
+          "label_de": "Messung und Protokoll",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.2,
+            0.4
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "elektrik.wallbox",
+      "trade": "elektrik",
+      "label_de": "Wallbox installieren (11 kW)",
+      "unit": "Stk",
+      "setup_hours": [
+        0.6,
+        1.2
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        500,
+        1500
+      ],
+      "market_band_de": [
+        550,
+        1600
+      ],
+      "band_basis": "total",
+      "sources": [
+        "wallbox-kosten.at/wallbox-kosten/installation"
+      ],
+      "confidence": "high",
+      "group": "Elektrik",
+      "segment": "Elektriker",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "entfernung",
+          "label_de": "Entfernung Verteiler zur Wallbox",
+          "type": "number",
+          "unit": "lfm",
+          "options": [],
+          "affects": "qty",
+          "default": 10,
+          "note_if": {},
+          "help_de": "Der größte Kostentreiber. Über 20 m wird die Zuleitung teuer."
+        },
+        {
+          "key": "verlegung",
+          "label_de": "Verlegeart",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "aufputz",
+              "Aufputz / Kabelkanal"
+            ],
+            [
+              "unterputz",
+              "Unterputz"
+            ],
+            [
+              "erdverlegt",
+              "Erdverlegt (Garage separat)"
+            ]
+          ],
+          "affects": "variant",
+          "default": "aufputz",
+          "note_if": {
+            "erdverlegt": "erdarbeiten_extra"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "verteiler_platz",
+          "label_de": "Platz im Verteiler frei?",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": true,
+          "note_if": {
+            "False": "verteiler_erweiterung"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "fi_vorhanden",
+          "label_de": "FI Typ A/B vorhanden?",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": false,
+          "note_if": {
+            "False": "fi_typ_b"
+          },
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "netzbetreiber_meldung",
+        "fi_typ_b",
+        "foerderung",
+        "lastmanagement"
+      ],
+      "labour_variance": 3.29,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.06,
+      "operations": [
+        {
+          "key": "zuleitung",
+          "label_de": "Zuleitung verlegen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.5,
+            3.0
+          ],
+          "material_per_unit": [
+            90,
+            220
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "absicherung",
+          "label_de": "Absicherung und FI im Verteiler",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.8,
+            1.6
+          ],
+          "material_per_unit": [
+            120,
+            280
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "montage",
+          "label_de": "Wallbox montieren und anschließen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.0,
+            2.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "inbetriebnahme",
+          "label_de": "Inbetriebnahme, Messung, Anmeldung",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.8,
+            1.5
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "elektrik.verteiler_klein",
+      "trade": "elektrik",
+      "label_de": "Verteiler erweitern (einzelne Stromkreise)",
+      "unit": "Stk",
+      "setup_hours": [
+        0.5,
+        1.0
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        220,
+        650
+      ],
+      "market_band_de": [
+        240,
+        700
+      ],
+      "band_basis": "total",
+      "sources": [
+        "fixbuddy.at/was-kostet-elektriker",
+        "werkflow.at/elektriker-kosten",
+        "daibau.at/baukostenrechner/elektroinstallationen"
+      ],
+      "confidence": "medium",
+      "group": "Elektrik",
+      "segment": "Elektriker",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "stromkreise",
+          "label_de": "Neue Stromkreise",
+          "type": "number",
+          "unit": "Stk",
+          "options": [],
+          "affects": "qty",
+          "default": 2,
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "platz",
+          "label_de": "Platz im Verteiler?",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": true,
+          "note_if": {
+            "False": "verteiler_erweiterung"
+          },
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "abschaltung",
+        "e_befund"
+      ],
+      "labour_variance": 3.57,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.18,
+      "operations": [
+        {
+          "key": "montage",
+          "label_de": "Automaten und FI ergänzen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.8,
+            1.6
+          ],
+          "material_per_unit": [
+            45,
+            130
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "pruefung",
+          "label_de": "Prüfung und Beschriftung",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.4,
+            0.8
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "elektrik.wohnung_neuinstallation",
+      "trade": "elektrik",
+      "label_de": "Elektroinstallation Wohnung komplett",
+      "unit": "m2",
+      "setup_hours": [
+        3.0,
+        6.0
+      ],
+      "typical_size": [
+        50,
+        120
+      ],
+      "market_band_at": [
+        85,
+        180
+      ],
+      "market_band_de": [
+        90,
+        190
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "fixbuddy.at/was-kostet-elektriker",
+        "werkflow.at/elektriker-kosten",
+        "daibau.at/baukostenrechner/elektroinstallationen"
+      ],
+      "confidence": "medium",
+      "group": "Elektrik",
+      "segment": "Elektriker",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "wohnflaeche",
+          "label_de": "Wohnfläche",
+          "type": "number",
+          "unit": "m2",
+          "options": [],
+          "affects": "qty",
+          "default": 75,
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, leer"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leer"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "baujahr",
+          "label_de": "Baujahr",
+          "type": "number",
+          "unit": "Jahr",
+          "options": [],
+          "affects": "note",
+          "default": null,
+          "note_if": {},
+          "help_de": "Vor 1965: oft ohne Schutzleiter. Vor 1990: kein FI."
+        },
+        {
+          "key": "altanlage",
+          "label_de": "Zustand der Bestandsanlage",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "modern",
+              "Modern, mit FI"
+            ],
+            [
+              "mit_pe",
+              "Älter, aber mit Schutzleiter"
+            ],
+            [
+              "klassisch_null",
+              "Klassische Nullung / kein PE"
+            ],
+            [
+              "unbekannt",
+              "Unbekannt"
+            ]
+          ],
+          "affects": "note",
+          "default": "unbekannt",
+          "note_if": {
+            "klassisch_null": "klassische_nullung",
+            "unbekannt": "altanlage_unbekannt"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "ausstattung",
+          "label_de": "Ausstattungsgrad",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "basic",
+              "Standard"
+            ],
+            [
+              "standard",
+              "Gehoben"
+            ],
+            [
+              "premium",
+              "Smart Home"
+            ]
+          ],
+          "affects": "variant",
+          "default": "standard",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "e_befund",
+        "staub",
+        "koordination_gewerke",
+        "abschaltung"
+      ],
+      "labour_variance": 3.28,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.04,
+      "operations": [
+        {
+          "key": "schlitze",
+          "label_de": "Schlitze und Dosen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.22,
+            0.4
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            6,
+            14
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "leitungen",
+          "label_de": "Leitungen verlegen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.2,
+            0.36
+          ],
+          "material_per_unit": [
+            7,
+            15
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verteiler",
+          "label_de": "Verteiler neu",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.06,
+            0.12
+          ],
+          "material_per_unit": [
+            6,
+            14
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "geraete",
+          "label_de": "Schalter, Steckdosen, Auslässe",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.14,
+            0.26
+          ],
+          "material_per_unit": [
+            9,
+            22
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verschliessen",
+          "label_de": "Schlitze verschließen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.14,
+            0.26
+          ],
+          "material_per_unit": [
+            2,
+            5
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "pruefung",
+          "label_de": "Messung, Befund, Übergabe",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.05,
+            0.1
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "elektrik.smarthome",
+      "trade": "elektrik",
+      "label_de": "Smart-Home-Nachrüstung (Schalter/Jalousie)",
+      "unit": "Stk",
+      "setup_hours": [
+        0.5,
+        1.0
+      ],
+      "typical_size": [
+        3,
+        15
+      ],
+      "market_band_at": [
+        110,
+        300
+      ],
+      "market_band_de": [
+        120,
+        320
+      ],
+      "band_basis": "total",
+      "sources": [
+        "fixbuddy.at/was-kostet-elektriker",
+        "werkflow.at/elektriker-kosten",
+        "daibau.at/baukostenrechner/elektroinstallationen"
+      ],
+      "confidence": "low",
+      "group": "Elektrik",
+      "segment": "Elektriker",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "anzahl",
+          "label_de": "Anzahl Punkte",
+          "type": "number",
+          "unit": "Stk",
+          "options": [],
+          "affects": "qty",
+          "default": 6,
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "neutral",
+          "label_de": "Neutralleiter in der Dose vorhanden?",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "ja",
+              "Ja"
+            ],
+            [
+              "nein",
+              "Nein"
+            ],
+            [
+              "unbekannt",
+              "Unbekannt"
+            ]
+          ],
+          "affects": "note",
+          "default": "unbekannt",
+          "note_if": {
+            "nein": "neutralleiter_noetig",
+            "unbekannt": "neutralleiter_noetig"
+          },
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "neutralleiter_noetig",
+        "system_bindung"
+      ],
+      "labour_variance": 3.38,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.1,
+      "operations": [
+        {
+          "key": "montage",
+          "label_de": "Aktoren setzen und einlernen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.38,
+            0.75
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "material",
+          "label_de": "Aktor und Bedienteil",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            55,
+            150
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "konfiguration",
+          "label_de": "System konfigurieren",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.2,
+            0.5
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "elektrik.gegensprechanlage",
+      "trade": "elektrik",
+      "label_de": "Gegensprech-/Videoanlage tauschen",
+      "unit": "Stk",
+      "setup_hours": [
+        0.8,
+        1.5
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        450,
+        1400
+      ],
+      "market_band_de": [
+        480,
+        1500
+      ],
+      "band_basis": "total",
+      "sources": [
+        "fixbuddy.at/was-kostet-elektriker",
+        "werkflow.at/elektriker-kosten",
+        "daibau.at/baukostenrechner/elektroinstallationen"
+      ],
+      "confidence": "low",
+      "group": "Elektrik",
+      "segment": "Elektriker",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "parteien",
+          "label_de": "Anzahl Parteien",
+          "type": "number",
+          "unit": "Stk",
+          "options": [],
+          "affects": "qty",
+          "default": 1,
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "leitung",
+          "label_de": "Bestandsleitung nutzbar?",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "ja",
+              "Ja"
+            ],
+            [
+              "nein",
+              "Nein"
+            ],
+            [
+              "unbekannt",
+              "Unbekannt"
+            ]
+          ],
+          "affects": "note",
+          "default": "unbekannt",
+          "note_if": {
+            "nein": "neue_leitung_noetig",
+            "unbekannt": "bestandsleitung_nutzbar"
+          },
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "bestandsleitung_nutzbar"
+      ],
+      "labour_variance": 3.51,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.08,
+      "operations": [
+        {
+          "key": "demontage",
+          "label_de": "Altanlage demontieren",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.6,
+            1.2
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            3,
+            8
+          ],
+          "debris_type": "metall",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "anlage",
+          "label_de": "Anlage inkl. Außenstation",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            220,
+            700
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "montage",
+          "label_de": "Montage und Inbetriebnahme",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            2.0,
+            4.0
           ],
           "material_per_unit": [
             0.0,

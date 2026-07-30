@@ -165,7 +165,7 @@ ELEKTRIK = [
     JobType(
         key="elektrik.steckdose", trade="elektrik",
         label_de="Steckdose setzen (Unterputz, Bestand)", unit="Stk",
-        setup_hours=(0.3, 0.6), typical_size=(1, 6),
+        setup_hours=(0.2, 0.35), typical_size=(1, 6),
         market_band_at=(70, 180), market_band_de=(75, 190),
         band_basis="total", note_keys=["e_befund", "altbau_leitungen"],
         operations=[

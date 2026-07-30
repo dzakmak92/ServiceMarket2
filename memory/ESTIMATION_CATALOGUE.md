@@ -31,8 +31,21 @@ bill by tonne. Quoting by container size systematically underprices.
 
 ## Coverage
 
-80 job types across all 20 groups in `business_directory`, tagged with `group`
+94 job types across all 20 groups in `business_directory`, tagged with `group`
 and `segment` so a prospect and a template line up. 15,696 scenarios simulated.
+
+**Sanitär and Elektrik are deepened; the rest are wide only.** Both follow the
+same shape, which is the template for every remaining trade: emergency,
+recurring, project.
+
+**Elektrik.** 3 job types became 14 with 35 questions. Every job carries an
+E-Befund note, because electrical work in existing fabric touches a legally
+significant document and a quote silent about it leaves the pro carrying an
+unpriced risk. Two questions do most of the work: the state of the existing
+installation (klassische Nullung without a separate protective conductor is a
+`critical` note — continued operation after an intervention is not permissible)
+and, for a Wallbox, the distance from the distribution board, which is the
+single largest cost driver. The rate was corrected from 55-85 to 62-110 EUR/h.
 
 **Sanitär is the depth reference.** 20 job types with 43 survey questions,
 covering the three shapes the trade actually sells: emergency call-outs
@@ -132,7 +145,7 @@ Coverage is wide, not deep: 64 job types is one to six per group, which proves
 the structure and does not cover any trade completely. A Fliesenleger does far
 more than six things.
 
-Confidence is recorded per job because it is uneven. 8 high, 57 medium, 15 low.
+Confidence is recorded per job because it is uneven. 10 high, 65 medium, 19 low.
 The `low` entries — Pool, Wärmepumpe, Markise, Einbauschrank, Geländer, Sofa,
 Gutachten, Flachdach, Rollladen, Fensterbank, Küchendemontage, Schädlings-
 bekämpfung, KFZ-Service — are plausible trade knowledge that no published band
