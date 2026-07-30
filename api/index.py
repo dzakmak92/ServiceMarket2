@@ -68,6 +68,7 @@ def _build_app():
         from routes._pro import require_pro_id  # noqa: F401
         from routes.auth_routes import router as auth_router
         from routes.customer_routes import router as customer_router
+        from routes.estimate_routes import router as estimate_router
         from routes.invoice_routes import router as invoice_router
         from routes.job_routes import router as job_router
         from routes.profile_routes import router as profile_router
@@ -85,6 +86,7 @@ def _build_app():
 
         for r in (auth_router, customer_router, job_router, quote_router,
                   profile_router, recurring_router, template_router,
+                  estimate_router,
                   quote_invoice_router, invoice_router, tax_router,
                   pm_router, pm_timer_router, upload_router,
                   portal_router, pm_portal_router, upload_portal_router):
