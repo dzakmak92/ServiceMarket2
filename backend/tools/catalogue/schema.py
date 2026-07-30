@@ -123,14 +123,14 @@ ACCESS_UPLIFT = {
 # Hourly rates, grounded: AT Malerstunde 35-55; DE Handwerk 35-60, Großstadt
 # 50-70, Meister 70-90. Sanitär and Elektrik sit above Maler in both markets.
 HOURLY = {
-    "AT": {"maler": (38, 55), "fliesen": (42, 62), "sanitaer": (68, 112),
+    "AT": {"maler": (38, 55), "fliesen": (42, 62), "boden": (38, 58), "sanitaer": (68, 112),
            "elektrik": (62, 110), "trockenbau": (40, 60), "abriss": (35, 55),
            "maurer": (42, 65), "tischler": (45, 70), "garten": (35, 55),
            "fenster": (45, 70), "dach": (45, 70), "heizung": (68, 110),
            "umzug": (30, 48), "kueche": (45, 70), "montage": (35, 58),
            "reinigung": (25, 42), "polster": (40, 62), "solar": (55, 85),
            "metallbau": (48, 72), "geruest": (38, 58)},
-    "DE": {"maler": (35, 60), "fliesen": (40, 65), "sanitaer": (68, 115),
+    "DE": {"maler": (35, 60), "fliesen": (40, 65), "boden": (36, 60), "sanitaer": (68, 115),
            "elektrik": (62, 112), "trockenbau": (38, 62), "abriss": (35, 58),
            "maurer": (40, 68), "tischler": (45, 75), "garten": (35, 58),
            "fenster": (45, 72), "dach": (45, 75), "heizung": (68, 112),

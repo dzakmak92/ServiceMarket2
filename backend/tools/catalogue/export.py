@@ -23,6 +23,11 @@ JOBS = ALL_JOBS
 # anything is fabricated.
 SITE_VISIT = {
     "fliesen.entfernen_duennbett", "fliesen.entfernen_dickbett",   # bed type unknown
+    "fliesen.grossformat",                                         # Ebenheitstoleranz
+    "fliesen.terrasse", "fliesen.treppe",                          # Aufbau, Aufmaß
+    "boden.belag_entfernen",                                       # what is underneath
+    "boden.ausgleich",                                             # how far out of level
+    "boden.parkett_schleifen",                                     # residual wear layer
     "abriss.estrich", "abriss.nichttragende_wand",                 # what is underneath
     "maurer.durchbruch", "maurer.wand_mauern",                     # structural
     "sanitaer.rohrbruch",                                          # leak location
@@ -192,6 +197,16 @@ NOTES = {
   "lack_demontage": {"severity":"medium","de":"Beschläge, Griffe und Dichtungen werden demontiert und wieder montiert. Defekte Beschläge werden nicht ersetzt."},
   "musteranstrich": {"severity":"low","de":"Farbtöne und Strukturen wirken auf der Fläche anders als auf der Musterkarte. Ein Musteranstrich vor Ausführung wird empfohlen und ist gesondert zu beauftragen."},
   "holzschutz_intervall": {"severity":"low","de":"Holzschutz an bewitterten Bauteilen ist je nach Ausrichtung alle 3 bis 6 Jahre zu erneuern. Der Anstrich ist keine dauerhafte Versiegelung."},
+  # ── Boden & Fliesen ──────────────────────────────────────────────────
+  "restfeuchte_messung": {"severity":"high","de":"Vor Verlegung ist die Belegreife des Estrichs mittels CM-Messung nachzuweisen (Zementestrich max. 2,0 CM-%, mit Fußbodenheizung 1,8). Die Messung ist nicht enthalten; bei zu hoher Restfeuchte verschiebt sich der Termin."},
+  "fbh_aufheizprotokoll": {"severity":"high","de":"Bei Fußbodenheizung ist ein Aufheiz- bzw. Funktionsheizprotokoll erforderlich und vor Verlegebeginn vorzulegen. Erstellung ist nicht enthalten."},
+  "frostsicher_aussen": {"severity":"high","de":"Außenbeläge werden frostsicher und mit Gefälle ausgeführt. Bestehende Abdichtung und Untergrundaufbau werden als normgerecht angenommen."},
+  "grossformat_zweiter_mann": {"severity":"medium","de":"Großformate ab 60x120 werden zu zweit im Kombiverfahren mit Nivelliersystem verlegt. Der Mehraufwand gegenüber Standardformaten ist berücksichtigt."},
+  "belag_nicht_enthalten": {"severity":"medium","de":"Der Preis umfasst Verlegung und Verlegematerial (Kleber, Fuge, Dämmung). Fliesen bzw. Bodenbelag sind nicht enthalten und werden gesondert verrechnet."},
+  "tuerblatt_kuerzen": {"severity":"medium","de":"Durch die neue Aufbauhöhe können Türblätter zu kürzen sein. Tischlerarbeiten sind nicht enthalten."},
+  "schleifen_restdicke": {"severity":"medium","de":"Abschleifen setzt eine ausreichende Nutzschicht voraus. Bei zu geringer Restdicke oder durchgeschliffenen Stellen ist eine Sanierung nicht möglich; die Prüfung erfolgt vor Ort."},
+  "fliesen_ersatz_farbton": {"severity":"medium","de":"Ohne Ersatzfliesen aus derselben Charge ist ein exakt gleicher Farbton und Kaliber nicht erreichbar. Ein sichtbarer Unterschied ist kein Mangel."},
+  "fugenfarbe_abweichung": {"severity":"low","de":"Neue Fugenmasse trocknet farblich anders auf als die gealterte Bestandsfuge. Teilerneuerungen bleiben sichtbar."},
 }
 
 out = {"version": 1, "countries": ["AT","DE"],

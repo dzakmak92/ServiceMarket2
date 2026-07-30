@@ -1,4 +1,4 @@
-"""Maler in depth — 18 job types with guided forms.
+"""Maler in depth — 19 job types with guided forms.
 
 Bands from AT/DE price radars: Malerstunde AT 38-55, DE 35-60. Innenanstrich
 7-15 EUR/m2 all-in, Tapezieren 8-16, Fassade 18-44 *inklusive Gerüst*,

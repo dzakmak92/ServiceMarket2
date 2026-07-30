@@ -66,6 +66,10 @@
         42,
         62
       ],
+      "boden": [
+        38,
+        58
+      ],
       "sanitaer": [
         68,
         112
@@ -147,6 +151,10 @@
       "fliesen": [
         40,
         65
+      ],
+      "boden": [
+        36,
+        60
       ],
       "sanitaer": [
         68,
@@ -289,6 +297,9 @@
   "site_visit_required": [
     "abriss.estrich",
     "abriss.nichttragende_wand",
+    "boden.ausgleich",
+    "boden.belag_entfernen",
+    "boden.parkett_schleifen",
     "dach.flachdach",
     "dach.rinne",
     "dach.ziegel_umdecken",
@@ -299,6 +310,9 @@
     "fenster.tausch",
     "fliesen.entfernen_dickbett",
     "fliesen.entfernen_duennbett",
+    "fliesen.grossformat",
+    "fliesen.terrasse",
+    "fliesen.treppe",
     "garten.pflaster",
     "garten.pool",
     "garten.zaun",
@@ -852,6 +866,42 @@
     "holzschutz_intervall": {
       "severity": "low",
       "de": "Holzschutz an bewitterten Bauteilen ist je nach Ausrichtung alle 3 bis 6 Jahre zu erneuern. Der Anstrich ist keine dauerhafte Versiegelung."
+    },
+    "restfeuchte_messung": {
+      "severity": "high",
+      "de": "Vor Verlegung ist die Belegreife des Estrichs mittels CM-Messung nachzuweisen (Zementestrich max. 2,0 CM-%, mit Fußbodenheizung 1,8). Die Messung ist nicht enthalten; bei zu hoher Restfeuchte verschiebt sich der Termin."
+    },
+    "fbh_aufheizprotokoll": {
+      "severity": "high",
+      "de": "Bei Fußbodenheizung ist ein Aufheiz- bzw. Funktionsheizprotokoll erforderlich und vor Verlegebeginn vorzulegen. Erstellung ist nicht enthalten."
+    },
+    "frostsicher_aussen": {
+      "severity": "high",
+      "de": "Außenbeläge werden frostsicher und mit Gefälle ausgeführt. Bestehende Abdichtung und Untergrundaufbau werden als normgerecht angenommen."
+    },
+    "grossformat_zweiter_mann": {
+      "severity": "medium",
+      "de": "Großformate ab 60x120 werden zu zweit im Kombiverfahren mit Nivelliersystem verlegt. Der Mehraufwand gegenüber Standardformaten ist berücksichtigt."
+    },
+    "belag_nicht_enthalten": {
+      "severity": "medium",
+      "de": "Der Preis umfasst Verlegung und Verlegematerial (Kleber, Fuge, Dämmung). Fliesen bzw. Bodenbelag sind nicht enthalten und werden gesondert verrechnet."
+    },
+    "tuerblatt_kuerzen": {
+      "severity": "medium",
+      "de": "Durch die neue Aufbauhöhe können Türblätter zu kürzen sein. Tischlerarbeiten sind nicht enthalten."
+    },
+    "schleifen_restdicke": {
+      "severity": "medium",
+      "de": "Abschleifen setzt eine ausreichende Nutzschicht voraus. Bei zu geringer Restdicke oder durchgeschliffenen Stellen ist eine Sanierung nicht möglich; die Prüfung erfolgt vor Ort."
+    },
+    "fliesen_ersatz_farbton": {
+      "severity": "medium",
+      "de": "Ohne Ersatzfliesen aus derselben Charge ist ein exakt gleicher Farbton und Kaliber nicht erreichbar. Ein sichtbarer Unterschied ist kein Mangel."
+    },
+    "fugenfarbe_abweichung": {
+      "severity": "low",
+      "de": "Neue Fugenmasse trocknet farblich anders auf als die gealterte Bestandsfuge. Teilerneuerungen bleiben sichtbar."
     }
   },
   "jobs": [
@@ -5627,15 +5677,93 @@
       ],
       "band_basis": "per_unit",
       "sources": [
-        "my-hammer.at/bauschutt-entsorgen",
-        "baucheck.io"
+        "fixbuddy.at/was-kostet-fliesen-verlegen",
+        "fliesenlegung.de",
+        "daibau.at/baukostenrechner/fliesenlegerarbeiten"
       ],
       "confidence": "medium",
       "group": "Boden & Fliesen",
       "segment": "Fliesenleger",
       "messy": true,
       "emergency_capable": false,
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "baujahr",
+          "label_de": "Baujahr",
+          "type": "number",
+          "unit": "Jahr",
+          "options": [],
+          "affects": "note",
+          "default": null,
+          "note_if": {},
+          "help_de": "Vor 1990 kann der Kleber Asbest enthalten."
+        },
+        {
+          "key": "fussbodenheizung",
+          "label_de": "Fußbodenheizung vorhanden",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": false,
+          "note_if": {
+            "True": "fbh_aufheizprotokoll"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
       "note_keys": [
         "asbest_vor_1990",
         "staub"
@@ -5697,8 +5825,8 @@
           "unit": "m2",
           "kind": "disposal",
           "hours_per_unit": [
-            0.0,
-            0.0
+            0,
+            0
           ],
           "material_per_unit": [
             0.0,
@@ -5739,15 +5867,119 @@
       ],
       "band_basis": "per_unit",
       "sources": [
-        "baucheck.io",
-        "fliesenlegung.de"
+        "fixbuddy.at/was-kostet-fliesen-verlegen",
+        "fliesenlegung.de",
+        "daibau.at/baukostenrechner/fliesenlegerarbeiten"
       ],
       "confidence": "medium",
       "group": "Boden & Fliesen",
       "segment": "Fliesenleger",
       "messy": true,
       "emergency_capable": false,
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "bett",
+          "label_de": "Verlegeart des Bestands",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "duennbett",
+              "Dünnbett, Kleber sichtbar"
+            ],
+            [
+              "dickbett",
+              "Dickbett, Mörtelbett 15-40 mm"
+            ],
+            [
+              "unbekannt",
+              "Unbekannt"
+            ]
+          ],
+          "affects": "variant",
+          "default": "unbekannt",
+          "note_if": {
+            "unbekannt": "dickbett_mehraufwand"
+          },
+          "help_de": "An einer Fliesenkante ablesbar — die wertvollste Frage im Formular"
+        },
+        {
+          "key": "baujahr",
+          "label_de": "Baujahr",
+          "type": "number",
+          "unit": "Jahr",
+          "options": [],
+          "affects": "note",
+          "default": null,
+          "note_if": {},
+          "help_de": "Vor 1990 kann der Kleber Asbest enthalten."
+        },
+        {
+          "key": "fussbodenheizung",
+          "label_de": "Fußbodenheizung vorhanden",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": false,
+          "note_if": {
+            "True": "fbh_aufheizprotokoll"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
       "note_keys": [
         "asbest_vor_1990",
         "staub",
@@ -5810,8 +6042,8 @@
           "unit": "m2",
           "kind": "disposal",
           "hours_per_unit": [
-            0.0,
-            0.0
+            0,
+            0
           ],
           "material_per_unit": [
             0.0,
@@ -5852,17 +6084,208 @@
       ],
       "band_basis": "per_unit",
       "sources": [
-        "fixbuddy.at/was-kostet-fliesen-verlegen"
+        "fixbuddy.at/was-kostet-fliesen-verlegen",
+        "fliesenlegung.de",
+        "daibau.at/baukostenrechner/fliesenlegerarbeiten"
       ],
-      "confidence": "medium",
+      "confidence": "high",
       "group": "Boden & Fliesen",
       "segment": "Fliesenleger",
       "messy": true,
       "emergency_capable": false,
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "untergrund",
+          "label_de": "Untergrund",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "estrich_neu",
+              "Estrich, neu"
+            ],
+            [
+              "estrich_alt",
+              "Estrich, alt aber eben"
+            ],
+            [
+              "fliesen_bestand",
+              "Bestehende Fliesen"
+            ],
+            [
+              "holzdielen",
+              "Holzdielen"
+            ],
+            [
+              "unbekannt",
+              "Unbekannt"
+            ]
+          ],
+          "affects": "variant",
+          "default": "estrich_alt",
+          "note_if": {
+            "estrich_neu": "restfeuchte_messung",
+            "fliesen_bestand": "aufbauhoehe",
+            "holzdielen": "untergrund_eben",
+            "unbekannt": "untergrund_eben"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "verlegeart",
+          "label_de": "Verlegeart",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "gerade",
+              "Gerade / im Verband"
+            ],
+            [
+              "diagonal",
+              "Diagonal"
+            ],
+            [
+              "muster",
+              "Muster, Fischgrät oder Bordüre"
+            ]
+          ],
+          "affects": "variant",
+          "default": "gerade",
+          "note_if": {
+            "diagonal": "verschnitt_muster",
+            "muster": "verschnitt_muster"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "raum",
+          "label_de": "Raum",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "wohnraum",
+              "Wohnraum"
+            ],
+            [
+              "kueche",
+              "Küche"
+            ],
+            [
+              "bad",
+              "Bad oder Dusche"
+            ],
+            [
+              "aussen",
+              "Außenbereich"
+            ]
+          ],
+          "affects": "variant",
+          "default": "wohnraum",
+          "note_if": {
+            "bad": "abdichtung_nassbereich",
+            "aussen": "frostsicher_aussen"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "fussbodenheizung",
+          "label_de": "Fußbodenheizung vorhanden",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": false,
+          "note_if": {
+            "True": "fbh_aufheizprotokoll"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "tueren_kuerzen",
+          "label_de": "Türblätter müssen gekürzt werden",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": false,
+          "note_if": {
+            "True": "tuerblatt_kuerzen"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "belag_bauseits",
+          "label_de": "Belag wird beigestellt",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": true,
+          "note_if": {
+            "True": "belag_nicht_enthalten",
+            "False": "belag_nicht_enthalten"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
       "note_keys": [
         "untergrund_eben",
-        "verschnitt_muster"
+        "verschnitt_muster",
+        "belag_nicht_enthalten"
       ],
       "labour_variance": 2.53,
       "site_visit_required": false,
@@ -5944,8 +6367,8 @@
           "unit": "m2",
           "kind": "material",
           "hours_per_unit": [
-            0.0,
-            0.0
+            0,
+            0
           ],
           "material_per_unit": [
             4.5,
@@ -5986,16 +6409,181 @@
       ],
       "band_basis": "per_unit",
       "sources": [
-        "fixbuddy.at"
+        "fixbuddy.at/was-kostet-fliesen-verlegen",
+        "fliesenlegung.de",
+        "daibau.at/baukostenrechner/fliesenlegerarbeiten"
       ],
-      "confidence": "medium",
+      "confidence": "high",
       "group": "Boden & Fliesen",
       "segment": "Fliesenleger",
       "messy": true,
       "emergency_capable": false,
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "untergrund",
+          "label_de": "Untergrund",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "estrich_neu",
+              "Estrich, neu"
+            ],
+            [
+              "estrich_alt",
+              "Estrich, alt aber eben"
+            ],
+            [
+              "fliesen_bestand",
+              "Bestehende Fliesen"
+            ],
+            [
+              "holzdielen",
+              "Holzdielen"
+            ],
+            [
+              "unbekannt",
+              "Unbekannt"
+            ]
+          ],
+          "affects": "variant",
+          "default": "estrich_alt",
+          "note_if": {
+            "estrich_neu": "restfeuchte_messung",
+            "fliesen_bestand": "aufbauhoehe",
+            "holzdielen": "untergrund_eben",
+            "unbekannt": "untergrund_eben"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "verlegeart",
+          "label_de": "Verlegeart",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "gerade",
+              "Gerade / im Verband"
+            ],
+            [
+              "diagonal",
+              "Diagonal"
+            ],
+            [
+              "muster",
+              "Muster, Fischgrät oder Bordüre"
+            ]
+          ],
+          "affects": "variant",
+          "default": "gerade",
+          "note_if": {
+            "diagonal": "verschnitt_muster",
+            "muster": "verschnitt_muster"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "raum",
+          "label_de": "Raum",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "wohnraum",
+              "Wohnraum"
+            ],
+            [
+              "kueche",
+              "Küche"
+            ],
+            [
+              "bad",
+              "Bad oder Dusche"
+            ],
+            [
+              "aussen",
+              "Außenbereich"
+            ]
+          ],
+          "affects": "variant",
+          "default": "wohnraum",
+          "note_if": {
+            "bad": "abdichtung_nassbereich",
+            "aussen": "frostsicher_aussen"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "belag_bauseits",
+          "label_de": "Belag wird beigestellt",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": true,
+          "note_if": {
+            "True": "belag_nicht_enthalten",
+            "False": "belag_nicht_enthalten"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
       "note_keys": [
-        "abdichtung_nassbereich"
+        "abdichtung_nassbereich",
+        "belag_nicht_enthalten"
       ],
       "labour_variance": 2.51,
       "site_visit_required": false,
@@ -6077,8 +6665,8 @@
           "unit": "m2",
           "kind": "material",
           "hours_per_unit": [
-            0.0,
-            0.0
+            0,
+            0
           ],
           "material_per_unit": [
             4.5,
@@ -6097,8 +6685,2671 @@
       ]
     },
     {
-      "key": "boden.laminat",
+      "key": "fliesen.grossformat",
       "trade": "fliesen",
+      "label_de": "Großformatfliesen verlegen (ab 60x120)",
+      "unit": "m2",
+      "setup_hours": [
+        1.5,
+        2.5
+      ],
+      "typical_size": [
+        10,
+        45
+      ],
+      "market_band_at": [
+        55,
+        100
+      ],
+      "market_band_de": [
+        55,
+        110
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "fixbuddy.at/was-kostet-fliesen-verlegen",
+        "fliesenlegung.de",
+        "daibau.at/baukostenrechner/fliesenlegerarbeiten"
+      ],
+      "confidence": "medium",
+      "group": "Boden & Fliesen",
+      "segment": "Fliesenleger",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "format",
+          "label_de": "Format",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "60x120",
+              "60 x 120"
+            ],
+            [
+              "100x100",
+              "100 x 100"
+            ],
+            [
+              "120x240",
+              "120 x 240 oder größer"
+            ]
+          ],
+          "affects": "variant",
+          "default": "60x120",
+          "note_if": {
+            "120x240": "grossformat_zweiter_mann"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "untergrund",
+          "label_de": "Untergrund",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "estrich_neu",
+              "Estrich, neu"
+            ],
+            [
+              "estrich_alt",
+              "Estrich, alt aber eben"
+            ],
+            [
+              "fliesen_bestand",
+              "Bestehende Fliesen"
+            ],
+            [
+              "holzdielen",
+              "Holzdielen"
+            ],
+            [
+              "unbekannt",
+              "Unbekannt"
+            ]
+          ],
+          "affects": "variant",
+          "default": "estrich_alt",
+          "note_if": {
+            "estrich_neu": "restfeuchte_messung",
+            "fliesen_bestand": "aufbauhoehe",
+            "holzdielen": "untergrund_eben",
+            "unbekannt": "untergrund_eben"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "raum",
+          "label_de": "Raum",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "wohnraum",
+              "Wohnraum"
+            ],
+            [
+              "kueche",
+              "Küche"
+            ],
+            [
+              "bad",
+              "Bad oder Dusche"
+            ],
+            [
+              "aussen",
+              "Außenbereich"
+            ]
+          ],
+          "affects": "variant",
+          "default": "wohnraum",
+          "note_if": {
+            "bad": "abdichtung_nassbereich",
+            "aussen": "frostsicher_aussen"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "fussbodenheizung",
+          "label_de": "Fußbodenheizung vorhanden",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": false,
+          "note_if": {
+            "True": "fbh_aufheizprotokoll"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "belag_bauseits",
+          "label_de": "Belag wird beigestellt",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": true,
+          "note_if": {
+            "True": "belag_nicht_enthalten",
+            "False": "belag_nicht_enthalten"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "untergrund_eben",
+        "grossformat_zweiter_mann",
+        "belag_nicht_enthalten"
+      ],
+      "labour_variance": 2.57,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.15,
+      "operations": [
+        {
+          "key": "nivellieren",
+          "label_de": "Untergrund prüfen und nivellieren",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.1,
+            0.18
+          ],
+          "material_per_unit": [
+            2.0,
+            4.5
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "grundierung",
+          "label_de": "Grundierung",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.03,
+            0.05
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verlegen",
+          "label_de": "Verlegen im Kombiverfahren mit Nivelliersystem",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.55,
+            0.9
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verfugen",
+          "label_de": "Verfugen und Silikon",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.1,
+            0.18
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "kleber",
+          "label_de": "Fließbettkleber, Fuge, Nivellierkeile",
+          "unit": "m2",
+          "kind": "material",
+          "hours_per_unit": [
+            0,
+            0
+          ],
+          "material_per_unit": [
+            7.0,
+            12.0
+          ],
+          "waste_factor": 0.08,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "fliesen.mosaik",
+      "trade": "fliesen",
+      "label_de": "Mosaik verlegen",
+      "unit": "m2",
+      "setup_hours": [
+        1.0,
+        1.8
+      ],
+      "typical_size": [
+        2,
+        12
+      ],
+      "market_band_at": [
+        70,
+        140
+      ],
+      "market_band_de": [
+        70,
+        150
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "fixbuddy.at/was-kostet-fliesen-verlegen",
+        "fliesenlegung.de",
+        "daibau.at/baukostenrechner/fliesenlegerarbeiten"
+      ],
+      "confidence": "low",
+      "group": "Boden & Fliesen",
+      "segment": "Fliesenleger",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "untergrund",
+          "label_de": "Untergrund",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "estrich_neu",
+              "Estrich, neu"
+            ],
+            [
+              "estrich_alt",
+              "Estrich, alt aber eben"
+            ],
+            [
+              "fliesen_bestand",
+              "Bestehende Fliesen"
+            ],
+            [
+              "holzdielen",
+              "Holzdielen"
+            ],
+            [
+              "unbekannt",
+              "Unbekannt"
+            ]
+          ],
+          "affects": "variant",
+          "default": "estrich_alt",
+          "note_if": {
+            "estrich_neu": "restfeuchte_messung",
+            "fliesen_bestand": "aufbauhoehe",
+            "holzdielen": "untergrund_eben",
+            "unbekannt": "untergrund_eben"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "raum",
+          "label_de": "Raum",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "wohnraum",
+              "Wohnraum"
+            ],
+            [
+              "kueche",
+              "Küche"
+            ],
+            [
+              "bad",
+              "Bad oder Dusche"
+            ],
+            [
+              "aussen",
+              "Außenbereich"
+            ]
+          ],
+          "affects": "variant",
+          "default": "wohnraum",
+          "note_if": {
+            "bad": "abdichtung_nassbereich",
+            "aussen": "frostsicher_aussen"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "belag_bauseits",
+          "label_de": "Belag wird beigestellt",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": true,
+          "note_if": {
+            "True": "belag_nicht_enthalten",
+            "False": "belag_nicht_enthalten"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "verschnitt_muster",
+        "belag_nicht_enthalten"
+      ],
+      "labour_variance": 2.83,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.41,
+      "operations": [
+        {
+          "key": "grundierung",
+          "label_de": "Grundierung",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.04,
+            0.07
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verlegen",
+          "label_de": "Mosaik ansetzen und verlegen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.9,
+            1.6
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verfugen",
+          "label_de": "Verfugen und Silikon",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.22,
+            0.4
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "kleber",
+          "label_de": "Kleber und Fugenmasse",
+          "unit": "m2",
+          "kind": "material",
+          "hours_per_unit": [
+            0,
+            0
+          ],
+          "material_per_unit": [
+            6.0,
+            12.0
+          ],
+          "waste_factor": 0.08,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "fliesen.treppe",
+      "trade": "fliesen",
+      "label_de": "Treppe fliesen",
+      "unit": "Stufe",
+      "setup_hours": [
+        1.0,
+        1.8
+      ],
+      "typical_size": [
+        3,
+        16
+      ],
+      "market_band_at": [
+        70,
+        160
+      ],
+      "market_band_de": [
+        70,
+        170
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "fixbuddy.at/was-kostet-fliesen-verlegen",
+        "fliesenlegung.de",
+        "daibau.at/baukostenrechner/fliesenlegerarbeiten"
+      ],
+      "confidence": "low",
+      "group": "Boden & Fliesen",
+      "segment": "Fliesenleger",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "stufen",
+          "label_de": "Anzahl Stufen",
+          "type": "number",
+          "unit": "Stufe",
+          "options": [],
+          "affects": "qty",
+          "default": 14,
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "setzstufe",
+          "label_de": "Mit Setzstufe",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": true,
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "untergrund",
+          "label_de": "Untergrund",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "estrich_neu",
+              "Estrich, neu"
+            ],
+            [
+              "estrich_alt",
+              "Estrich, alt aber eben"
+            ],
+            [
+              "fliesen_bestand",
+              "Bestehende Fliesen"
+            ],
+            [
+              "holzdielen",
+              "Holzdielen"
+            ],
+            [
+              "unbekannt",
+              "Unbekannt"
+            ]
+          ],
+          "affects": "variant",
+          "default": "estrich_alt",
+          "note_if": {
+            "estrich_neu": "restfeuchte_messung",
+            "fliesen_bestand": "aufbauhoehe",
+            "holzdielen": "untergrund_eben",
+            "unbekannt": "untergrund_eben"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "belag_bauseits",
+          "label_de": "Belag wird beigestellt",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": true,
+          "note_if": {
+            "True": "belag_nicht_enthalten",
+            "False": "belag_nicht_enthalten"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "aufmass_vor_fertigung",
+        "belag_nicht_enthalten"
+      ],
+      "labour_variance": 2.78,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.29,
+      "operations": [
+        {
+          "key": "zuschnitt",
+          "label_de": "Zuschnitt Tritt- und Setzstufe",
+          "unit": "Stufe",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.35,
+            0.6
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "setzen",
+          "label_de": "Stufen setzen",
+          "unit": "Stufe",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.55,
+            0.95
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verfugen",
+          "label_de": "Verfugen und Silikon",
+          "unit": "Stufe",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.15,
+            0.28
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "mat",
+          "label_de": "Kleber, Fuge, Kantenprofil",
+          "unit": "Stufe",
+          "kind": "material",
+          "hours_per_unit": [
+            0,
+            0
+          ],
+          "material_per_unit": [
+            8.0,
+            18.0
+          ],
+          "waste_factor": 0.08,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "fliesen.terrasse",
+      "trade": "fliesen",
+      "label_de": "Terrasse fliesen (frostsicher)",
+      "unit": "m2",
+      "setup_hours": [
+        2.0,
+        3.5
+      ],
+      "typical_size": [
+        10,
+        35
+      ],
+      "market_band_at": [
+        60,
+        120
+      ],
+      "market_band_de": [
+        60,
+        130
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "fixbuddy.at/was-kostet-fliesen-verlegen",
+        "fliesenlegung.de",
+        "daibau.at/baukostenrechner/fliesenlegerarbeiten"
+      ],
+      "confidence": "low",
+      "group": "Boden & Fliesen",
+      "segment": "Fliesenleger",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "aufbau",
+          "label_de": "Aufbau",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "drainmoertel",
+              "Drainmörtel, gebunden"
+            ],
+            [
+              "stelzlager",
+              "Stelzlager, lose"
+            ],
+            [
+              "splitt",
+              "Splittbett"
+            ]
+          ],
+          "affects": "variant",
+          "default": "drainmoertel",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "gefaelle_vorhanden",
+          "label_de": "Gefälle vorhanden",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": true,
+          "note_if": {
+            "False": "gefaelle"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "untergrund",
+          "label_de": "Untergrund",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "estrich_neu",
+              "Estrich, neu"
+            ],
+            [
+              "estrich_alt",
+              "Estrich, alt aber eben"
+            ],
+            [
+              "fliesen_bestand",
+              "Bestehende Fliesen"
+            ],
+            [
+              "holzdielen",
+              "Holzdielen"
+            ],
+            [
+              "unbekannt",
+              "Unbekannt"
+            ]
+          ],
+          "affects": "variant",
+          "default": "estrich_alt",
+          "note_if": {
+            "estrich_neu": "restfeuchte_messung",
+            "fliesen_bestand": "aufbauhoehe",
+            "holzdielen": "untergrund_eben",
+            "unbekannt": "untergrund_eben"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "belag_bauseits",
+          "label_de": "Belag wird beigestellt",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": true,
+          "note_if": {
+            "True": "belag_nicht_enthalten",
+            "False": "belag_nicht_enthalten"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "frostsicher_aussen",
+        "gefaelle",
+        "witterung",
+        "belag_nicht_enthalten"
+      ],
+      "labour_variance": 2.64,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.16,
+      "operations": [
+        {
+          "key": "pruefen",
+          "label_de": "Untergrund und Gefälle prüfen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.08,
+            0.15
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "abdichten",
+          "label_de": "Abdichtung und Drainage",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.15,
+            0.28
+          ],
+          "material_per_unit": [
+            5.0,
+            10.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verlegen",
+          "label_de": "Frostsicher verlegen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.45,
+            0.75
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verfugen",
+          "label_de": "Verfugen, Randfugen elastisch",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.12,
+            0.22
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "mat",
+          "label_de": "Drainmörtel bzw. Lager, Fuge",
+          "unit": "m2",
+          "kind": "material",
+          "hours_per_unit": [
+            0,
+            0
+          ],
+          "material_per_unit": [
+            9.0,
+            18.0
+          ],
+          "waste_factor": 0.08,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "fliesen.abdichtung",
+      "trade": "fliesen",
+      "label_de": "Verbundabdichtung Nassbereich",
+      "unit": "m2",
+      "setup_hours": [
+        0.8,
+        1.5
+      ],
+      "typical_size": [
+        4,
+        18
+      ],
+      "market_band_at": [
+        22,
+        45
+      ],
+      "market_band_de": [
+        22,
+        48
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "fixbuddy.at/was-kostet-fliesen-verlegen",
+        "fliesenlegung.de",
+        "daibau.at/baukostenrechner/fliesenlegerarbeiten"
+      ],
+      "confidence": "medium",
+      "group": "Boden & Fliesen",
+      "segment": "Fliesenleger",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "beanspruchung",
+          "label_de": "Beanspruchungsklasse",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "w1",
+              "W1-I, Wand mit Spritzwasser"
+            ],
+            [
+              "w2",
+              "W2-I, bodengleiche Dusche"
+            ],
+            [
+              "w3",
+              "W3-I, öffentlich oder Dampfbad"
+            ]
+          ],
+          "affects": "variant",
+          "default": "w2",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "untergrund",
+          "label_de": "Untergrund",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "estrich_neu",
+              "Estrich, neu"
+            ],
+            [
+              "estrich_alt",
+              "Estrich, alt aber eben"
+            ],
+            [
+              "fliesen_bestand",
+              "Bestehende Fliesen"
+            ],
+            [
+              "holzdielen",
+              "Holzdielen"
+            ],
+            [
+              "unbekannt",
+              "Unbekannt"
+            ]
+          ],
+          "affects": "variant",
+          "default": "estrich_alt",
+          "note_if": {
+            "estrich_neu": "restfeuchte_messung",
+            "fliesen_bestand": "aufbauhoehe",
+            "holzdielen": "untergrund_eben",
+            "unbekannt": "untergrund_eben"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "abdichtung_nassbereich",
+        "fliesen_folgt"
+      ],
+      "labour_variance": 2.72,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.54,
+      "operations": [
+        {
+          "key": "vorbereiten",
+          "label_de": "Untergrund vorbereiten und grundieren",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.05,
+            0.09
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "dichtband",
+          "label_de": "Dichtbänder, Ecken und Manschetten",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.08,
+            0.15
+          ],
+          "material_per_unit": [
+            2.5,
+            5.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "abdichten",
+          "label_de": "Abdichtung, zwei Lagen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.15,
+            0.28
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "mat",
+          "label_de": "Abdichtungsmasse und Grundierung",
+          "unit": "m2",
+          "kind": "material",
+          "hours_per_unit": [
+            0,
+            0
+          ],
+          "material_per_unit": [
+            4.0,
+            8.0
+          ],
+          "waste_factor": 0.08,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "fliesen.fugen_sanieren",
+      "trade": "fliesen",
+      "label_de": "Fugen erneuern",
+      "unit": "m2",
+      "setup_hours": [
+        1.0,
+        1.8
+      ],
+      "typical_size": [
+        4,
+        20
+      ],
+      "market_band_at": [
+        18,
+        40
+      ],
+      "market_band_de": [
+        18,
+        45
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "fixbuddy.at/was-kostet-fliesen-verlegen",
+        "fliesenlegung.de",
+        "daibau.at/baukostenrechner/fliesenlegerarbeiten"
+      ],
+      "confidence": "low",
+      "group": "Boden & Fliesen",
+      "segment": "Fliesenleger",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "umfang",
+          "label_de": "Umfang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "nur_silikon",
+              "Nur Silikonfugen"
+            ],
+            [
+              "teilweise",
+              "Schadhafte Fugen"
+            ],
+            [
+              "komplett",
+              "Alle Fugen ausfräsen"
+            ]
+          ],
+          "affects": "variant",
+          "default": "komplett",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "raum",
+          "label_de": "Raum",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "wohnraum",
+              "Wohnraum"
+            ],
+            [
+              "kueche",
+              "Küche"
+            ],
+            [
+              "bad",
+              "Bad oder Dusche"
+            ],
+            [
+              "aussen",
+              "Außenbereich"
+            ]
+          ],
+          "affects": "variant",
+          "default": "wohnraum",
+          "note_if": {
+            "bad": "abdichtung_nassbereich",
+            "aussen": "frostsicher_aussen"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "staub",
+        "fugenfarbe_abweichung"
+      ],
+      "labour_variance": 2.97,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.67,
+      "operations": [
+        {
+          "key": "ausfraesen",
+          "label_de": "Fugen ausfräsen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.15,
+            0.3
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            1.5,
+            3.5
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "reinigen",
+          "label_de": "Reinigen und entstauben",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.06,
+            0.12
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verfugen",
+          "label_de": "Neu verfugen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.1,
+            0.18
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "mat",
+          "label_de": "Fugenmasse und Silikon",
+          "unit": "m2",
+          "kind": "material",
+          "hours_per_unit": [
+            0,
+            0
+          ],
+          "material_per_unit": [
+            2.0,
+            4.0
+          ],
+          "waste_factor": 0.08,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "fliesen.silikonfugen",
+      "trade": "fliesen",
+      "label_de": "Silikonfugen erneuern",
+      "unit": "lfm",
+      "setup_hours": [
+        0.4,
+        0.7
+      ],
+      "typical_size": [
+        4,
+        20
+      ],
+      "market_band_at": [
+        8,
+        18
+      ],
+      "market_band_de": [
+        8,
+        20
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "fixbuddy.at/was-kostet-fliesen-verlegen",
+        "fliesenlegung.de",
+        "daibau.at/baukostenrechner/fliesenlegerarbeiten"
+      ],
+      "confidence": "medium",
+      "group": "Boden & Fliesen",
+      "segment": "Fliesenleger",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "laenge",
+          "label_de": "Fugenlänge",
+          "type": "number",
+          "unit": "lfm",
+          "options": [],
+          "affects": "qty",
+          "default": 8,
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "schimmel",
+          "label_de": "Schimmel in der Fuge",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": false,
+          "note_if": {
+            "True": "schimmel_ursache_extra"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "raum",
+          "label_de": "Raum",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "wohnraum",
+              "Wohnraum"
+            ],
+            [
+              "kueche",
+              "Küche"
+            ],
+            [
+              "bad",
+              "Bad oder Dusche"
+            ],
+            [
+              "aussen",
+              "Außenbereich"
+            ]
+          ],
+          "affects": "variant",
+          "default": "wohnraum",
+          "note_if": {
+            "bad": "abdichtung_nassbereich",
+            "aussen": "frostsicher_aussen"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "silikon_wartungsfuge"
+      ],
+      "labour_variance": 3.05,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.42,
+      "operations": [
+        {
+          "key": "entfernen",
+          "label_de": "Altfuge entfernen",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.06,
+            0.12
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "reinigen",
+          "label_de": "Reinigen und entfetten",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.03,
+            0.06
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "ziehen",
+          "label_de": "Neue Silikonfuge ziehen",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.05,
+            0.1
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "mat",
+          "label_de": "Sanitärsilikon und Vorlegeband",
+          "unit": "lfm",
+          "kind": "material",
+          "hours_per_unit": [
+            0,
+            0
+          ],
+          "material_per_unit": [
+            0.8,
+            1.6
+          ],
+          "waste_factor": 0.1,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "fliesen.einzelne_ersetzen",
+      "trade": "fliesen",
+      "label_de": "Einzelne Fliesen ersetzen",
+      "unit": "Stk",
+      "setup_hours": [
+        0.4,
+        0.7
+      ],
+      "typical_size": [
+        1,
+        4
+      ],
+      "market_band_at": [
+        60,
+        180
+      ],
+      "market_band_de": [
+        60,
+        190
+      ],
+      "band_basis": "total",
+      "sources": [
+        "fixbuddy.at/was-kostet-fliesen-verlegen",
+        "fliesenlegung.de",
+        "daibau.at/baukostenrechner/fliesenlegerarbeiten"
+      ],
+      "confidence": "low",
+      "group": "Boden & Fliesen",
+      "segment": "Fliesenleger",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "anzahl",
+          "label_de": "Anzahl Fliesen",
+          "type": "number",
+          "unit": "Stk",
+          "options": [],
+          "affects": "qty",
+          "default": 1,
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "ersatz_vorhanden",
+          "label_de": "Ersatzfliesen vorhanden",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": false,
+          "note_if": {
+            "False": "fliesen_ersatz_farbton"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "baujahr",
+          "label_de": "Baujahr",
+          "type": "number",
+          "unit": "Jahr",
+          "options": [],
+          "affects": "note",
+          "default": null,
+          "note_if": {},
+          "help_de": "Vor 1990 kann der Kleber Asbest enthalten."
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "fliesen_ersatz_farbton"
+      ],
+      "labour_variance": 3.16,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.3,
+      "operations": [
+        {
+          "key": "entfernen",
+          "label_de": "Fliese und Kleberbett entfernen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.25,
+            0.5
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            3,
+            6
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "untergrund",
+          "label_de": "Untergrund vorbereiten",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.15,
+            0.3
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "setzen",
+          "label_de": "Neue Fliese setzen und verfugen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.25,
+            0.5
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "mat",
+          "label_de": "Fliese, Kleber, Fuge",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0,
+            0
+          ],
+          "material_per_unit": [
+            8.0,
+            25.0
+          ],
+          "waste_factor": 0.1,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "fliesen.sockelleisten",
+      "trade": "fliesen",
+      "label_de": "Fliesensockel setzen",
+      "unit": "lfm",
+      "setup_hours": [
+        0.6,
+        1.2
+      ],
+      "typical_size": [
+        8,
+        40
+      ],
+      "market_band_at": [
+        9,
+        20
+      ],
+      "market_band_de": [
+        9,
+        22
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "fixbuddy.at/was-kostet-fliesen-verlegen",
+        "fliesenlegung.de",
+        "daibau.at/baukostenrechner/fliesenlegerarbeiten"
+      ],
+      "confidence": "low",
+      "group": "Boden & Fliesen",
+      "segment": "Fliesenleger",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "laenge",
+          "label_de": "Länge",
+          "type": "number",
+          "unit": "lfm",
+          "options": [],
+          "affects": "qty",
+          "default": 20,
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "belag_bauseits",
+          "label_de": "Belag wird beigestellt",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": true,
+          "note_if": {
+            "True": "belag_nicht_enthalten",
+            "False": "belag_nicht_enthalten"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "belag_nicht_enthalten"
+      ],
+      "labour_variance": 2.96,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.63,
+      "operations": [
+        {
+          "key": "zuschnitt",
+          "label_de": "Zuschnitt und Ansetzen",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.08,
+            0.15
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verfugen",
+          "label_de": "Verfugen und Silikon",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.04,
+            0.08
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "mat",
+          "label_de": "Kleber, Fuge, Silikon",
+          "unit": "lfm",
+          "kind": "material",
+          "hours_per_unit": [
+            0,
+            0
+          ],
+          "material_per_unit": [
+            1.2,
+            2.5
+          ],
+          "waste_factor": 0.08,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "boden.belag_entfernen",
+      "trade": "boden",
+      "label_de": "Alten Bodenbelag entfernen",
+      "unit": "m2",
+      "setup_hours": [
+        0.6,
+        1.2
+      ],
+      "typical_size": [
+        15,
+        60
+      ],
+      "market_band_at": [
+        6,
+        16
+      ],
+      "market_band_de": [
+        6,
+        18
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "daibau.at/baukostenrechner/bodenbelaege",
+        "my-hammer.at/bodenleger"
+      ],
+      "confidence": "medium",
+      "group": "Boden & Fliesen",
+      "segment": "Bodenleger",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "belagsart",
+          "label_de": "Bisheriger Belag",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "laminat_klick",
+              "Laminat, schwimmend"
+            ],
+            [
+              "teppich_geklebt",
+              "Teppich, geklebt"
+            ],
+            [
+              "pvc_geklebt",
+              "PVC oder Linoleum, geklebt"
+            ],
+            [
+              "parkett_geklebt",
+              "Parkett, geklebt"
+            ]
+          ],
+          "affects": "variant",
+          "default": "laminat_klick",
+          "note_if": {
+            "pvc_geklebt": "asbest_vor_1990"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "baujahr",
+          "label_de": "Baujahr",
+          "type": "number",
+          "unit": "Jahr",
+          "options": [],
+          "affects": "note",
+          "default": null,
+          "note_if": {},
+          "help_de": "Vor 1990 kann der Kleber Asbest enthalten."
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "asbest_vor_1990",
+        "staub"
+      ],
+      "labour_variance": 3.8,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.32,
+      "operations": [
+        {
+          "key": "entfernen",
+          "label_de": "Belag aufnehmen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.06,
+            0.13
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            3,
+            8
+          ],
+          "debris_type": "sperrmuell",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "kleberreste",
+          "label_de": "Kleberreste entfernen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.04,
+            0.09
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "leisten",
+          "label_de": "Sockelleisten demontieren",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.02,
+            0.05
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "boden.ausgleich",
+      "trade": "boden",
+      "label_de": "Untergrund spachteln und ausgleichen",
+      "unit": "m2",
+      "setup_hours": [
+        1.0,
+        1.8
+      ],
+      "typical_size": [
+        15,
+        60
+      ],
+      "market_band_at": [
+        12,
+        28
+      ],
+      "market_band_de": [
+        12,
+        30
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "daibau.at/baukostenrechner/bodenbelaege",
+        "my-hammer.at/bodenleger"
+      ],
+      "confidence": "medium",
+      "group": "Boden & Fliesen",
+      "segment": "Bodenleger",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "hoehe",
+          "label_de": "Ausgleichshöhe",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "bis_5",
+              "Bis 5 mm"
+            ],
+            [
+              "bis_15",
+              "5 bis 15 mm"
+            ],
+            [
+              "ueber_15",
+              "Über 15 mm"
+            ]
+          ],
+          "affects": "variant",
+          "default": "bis_5",
+          "note_if": {
+            "ueber_15": "aufbauhoehe"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "untergrund",
+          "label_de": "Untergrund",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "estrich_neu",
+              "Estrich, neu"
+            ],
+            [
+              "estrich_alt",
+              "Estrich, alt aber eben"
+            ],
+            [
+              "fliesen_bestand",
+              "Bestehende Fliesen"
+            ],
+            [
+              "holzdielen",
+              "Holzdielen"
+            ],
+            [
+              "unbekannt",
+              "Unbekannt"
+            ]
+          ],
+          "affects": "variant",
+          "default": "estrich_alt",
+          "note_if": {
+            "estrich_neu": "restfeuchte_messung",
+            "fliesen_bestand": "aufbauhoehe",
+            "holzdielen": "untergrund_eben",
+            "unbekannt": "untergrund_eben"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "fussbodenheizung",
+          "label_de": "Fußbodenheizung vorhanden",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": false,
+          "note_if": {
+            "True": "fbh_aufheizprotokoll"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "untergrund_eben",
+        "trocknung_nutzung"
+      ],
+      "labour_variance": 2.75,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.26,
+      "operations": [
+        {
+          "key": "grundierung",
+          "label_de": "Grundierung",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.03,
+            0.06
+          ],
+          "material_per_unit": [
+            1.0,
+            2.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "ausgleichen",
+          "label_de": "Ausgleichsmasse auftragen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.1,
+            0.2
+          ],
+          "material_per_unit": [
+            5.0,
+            11.0
+          ],
+          "waste_factor": 0.08,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "boden.laminat",
+      "trade": "boden",
       "label_de": "Laminat verlegen",
       "unit": "m2",
       "setup_hours": [
@@ -6118,18 +9369,179 @@
         32
       ],
       "band_basis": "per_unit",
-      "sources": [],
-      "confidence": "medium",
+      "sources": [
+        "daibau.at/baukostenrechner/bodenbelaege",
+        "my-hammer.at/bodenleger"
+      ],
+      "confidence": "high",
       "group": "Boden & Fliesen",
-      "segment": "Fliesenleger",
+      "segment": "Bodenleger",
       "messy": true,
       "emergency_capable": false,
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "untergrund",
+          "label_de": "Untergrund",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "estrich_neu",
+              "Estrich, neu"
+            ],
+            [
+              "estrich_alt",
+              "Estrich, alt aber eben"
+            ],
+            [
+              "fliesen_bestand",
+              "Bestehende Fliesen"
+            ],
+            [
+              "holzdielen",
+              "Holzdielen"
+            ],
+            [
+              "unbekannt",
+              "Unbekannt"
+            ]
+          ],
+          "affects": "variant",
+          "default": "estrich_alt",
+          "note_if": {
+            "estrich_neu": "restfeuchte_messung",
+            "fliesen_bestand": "aufbauhoehe",
+            "holzdielen": "untergrund_eben",
+            "unbekannt": "untergrund_eben"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "verlegeart",
+          "label_de": "Verlegeart",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "gerade",
+              "Gerade / im Verband"
+            ],
+            [
+              "diagonal",
+              "Diagonal"
+            ],
+            [
+              "muster",
+              "Muster, Fischgrät oder Bordüre"
+            ]
+          ],
+          "affects": "variant",
+          "default": "gerade",
+          "note_if": {
+            "diagonal": "verschnitt_muster",
+            "muster": "verschnitt_muster"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "fussbodenheizung",
+          "label_de": "Fußbodenheizung vorhanden",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": false,
+          "note_if": {
+            "True": "fbh_aufheizprotokoll"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "tueren_kuerzen",
+          "label_de": "Türblätter müssen gekürzt werden",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": false,
+          "note_if": {
+            "True": "tuerblatt_kuerzen"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "belag_bauseits",
+          "label_de": "Belag wird beigestellt",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": true,
+          "note_if": {
+            "True": "belag_nicht_enthalten",
+            "False": "belag_nicht_enthalten"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
       "note_keys": [
         "untergrund_eben",
-        "dehnungsfuge"
+        "dehnungsfuge",
+        "belag_nicht_enthalten"
       ],
-      "labour_variance": 2.6,
+      "labour_variance": 2.65,
       "site_visit_required": false,
       "quote_mode": "fixed",
       "small_job_premium": 1.2,
@@ -6206,8 +9618,273 @@
       ]
     },
     {
+      "key": "boden.vinyl",
+      "trade": "boden",
+      "label_de": "Vinyl oder Designbelag verlegen",
+      "unit": "m2",
+      "setup_hours": [
+        1.0,
+        1.8
+      ],
+      "typical_size": [
+        15,
+        55
+      ],
+      "market_band_at": [
+        18,
+        38
+      ],
+      "market_band_de": [
+        18,
+        40
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "daibau.at/baukostenrechner/bodenbelaege",
+        "my-hammer.at/bodenleger"
+      ],
+      "confidence": "medium",
+      "group": "Boden & Fliesen",
+      "segment": "Bodenleger",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "verlegung",
+          "label_de": "Verlegung",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "klick",
+              "Klick, schwimmend"
+            ],
+            [
+              "vollflaechig",
+              "Vollflächig verklebt"
+            ]
+          ],
+          "affects": "variant",
+          "default": "klick",
+          "note_if": {
+            "vollflaechig": "trocknung_nutzung"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "untergrund",
+          "label_de": "Untergrund",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "estrich_neu",
+              "Estrich, neu"
+            ],
+            [
+              "estrich_alt",
+              "Estrich, alt aber eben"
+            ],
+            [
+              "fliesen_bestand",
+              "Bestehende Fliesen"
+            ],
+            [
+              "holzdielen",
+              "Holzdielen"
+            ],
+            [
+              "unbekannt",
+              "Unbekannt"
+            ]
+          ],
+          "affects": "variant",
+          "default": "estrich_alt",
+          "note_if": {
+            "estrich_neu": "restfeuchte_messung",
+            "fliesen_bestand": "aufbauhoehe",
+            "holzdielen": "untergrund_eben",
+            "unbekannt": "untergrund_eben"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "fussbodenheizung",
+          "label_de": "Fußbodenheizung vorhanden",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": false,
+          "note_if": {
+            "True": "fbh_aufheizprotokoll"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "tueren_kuerzen",
+          "label_de": "Türblätter müssen gekürzt werden",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": false,
+          "note_if": {
+            "True": "tuerblatt_kuerzen"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "belag_bauseits",
+          "label_de": "Belag wird beigestellt",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": true,
+          "note_if": {
+            "True": "belag_nicht_enthalten",
+            "False": "belag_nicht_enthalten"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "untergrund_eben",
+        "belag_nicht_enthalten",
+        "raumklima"
+      ],
+      "labour_variance": 2.66,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.18,
+      "operations": [
+        {
+          "key": "spachteln",
+          "label_de": "Untergrund spachteln",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.08,
+            0.14
+          ],
+          "material_per_unit": [
+            2.0,
+            3.5
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verlegen",
+          "label_de": "Belag verlegen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.16,
+            0.28
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "leisten",
+          "label_de": "Sockelleisten montieren",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.06,
+            0.1
+          ],
+          "material_per_unit": [
+            2.5,
+            4.5
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
       "key": "boden.parkett",
-      "trade": "fliesen",
+      "trade": "boden",
       "label_de": "Parkett verlegen (verklebt)",
       "unit": "m2",
       "setup_hours": [
@@ -6227,21 +9904,182 @@
         65
       ],
       "band_basis": "per_unit",
-      "sources": [],
-      "confidence": "medium",
+      "sources": [
+        "daibau.at/baukostenrechner/bodenbelaege",
+        "my-hammer.at/bodenleger"
+      ],
+      "confidence": "high",
       "group": "Boden & Fliesen",
-      "segment": "Fliesenleger",
+      "segment": "Bodenleger",
       "messy": true,
       "emergency_capable": false,
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "untergrund",
+          "label_de": "Untergrund",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "estrich_neu",
+              "Estrich, neu"
+            ],
+            [
+              "estrich_alt",
+              "Estrich, alt aber eben"
+            ],
+            [
+              "fliesen_bestand",
+              "Bestehende Fliesen"
+            ],
+            [
+              "holzdielen",
+              "Holzdielen"
+            ],
+            [
+              "unbekannt",
+              "Unbekannt"
+            ]
+          ],
+          "affects": "variant",
+          "default": "estrich_alt",
+          "note_if": {
+            "estrich_neu": "restfeuchte_messung",
+            "fliesen_bestand": "aufbauhoehe",
+            "holzdielen": "untergrund_eben",
+            "unbekannt": "untergrund_eben"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "verlegeart",
+          "label_de": "Verlegeart",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "gerade",
+              "Gerade / im Verband"
+            ],
+            [
+              "diagonal",
+              "Diagonal"
+            ],
+            [
+              "muster",
+              "Muster, Fischgrät oder Bordüre"
+            ]
+          ],
+          "affects": "variant",
+          "default": "gerade",
+          "note_if": {
+            "diagonal": "verschnitt_muster",
+            "muster": "verschnitt_muster"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "fussbodenheizung",
+          "label_de": "Fußbodenheizung vorhanden",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": false,
+          "note_if": {
+            "True": "fbh_aufheizprotokoll"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "tueren_kuerzen",
+          "label_de": "Türblätter müssen gekürzt werden",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": false,
+          "note_if": {
+            "True": "tuerblatt_kuerzen"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "belag_bauseits",
+          "label_de": "Belag wird beigestellt",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": true,
+          "note_if": {
+            "True": "belag_nicht_enthalten",
+            "False": "belag_nicht_enthalten"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
       "note_keys": [
         "untergrund_eben",
-        "raumklima"
+        "raumklima",
+        "belag_nicht_enthalten"
       ],
-      "labour_variance": 2.51,
+      "labour_variance": 2.56,
       "site_visit_required": false,
       "quote_mode": "fixed",
-      "small_job_premium": 1.12,
+      "small_job_premium": 1.11,
       "operations": [
         {
           "key": "spachteln",
@@ -6310,6 +10148,501 @@
           "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "standard",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "boden.parkett_schleifen",
+      "trade": "boden",
+      "label_de": "Parkett oder Dielen abschleifen und versiegeln",
+      "unit": "m2",
+      "setup_hours": [
+        1.5,
+        2.5
+      ],
+      "typical_size": [
+        15,
+        60
+      ],
+      "market_band_at": [
+        25,
+        50
+      ],
+      "market_band_de": [
+        25,
+        55
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "daibau.at/baukostenrechner/bodenbelaege",
+        "my-hammer.at/bodenleger"
+      ],
+      "confidence": "medium",
+      "group": "Boden & Fliesen",
+      "segment": "Bodenleger",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "zustand_belag",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "leicht",
+              "Leichte Gebrauchsspuren"
+            ],
+            [
+              "stark",
+              "Stark abgenutzt, tiefe Kratzer"
+            ],
+            [
+              "lack_alt",
+              "Alter Lack, mehrlagig"
+            ]
+          ],
+          "affects": "variant",
+          "default": "stark",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "oberflaeche",
+          "label_de": "Neue Oberfläche",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "versiegelung",
+              "Versiegelung"
+            ],
+            [
+              "oel",
+              "Öl oder Hartwachs"
+            ]
+          ],
+          "affects": "variant",
+          "default": "versiegelung",
+          "note_if": {
+            "oel": "holzschutz_intervall"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "baujahr",
+          "label_de": "Baujahr",
+          "type": "number",
+          "unit": "Jahr",
+          "options": [],
+          "affects": "note",
+          "default": null,
+          "note_if": {},
+          "help_de": "Vor 1990 kann der Kleber Asbest enthalten."
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "staub",
+        "trocknung_nutzung",
+        "schleifen_restdicke"
+      ],
+      "labour_variance": 2.83,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.17,
+      "operations": [
+        {
+          "key": "vorbereiten",
+          "label_de": "Nägel versenken, Fugen kitten",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.05,
+            0.1
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "grobschliff",
+          "label_de": "Grobschliff",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.1,
+            0.18
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.5,
+            1.2
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "feinschliff",
+          "label_de": "Fein- und Zwischenschliff",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.14,
+            0.24
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "versiegeln",
+          "label_de": "Dreimal versiegeln",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.16,
+            0.28
+          ],
+          "material_per_unit": [
+            4.0,
+            8.0
+          ],
+          "waste_factor": 0.08,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "boden.teppich",
+      "trade": "boden",
+      "label_de": "Teppichboden verlegen",
+      "unit": "m2",
+      "setup_hours": [
+        0.8,
+        1.5
+      ],
+      "typical_size": [
+        15,
+        60
+      ],
+      "market_band_at": [
+        14,
+        32
+      ],
+      "market_band_de": [
+        14,
+        35
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "daibau.at/baukostenrechner/bodenbelaege",
+        "my-hammer.at/bodenleger"
+      ],
+      "confidence": "low",
+      "group": "Boden & Fliesen",
+      "segment": "Bodenleger",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "verlegung",
+          "label_de": "Verlegung",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "lose",
+              "Lose verlegt"
+            ],
+            [
+              "geklebt",
+              "Vollflächig geklebt"
+            ]
+          ],
+          "affects": "variant",
+          "default": "geklebt",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "untergrund",
+          "label_de": "Untergrund",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "estrich_neu",
+              "Estrich, neu"
+            ],
+            [
+              "estrich_alt",
+              "Estrich, alt aber eben"
+            ],
+            [
+              "fliesen_bestand",
+              "Bestehende Fliesen"
+            ],
+            [
+              "holzdielen",
+              "Holzdielen"
+            ],
+            [
+              "unbekannt",
+              "Unbekannt"
+            ]
+          ],
+          "affects": "variant",
+          "default": "estrich_alt",
+          "note_if": {
+            "estrich_neu": "restfeuchte_messung",
+            "fliesen_bestand": "aufbauhoehe",
+            "holzdielen": "untergrund_eben",
+            "unbekannt": "untergrund_eben"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "tueren_kuerzen",
+          "label_de": "Türblätter müssen gekürzt werden",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": false,
+          "note_if": {
+            "True": "tuerblatt_kuerzen"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "belag_bauseits",
+          "label_de": "Belag wird beigestellt",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": true,
+          "note_if": {
+            "True": "belag_nicht_enthalten",
+            "False": "belag_nicht_enthalten"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "untergrund_eben",
+        "belag_nicht_enthalten"
+      ],
+      "labour_variance": 2.72,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.17,
+      "operations": [
+        {
+          "key": "vorbereiten",
+          "label_de": "Untergrund reinigen und grundieren",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.05,
+            0.1
+          ],
+          "material_per_unit": [
+            0.8,
+            1.6
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verlegen",
+          "label_de": "Teppich zuschneiden und verlegen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.14,
+            0.26
+          ],
+          "material_per_unit": [
+            2.5,
+            5.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "leisten",
+          "label_de": "Sockelleisten montieren",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.06,
+            0.1
+          ],
+          "material_per_unit": [
+            2.5,
+            4.5
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
           "note_keys": []
         }
       ]

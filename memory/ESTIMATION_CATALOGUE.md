@@ -31,14 +31,32 @@ bill by tonne. Quoting by container size systematically underprices.
 
 ## Coverage
 
-108 job types across all 20 groups in `business_directory`, tagged with `group`
-and `segment` so a prospect and a template line up. 25,488 scenarios simulated.
+122 job types across all 20 groups in `business_directory`, tagged with `group`
+and `segment` so a prospect and a template line up.
 
-**Sanitär, Elektrik and Maler are deepened; the rest are wide only.** All three
-follow the same shape, which is the template for every remaining trade:
-emergency, recurring, project.
+**Four groups are deepened; the rest are wide only.** All follow the same
+shape, which is the template for every remaining trade: emergency, recurring,
+project.
 
-**Maler.** 5 job types became 18 with 74 questions. The trade taught the
+**Boden & Fliesen.** 6 job types became 20, and the group turned out to hold
+two Gewerbe rather than one. Fliesenleger (AT 42-62 EUR/h) and Bodenleger
+(AT 38-58) are now separate trades with separate rates; treating a floor layer
+as a tiler had overstated every covering job by roughly a tenth.
+
+The covering is not in the price, in either market. Every published
+Verlegepreis is labour plus Verlegematerial — Kleber, Fuge, Trittschall — and
+the tiles or planks are chosen and usually bought by the customer. Material
+here is the consumables and a note says so, because folding in a guessed
+30 EUR/m² for tiles would double the quote and put every entry outside its own
+band.
+
+Stairs exposed a flaw in how `total` bands validate. Checked at quantity one, a
+staircase validates as a single step — a call-out price, roughly double the
+per-step rate anyone quotes for a run of fourteen. It is `per_unit` with a
+typical run of 3 to 16. Replacing a few broken tiles genuinely *is* a call-out,
+and that one stays `total`.
+
+**Maler.** 5 job types became 19 with 74 questions. The trade taught the
 catalogue three things.
 
 Published Maler bands include the scaffolding. The Fassade band was taken at
@@ -89,7 +107,7 @@ operations are included.
 
 ## Validation
 
-216 of 216 job/country pairs land inside their published market band.
+244 of 244 job/country pairs land inside their published market band.
 
 Getting to zero misses took restating a band, not tuning a coefficient. For two
 revisions `maler.fassade` DE sat at €19.10 against a €20 floor and was written
@@ -122,7 +140,7 @@ small and setup-dominated; a boiler swap looked certain at ×1.84 only because a
 1,800-2,900 EUR appliance swamps the labour variance. Deriving the flag would
 have sent a tradesperson to inspect a window and quote a Wärmepumpe blind.
 
-`site_visit_required` is now an explicit list of 39 job types — concealed
+`site_visit_required` is now an explicit list of 45 job types — concealed
 build-up, concealed services, structural involvement, or a measurement that must
 be exact before fabrication. The spread survives under an honest name,
 `labour_variance`: how much of the price is variable labour, and therefore how
@@ -168,11 +186,12 @@ produces coefficients that describe *this* business. Nobody can copy that, and
 it is the actual moat.
 
 Coverage is uneven on purpose and the unevenness is the honest part. Three
-trades are deep — Sanitär 20, Maler 18, Elektrik 17 — and the other seventeen
+groups are deep — Boden & Fliesen 20, Sanitär 20, Maler 19, Elektrik 17 — and
+the other sixteen
 are one to six job types each, enough to prove the structure and not enough to
 cover the trade. A Fliesenleger does far more than six things.
 
-Confidence is recorded per job because it is uneven. 14 high, 69 medium, 25 low.
+Confidence is recorded per job because it is uneven. 18 high, 72 medium, 32 low.
 The `low` entries — Pool, Wärmepumpe, Markise, Einbauschrank, Geländer, Sofa,
 Gutachten, Flachdach, Rollladen, Fensterbank, Küchendemontage, Schädlings-
 bekämpfung, KFZ-Service, and the newer Maler entries WDVS, Strukturputz,
@@ -191,7 +210,7 @@ services before excavation, and mould beyond 0.5 m².
 `backend/services/estimator.py` is the only consumer, and it reimplements
 `tools/catalogue/engine.py` exactly. If the two drift, the band validation
 stops saying anything about what the app actually quotes — so
-`backend/tests/test_estimator.py` re-runs all 216 band checks through the
+`backend/tests/test_estimator.py` re-runs all 244 band checks through the
 service rather than the authoring harness, and additionally proves the quote
 positions sum back to the total they were derived from.
 

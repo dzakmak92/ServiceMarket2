@@ -1,99 +1,12 @@
 from schema import JobType, Operation as Op
 
-# ── Boden & Fliesen ───────────────────────────────────────────────────
-# Bands: Fliesen verlegen AT 35-60 EUR/m2 (fixbuddy.at). Fliesen entfernen
-# 15-30 incl. disposal; AT typical 20-40, stark verklebt 25-55 (my-hammer.at,
-# baucheck.io). Debris 18-23 kg/m2 Duennbett; Dickbett far higher.
-BODEN = [
-    JobType(
-        key="fliesen.entfernen_duennbett", trade="fliesen",
-        label_de="Fliesen entfernen (Dünnbett)", unit="m2",
-        setup_hours=(1.0, 1.8), typical_size=(6, 30),
-        market_band_at=(15, 30), market_band_de=(15, 32),
-        sources=["my-hammer.at/bauschutt-entsorgen", "baucheck.io"],
-        note_keys=["asbest_vor_1990", "staub"],
-        operations=[
-            Op("abschlagen", "Fliesen abschlagen", "m2", (0.16, 0.27),
-               debris_kg_per_unit=(20, 26)),
-            Op("kleberreste", "Kleberreste abschleifen", "m2", (0.06, 0.11)),
-            Op("entsorgung", "Entsorgung Bauschutt", "m2", (0.0, 0.0),
-               kind="disposal"),
-        ],
-    ),
-    JobType(
-        key="fliesen.entfernen_dickbett", trade="fliesen",
-        label_de="Fliesen entfernen (Dickbett, Altbau)", unit="m2",
-        setup_hours=(1.2, 2.2), typical_size=(6, 25),
-        market_band_at=(25, 55), market_band_de=(25, 58),
-        sources=["baucheck.io", "fliesenlegung.de"],
-        note_keys=["asbest_vor_1990", "staub", "dickbett_mehraufwand"],
-        operations=[
-            # 15-40 mm cement bed. Breaker work, not chisel work.
-            Op("abschlagen", "Fliesen und Mörtelbett abschlagen", "m2", (0.34, 0.58),
-               debris_kg_per_unit=(45, 75)),
-            Op("untergrund", "Untergrund nacharbeiten", "m2", (0.08, 0.16)),
-            Op("entsorgung", "Entsorgung Bauschutt", "m2", (0.0, 0.0), kind="disposal"),
-        ],
-    ),
-    JobType(
-        key="fliesen.verlegen_boden", trade="fliesen",
-        label_de="Bodenfliesen verlegen", unit="m2",
-        setup_hours=(1.2, 2.0), typical_size=(8, 40),
-        market_band_at=(35, 60), market_band_de=(35, 65),
-        sources=["fixbuddy.at/was-kostet-fliesen-verlegen"],
-        note_keys=["untergrund_eben", "verschnitt_muster"],
-        operations=[
-            Op("grundierung", "Grundierung", "m2", (0.03, 0.05)),
-            Op("verlegen", "Fliesen verlegen", "m2", (0.35, 0.55)),
-            Op("verfugen", "Verfugen und Silikon", "m2", (0.10, 0.18)),
-            Op("kleber", "Kleber und Fugenmasse", "m2", (0.0, 0.0), kind="material",
-               material_per_unit=(4.50, 8.00), waste_factor=0.05),
-        ],
-    ),
-    JobType(
-        key="fliesen.verlegen_wand", trade="fliesen",
-        label_de="Wandfliesen verlegen", unit="m2",
-        setup_hours=(1.2, 2.0), typical_size=(8, 30),
-        market_band_at=(40, 70), market_band_de=(40, 75),
-        sources=["fixbuddy.at"],
-        note_keys=["abdichtung_nassbereich"],
-        operations=[
-            Op("abdichtung", "Verbundabdichtung Nassbereich", "m2", (0.10, 0.18),
-               material_per_unit=(3.00, 5.50)),
-            Op("verlegen", "Wandfliesen verlegen", "m2", (0.40, 0.62)),
-            Op("verfugen", "Verfugen und Silikon", "m2", (0.10, 0.18)),
-            Op("kleber", "Kleber und Fugenmasse", "m2", (0.0, 0.0), kind="material",
-               material_per_unit=(4.50, 8.00), waste_factor=0.05),
-        ],
-    ),
-    JobType(
-        key="boden.laminat", trade="fliesen", label_de="Laminat verlegen", unit="m2",
-        setup_hours=(0.8, 1.5), typical_size=(15, 60),
-        market_band_at=(15, 30), market_band_de=(15, 32),
-        note_keys=["untergrund_eben", "dehnungsfuge"],
-        operations=[
-            Op("unterlage", "Trittschalldämmung verlegen", "m2", (0.03, 0.06),
-               material_per_unit=(2.00, 4.00)),
-            Op("verlegen", "Laminat verlegen", "m2", (0.14, 0.24)),
-            Op("leisten", "Sockelleisten montieren", "m2", (0.06, 0.10),
-               material_per_unit=(2.50, 4.50)),
-        ],
-    ),
-    JobType(
-        key="boden.parkett", trade="fliesen", label_de="Parkett verlegen (verklebt)",
-        unit="m2", setup_hours=(1.0, 1.8), typical_size=(15, 60),
-        market_band_at=(30, 60), market_band_de=(32, 65),
-        note_keys=["untergrund_eben", "raumklima"],
-        operations=[
-            Op("spachteln", "Untergrund spachteln", "m2", (0.08, 0.14),
-               material_per_unit=(2.00, 3.50)),
-            Op("verkleben", "Parkett vollflächig verkleben", "m2", (0.28, 0.45),
-               material_per_unit=(4.00, 7.00)),
-            Op("schleifen", "Schleifen und versiegeln", "m2", (0.12, 0.22),
-               material_per_unit=(2.50, 4.50), tier_min="standard"),
-        ],
-    ),
-]
+# Boden & Fliesen moved to boden_deep.py when the group was deepened from six
+# job types to twenty — the six here were reproduced there with guided forms,
+# so leaving them would have duplicated every key.
+#
+# The Sanitär and Elektrik lists below are different: sanitaer_deep.py and
+# elektrik_deep.py *add* to them rather than replace them, which is why four
+# Sanitär and three Elektrik job types still have no guided form.
 
 # ── Sanitär ───────────────────────────────────────────────────────────
 # Bands here are per PIECE (unit Stk), so band_basis is the whole job.
@@ -260,4 +173,4 @@ ABRISS = [
     ),
 ]
 
-ALL = BODEN + SANITAER + ELEKTRIK + TROCKENBAU + ABRISS
+ALL = SANITAER + ELEKTRIK + TROCKENBAU + ABRISS
