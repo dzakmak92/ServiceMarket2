@@ -1,12 +1,11 @@
 import sys, json, statistics as st
 sys.path.insert(0, '.')
 from itertools import product
-from maler import MALER
-from trades import ALL
+from alljobs import ALL_JOBS
 from engine import estimate
 from schema import COND_UPLIFT, ACCESS_UPLIFT, BAUSCHUTT_KG_PER_M3
 
-JOBS = MALER + ALL
+JOBS = ALL_JOBS
 CONDS = list(COND_UPLIFT); ACCS = list(ACCESS_UPLIFT)
 TIERS = ["basic", "standard", "premium"]; COUNTRIES = ["AT", "DE"]
 

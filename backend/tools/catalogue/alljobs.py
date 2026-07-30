@@ -1,5 +1,5 @@
 import sys; sys.path.insert(0, '.')
-from maler import MALER
+from maler_deep import MALER_DEEP
 from trades import ALL as CORE
 from wide1 import BAUEN, TISCHLER, KUECHE
 from wide2 import GARTEN, FENSTER, DACH
@@ -18,10 +18,10 @@ GROUP_FIX = {
     "trockenbau": ("Trockenbau & Verputzen", "Trockenbauer"),
     "abriss": ("Abriss & Entsorgung", "Abrissunternehmen"),
 }
-for j in MALER + CORE:
+for j in CORE:
     if not j.group:
         j.group, j.segment = GROUP_FIX.get(j.trade, ("", ""))
 
-ALL_JOBS = (MALER + CORE + SANITAER_DEEP + ELEKTRIK_DEEP + BAUEN + TISCHLER + KUECHE + GARTEN + FENSTER +
+ALL_JOBS = (MALER_DEEP + CORE + SANITAER_DEEP + ELEKTRIK_DEEP + BAUEN + TISCHLER + KUECHE + GARTEN + FENSTER +
             DACH + HEIZUNG + UMZUG + REINIGUNG + POLSTER + SOLAR + MONTAGE +
             GUTACHTER + FAHRZEUGE)

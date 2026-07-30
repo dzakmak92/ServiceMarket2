@@ -28,6 +28,11 @@ SITE_VISIT = {
     "sanitaer.rohrbruch",                                          # leak location
     "elektrik.leitung_verlegen", "elektrik.verteiler",             # concealed services
     "maler.tapete_entfernen", "maler.fassade",                     # layers, substrate
+    "maler.wdvs",                                                  # Sockel, Details, Bauphysik
+    "maler.schimmelsanierung",                                     # extent and cause
+    "maler.risse_sanieren",                                        # structural or not
+    "maler.bodenbeschichtung",                                     # substrate moisture
+    "maler.holzfenster_streichen",                                 # rot under the paint
     "dach.ziegel_umdecken", "dach.flachdach", "dach.rinne",        # substructure
     "fenster.tausch", "fenster.rolladen", "fenster.markise",       # Aufmaß, anchorage
     "glaser.scheibe", "steinmetz.fensterbank",                     # Aufmaß
@@ -174,6 +179,19 @@ NOTES = {
   "pruefplakette": {"severity":"low","de":"Geprüfte Geräte erhalten eine Prüfplakette mit Datum der nächsten Prüfung."},
   "abschaltung": {"severity":"medium","de":"Zeitweise Abschaltung der Stromversorgung ist erforderlich."},
   "foerderung": {"severity":"low","de":"Förderungsabwicklung ist nicht enthalten."},
+  # ── Maler ────────────────────────────────────────────────────────────
+  "schimmel_grossflaechig": {"severity":"critical","de":"Ab etwa 0,5 m² Befall ist nach Umweltbundesamt-Leitfaden eine fachgerechte Sanierung mit Abschottung erforderlich. Ursachenklärung, Trocknung und ggf. Raumluftmessung sind nicht enthalten."},
+  "schimmel_ursache_extra": {"severity":"high","de":"Die Sanierung behandelt den Befall, nicht die Ursache. Ohne Beseitigung der Feuchtequelle tritt der Schaden wieder auf; Ursachenermittlung und bauliche Maßnahmen sind nicht enthalten."},
+  "leimfarbe_altanstrich": {"severity":"high","de":"Alte Leim- oder Kalkfarben sind nicht überstreichbar und müssen vollständig abgewaschen werden. Der Mehraufwand ist erst nach Freilegen einer Probefläche bezifferbar."},
+  "bleifarbe_vor_1960": {"severity":"high","de":"Anstriche vor etwa 1960 können Blei enthalten. Trockenes Schleifen ist dann unzulässig; staubarme Verfahren sind nicht im Angebot enthalten."},
+  "fassade_haftung": {"severity":"high","de":"Die Tragfähigkeit des Altanstrichs wird vor Ort mittels Kratz- und Klebebandprobe geprüft. Ist der Untergrund kreidend oder nicht tragfähig, sind Zusatzarbeiten erforderlich."},
+  "wdvs_details": {"severity":"high","de":"Sockelausbildung, Laibungen, Rollladenkästen, Fensterbänke und Dachanschluss sind gesondert zu bewerten. Sie bestimmen die Bauphysik des Systems und sind hier nur pauschal berücksichtigt."},
+  "deckkraft_farbwechsel": {"severity":"medium","de":"Bei deutlichem Farbwechsel, besonders dunkel auf hell oder bei intensiven Farbtönen, ist ein dritter Anstrich erforderlich. Dieser ist im Angebot berücksichtigt."},
+  "nikotin_sperrgrund": {"severity":"medium","de":"Nikotin-, Ruß- und Wasserflecken schlagen durch Dispersionsfarbe durch. Ein Isoliergrund ist erforderlich und im Angebot enthalten."},
+  "trocknung_nutzung": {"severity":"medium","de":"Zwischen den Anstrichen sind Trocknungszeiten einzuhalten. Die Räume sind während der Arbeiten und mindestens 24 Stunden danach nur eingeschränkt nutzbar."},
+  "lack_demontage": {"severity":"medium","de":"Beschläge, Griffe und Dichtungen werden demontiert und wieder montiert. Defekte Beschläge werden nicht ersetzt."},
+  "musteranstrich": {"severity":"low","de":"Farbtöne und Strukturen wirken auf der Fläche anders als auf der Musterkarte. Ein Musteranstrich vor Ausführung wird empfohlen und ist gesondert zu beauftragen."},
+  "holzschutz_intervall": {"severity":"low","de":"Holzschutz an bewitterten Bauteilen ist je nach Ausrichtung alle 3 bis 6 Jahre zu erneuern. Der Anstrich ist keine dauerhafte Versiegelung."},
 }
 
 out = {"version": 1, "countries": ["AT","DE"],

@@ -31,12 +31,31 @@ bill by tonne. Quoting by container size systematically underprices.
 
 ## Coverage
 
-94 job types across all 20 groups in `business_directory`, tagged with `group`
-and `segment` so a prospect and a template line up. 15,696 scenarios simulated.
+108 job types across all 20 groups in `business_directory`, tagged with `group`
+and `segment` so a prospect and a template line up. 25,488 scenarios simulated.
 
-**Sanitär and Elektrik are deepened; the rest are wide only.** Both follow the
-same shape, which is the template for every remaining trade: emergency,
-recurring, project.
+**Sanitär, Elektrik and Maler are deepened; the rest are wide only.** All three
+follow the same shape, which is the template for every remaining trade:
+emergency, recurring, project.
+
+**Maler.** 5 job types became 18 with 74 questions. The trade taught the
+catalogue three things.
+
+Published Maler bands include the scaffolding. The Fassade band was taken at
+face value (18-44 AT) while the job was priced explicitly without Gerüst, and
+that mismatch — not any coefficient — was the catalogue's one standing
+validation failure for two revisions. The Gerüst entry in this same catalogue
+is 6-14 EUR/m², so the two facade jobs now state bands net of it and the
+estimate agrees with the note that says scaffolding is excluded.
+
+The substrate is the whole job. A painter quoting per m² is quoting the coat;
+what varies by a factor of four is what happens before it — nothing on new
+plasterboard, a full strip and wash on five layers of painted-over Raufaser.
+`untergrund` is asked on every surface job and moves the number more than any
+other answer.
+
+A colour change is not free. Dark to light is three coats, and it is the most
+common argument on site. It is asked, priced, and produces a note.
 
 **Elektrik.** 3 job types became 14 with 35 questions. Every job carries an
 E-Befund note, because electrical work in existing fabric touches a legally
@@ -70,9 +89,17 @@ operations are included.
 
 ## Validation
 
-127 of 128 job/country pairs land inside their published market band. The single failure — `maler.fassade` DE at €18.70
-against a €20 floor — is a scope mismatch, not a bad coefficient: published
-Fassade prices include Gerüst and this catalogue explicitly excludes it.
+216 of 216 job/country pairs land inside their published market band.
+
+Getting to zero misses took restating a band, not tuning a coefficient. For two
+revisions `maler.fassade` DE sat at €19.10 against a €20 floor and was written
+off as a known scope mismatch — published Fassade prices include Gerüst and
+this catalogue excludes it. That was the correct diagnosis and the wrong
+response: the fix is to state the band for the scope actually being priced,
+which is the published band less the 6-14 EUR/m² this catalogue itself charges
+for Gerüst. The estimate had been right the whole time. A validation harness
+that carries a permanent expected failure has stopped being a validation
+harness, so the check now requires zero.
 
 Bands are checked at **large** size on purpose. Published €/m² rates are averages
 over typical, larger jobs where the contractor's setup is already amortised;
@@ -81,8 +108,9 @@ not an error — it is the product's core insight.
 
 ## What 5,328 simulated scenarios showed
 
-**The small-job premium is real and large.** Median ×1.27, up to ×1.68 for tile
-removal — the same work costs 68% more per m² on a small floor than a large one.
+**The small-job premium is real and large.** Median ×1.27, up to ×2.09 for
+mould remediation and ×1.68 for tile removal — the same work costs twice as
+much per m² on a 2 m² patch as on a 15 m² wall.
 Flat €/m² pricing under-recovers on 83% of scenarios.
 
 **Site-visit necessity is declared, not derived — and the first version got
@@ -94,7 +122,7 @@ small and setup-dominated; a boiler swap looked certain at ×1.84 only because a
 1,800-2,900 EUR appliance swamps the labour variance. Deriving the flag would
 have sent a tradesperson to inspect a window and quote a Wärmepumpe blind.
 
-`site_visit_required` is now an explicit list of 34 job types — concealed
+`site_visit_required` is now an explicit list of 39 job types — concealed
 build-up, concealed services, structural involvement, or a measurement that must
 be exact before fabrication. The spread survives under an honest name,
 `labour_variance`: how much of the price is variable labour, and therefore how
@@ -126,10 +154,8 @@ seconds by looking at a tile edge.
            ├─ debris_kg_per_unit
            └─ tier_min                basic | standard | premium
 
-24 notes carry a severity. Two are `critical` and exist to prevent harm rather
-than to price work: **asbestos in pre-1990 adhesives and floor coverings**
-(TRGS 519 — a criminal-liability matter, not a pricing one) and **load-bearing
-confirmation before demolition**.
+131 notes carry a severity, so a UI can rank them: an asbestos warning and a
+note about who moves the furniture must not look alike.
 
 ## Honest limits
 
@@ -141,19 +167,36 @@ estimated against actual `job_time_logs` and writing back to `pro_rates`
 produces coefficients that describe *this* business. Nobody can copy that, and
 it is the actual moat.
 
-Coverage is wide, not deep: 64 job types is one to six per group, which proves
-the structure and does not cover any trade completely. A Fliesenleger does far
-more than six things.
+Coverage is uneven on purpose and the unevenness is the honest part. Three
+trades are deep — Sanitär 20, Maler 18, Elektrik 17 — and the other seventeen
+are one to six job types each, enough to prove the structure and not enough to
+cover the trade. A Fliesenleger does far more than six things.
 
-Confidence is recorded per job because it is uneven. 10 high, 65 medium, 19 low.
+Confidence is recorded per job because it is uneven. 14 high, 69 medium, 25 low.
 The `low` entries — Pool, Wärmepumpe, Markise, Einbauschrank, Geländer, Sofa,
 Gutachten, Flachdach, Rollladen, Fensterbank, Küchendemontage, Schädlings-
-bekämpfung, KFZ-Service — are plausible trade knowledge that no published band
-corroborates. They must be checked with a practising pro before they price
-anything real, and the field exists so that gap is visible rather than hidden
-behind a uniform-looking table.
+bekämpfung, KFZ-Service, and the newer Maler entries WDVS, Strukturputz,
+Bodenbeschichtung, Holzschutz, Risse and Fassadenreinigung — are plausible
+trade knowledge that no published band corroborates. They must be checked with
+a practising pro before they price anything real, and the field exists so that
+gap is visible rather than hidden behind a uniform-looking table.
 
-Five notes are `critical` and exist to prevent harm rather than to price work:
+Six notes are `critical` and exist to prevent harm rather than to price work:
 asbestos in pre-1990 adhesives and coverings, load-bearing confirmation before
-demolition, structural sign-off for openings, roof load before PV, and buried
-services before excavation.
+demolition, structural sign-off for openings, roof load before PV, buried
+services before excavation, and mould beyond 0.5 m².
+
+## What reads it
+
+`backend/services/estimator.py` is the only consumer, and it reimplements
+`tools/catalogue/engine.py` exactly. If the two drift, the band validation
+stops saying anything about what the app actually quotes — so
+`backend/tests/test_estimator.py` re-runs all 216 band checks through the
+service rather than the authoring harness, and additionally proves the quote
+positions sum back to the total they were derived from.
+
+The catalogue carries no `rate_key` and no prices, deliberately: it is a
+physical model of hours, material and debris. The join to a business's own
+pricing is made in the service by convention (`trade.operation` against
+`pro_rates.key`), so a pro who corrects a rate once has it applied everywhere
+that operation appears.

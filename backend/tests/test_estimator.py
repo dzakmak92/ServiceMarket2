@@ -61,9 +61,11 @@ for j in JOBS:
         mid = sum(r["per_unit"]) / 2
         if not band[0] <= mid <= band[1]:
             band_fails.append(f"{j['key']} {country}: {mid:.0f} vs {band}")
-# maler.fassade DE is the one documented miss: the German band includes
-# scaffolding hire, which this catalogue prices as its own job type.
-check(len(band_fails) <= 1, f"{len(band_fails)} band miss(es): {band_fails or 'none'}")
+# Zero, not "at most one". The catalogue carried a standing maler.fassade DE
+# failure until the band was restated net of scaffolding — the estimate had
+# been right all along and the published band was measuring a different scope.
+# A tolerance here would have let that keep hiding.
+check(not band_fails, f"{len(band_fails)} band miss(es): {band_fails or 'none'}")
 
 print("\n── the positions add up to the total ──")
 sum_fails = []

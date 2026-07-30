@@ -309,8 +309,13 @@
     "heizung.waermepumpe",
     "kueche.demontage",
     "kueche.montage",
+    "maler.bodenbeschichtung",
     "maler.fassade",
+    "maler.holzfenster_streichen",
+    "maler.risse_sanieren",
+    "maler.schimmelsanierung",
     "maler.tapete_entfernen",
+    "maler.wdvs",
     "maurer.durchbruch",
     "maurer.wand_mauern",
     "polster.sofa",
@@ -799,6 +804,54 @@
     "foerderung": {
       "severity": "low",
       "de": "Förderungsabwicklung ist nicht enthalten."
+    },
+    "schimmel_grossflaechig": {
+      "severity": "critical",
+      "de": "Ab etwa 0,5 m² Befall ist nach Umweltbundesamt-Leitfaden eine fachgerechte Sanierung mit Abschottung erforderlich. Ursachenklärung, Trocknung und ggf. Raumluftmessung sind nicht enthalten."
+    },
+    "schimmel_ursache_extra": {
+      "severity": "high",
+      "de": "Die Sanierung behandelt den Befall, nicht die Ursache. Ohne Beseitigung der Feuchtequelle tritt der Schaden wieder auf; Ursachenermittlung und bauliche Maßnahmen sind nicht enthalten."
+    },
+    "leimfarbe_altanstrich": {
+      "severity": "high",
+      "de": "Alte Leim- oder Kalkfarben sind nicht überstreichbar und müssen vollständig abgewaschen werden. Der Mehraufwand ist erst nach Freilegen einer Probefläche bezifferbar."
+    },
+    "bleifarbe_vor_1960": {
+      "severity": "high",
+      "de": "Anstriche vor etwa 1960 können Blei enthalten. Trockenes Schleifen ist dann unzulässig; staubarme Verfahren sind nicht im Angebot enthalten."
+    },
+    "fassade_haftung": {
+      "severity": "high",
+      "de": "Die Tragfähigkeit des Altanstrichs wird vor Ort mittels Kratz- und Klebebandprobe geprüft. Ist der Untergrund kreidend oder nicht tragfähig, sind Zusatzarbeiten erforderlich."
+    },
+    "wdvs_details": {
+      "severity": "high",
+      "de": "Sockelausbildung, Laibungen, Rollladenkästen, Fensterbänke und Dachanschluss sind gesondert zu bewerten. Sie bestimmen die Bauphysik des Systems und sind hier nur pauschal berücksichtigt."
+    },
+    "deckkraft_farbwechsel": {
+      "severity": "medium",
+      "de": "Bei deutlichem Farbwechsel, besonders dunkel auf hell oder bei intensiven Farbtönen, ist ein dritter Anstrich erforderlich. Dieser ist im Angebot berücksichtigt."
+    },
+    "nikotin_sperrgrund": {
+      "severity": "medium",
+      "de": "Nikotin-, Ruß- und Wasserflecken schlagen durch Dispersionsfarbe durch. Ein Isoliergrund ist erforderlich und im Angebot enthalten."
+    },
+    "trocknung_nutzung": {
+      "severity": "medium",
+      "de": "Zwischen den Anstrichen sind Trocknungszeiten einzuhalten. Die Räume sind während der Arbeiten und mindestens 24 Stunden danach nur eingeschränkt nutzbar."
+    },
+    "lack_demontage": {
+      "severity": "medium",
+      "de": "Beschläge, Griffe und Dichtungen werden demontiert und wieder montiert. Defekte Beschläge werden nicht ersetzt."
+    },
+    "musteranstrich": {
+      "severity": "low",
+      "de": "Farbtöne und Strukturen wirken auf der Fläche anders als auf der Musterkarte. Ein Musteranstrich vor Ausführung wird empfohlen und ist gesondert zu beauftragen."
+    },
+    "holzschutz_intervall": {
+      "severity": "low",
+      "de": "Holzschutz an bewitterten Bauteilen ist je nach Ausrichtung alle 3 bis 6 Jahre zu erneuern. Der Anstrich ist keine dauerhafte Versiegelung."
     }
   },
   "jobs": [
@@ -826,16 +879,159 @@
       "band_basis": "per_unit",
       "sources": [
         "fixbuddy.at/was-kostet-maler",
-        "daibau.at/baukostenrechner/maler"
+        "daibau.at/baukostenrechner/maler",
+        "profirechner.de/malerarbeiten-kosten-rechner"
       ],
-      "confidence": "medium",
+      "confidence": "high",
       "group": "Maler & Tapezierer",
       "segment": "Maler & Lackierer",
       "messy": true,
       "emergency_capable": false,
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "untergrund",
+          "label_de": "Untergrund",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "gipskarton_neu",
+              "Gipskarton, neu gespachtelt"
+            ],
+            [
+              "putz_gestrichen",
+              "Verputzt, gestrichen, intakt"
+            ],
+            [
+              "raufaser",
+              "Raufaser, gestrichen"
+            ],
+            [
+              "altbau_leimfarbe",
+              "Altbau, Leim- oder Kalkfarbe"
+            ],
+            [
+              "schadhaft",
+              "Rissig oder abblätternd"
+            ]
+          ],
+          "affects": "variant",
+          "default": "putz_gestrichen",
+          "note_if": {
+            "altbau_leimfarbe": "leimfarbe_altanstrich",
+            "schadhaft": "untergrund_tragfaehig"
+          },
+          "help_de": "Was schon an der Wand ist, entscheidet über den Aufwand davor."
+        },
+        {
+          "key": "farbwechsel",
+          "label_de": "Deutlicher Farbwechsel",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": false,
+          "note_if": {
+            "True": "deckkraft_farbwechsel"
+          },
+          "help_de": "Dunkel auf hell braucht einen dritten Anstrich"
+        },
+        {
+          "key": "nikotin",
+          "label_de": "Nikotin- oder Wasserflecken",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": false,
+          "note_if": {
+            "True": "nikotin_sperrgrund"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "moebel",
+          "label_de": "Möblierung",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "leer",
+              "Leer"
+            ],
+            [
+              "teilweise",
+              "Teilweise geräumt"
+            ],
+            [
+              "voll",
+              "Voll möbliert"
+            ]
+          ],
+          "affects": "note",
+          "default": "leer",
+          "note_if": {
+            "voll": "moebel_bauseits",
+            "teilweise": "moebel_bauseits"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
       "note_keys": [
-        "moebel_bauseits"
+        "moebel_bauseits",
+        "trocknung_nutzung"
       ],
       "labour_variance": 2.42,
       "site_visit_required": false,
@@ -894,8 +1090,8 @@
           "unit": "m2",
           "kind": "material",
           "hours_per_unit": [
-            0.0,
-            0.0
+            0,
+            0
           ],
           "material_per_unit": [
             1.1,
@@ -936,15 +1132,147 @@
       ],
       "band_basis": "per_unit",
       "sources": [
-        "daibau.at"
+        "fixbuddy.at/was-kostet-maler",
+        "daibau.at/baukostenrechner/maler",
+        "profirechner.de/malerarbeiten-kosten-rechner"
       ],
-      "confidence": "medium",
+      "confidence": "high",
       "group": "Maler & Tapezierer",
       "segment": "Maler & Lackierer",
       "messy": true,
       "emergency_capable": false,
-      "guided_form": [],
-      "note_keys": [],
+      "guided_form": [
+        {
+          "key": "untergrund",
+          "label_de": "Untergrund",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "gipskarton_neu",
+              "Gipskarton, neu gespachtelt"
+            ],
+            [
+              "putz_gestrichen",
+              "Verputzt, gestrichen, intakt"
+            ],
+            [
+              "raufaser",
+              "Raufaser, gestrichen"
+            ],
+            [
+              "altbau_leimfarbe",
+              "Altbau, Leim- oder Kalkfarbe"
+            ],
+            [
+              "schadhaft",
+              "Rissig oder abblätternd"
+            ]
+          ],
+          "affects": "variant",
+          "default": "putz_gestrichen",
+          "note_if": {
+            "altbau_leimfarbe": "leimfarbe_altanstrich",
+            "schadhaft": "untergrund_tragfaehig"
+          },
+          "help_de": "Was schon an der Wand ist, entscheidet über den Aufwand davor."
+        },
+        {
+          "key": "nikotin",
+          "label_de": "Nikotin- oder Wasserflecken",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": false,
+          "note_if": {
+            "True": "nikotin_sperrgrund"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "moebel",
+          "label_de": "Möblierung",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "leer",
+              "Leer"
+            ],
+            [
+              "teilweise",
+              "Teilweise geräumt"
+            ],
+            [
+              "voll",
+              "Voll möbliert"
+            ]
+          ],
+          "affects": "note",
+          "default": "leer",
+          "note_if": {
+            "voll": "moebel_bauseits",
+            "teilweise": "moebel_bauseits"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "trocknung_nutzung"
+      ],
       "labour_variance": 2.49,
       "site_visit_required": false,
       "quote_mode": "fixed",
@@ -1002,12 +1330,324 @@
           "unit": "m2",
           "kind": "material",
           "hours_per_unit": [
-            0.0,
-            0.0
+            0,
+            0
           ],
           "material_per_unit": [
             1.1,
             1.8
+          ],
+          "waste_factor": 0.08,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "maler.wohnung_komplett",
+      "trade": "maler",
+      "label_de": "Wohnung komplett streichen",
+      "unit": "m2",
+      "setup_hours": [
+        2.5,
+        4.5
+      ],
+      "typical_size": [
+        45,
+        110
+      ],
+      "market_band_at": [
+        20,
+        42
+      ],
+      "market_band_de": [
+        20,
+        46
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "fixbuddy.at/was-kostet-maler",
+        "daibau.at/baukostenrechner/maler",
+        "profirechner.de/malerarbeiten-kosten-rechner"
+      ],
+      "confidence": "medium",
+      "group": "Maler & Tapezierer",
+      "segment": "Maler & Lackierer",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "wohnflaeche",
+          "label_de": "Wohnfläche",
+          "type": "number",
+          "unit": "m2",
+          "options": [],
+          "affects": "qty",
+          "default": 70,
+          "note_if": {},
+          "help_de": "Wand- und Deckenfläche werden daraus gerechnet"
+        },
+        {
+          "key": "untergrund",
+          "label_de": "Untergrund",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "gipskarton_neu",
+              "Gipskarton, neu gespachtelt"
+            ],
+            [
+              "putz_gestrichen",
+              "Verputzt, gestrichen, intakt"
+            ],
+            [
+              "raufaser",
+              "Raufaser, gestrichen"
+            ],
+            [
+              "altbau_leimfarbe",
+              "Altbau, Leim- oder Kalkfarbe"
+            ],
+            [
+              "schadhaft",
+              "Rissig oder abblätternd"
+            ]
+          ],
+          "affects": "variant",
+          "default": "putz_gestrichen",
+          "note_if": {
+            "altbau_leimfarbe": "leimfarbe_altanstrich",
+            "schadhaft": "untergrund_tragfaehig"
+          },
+          "help_de": "Was schon an der Wand ist, entscheidet über den Aufwand davor."
+        },
+        {
+          "key": "farbwechsel",
+          "label_de": "Deutlicher Farbwechsel",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": false,
+          "note_if": {
+            "True": "deckkraft_farbwechsel"
+          },
+          "help_de": "Dunkel auf hell braucht einen dritten Anstrich"
+        },
+        {
+          "key": "nikotin",
+          "label_de": "Nikotin- oder Wasserflecken",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": false,
+          "note_if": {
+            "True": "nikotin_sperrgrund"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "moebel",
+          "label_de": "Möblierung",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "leer",
+              "Leer"
+            ],
+            [
+              "teilweise",
+              "Teilweise geräumt"
+            ],
+            [
+              "voll",
+              "Voll möbliert"
+            ]
+          ],
+          "affects": "note",
+          "default": "leer",
+          "note_if": {
+            "voll": "moebel_bauseits",
+            "teilweise": "moebel_bauseits"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "moebel_bauseits",
+        "trocknung_nutzung",
+        "musteranstrich"
+      ],
+      "labour_variance": 2.49,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.12,
+      "operations": [
+        {
+          "key": "abdecken",
+          "label_de": "Abdecken und Abkleben",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.075,
+            0.125
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "waende",
+          "label_de": "Wände, zwei Anstriche",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.13,
+            0.2
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "decken",
+          "label_de": "Decken, zwei Anstriche",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.07,
+            0.11
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "ausbessern",
+          "label_de": "Kleinausbesserungen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.02,
+            0.055
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "farbe",
+          "label_de": "Dispersionsfarbe",
+          "unit": "m2",
+          "kind": "material",
+          "hours_per_unit": [
+            0,
+            0
+          ],
+          "material_per_unit": [
+            3.3,
+            5.8
           ],
           "waste_factor": 0.08,
           "debris_kg_per_unit": [
@@ -1044,16 +1684,134 @@
       ],
       "band_basis": "per_unit",
       "sources": [
+        "fixbuddy.at/was-kostet-maler",
+        "daibau.at/baukostenrechner/maler",
         "profirechner.de/malerarbeiten-kosten-rechner"
       ],
-      "confidence": "medium",
+      "confidence": "high",
       "group": "Maler & Tapezierer",
       "segment": "Maler & Lackierer",
       "messy": true,
       "emergency_capable": false,
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "untergrund",
+          "label_de": "Untergrund",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "gipskarton_neu",
+              "Gipskarton, neu gespachtelt"
+            ],
+            [
+              "putz_gestrichen",
+              "Verputzt, gestrichen, intakt"
+            ],
+            [
+              "raufaser",
+              "Raufaser, gestrichen"
+            ],
+            [
+              "altbau_leimfarbe",
+              "Altbau, Leim- oder Kalkfarbe"
+            ],
+            [
+              "schadhaft",
+              "Rissig oder abblätternd"
+            ]
+          ],
+          "affects": "variant",
+          "default": "putz_gestrichen",
+          "note_if": {
+            "altbau_leimfarbe": "leimfarbe_altanstrich",
+            "schadhaft": "untergrund_tragfaehig"
+          },
+          "help_de": "Was schon an der Wand ist, entscheidet über den Aufwand davor."
+        },
+        {
+          "key": "moebel",
+          "label_de": "Möblierung",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "leer",
+              "Leer"
+            ],
+            [
+              "teilweise",
+              "Teilweise geräumt"
+            ],
+            [
+              "voll",
+              "Voll möbliert"
+            ]
+          ],
+          "affects": "note",
+          "default": "leer",
+          "note_if": {
+            "voll": "moebel_bauseits",
+            "teilweise": "moebel_bauseits"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
       "note_keys": [
-        "untergrund_tragfaehig"
+        "untergrund_tragfaehig",
+        "staub"
       ],
       "labour_variance": 2.56,
       "site_visit_required": false,
@@ -1135,12 +1893,287 @@
           "unit": "m2",
           "kind": "material",
           "hours_per_unit": [
-            0.0,
-            0.0
+            0,
+            0
           ],
           "material_per_unit": [
             1.4,
             2.6
+          ],
+          "waste_factor": 0.1,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "maler.spachteln_q4",
+      "trade": "maler",
+      "label_de": "Spachteln Q4 (streiflichttauglich)",
+      "unit": "m2",
+      "setup_hours": [
+        1.0,
+        1.8
+      ],
+      "typical_size": [
+        20,
+        70
+      ],
+      "market_band_at": [
+        20,
+        42
+      ],
+      "market_band_de": [
+        20,
+        46
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "fixbuddy.at/was-kostet-maler",
+        "daibau.at/baukostenrechner/maler",
+        "profirechner.de/malerarbeiten-kosten-rechner"
+      ],
+      "confidence": "medium",
+      "group": "Maler & Tapezierer",
+      "segment": "Maler & Lackierer",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "untergrund",
+          "label_de": "Untergrund",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "gipskarton_neu",
+              "Gipskarton, neu gespachtelt"
+            ],
+            [
+              "putz_gestrichen",
+              "Verputzt, gestrichen, intakt"
+            ],
+            [
+              "raufaser",
+              "Raufaser, gestrichen"
+            ],
+            [
+              "altbau_leimfarbe",
+              "Altbau, Leim- oder Kalkfarbe"
+            ],
+            [
+              "schadhaft",
+              "Rissig oder abblätternd"
+            ]
+          ],
+          "affects": "variant",
+          "default": "putz_gestrichen",
+          "note_if": {
+            "altbau_leimfarbe": "leimfarbe_altanstrich",
+            "schadhaft": "untergrund_tragfaehig"
+          },
+          "help_de": "Was schon an der Wand ist, entscheidet über den Aufwand davor."
+        },
+        {
+          "key": "moebel",
+          "label_de": "Möblierung",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "leer",
+              "Leer"
+            ],
+            [
+              "teilweise",
+              "Teilweise geräumt"
+            ],
+            [
+              "voll",
+              "Voll möbliert"
+            ]
+          ],
+          "affects": "note",
+          "default": "leer",
+          "note_if": {
+            "voll": "moebel_bauseits",
+            "teilweise": "moebel_bauseits"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "untergrund_tragfaehig",
+        "staub",
+        "trocknung_nutzung"
+      ],
+      "labour_variance": 2.52,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.16,
+      "operations": [
+        {
+          "key": "grundierung",
+          "label_de": "Grundierung",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.02,
+            0.035
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "q3",
+          "label_de": "Grundspachtelung",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.11,
+            0.18
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "q4",
+          "label_de": "Feinspachtelung vollflächig",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.09,
+            0.15
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "schleifen",
+          "label_de": "Schleifen und entstauben",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.055,
+            0.09
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "mat",
+          "label_de": "Spachtelmasse, Fein- und Grundierung",
+          "unit": "m2",
+          "kind": "material",
+          "hours_per_unit": [
+            0,
+            0
+          ],
+          "material_per_unit": [
+            2.4,
+            4.2
           ],
           "waste_factor": 0.1,
           "debris_kg_per_unit": [
@@ -1177,21 +2210,135 @@
       ],
       "band_basis": "per_unit",
       "sources": [
-        "handwerksratgeber.de/maler-kosten"
+        "fixbuddy.at/was-kostet-maler",
+        "daibau.at/baukostenrechner/maler",
+        "profirechner.de/malerarbeiten-kosten-rechner"
       ],
-      "confidence": "medium",
+      "confidence": "high",
       "group": "Maler & Tapezierer",
       "segment": "Maler & Lackierer",
       "messy": true,
       "emergency_capable": false,
-      "guided_form": [],
-      "note_keys": [
-        "altbau_untergrund"
+      "guided_form": [
+        {
+          "key": "tapetenart",
+          "label_de": "Art der Tapete",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "raufaser_1x",
+              "Raufaser, einmal gestrichen"
+            ],
+            [
+              "raufaser_mehrfach",
+              "Raufaser, mehrfach überstrichen"
+            ],
+            [
+              "vlies",
+              "Vlies, trocken abziehbar"
+            ],
+            [
+              "papier_alt",
+              "Alte Papiertapete, mehrlagig"
+            ]
+          ],
+          "affects": "variant",
+          "default": "raufaser_1x",
+          "note_if": {
+            "raufaser_mehrfach": "untergrund_tragfaehig",
+            "papier_alt": "altbau_untergrund"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "moebel",
+          "label_de": "Möblierung",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "leer",
+              "Leer"
+            ],
+            [
+              "teilweise",
+              "Teilweise geräumt"
+            ],
+            [
+              "voll",
+              "Voll möbliert"
+            ]
+          ],
+          "affects": "note",
+          "default": "leer",
+          "note_if": {
+            "voll": "moebel_bauseits",
+            "teilweise": "moebel_bauseits"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
       ],
-      "labour_variance": 3.45,
+      "note_keys": [
+        "altbau_untergrund",
+        "staub"
+      ],
+      "labour_variance": 3.47,
       "site_visit_required": true,
       "quote_mode": "regie",
-      "small_job_premium": 1.31,
+      "small_job_premium": 1.3,
       "operations": [
         {
           "key": "loesen",
@@ -1211,7 +2358,7 @@
             0.4,
             1.2
           ],
-          "debris_type": "bauschutt",
+          "debris_type": "sperrmuell",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1242,6 +2389,2072 @@
       ]
     },
     {
+      "key": "maler.tapezieren",
+      "trade": "maler",
+      "label_de": "Raufaser tapezieren und streichen",
+      "unit": "m2",
+      "setup_hours": [
+        0.8,
+        1.5
+      ],
+      "typical_size": [
+        25,
+        90
+      ],
+      "market_band_at": [
+        11,
+        22
+      ],
+      "market_band_de": [
+        11,
+        25
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "fixbuddy.at/was-kostet-maler",
+        "daibau.at/baukostenrechner/maler",
+        "profirechner.de/malerarbeiten-kosten-rechner"
+      ],
+      "confidence": "medium",
+      "group": "Maler & Tapezierer",
+      "segment": "Maler & Lackierer",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "untergrund",
+          "label_de": "Untergrund",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "gipskarton_neu",
+              "Gipskarton, neu gespachtelt"
+            ],
+            [
+              "putz_gestrichen",
+              "Verputzt, gestrichen, intakt"
+            ],
+            [
+              "raufaser",
+              "Raufaser, gestrichen"
+            ],
+            [
+              "altbau_leimfarbe",
+              "Altbau, Leim- oder Kalkfarbe"
+            ],
+            [
+              "schadhaft",
+              "Rissig oder abblätternd"
+            ]
+          ],
+          "affects": "variant",
+          "default": "putz_gestrichen",
+          "note_if": {
+            "altbau_leimfarbe": "leimfarbe_altanstrich",
+            "schadhaft": "untergrund_tragfaehig"
+          },
+          "help_de": "Was schon an der Wand ist, entscheidet über den Aufwand davor."
+        },
+        {
+          "key": "moebel",
+          "label_de": "Möblierung",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "leer",
+              "Leer"
+            ],
+            [
+              "teilweise",
+              "Teilweise geräumt"
+            ],
+            [
+              "voll",
+              "Voll möbliert"
+            ]
+          ],
+          "affects": "note",
+          "default": "leer",
+          "note_if": {
+            "voll": "moebel_bauseits",
+            "teilweise": "moebel_bauseits"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "untergrund_eben",
+        "trocknung_nutzung"
+      ],
+      "labour_variance": 2.46,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.17,
+      "operations": [
+        {
+          "key": "vorbereiten",
+          "label_de": "Untergrund vorbereiten und grundieren",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.03,
+            0.055
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "tapezieren",
+          "label_de": "Raufaser ansetzen und tapezieren",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.09,
+            0.15
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "anstrich2",
+          "label_de": "Zwei Anstriche",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.055,
+            0.085
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "mat",
+          "label_de": "Raufaser, Kleister und Farbe",
+          "unit": "m2",
+          "kind": "material",
+          "hours_per_unit": [
+            0,
+            0
+          ],
+          "material_per_unit": [
+            2.4,
+            4.2
+          ],
+          "waste_factor": 0.12,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "maler.designtapete",
+      "trade": "maler",
+      "label_de": "Vlies- oder Designtapete verlegen",
+      "unit": "m2",
+      "setup_hours": [
+        1.0,
+        2.0
+      ],
+      "typical_size": [
+        10,
+        35
+      ],
+      "market_band_at": [
+        22,
+        55
+      ],
+      "market_band_de": [
+        22,
+        60
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "fixbuddy.at/was-kostet-maler",
+        "daibau.at/baukostenrechner/maler",
+        "profirechner.de/malerarbeiten-kosten-rechner"
+      ],
+      "confidence": "medium",
+      "group": "Maler & Tapezierer",
+      "segment": "Maler & Lackierer",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "ansatz",
+          "label_de": "Musteransatz",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "ohne",
+              "Kein Ansatz / uni"
+            ],
+            [
+              "gerade",
+              "Gerader Ansatz"
+            ],
+            [
+              "versetzt",
+              "Versetzter Ansatz"
+            ]
+          ],
+          "affects": "variant",
+          "default": "gerade",
+          "note_if": {
+            "versetzt": "verschnitt_muster"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "material_bauseits",
+          "label_de": "Tapete wird beigestellt",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": false,
+          "note_if": {
+            "True": "stoff_bauseits_moeglich"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "untergrund",
+          "label_de": "Untergrund",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "gipskarton_neu",
+              "Gipskarton, neu gespachtelt"
+            ],
+            [
+              "putz_gestrichen",
+              "Verputzt, gestrichen, intakt"
+            ],
+            [
+              "raufaser",
+              "Raufaser, gestrichen"
+            ],
+            [
+              "altbau_leimfarbe",
+              "Altbau, Leim- oder Kalkfarbe"
+            ],
+            [
+              "schadhaft",
+              "Rissig oder abblätternd"
+            ]
+          ],
+          "affects": "variant",
+          "default": "putz_gestrichen",
+          "note_if": {
+            "altbau_leimfarbe": "leimfarbe_altanstrich",
+            "schadhaft": "untergrund_tragfaehig"
+          },
+          "help_de": "Was schon an der Wand ist, entscheidet über den Aufwand davor."
+        },
+        {
+          "key": "moebel",
+          "label_de": "Möblierung",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "leer",
+              "Leer"
+            ],
+            [
+              "teilweise",
+              "Teilweise geräumt"
+            ],
+            [
+              "voll",
+              "Voll möbliert"
+            ]
+          ],
+          "affects": "note",
+          "default": "leer",
+          "note_if": {
+            "voll": "moebel_bauseits",
+            "teilweise": "moebel_bauseits"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "verschnitt_muster",
+        "untergrund_eben",
+        "stoff_bauseits_moeglich"
+      ],
+      "labour_variance": 2.65,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.24,
+      "operations": [
+        {
+          "key": "vorbereiten",
+          "label_de": "Untergrund vorbereiten und grundieren",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.035,
+            0.065
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verlegen",
+          "label_de": "Tapete ansetzen und verlegen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.13,
+            0.25
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "mat",
+          "label_de": "Vlies- bzw. Designtapete",
+          "unit": "m2",
+          "kind": "material",
+          "hours_per_unit": [
+            0,
+            0
+          ],
+          "material_per_unit": [
+            11.0,
+            26.0
+          ],
+          "waste_factor": 0.15,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "maler.tuer_lackieren",
+      "trade": "maler",
+      "label_de": "Innentür lackieren (Blatt und Zarge)",
+      "unit": "Stk",
+      "setup_hours": [
+        0.5,
+        1.0
+      ],
+      "typical_size": [
+        1,
+        6
+      ],
+      "market_band_at": [
+        120,
+        260
+      ],
+      "market_band_de": [
+        125,
+        290
+      ],
+      "band_basis": "total",
+      "sources": [
+        "fixbuddy.at/was-kostet-maler",
+        "daibau.at/baukostenrechner/maler",
+        "profirechner.de/malerarbeiten-kosten-rechner"
+      ],
+      "confidence": "medium",
+      "group": "Maler & Tapezierer",
+      "segment": "Maler & Lackierer",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "anzahl",
+          "label_de": "Anzahl Türen",
+          "type": "number",
+          "unit": "Stk",
+          "options": [],
+          "affects": "qty",
+          "default": 1,
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "altlack",
+          "label_de": "Bestehender Lack",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "intakt",
+              "Intakt, nur anschleifen"
+            ],
+            [
+              "abblaetternd",
+              "Abblätternd"
+            ],
+            [
+              "furnier_roh",
+              "Furnier oder roh"
+            ]
+          ],
+          "affects": "variant",
+          "default": "intakt",
+          "note_if": {
+            "abblaetternd": "untergrund_tragfaehig"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "baujahr",
+          "label_de": "Baujahr",
+          "type": "number",
+          "unit": "Jahr",
+          "options": [],
+          "affects": "note",
+          "default": null,
+          "note_if": {},
+          "help_de": "Vor 1960 kann der Altanstrich Blei enthalten."
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "lack_demontage",
+        "trocknung_nutzung"
+      ],
+      "labour_variance": 2.99,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.32,
+      "operations": [
+        {
+          "key": "demontage",
+          "label_de": "Beschläge demontieren und montieren",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.25,
+            0.45
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "schleifen",
+          "label_de": "Schleifen und entstauben",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.45,
+            0.9
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "grundieren",
+          "label_de": "Grundierung",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.3,
+            0.55
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "lackieren",
+          "label_de": "Zweimal lackieren mit Zwischenschliff",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.95,
+            1.8
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "mat",
+          "label_de": "Grundierung und Lack",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0,
+            0
+          ],
+          "material_per_unit": [
+            9.0,
+            22.0
+          ],
+          "waste_factor": 0.1,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "maler.heizkoerper_lackieren",
+      "trade": "maler",
+      "label_de": "Heizkörper lackieren",
+      "unit": "Stk",
+      "setup_hours": [
+        0.4,
+        0.8
+      ],
+      "typical_size": [
+        1,
+        5
+      ],
+      "market_band_at": [
+        60,
+        150
+      ],
+      "market_band_de": [
+        60,
+        160
+      ],
+      "band_basis": "total",
+      "sources": [
+        "fixbuddy.at/was-kostet-maler",
+        "daibau.at/baukostenrechner/maler",
+        "profirechner.de/malerarbeiten-kosten-rechner"
+      ],
+      "confidence": "medium",
+      "group": "Maler & Tapezierer",
+      "segment": "Maler & Lackierer",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "anzahl",
+          "label_de": "Anzahl Heizkörper",
+          "type": "number",
+          "unit": "Stk",
+          "options": [],
+          "affects": "qty",
+          "default": 1,
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "typ",
+          "label_de": "Bauart",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "flach",
+              "Flachheizkörper"
+            ],
+            [
+              "rippen",
+              "Rippenheizkörper"
+            ],
+            [
+              "guss_alt",
+              "Alter Gussradiator"
+            ]
+          ],
+          "affects": "variant",
+          "default": "flach",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "anlage_entleeren",
+        "trocknung_nutzung"
+      ],
+      "labour_variance": 3.07,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.25,
+      "operations": [
+        {
+          "key": "abdecken",
+          "label_de": "Abdecken und Abkleben",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.2,
+            0.35
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "schleifen",
+          "label_de": "Entrosten und anschleifen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.3,
+            0.65
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "lackieren",
+          "label_de": "Heizkörperlack, zwei Aufträge",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.5,
+            1.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "mat",
+          "label_de": "Grundierung und Heizkörperlack",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0,
+            0
+          ],
+          "material_per_unit": [
+            7.0,
+            16.0
+          ],
+          "waste_factor": 0.1,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "maler.holzfenster_streichen",
+      "trade": "maler",
+      "label_de": "Holzfenster streichen",
+      "unit": "Stk",
+      "setup_hours": [
+        0.6,
+        1.2
+      ],
+      "typical_size": [
+        1,
+        8
+      ],
+      "market_band_at": [
+        130,
+        320
+      ],
+      "market_band_de": [
+        140,
+        350
+      ],
+      "band_basis": "total",
+      "sources": [
+        "fixbuddy.at/was-kostet-maler",
+        "daibau.at/baukostenrechner/maler",
+        "profirechner.de/malerarbeiten-kosten-rechner"
+      ],
+      "confidence": "medium",
+      "group": "Maler & Tapezierer",
+      "segment": "Maler & Lackierer",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "anzahl",
+          "label_de": "Anzahl Fenster",
+          "type": "number",
+          "unit": "Stk",
+          "options": [],
+          "affects": "qty",
+          "default": 2,
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "zustand_holz",
+          "label_de": "Zustand des Holzes",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "gut",
+              "Gut, nur anschleifen"
+            ],
+            [
+              "verwittert",
+              "Verwittert, Altanstrich lose"
+            ],
+            [
+              "schaeden",
+              "Holzschäden sichtbar"
+            ]
+          ],
+          "affects": "variant",
+          "default": "verwittert",
+          "note_if": {
+            "schaeden": "untergrund_tragfaehig"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "baujahr",
+          "label_de": "Baujahr",
+          "type": "number",
+          "unit": "Jahr",
+          "options": [],
+          "affects": "note",
+          "default": null,
+          "note_if": {},
+          "help_de": "Vor 1960 kann der Altanstrich Blei enthalten."
+        },
+        {
+          "key": "geruest",
+          "label_de": "Gerüst",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "bauseits",
+              "Wird bauseits gestellt"
+            ],
+            [
+              "noetig",
+              "Wird benötigt"
+            ],
+            [
+              "nicht_noetig",
+              "Nicht nötig, Leiter reicht"
+            ]
+          ],
+          "affects": "note",
+          "default": "noetig",
+          "note_if": {
+            "noetig": "geruest_nicht_enthalten"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "witterung",
+        "holzschutz_intervall",
+        "lack_demontage"
+      ],
+      "labour_variance": 3.17,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.29,
+      "operations": [
+        {
+          "key": "demontage",
+          "label_de": "Beschläge lösen und wieder montieren",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.3,
+            0.55
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "vorbereiten",
+          "label_de": "Altanstrich anschleifen, lose Teile entfernen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.7,
+            1.6
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "grundieren",
+          "label_de": "Holzgrundierung",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.35,
+            0.7
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "lackieren",
+          "label_de": "Zweimal Wetterschutzlack",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.9,
+            1.8
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "mat",
+          "label_de": "Grundierung, Lack und Dichtstoff",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0,
+            0
+          ],
+          "material_per_unit": [
+            14.0,
+            32.0
+          ],
+          "waste_factor": 0.1,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "maler.schimmelsanierung",
+      "trade": "maler",
+      "label_de": "Schimmelsanierung Innenwand",
+      "unit": "m2",
+      "setup_hours": [
+        1.2,
+        2.5
+      ],
+      "typical_size": [
+        2,
+        15
+      ],
+      "market_band_at": [
+        28,
+        75
+      ],
+      "market_band_de": [
+        28,
+        85
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "fixbuddy.at/was-kostet-maler",
+        "daibau.at/baukostenrechner/maler",
+        "profirechner.de/malerarbeiten-kosten-rechner"
+      ],
+      "confidence": "medium",
+      "group": "Maler & Tapezierer",
+      "segment": "Maler & Lackierer",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "flaeche",
+          "label_de": "Befallene Fläche",
+          "type": "number",
+          "unit": "m2",
+          "options": [],
+          "affects": "qty",
+          "default": 4,
+          "note_if": {},
+          "help_de": "Ab 0,5 m² ist es nach Umweltbundesamt ein Fall für Fachfirmen"
+        },
+        {
+          "key": "ursache",
+          "label_de": "Ursache",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "kondensat",
+              "Kondensat / Lüftungsverhalten"
+            ],
+            [
+              "wasserschaden",
+              "Wasserschaden"
+            ],
+            [
+              "waermebruecke",
+              "Wärmebrücke"
+            ],
+            [
+              "unbekannt",
+              "Unbekannt"
+            ]
+          ],
+          "affects": "note",
+          "default": "unbekannt",
+          "note_if": {
+            "unbekannt": "schimmel_ursache_extra",
+            "wasserschaden": "folgeschaeden"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "umfang_gross",
+          "label_de": "Mehr als 0,5 m² befallen",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": true,
+          "note_if": {
+            "True": "schimmel_grossflaechig"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "moebel",
+          "label_de": "Möblierung",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "leer",
+              "Leer"
+            ],
+            [
+              "teilweise",
+              "Teilweise geräumt"
+            ],
+            [
+              "voll",
+              "Voll möbliert"
+            ]
+          ],
+          "affects": "note",
+          "default": "leer",
+          "note_if": {
+            "voll": "moebel_bauseits",
+            "teilweise": "moebel_bauseits"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "schimmel_ursache_extra",
+        "raumklima",
+        "staub"
+      ],
+      "labour_variance": 3.0,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 2.09,
+      "operations": [
+        {
+          "key": "abschotten",
+          "label_de": "Arbeitsbereich abschotten",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.06,
+            0.12
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "entfernen",
+          "label_de": "Befallenen Putz bzw. Anstrich entfernen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.15,
+            0.32
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            3.0,
+            9.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "behandeln",
+          "label_de": "Desinfektion und Trocknung prüfen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.08,
+            0.16
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "aufbauen",
+          "label_de": "Sperrgrund und Neuanstrich",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.11,
+            0.2
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "mat",
+          "label_de": "Schimmelentferner, Sperrgrund, Farbe",
+          "unit": "m2",
+          "kind": "material",
+          "hours_per_unit": [
+            0,
+            0
+          ],
+          "material_per_unit": [
+            6.0,
+            14.0
+          ],
+          "waste_factor": 0.1,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "maler.strukturputz",
+      "trade": "maler",
+      "label_de": "Struktur- oder Dekorputz innen",
+      "unit": "m2",
+      "setup_hours": [
+        1.0,
+        2.0
+      ],
+      "typical_size": [
+        12,
+        45
+      ],
+      "market_band_at": [
+        22,
+        48
+      ],
+      "market_band_de": [
+        22,
+        55
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "fixbuddy.at/was-kostet-maler",
+        "daibau.at/baukostenrechner/maler",
+        "profirechner.de/malerarbeiten-kosten-rechner"
+      ],
+      "confidence": "low",
+      "group": "Maler & Tapezierer",
+      "segment": "Maler & Lackierer",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "art",
+          "label_de": "Art",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "rollputz",
+              "Rollputz"
+            ],
+            [
+              "reibeputz",
+              "Reibeputz"
+            ],
+            [
+              "spachtel_dekor",
+              "Dekorspachtel / Beton-Optik"
+            ]
+          ],
+          "affects": "variant",
+          "default": "reibeputz",
+          "note_if": {
+            "spachtel_dekor": "musteranstrich"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "untergrund",
+          "label_de": "Untergrund",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "gipskarton_neu",
+              "Gipskarton, neu gespachtelt"
+            ],
+            [
+              "putz_gestrichen",
+              "Verputzt, gestrichen, intakt"
+            ],
+            [
+              "raufaser",
+              "Raufaser, gestrichen"
+            ],
+            [
+              "altbau_leimfarbe",
+              "Altbau, Leim- oder Kalkfarbe"
+            ],
+            [
+              "schadhaft",
+              "Rissig oder abblätternd"
+            ]
+          ],
+          "affects": "variant",
+          "default": "putz_gestrichen",
+          "note_if": {
+            "altbau_leimfarbe": "leimfarbe_altanstrich",
+            "schadhaft": "untergrund_tragfaehig"
+          },
+          "help_de": "Was schon an der Wand ist, entscheidet über den Aufwand davor."
+        },
+        {
+          "key": "moebel",
+          "label_de": "Möblierung",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "leer",
+              "Leer"
+            ],
+            [
+              "teilweise",
+              "Teilweise geräumt"
+            ],
+            [
+              "voll",
+              "Voll möbliert"
+            ]
+          ],
+          "affects": "note",
+          "default": "leer",
+          "note_if": {
+            "voll": "moebel_bauseits",
+            "teilweise": "moebel_bauseits"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "untergrund_eben",
+        "musteranstrich",
+        "trocknung_nutzung"
+      ],
+      "labour_variance": 2.78,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.29,
+      "operations": [
+        {
+          "key": "grundieren",
+          "label_de": "Haftgrund",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.025,
+            0.045
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "auftragen",
+          "label_de": "Putz auftragen und strukturieren",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.15,
+            0.3
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "mat",
+          "label_de": "Putz und Haftgrund",
+          "unit": "m2",
+          "kind": "material",
+          "hours_per_unit": [
+            0,
+            0
+          ],
+          "material_per_unit": [
+            5.0,
+            11.0
+          ],
+          "waste_factor": 0.12,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "maler.risse_sanieren",
+      "trade": "maler",
+      "label_de": "Risse sanieren",
+      "unit": "lfm",
+      "setup_hours": [
+        0.6,
+        1.2
+      ],
+      "typical_size": [
+        3,
+        25
+      ],
+      "market_band_at": [
+        9,
+        28
+      ],
+      "market_band_de": [
+        9,
+        30
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "fixbuddy.at/was-kostet-maler",
+        "daibau.at/baukostenrechner/maler",
+        "profirechner.de/malerarbeiten-kosten-rechner"
+      ],
+      "confidence": "low",
+      "group": "Maler & Tapezierer",
+      "segment": "Maler & Lackierer",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "laenge",
+          "label_de": "Risslänge gesamt",
+          "type": "number",
+          "unit": "lfm",
+          "options": [],
+          "affects": "qty",
+          "default": 8,
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "art",
+          "label_de": "Art des Risses",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "haarriss",
+              "Haarriss im Putz"
+            ],
+            [
+              "setzriss",
+              "Setzriss, durchgehend"
+            ],
+            [
+              "anschlussfuge",
+              "Anschlussfuge Wand/Decke"
+            ]
+          ],
+          "affects": "variant",
+          "default": "haarriss",
+          "note_if": {
+            "setzriss": "statik_nicht_tragend"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "untergrund_tragfaehig",
+        "statik_nicht_tragend"
+      ],
+      "labour_variance": 3.4,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.61,
+      "operations": [
+        {
+          "key": "oeffnen",
+          "label_de": "Riss öffnen und entstauben",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.06,
+            0.14
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.3,
+            0.9
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verfuellen",
+          "label_de": "Armieren und verspachteln",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.09,
+            0.2
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "schleifen",
+          "label_de": "Schleifen und ausbessern",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.05,
+            0.11
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "mat",
+          "label_de": "Armierband, Spachtel, Grundierung",
+          "unit": "lfm",
+          "kind": "material",
+          "hours_per_unit": [
+            0,
+            0
+          ],
+          "material_per_unit": [
+            1.2,
+            3.0
+          ],
+          "waste_factor": 0.1,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
       "key": "maler.fassade",
       "trade": "maler",
       "label_de": "Fassadenanstrich",
@@ -1255,26 +4468,139 @@
         300
       ],
       "market_band_at": [
-        18,
-        44
+        12,
+        34
       ],
       "market_band_de": [
-        20,
-        48
+        13,
+        38
       ],
       "band_basis": "per_unit",
       "sources": [
-        "hausbau-magazin.at/malerkosten-oesterreich"
+        "hausbau-magazin.at/malerkosten-oesterreich",
+        "daibau.at/baukostenrechner/fassade"
       ],
       "confidence": "medium",
       "group": "Maler & Tapezierer",
       "segment": "Maler & Lackierer",
       "messy": true,
       "emergency_capable": false,
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "untergrund_aussen",
+          "label_de": "Untergrund",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "putz_intakt",
+              "Putz, intakt gestrichen"
+            ],
+            [
+              "putz_kreidend",
+              "Putz, kreidend"
+            ],
+            [
+              "wdvs_bestand",
+              "Bestehendes WDVS"
+            ],
+            [
+              "sichtbeton",
+              "Sichtbeton"
+            ]
+          ],
+          "affects": "variant",
+          "default": "putz_intakt",
+          "note_if": {
+            "putz_kreidend": "fassade_haftung"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "hoehe",
+          "label_de": "Gebäudehöhe",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "bis_2",
+              "Bis 2 Geschosse"
+            ],
+            [
+              "bis_4",
+              "3 bis 4 Geschosse"
+            ],
+            [
+              "ueber_4",
+              "Mehr als 4 Geschosse"
+            ]
+          ],
+          "affects": "variant",
+          "default": "bis_2",
+          "note_if": {
+            "ueber_4": "absturzsicherung_norm"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "geruest",
+          "label_de": "Gerüst",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "bauseits",
+              "Wird bauseits gestellt"
+            ],
+            [
+              "noetig",
+              "Wird benötigt"
+            ],
+            [
+              "nicht_noetig",
+              "Nicht nötig, Leiter reicht"
+            ]
+          ],
+          "affects": "note",
+          "default": "noetig",
+          "note_if": {
+            "noetig": "geruest_nicht_enthalten"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
       "note_keys": [
         "geruest_nicht_enthalten",
-        "witterung"
+        "witterung",
+        "fassade_haftung"
       ],
       "labour_variance": 2.58,
       "site_visit_required": true,
@@ -1356,12 +4682,915 @@
           "unit": "m2",
           "kind": "material",
           "hours_per_unit": [
-            0.0,
-            0.0
+            0,
+            0
           ],
           "material_per_unit": [
             3.2,
             6.5
+          ],
+          "waste_factor": 0.1,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "maler.fassade_reinigen",
+      "trade": "maler",
+      "label_de": "Fassade reinigen und imprägnieren",
+      "unit": "m2",
+      "setup_hours": [
+        1.5,
+        3.0
+      ],
+      "typical_size": [
+        60,
+        250
+      ],
+      "market_band_at": [
+        7,
+        18
+      ],
+      "market_band_de": [
+        7,
+        20
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "hausbau-magazin.at/malerkosten-oesterreich",
+        "daibau.at/baukostenrechner/fassade"
+      ],
+      "confidence": "low",
+      "group": "Maler & Tapezierer",
+      "segment": "Maler & Lackierer",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "verschmutzung",
+          "label_de": "Verschmutzung",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "staub",
+              "Staub und Flugschmutz"
+            ],
+            [
+              "algen",
+              "Algen und Grünbelag"
+            ],
+            [
+              "graffiti",
+              "Graffiti"
+            ]
+          ],
+          "affects": "variant",
+          "default": "algen",
+          "note_if": {
+            "graffiti": "regie_abrechnung"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "geruest",
+          "label_de": "Gerüst",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "bauseits",
+              "Wird bauseits gestellt"
+            ],
+            [
+              "noetig",
+              "Wird benötigt"
+            ],
+            [
+              "nicht_noetig",
+              "Nicht nötig, Leiter reicht"
+            ]
+          ],
+          "affects": "note",
+          "default": "noetig",
+          "note_if": {
+            "noetig": "geruest_nicht_enthalten"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "witterung",
+        "geruest_nicht_enthalten"
+      ],
+      "labour_variance": 2.87,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.17,
+      "operations": [
+        {
+          "key": "reinigen",
+          "label_de": "Reinigen, Niederdruck",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.04,
+            0.085
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "impraegnieren",
+          "label_de": "Imprägnierung auftragen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.03,
+            0.055
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "mat",
+          "label_de": "Reiniger und Imprägnierung",
+          "unit": "m2",
+          "kind": "material",
+          "hours_per_unit": [
+            0,
+            0
+          ],
+          "material_per_unit": [
+            1.6,
+            3.6
+          ],
+          "waste_factor": 0.08,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "maler.wdvs",
+      "trade": "maler",
+      "label_de": "Wärmedämmverbundsystem (WDVS)",
+      "unit": "m2",
+      "setup_hours": [
+        6.0,
+        12.0
+      ],
+      "typical_size": [
+        90,
+        320
+      ],
+      "market_band_at": [
+        105,
+        200
+      ],
+      "market_band_de": [
+        112,
+        225
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "hausbau-magazin.at/malerkosten-oesterreich",
+        "daibau.at/baukostenrechner/fassade"
+      ],
+      "confidence": "low",
+      "group": "Maler & Tapezierer",
+      "segment": "Maler & Lackierer",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "daemmstoff",
+          "label_de": "Dämmstoff",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eps",
+              "EPS"
+            ],
+            [
+              "mineralwolle",
+              "Mineralwolle"
+            ],
+            [
+              "holzfaser",
+              "Holzfaser"
+            ]
+          ],
+          "affects": "variant",
+          "default": "eps",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "staerke",
+          "label_de": "Dämmstärke",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "12",
+              "12 cm"
+            ],
+            [
+              "16",
+              "16 cm"
+            ],
+            [
+              "20",
+              "20 cm"
+            ]
+          ],
+          "affects": "variant",
+          "default": "16",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "geruest",
+          "label_de": "Gerüst",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "bauseits",
+              "Wird bauseits gestellt"
+            ],
+            [
+              "noetig",
+              "Wird benötigt"
+            ],
+            [
+              "nicht_noetig",
+              "Nicht nötig, Leiter reicht"
+            ]
+          ],
+          "affects": "note",
+          "default": "noetig",
+          "note_if": {
+            "noetig": "geruest_nicht_enthalten"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "geruest_nicht_enthalten",
+        "witterung",
+        "wdvs_details",
+        "foerderung"
+      ],
+      "labour_variance": 2.29,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.04,
+      "operations": [
+        {
+          "key": "vorbereiten",
+          "label_de": "Untergrund prüfen und vorbereiten",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.05,
+            0.1
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "kleben",
+          "label_de": "Dämmplatten kleben und dübeln",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.22,
+            0.38
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "armieren",
+          "label_de": "Armierungsschicht mit Gewebe",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.18,
+            0.3
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "oberputz",
+          "label_de": "Grundierung und Oberputz",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.14,
+            0.24
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "details",
+          "label_de": "Sockel, Laibungen und Anschlüsse",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.07,
+            0.15
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "mat",
+          "label_de": "Dämmung, Kleber, Gewebe, Putz",
+          "unit": "m2",
+          "kind": "material",
+          "hours_per_unit": [
+            0,
+            0
+          ],
+          "material_per_unit": [
+            38.0,
+            72.0
+          ],
+          "waste_factor": 0.1,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "maler.holzschutz",
+      "trade": "maler",
+      "label_de": "Holzfassade oder Zaun lasieren",
+      "unit": "m2",
+      "setup_hours": [
+        1.0,
+        2.0
+      ],
+      "typical_size": [
+        20,
+        120
+      ],
+      "market_band_at": [
+        13,
+        32
+      ],
+      "market_band_de": [
+        13,
+        34
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "hausbau-magazin.at/malerkosten-oesterreich",
+        "daibau.at/baukostenrechner/fassade"
+      ],
+      "confidence": "low",
+      "group": "Maler & Tapezierer",
+      "segment": "Maler & Lackierer",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "zustand_holz",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neu",
+              "Neu, unbehandelt"
+            ],
+            [
+              "lasiert_intakt",
+              "Lasiert, intakt"
+            ],
+            [
+              "vergraut",
+              "Vergraut oder abblätternd"
+            ]
+          ],
+          "affects": "variant",
+          "default": "vergraut",
+          "note_if": {
+            "vergraut": "untergrund_tragfaehig"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "witterung",
+        "holzschutz_intervall"
+      ],
+      "labour_variance": 2.94,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.3,
+      "operations": [
+        {
+          "key": "vorbereiten",
+          "label_de": "Reinigen, schleifen, entgrauen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.06,
+            0.13
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "lasieren",
+          "label_de": "Zweimal lasieren",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.07,
+            0.13
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "mat",
+          "label_de": "Holzschutzlasur",
+          "unit": "m2",
+          "kind": "material",
+          "hours_per_unit": [
+            0,
+            0
+          ],
+          "material_per_unit": [
+            2.2,
+            5.0
+          ],
+          "waste_factor": 0.1,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "maler.bodenbeschichtung",
+      "trade": "maler",
+      "label_de": "Bodenbeschichtung Garage oder Keller",
+      "unit": "m2",
+      "setup_hours": [
+        1.5,
+        3.0
+      ],
+      "typical_size": [
+        15,
+        60
+      ],
+      "market_band_at": [
+        30,
+        70
+      ],
+      "market_band_de": [
+        30,
+        75
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "fixbuddy.at/was-kostet-maler",
+        "daibau.at/baukostenrechner/maler",
+        "profirechner.de/malerarbeiten-kosten-rechner"
+      ],
+      "confidence": "low",
+      "group": "Maler & Tapezierer",
+      "segment": "Maler & Lackierer",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "untergrund_boden",
+          "label_de": "Untergrund",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "beton_neu",
+              "Beton, neu"
+            ],
+            [
+              "beton_alt",
+              "Beton, alt"
+            ],
+            [
+              "estrich",
+              "Estrich"
+            ],
+            [
+              "beschichtet",
+              "Bereits beschichtet"
+            ]
+          ],
+          "affects": "variant",
+          "default": "beton_alt",
+          "note_if": {
+            "beschichtet": "untergrund_tragfaehig"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "feuchte",
+          "label_de": "Aufsteigende Feuchte bekannt",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": false,
+          "note_if": {
+            "True": "folgeschaeden"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, besenrein"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, leerstehend"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "untergrund_tragfaehig",
+        "trocknung_nutzung",
+        "raumklima"
+      ],
+      "labour_variance": 2.44,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.22,
+      "operations": [
+        {
+          "key": "schleifen",
+          "label_de": "Schleifen und entstauben",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.06,
+            0.12
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.5,
+            1.5
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "grundieren",
+          "label_de": "Epoxid-Grundierung",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.04,
+            0.08
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "beschichten",
+          "label_de": "Beschichtung auftragen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.06,
+            0.12
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "mat",
+          "label_de": "Grundierung und Beschichtung",
+          "unit": "m2",
+          "kind": "material",
+          "hours_per_unit": [
+            0,
+            0
+          ],
+          "material_per_unit": [
+            13.0,
+            26.0
           ],
           "waste_factor": 0.1,
           "debris_kg_per_unit": [
