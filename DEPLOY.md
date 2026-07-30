@@ -96,3 +96,32 @@ cold start because there is no MongoDB. Each returns once ported.
    direct LLM SDK for receipt OCR and classification. The Stripe webhook in
    `api/index.py` is a logged placeholder until then.
 5. **Port the remaining routes** listed above.
+
+### Optional — AI features (B2 lead structuring, B5 vision)
+
+Absent by default, and absent is a supported state: the app runs exactly as it
+does without them.
+
+| Variable | Example | Notes |
+|---|---|---|
+| `LLM_BASE_URL` | `https://api.mistral.ai/v1` | Any OpenAI-compatible endpoint |
+| `LLM_API_KEY` | | Provider key |
+| `LLM_MODEL` | `pixtral-12b-2409` | Vision-capable model for B5 |
+| `LLM_VISION` | `1` | **Separate switch.** Without it images are refused even with a valid key |
+| `LLM_PROVIDER` | `Mistral (EU)` | Label recorded in the audit trail and disclosed to customers |
+
+**On choosing a provider.** Job photos are the inside of a customer's home —
+personal data under DSGVO, and you are the controller. Two things follow:
+
+- Free tiers that train on submitted data (Mistral's Experiment tier, Google's
+  free tier) are fine for development against synthetic photos and unsuitable
+  for real customer images.
+- The hosted Chinese APIs — DeepSeek, Qwen, Kimi, GLM — process prompts in
+  China, which has no EU adequacy decision, and Chinese law can compel
+  disclosure. Their *weights* are open (Qwen3 Apache 2.0, DeepSeek and GLM
+  MIT), so the same models can run on EU infrastructure (Scaleway, OVH,
+  Nebius) or self-hosted. That keeps the capability and removes the transfer.
+
+`LLM_VISION` exists so that setting a key can never silently start sending
+photos: enabling it is a decision made on purpose, with a processor agreement
+behind it.
