@@ -2,7 +2,7 @@ from schema import JobType as J, Operation as Op
 
 # ══ Heizung (174) ═════════════════════════════════════════════════════
 HEIZUNG = [
-    J(key="heizung.heizkoerper", trade="heizung", group="Heizung",
+    J(key="heizung.heizkoerper", messy=False, trade="heizung", group="Heizung",
       segment="Heizungsinstallateur", label_de="Heizkörper tauschen", unit="Stk",
       setup_hours=(0.8, 1.5), typical_size=(1, 8),
       market_band_at=(320, 750), market_band_de=(340, 800), band_basis="total",
@@ -13,8 +13,8 @@ HEIZUNG = [
              debris_kg_per_unit=(25, 55)),
           Op("koerper", "Heizkörper und Ventile", "Stk", (0.0, 0.0), kind="material",
              material_per_unit=(140, 340)),
-          Op("montage", "Montieren und anschließen", "Stk", (1.4, 2.6)),
-          Op("befuellen", "Befüllen und entlüften", "Stk", (0.4, 0.8)),
+          Op("montage", "Montieren und anschließen", "Stk", (1.1, 2.0)),
+          Op("befuellen", "Befüllen und entlüften", "Stk", (0.3, 0.6)),
       ]),
     J(key="heizung.fussbodenheizung", trade="heizung", group="Heizung",
       segment="Heizungsinstallateur", label_de="Fußbodenheizung verlegen (Nass)",
@@ -85,7 +85,7 @@ UMZUG = [
 
 # ══ Reinigung (45) ════════════════════════════════════════════════════
 REINIGUNG = [
-    J(key="reinigung.grundreinigung", trade="reinigung", group="Reinigung",
+    J(key="reinigung.grundreinigung", messy=False, trade="reinigung", group="Reinigung",
       segment="Gebäudereiniger", label_de="Grundreinigung Wohnung", unit="m2",
       setup_hours=(0.5, 1.0), typical_size=(50, 140),
       market_band_at=(4, 12), market_band_de=(4, 13), confidence="medium",
@@ -94,21 +94,21 @@ REINIGUNG = [
           Op("reinigung", "Grundreinigung aller Flächen", "m2", (0.06, 0.13),
              material_per_unit=(0.20, 0.50)),
       ]),
-    J(key="reinigung.fenster", trade="reinigung", group="Reinigung",
+    J(key="reinigung.fenster", messy=False, trade="reinigung", group="Reinigung",
       segment="Gebäudereiniger", label_de="Fensterreinigung", unit="Stk",
       setup_hours=(0.3, 0.7), typical_size=(8, 30),
       market_band_at=(6, 18), market_band_de=(6, 20), confidence="medium",
       note_keys=["erreichbarkeit"],
       operations=[Op("fenster", "Fenster beidseitig reinigen", "Stk", (0.10, 0.25),
                      material_per_unit=(0.20, 0.60))]),
-    J(key="reinigung.hausbetreuung", trade="reinigung", group="Reinigung",
+    J(key="reinigung.hausbetreuung", messy=False, trade="reinigung", group="Reinigung",
       segment="Hausmeisterservice", label_de="Hausbetreuung (Stiegenhaus, pro Besuch)",
       unit="Stk", setup_hours=(0.2, 0.4), typical_size=(1, 1),
       market_band_at=(45, 130), market_band_de=(48, 140), band_basis="total",
       confidence="medium", note_keys=["schluessel_uebergabe"],
       operations=[Op("reinigung", "Stiegenhaus reinigen", "Stk", (1.0, 2.5),
                      material_per_unit=(3, 8))]),
-    J(key="reinigung.schaedlinge", trade="reinigung", group="Reinigung",
+    J(key="reinigung.schaedlinge", messy=False, trade="reinigung", group="Reinigung",
       segment="Schädlingsbekämpfung", label_de="Schädlingsbekämpfung (Erstbehandlung)",
       unit="Stk", setup_hours=(0.4, 0.8), typical_size=(1, 1),
       market_band_at=(180, 480), market_band_de=(190, 500), band_basis="total",
@@ -155,14 +155,14 @@ SOLAR = [
 
 # ══ Montage & Allround (89) ═══════════════════════════════════════════
 MONTAGE = [
-    J(key="montage.stunde", trade="montage", group="Montage & Allround",
+    J(key="montage.stunde", messy=False, trade="montage", group="Montage & Allround",
       segment="Montageservice & Allroundhandwerker",
       label_de="Allround-Handwerker (Regiestunde)", unit="h",
       setup_hours=(0.4, 0.8), typical_size=(2, 8),
       market_band_at=(45, 80), market_band_de=(45, 85), confidence="high",
       note_keys=["regie_abrechnung"],
       operations=[Op("arbeit", "Handwerkerleistung nach Aufwand", "h", (1.0, 1.0))]),
-    J(key="montage.tv_wandhalterung", trade="montage", group="Montage & Allround",
+    J(key="montage.tv_wandhalterung", messy=False, trade="montage", group="Montage & Allround",
       segment="Montageservice & Allroundhandwerker",
       label_de="TV-Wandhalterung montieren", unit="Stk",
       setup_hours=(0.3, 0.6), typical_size=(1, 1),

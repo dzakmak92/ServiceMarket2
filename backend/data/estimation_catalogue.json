@@ -67,8 +67,8 @@
         62
       ],
       "sanitaer": [
-        55,
-        80
+        68,
+        112
       ],
       "elektrik": [
         55,
@@ -103,8 +103,8 @@
         70
       ],
       "heizung": [
-        55,
-        82
+        68,
+        110
       ],
       "umzug": [
         30,
@@ -149,8 +149,8 @@
         65
       ],
       "sanitaer": [
-        55,
-        85
+        68,
+        115
       ],
       "elektrik": [
         55,
@@ -185,8 +185,8 @@
         75
       ],
       "heizung": [
-        55,
-        88
+        68,
+        112
       ],
       "umzug": [
         30,
@@ -221,6 +221,16 @@
         60
       ]
     }
+  },
+  "hourly_notdienst": {
+    "AT": [
+      125,
+      160
+    ],
+    "DE": [
+      120,
+      170
+    ]
   },
   "disposal_per_tonne": {
     "AT": {
@@ -606,6 +616,94 @@
       "severity": "high",
       "de": "In Altbauten sind Leitungen häufig nicht normgerecht verlegt. Notwendige Anpassungen werden nach Aufwand verrechnet."
     },
+    "bleirohre_vor_1970": {
+      "severity": "critical",
+      "de": "Bleileitungen sind gesundheitsschädlich und in Gebäuden vor 1970 möglich. Wird Blei vorgefunden, ist der gesamte Strang zu tauschen; dies ist im Angebot nicht enthalten."
+    },
+    "kein_absperrventil": {
+      "severity": "high",
+      "de": "Ohne funktionierendes Absperrventil muss der Steigstrang abgesperrt werden. Abstimmung mit der Hausverwaltung und Mehraufwand sind nicht enthalten."
+    },
+    "fallstrang_verdacht": {
+      "severity": "high",
+      "de": "Sind mehrere Abläufe betroffen, liegt die Ursache meist im Fallstrang. Fallstrangreinigung und ggf. Kamerabefahrung werden gesondert verrechnet."
+    },
+    "aufbauhoehe_kritisch": {
+      "severity": "high",
+      "de": "Für eine bodengleiche Dusche ist eine ausreichende Aufbauhöhe erforderlich. Ist sie nicht gegeben, sind Ablaufvariante oder Aufbau anzupassen; Mehraufwand nach Aufwand."
+    },
+    "abstimmung_hausgemeinschaft": {
+      "severity": "high",
+      "de": "Arbeiten am Steigstrang erfordern Abstimmung mit Hausverwaltung und Miteigentümern sowie eine Wasserabschaltung."
+    },
+    "koordination_gewerke": {
+      "severity": "high",
+      "de": "Die Koordination der Folgegewerke (Elektro, Maler) ist enthalten; deren Leistungen sind es nicht."
+    },
+    "elektro_anschluss": {
+      "severity": "high",
+      "de": "Ein normgerechter Elektroanschluss mit ausreichender Absicherung wird vorausgesetzt; Anpassungen durch einen Elektriker sind nicht enthalten."
+    },
+    "gefaelle_ablauf": {
+      "severity": "medium",
+      "de": "Das erforderliche Gefälle zum Ablauf muss herstellbar sein; andernfalls ist eine Pumpenlösung nötig."
+    },
+    "fliesen_anschluss": {
+      "severity": "medium",
+      "de": "Beim Wannentausch werden angrenzende Fliesen beschädigt. Fliesenarbeiten sind nicht enthalten."
+    },
+    "fliesen_folgt": {
+      "severity": "medium",
+      "de": "Fliesen- und Malerarbeiten erfolgen durch das Folgegewerk und sind nicht enthalten."
+    },
+    "fliesen_nicht_enthalten": {
+      "severity": "medium",
+      "de": "Fliesen-, Maler- und Elektroarbeiten sind nicht enthalten."
+    },
+    "steigleitung_zusatz": {
+      "severity": "medium",
+      "de": "Die Erneuerung der Zuleitungen ist als Zusatzposition kalkuliert."
+    },
+    "bad_nicht_nutzbar": {
+      "severity": "medium",
+      "de": "Das Bad ist während der Arbeiten nicht nutzbar. Ohne zweites WC ist eine Ersatzlösung bauseits zu organisieren."
+    },
+    "ersatzteil_verfuegbarkeit": {
+      "severity": "medium",
+      "de": "Bei unbekanntem Hersteller kann die Ersatzteilbeschaffung Mehraufwand verursachen oder einen Komplettaustausch erfordern."
+    },
+    "kamera_empfohlen": {
+      "severity": "medium",
+      "de": "Bei wiederkehrenden Verstopfungen wird eine Kamerabefahrung empfohlen, um die Ursache zu finden."
+    },
+    "fremdkoerper": {
+      "severity": "medium",
+      "de": "Schäden durch Fremdkörper (Feuchttücher, Hygieneartikel) sind nicht vom Angebot gedeckt."
+    },
+    "wartungsstau": {
+      "severity": "medium",
+      "de": "Bei länger zurückliegender Wartung ist mit zusätzlichem Reinigungs- und Teileaufwand zu rechnen."
+    },
+    "protokoll_versicherung": {
+      "severity": "low",
+      "de": "Das Protokoll ist für die Vorlage bei Versicherung oder Hausverwaltung geeignet."
+    },
+    "notdienst_pauschale": {
+      "severity": "low",
+      "de": "Die Anfahrtspauschale wird bei Auftragserteilung angerechnet."
+    },
+    "wartungsvertrag": {
+      "severity": "low",
+      "de": "Im Rahmen eines Wartungsvertrags gelten reduzierte Sätze und ein bevorzugter Termin."
+    },
+    "foerderung_barrierefrei": {
+      "severity": "low",
+      "de": "Für barrierefreie Umbauten bestehen Förderungen (AT: Länder/Pflegefonds, DE: KfW 455-B, Pflegekasse). Antragstellung ist nicht enthalten."
+    },
+    "silikon_wartungsfuge": {
+      "severity": "low",
+      "de": "Silikonfugen sind Wartungsfugen und von der Gewährleistung ausgenommen (ÖNORM B 2207 / IVD)."
+    },
     "abschaltung": {
       "severity": "medium",
       "de": "Zeitweise Abschaltung der Stromversorgung ist erforderlich."
@@ -645,6 +743,9 @@
       "confidence": "medium",
       "group": "Maler & Tapezierer",
       "segment": "Maler & Lackierer",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "moebel_bauseits"
       ],
@@ -752,6 +853,9 @@
       "confidence": "medium",
       "group": "Maler & Tapezierer",
       "segment": "Maler & Lackierer",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [],
       "labour_variance": 2.49,
       "site_visit_required": false,
@@ -857,6 +961,9 @@
       "confidence": "medium",
       "group": "Maler & Tapezierer",
       "segment": "Maler & Lackierer",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "untergrund_tragfaehig"
       ],
@@ -987,6 +1094,9 @@
       "confidence": "medium",
       "group": "Maler & Tapezierer",
       "segment": "Maler & Lackierer",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "altbau_untergrund"
       ],
@@ -1071,6 +1181,9 @@
       "confidence": "medium",
       "group": "Maler & Tapezierer",
       "segment": "Maler & Lackierer",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "geruest_nicht_enthalten",
         "witterung"
@@ -1203,6 +1316,9 @@
       "confidence": "medium",
       "group": "Boden & Fliesen",
       "segment": "Fliesenleger",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "asbest_vor_1990",
         "staub"
@@ -1312,6 +1428,9 @@
       "confidence": "medium",
       "group": "Boden & Fliesen",
       "segment": "Fliesenleger",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "asbest_vor_1990",
         "staub",
@@ -1421,6 +1540,9 @@
       "confidence": "medium",
       "group": "Boden & Fliesen",
       "segment": "Fliesenleger",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "untergrund_eben",
         "verschnitt_muster"
@@ -1552,6 +1674,9 @@
       "confidence": "medium",
       "group": "Boden & Fliesen",
       "segment": "Fliesenleger",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "abdichtung_nassbereich"
       ],
@@ -1680,6 +1805,9 @@
       "confidence": "medium",
       "group": "Boden & Fliesen",
       "segment": "Fliesenleger",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "untergrund_eben",
         "dehnungsfuge"
@@ -1786,6 +1914,9 @@
       "confidence": "medium",
       "group": "Boden & Fliesen",
       "segment": "Fliesenleger",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "untergrund_eben",
         "raumklima"
@@ -1892,14 +2023,17 @@
       "confidence": "medium",
       "group": "Sanitär",
       "segment": "Sanitär- / Klempner",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "absperrventil",
         "altgeraet_entsorgung"
       ],
-      "labour_variance": 2.69,
+      "labour_variance": 2.99,
       "site_visit_required": false,
       "quote_mode": "fixed",
-      "small_job_premium": 1.14,
+      "small_job_premium": 1.09,
       "operations": [
         {
           "key": "demontage",
@@ -2021,13 +2155,16 @@
       "confidence": "medium",
       "group": "Sanitär",
       "segment": "Sanitär- / Klempner",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "altgeraet_entsorgung"
       ],
-      "labour_variance": 2.67,
+      "labour_variance": 2.94,
       "site_visit_required": false,
       "quote_mode": "fixed",
-      "small_job_premium": 1.16,
+      "small_job_premium": 1.1,
       "operations": [
         {
           "key": "demontage",
@@ -2126,15 +2263,18 @@
       "confidence": "medium",
       "group": "Sanitär",
       "segment": "Sanitär- / Klempner",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "rauchfangkehrer",
         "gasleitung_normgerecht",
         "foerderung"
       ],
-      "labour_variance": 1.84,
+      "labour_variance": 1.97,
       "site_visit_required": false,
       "quote_mode": "fixed",
-      "small_job_premium": 1.02,
+      "small_job_premium": 1.03,
       "operations": [
         {
           "key": "demontage",
@@ -2256,14 +2396,17 @@
       "confidence": "medium",
       "group": "Sanitär",
       "segment": "Sanitär- / Klempner",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "folgeschaeden",
         "oeffnung_wand"
       ],
-      "labour_variance": 3.68,
+      "labour_variance": 4.09,
       "site_visit_required": true,
       "quote_mode": "regie",
-      "small_job_premium": 1.08,
+      "small_job_premium": 1.09,
       "operations": [
         {
           "key": "ortung",
@@ -2385,6 +2528,9 @@
       "confidence": "medium",
       "group": "Elektrik",
       "segment": "Elektriker",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "e_befund",
         "altbau_leitungen"
@@ -2491,6 +2637,9 @@
       "confidence": "medium",
       "group": "Elektrik",
       "segment": "Elektriker",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "e_befund",
         "staub"
@@ -2620,6 +2769,9 @@
       "confidence": "medium",
       "group": "Elektrik",
       "segment": "Elektriker",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "e_befund",
         "abschaltung"
@@ -2749,6 +2901,9 @@
       "confidence": "medium",
       "group": "Trockenbau & Verputzen",
       "segment": "Trockenbauer",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "statik_nicht_tragend"
       ],
@@ -2877,6 +3032,9 @@
       "confidence": "medium",
       "group": "Abriss & Entsorgung",
       "segment": "Abrissunternehmen",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "asbest_vor_1990",
         "staub",
@@ -2961,6 +3119,9 @@
       "confidence": "medium",
       "group": "Abriss & Entsorgung",
       "segment": "Abrissunternehmen",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "statik_nicht_tragend",
         "asbest_vor_1990",
@@ -3020,6 +3181,2677 @@
       ]
     },
     {
+      "key": "sanitaer.notdienst_anfahrt",
+      "trade": "sanitaer",
+      "label_de": "Notdienst-Anfahrt und Erstdiagnose",
+      "unit": "Stk",
+      "setup_hours": [
+        0.3,
+        0.6
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        120,
+        260
+      ],
+      "market_band_de": [
+        125,
+        280
+      ],
+      "band_basis": "total",
+      "sources": [
+        "werkflow.at/installateur-kosten",
+        "daibau.at/baukostenrechner/klempner",
+        "gecheckt.at/preise/wasserinstallateure"
+      ],
+      "confidence": "high",
+      "group": "Sanitär",
+      "segment": "Sanitär- / Klempner",
+      "messy": false,
+      "emergency_capable": true,
+      "guided_form": [
+        {
+          "key": "zeit",
+          "label_de": "Einsatzzeit",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "regulaer",
+              "Werktag 7-17 Uhr"
+            ],
+            [
+              "abend",
+              "Abend/Samstag"
+            ],
+            [
+              "nacht_sonntag",
+              "Nacht oder Sonn-/Feiertag"
+            ]
+          ],
+          "affects": "variant",
+          "default": "regulaer",
+          "note_if": {
+            "nacht_sonntag": "nacht_zuschlag"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "nacht_zuschlag",
+        "notdienst_pauschale"
+      ],
+      "labour_variance": 3.43,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.13,
+      "operations": [
+        {
+          "key": "anfahrt",
+          "label_de": "Anfahrt Notdienst",
+          "unit": "Stk",
+          "kind": "travel",
+          "hours_per_unit": [
+            0.5,
+            0.9
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "diagnose",
+          "label_de": "Erstdiagnose vor Ort",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.4,
+            0.8
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "sanitaer.rohrreinigung_waschbecken",
+      "trade": "sanitaer",
+      "label_de": "Verstopfung Waschbecken/Dusche lösen",
+      "unit": "Stk",
+      "setup_hours": [
+        0.3,
+        0.5
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        80,
+        180
+      ],
+      "market_band_de": [
+        85,
+        190
+      ],
+      "band_basis": "total",
+      "sources": [
+        "werkflow.at/installateur-kosten",
+        "daibau.at/baukostenrechner/klempner",
+        "gecheckt.at/preise/wasserinstallateure"
+      ],
+      "confidence": "high",
+      "group": "Sanitär",
+      "segment": "Rohrreinigung",
+      "messy": false,
+      "emergency_capable": true,
+      "guided_form": [
+        {
+          "key": "art",
+          "label_de": "Was ist verstopft?",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "waschbecken",
+              "Waschbecken"
+            ],
+            [
+              "dusche",
+              "Dusche/Wanne"
+            ],
+            [
+              "kueche",
+              "Küchenspüle"
+            ]
+          ],
+          "affects": "variant",
+          "default": "waschbecken",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "dauer",
+          "label_de": "Seit wann?",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "akut",
+              "Seit heute"
+            ],
+            [
+              "wiederkehrend",
+              "Wiederkehrend"
+            ]
+          ],
+          "affects": "note",
+          "default": null,
+          "note_if": {
+            "wiederkehrend": "kamera_empfohlen"
+          },
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "folgeschaeden"
+      ],
+      "labour_variance": 3.32,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.15,
+      "operations": [
+        {
+          "key": "reinigung",
+          "label_de": "Mechanische Reinigung, Siphon",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.5,
+            1.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "material",
+          "label_de": "Dichtungen, Kleinmaterial",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            8,
+            25
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "sanitaer.rohrreinigung_wc",
+      "trade": "sanitaer",
+      "label_de": "Verstopfung WC/Fallstrang lösen",
+      "unit": "Stk",
+      "setup_hours": [
+        0.3,
+        0.6
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        150,
+        300
+      ],
+      "market_band_de": [
+        155,
+        320
+      ],
+      "band_basis": "total",
+      "sources": [
+        "werkflow.at/installateur-kosten",
+        "daibau.at/baukostenrechner/klempner",
+        "gecheckt.at/preise/wasserinstallateure"
+      ],
+      "confidence": "high",
+      "group": "Sanitär",
+      "segment": "Rohrreinigung",
+      "messy": false,
+      "emergency_capable": true,
+      "guided_form": [
+        {
+          "key": "umfang",
+          "label_de": "Betroffen ist",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "einzeln",
+              "Nur ein WC"
+            ],
+            [
+              "mehrere",
+              "Mehrere Abläufe"
+            ]
+          ],
+          "affects": "variant",
+          "default": "einzeln",
+          "note_if": {
+            "mehrere": "fallstrang_verdacht"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "folgeschaeden",
+        "fremdkoerper"
+      ],
+      "labour_variance": 3.6,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.1,
+      "operations": [
+        {
+          "key": "spirale",
+          "label_de": "Rohrspirale einsetzen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.8,
+            1.6
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "kontrolle",
+          "label_de": "Funktionskontrolle und Spülung",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.3,
+            0.6
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "sanitaer.kamerabefahrung",
+      "trade": "sanitaer",
+      "label_de": "Kanal-Kamerabefahrung mit Protokoll",
+      "unit": "Stk",
+      "setup_hours": [
+        0.4,
+        0.8
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        120,
+        250
+      ],
+      "market_band_de": [
+        130,
+        270
+      ],
+      "band_basis": "total",
+      "sources": [
+        "werkflow.at/installateur-kosten",
+        "daibau.at/baukostenrechner/klempner",
+        "gecheckt.at/preise/wasserinstallateure"
+      ],
+      "confidence": "high",
+      "group": "Sanitär",
+      "segment": "Rohrreinigung",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "laenge",
+          "label_de": "Zu befahrende Länge",
+          "type": "number",
+          "unit": "lfm",
+          "options": [],
+          "affects": "note",
+          "default": 15,
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "protokoll_versicherung"
+      ],
+      "labour_variance": 3.56,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.17,
+      "operations": [
+        {
+          "key": "befahrung",
+          "label_de": "Befahrung und Aufzeichnung",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.6,
+            1.1
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "protokoll",
+          "label_de": "Protokoll erstellen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.2,
+            0.5
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "sanitaer.armatur",
+      "trade": "sanitaer",
+      "label_de": "Armatur tauschen",
+      "unit": "Stk",
+      "setup_hours": [
+        0.3,
+        0.6
+      ],
+      "typical_size": [
+        1,
+        3
+      ],
+      "market_band_at": [
+        130,
+        320
+      ],
+      "market_band_de": [
+        140,
+        340
+      ],
+      "band_basis": "total",
+      "sources": [
+        "werkflow.at/installateur-kosten",
+        "daibau.at/baukostenrechner/klempner",
+        "gecheckt.at/preise/wasserinstallateure"
+      ],
+      "confidence": "medium",
+      "group": "Sanitär",
+      "segment": "Sanitär- / Klempner",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "absperrventil",
+          "label_de": "Funktionierendes Absperrventil vorhanden?",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": true,
+          "note_if": {
+            "False": "kein_absperrventil"
+          },
+          "help_de": "Ohne Absperrventil muss der Steigstrang abgesperrt werden."
+        },
+        {
+          "key": "baujahr",
+          "label_de": "Baujahr des Gebäudes",
+          "type": "number",
+          "unit": "Jahr",
+          "options": [],
+          "affects": "note",
+          "default": null,
+          "note_if": {},
+          "help_de": "Vor 1990: Asbest- und Bleiprüfung nötig."
+        }
+      ],
+      "note_keys": [
+        "absperrventil"
+      ],
+      "labour_variance": 3.4,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.2,
+      "operations": [
+        {
+          "key": "demontage",
+          "label_de": "Altarmatur demontieren",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.3,
+            0.6
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "montage",
+          "label_de": "Neue Armatur montieren",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.5,
+            1.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "material",
+          "label_de": "Anschlussschläuche, Dichtungen",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            18,
+            45
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "sanitaer.spuelkasten",
+      "trade": "sanitaer",
+      "label_de": "Spülkasten reparieren (UP)",
+      "unit": "Stk",
+      "setup_hours": [
+        0.3,
+        0.6
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        150,
+        380
+      ],
+      "market_band_de": [
+        160,
+        400
+      ],
+      "band_basis": "total",
+      "sources": [
+        "werkflow.at/installateur-kosten",
+        "daibau.at/baukostenrechner/klempner",
+        "gecheckt.at/preise/wasserinstallateure"
+      ],
+      "confidence": "medium",
+      "group": "Sanitär",
+      "segment": "Sanitär- / Klempner",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "typ",
+          "label_de": "Bauart",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "up",
+              "Unterputz (Vorwand)"
+            ],
+            [
+              "ap",
+              "Aufputz"
+            ]
+          ],
+          "affects": "variant",
+          "default": "up",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "hersteller",
+          "label_de": "Hersteller bekannt?",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": true,
+          "note_if": {
+            "False": "ersatzteil_verfuegbarkeit"
+          },
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "ersatzteil_verfuegbarkeit"
+      ],
+      "labour_variance": 3.69,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.08,
+      "operations": [
+        {
+          "key": "oeffnen",
+          "label_de": "Revisionsöffnung, Diagnose",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.4,
+            0.9
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "reparatur",
+          "label_de": "Spülventil/Füllventil tauschen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.6,
+            1.3
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "material",
+          "label_de": "Ersatzteile",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            35,
+            110
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "sanitaer.badewanne_tausch",
+      "trade": "sanitaer",
+      "label_de": "Badewanne tauschen",
+      "unit": "Stk",
+      "setup_hours": [
+        1.0,
+        1.8
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        900,
+        2200
+      ],
+      "market_band_de": [
+        950,
+        2400
+      ],
+      "band_basis": "total",
+      "sources": [
+        "werkflow.at/installateur-kosten",
+        "daibau.at/baukostenrechner/klempner",
+        "gecheckt.at/preise/wasserinstallateure"
+      ],
+      "confidence": "medium",
+      "group": "Sanitär",
+      "segment": "Sanitär- / Klempner",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, leer"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, Wohnung leer"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "fliesen",
+          "label_de": "Fliesen im Anschlussbereich erhalten?",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": false,
+          "note_if": {
+            "True": "fliesen_anschluss"
+          },
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "fliesen_anschluss",
+        "altgeraet_entsorgung"
+      ],
+      "labour_variance": 2.84,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.06,
+      "operations": [
+        {
+          "key": "demontage",
+          "label_de": "Altwanne ausbauen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            2.0,
+            3.5
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            40,
+            120
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "wanne",
+          "label_de": "Wanne inkl. Träger und Ablauf",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            320,
+            750
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "montage",
+          "label_de": "Einbau, Anschluss, Abdichtung",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            3.5,
+            6.0
+          ],
+          "material_per_unit": [
+            45,
+            120
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "sanitaer.wanne_zu_dusche",
+      "trade": "sanitaer",
+      "label_de": "Wanne raus, bodengleiche Dusche rein",
+      "unit": "Stk",
+      "setup_hours": [
+        1.5,
+        2.5
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        2800,
+        6500
+      ],
+      "market_band_de": [
+        3000,
+        7000
+      ],
+      "band_basis": "total",
+      "sources": [
+        "werkflow.at/installateur-kosten",
+        "daibau.at/baukostenrechner/klempner",
+        "gecheckt.at/preise/wasserinstallateure"
+      ],
+      "confidence": "medium",
+      "group": "Sanitär",
+      "segment": "Sanitär- / Klempner",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, leer"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, Wohnung leer"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "baujahr",
+          "label_de": "Baujahr des Gebäudes",
+          "type": "number",
+          "unit": "Jahr",
+          "options": [],
+          "affects": "note",
+          "default": null,
+          "note_if": {},
+          "help_de": "Vor 1990: Asbest- und Bleiprüfung nötig."
+        },
+        {
+          "key": "aufbauhoehe",
+          "label_de": "Aufbauhöhe für Ablauf ausreichend?",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "ja",
+              "Ja, > 12 cm"
+            ],
+            [
+              "nein",
+              "Nein / unbekannt"
+            ]
+          ],
+          "affects": "variant",
+          "default": "nein",
+          "note_if": {
+            "nein": "aufbauhoehe_kritisch"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "barrierefrei",
+          "label_de": "Barrierefrei nach ÖNORM B 1600?",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": false,
+          "note_if": {
+            "True": "foerderung_barrierefrei"
+          },
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "abdichtung_nassbereich",
+        "gefaelle_ablauf",
+        "fliesen_folgt",
+        "foerderung_barrierefrei"
+      ],
+      "labour_variance": 2.93,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.03,
+      "operations": [
+        {
+          "key": "demontage",
+          "label_de": "Wanne und Fliesen entfernen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            4.0,
+            7.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            180,
+            400
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "ablauf",
+          "label_de": "Ablauf und Gefälle herstellen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            3.0,
+            5.5
+          ],
+          "material_per_unit": [
+            180,
+            420
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "abdichtung",
+          "label_de": "Verbundabdichtung",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            2.0,
+            3.5
+          ],
+          "material_per_unit": [
+            90,
+            190
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "dusche",
+          "label_de": "Duschelemente, Armatur, Tür",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            700,
+            1900
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "montage",
+          "label_de": "Montage und Anschluss",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            4.0,
+            7.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "sanitaer.duschkabine",
+      "trade": "sanitaer",
+      "label_de": "Duschkabine montieren",
+      "unit": "Stk",
+      "setup_hours": [
+        0.5,
+        1.0
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        320,
+        780
+      ],
+      "market_band_de": [
+        340,
+        820
+      ],
+      "band_basis": "total",
+      "sources": [
+        "werkflow.at/installateur-kosten",
+        "daibau.at/baukostenrechner/klempner",
+        "gecheckt.at/preise/wasserinstallateure"
+      ],
+      "confidence": "medium",
+      "group": "Sanitär",
+      "segment": "Sanitär- / Klempner",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "wand",
+          "label_de": "Wände lot- und fluchtgerecht?",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": true,
+          "note_if": {
+            "False": "wand_lot"
+          },
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "wand_lot",
+        "silikon_wartungsfuge"
+      ],
+      "labour_variance": 3.56,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.08,
+      "operations": [
+        {
+          "key": "montage",
+          "label_de": "Kabine montieren und ausrichten",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            2.0,
+            4.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "silikon",
+          "label_de": "Verfugen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.4,
+            0.8
+          ],
+          "material_per_unit": [
+            12,
+            30
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "sanitaer.boiler",
+      "trade": "sanitaer",
+      "label_de": "Warmwasserspeicher tauschen",
+      "unit": "Stk",
+      "setup_hours": [
+        0.8,
+        1.5
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        750,
+        1900
+      ],
+      "market_band_de": [
+        800,
+        2000
+      ],
+      "band_basis": "total",
+      "sources": [
+        "werkflow.at/installateur-kosten",
+        "daibau.at/baukostenrechner/klempner",
+        "gecheckt.at/preise/wasserinstallateure"
+      ],
+      "confidence": "medium",
+      "group": "Sanitär",
+      "segment": "Sanitär- / Klempner",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "liter",
+          "label_de": "Speichergröße",
+          "type": "number",
+          "unit": "l",
+          "options": [],
+          "affects": "variant",
+          "default": 120,
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "anschluss",
+          "label_de": "Elektroanschluss vorhanden und ausreichend?",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": true,
+          "note_if": {
+            "False": "elektro_anschluss"
+          },
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "altgeraet_entsorgung",
+        "elektro_anschluss"
+      ],
+      "labour_variance": 2.82,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.06,
+      "operations": [
+        {
+          "key": "demontage",
+          "label_de": "Altgerät entleeren und ausbauen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.2,
+            2.2
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            30,
+            80
+          ],
+          "debris_type": "metall",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "geraet",
+          "label_de": "Speicher inkl. Sicherheitsgruppe",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            380,
+            900
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "montage",
+          "label_de": "Montage, Anschluss, Inbetriebnahme",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            2.5,
+            4.5
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "sanitaer.steigleitung",
+      "trade": "sanitaer",
+      "label_de": "Wasserleitung erneuern (Strang)",
+      "unit": "lfm",
+      "setup_hours": [
+        1.5,
+        3.0
+      ],
+      "typical_size": [
+        8,
+        40
+      ],
+      "market_band_at": [
+        85,
+        190
+      ],
+      "market_band_de": [
+        90,
+        200
+      ],
+      "band_basis": "per_unit",
+      "sources": [
+        "werkflow.at/installateur-kosten",
+        "daibau.at/baukostenrechner/klempner",
+        "gecheckt.at/preise/wasserinstallateure"
+      ],
+      "confidence": "medium",
+      "group": "Sanitär",
+      "segment": "Sanitär- / Klempner",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "baujahr",
+          "label_de": "Baujahr des Gebäudes",
+          "type": "number",
+          "unit": "Jahr",
+          "options": [],
+          "affects": "note",
+          "default": null,
+          "note_if": {},
+          "help_de": "Vor 1990: Asbest- und Bleiprüfung nötig."
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, leer"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, Wohnung leer"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "verlegung",
+          "label_de": "Verlegeart",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "unterputz",
+              "Unterputz (stemmen)"
+            ],
+            [
+              "aufputz",
+              "Aufputz / Vorwand"
+            ]
+          ],
+          "affects": "variant",
+          "default": "unterputz",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "material_alt",
+          "label_de": "Altmaterial",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "kunststoff",
+              "Kunststoff"
+            ],
+            [
+              "kupfer",
+              "Kupfer"
+            ],
+            [
+              "verzinkt",
+              "Verzinkter Stahl"
+            ],
+            [
+              "blei",
+              "Blei"
+            ]
+          ],
+          "affects": "note",
+          "default": null,
+          "note_if": {
+            "blei": "bleirohre_vor_1970"
+          },
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "staub",
+        "oeffnung_wand",
+        "bleirohre_vor_1970",
+        "abstimmung_hausgemeinschaft"
+      ],
+      "labour_variance": 3.15,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.17,
+      "operations": [
+        {
+          "key": "stemmen",
+          "label_de": "Schlitze stemmen",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.25,
+            0.45
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            8,
+            18
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verlegen",
+          "label_de": "Rohr verlegen und pressen",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.3,
+            0.55
+          ],
+          "material_per_unit": [
+            14,
+            30
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "daemmung",
+          "label_de": "Dämmung nach ÖNORM",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.08,
+            0.15
+          ],
+          "material_per_unit": [
+            3,
+            8
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "druckprobe",
+          "label_de": "Druckprobe und Protokoll",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.05,
+            0.1
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verschliessen",
+          "label_de": "Schlitze verschließen",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.2,
+            0.38
+          ],
+          "material_per_unit": [
+            3,
+            7
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "sanitaer.waschmaschinenanschluss",
+      "trade": "sanitaer",
+      "label_de": "Waschmaschinenanschluss setzen",
+      "unit": "Stk",
+      "setup_hours": [
+        0.5,
+        0.9
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        280,
+        700
+      ],
+      "market_band_de": [
+        300,
+        750
+      ],
+      "band_basis": "total",
+      "sources": [
+        "werkflow.at/installateur-kosten",
+        "daibau.at/baukostenrechner/klempner",
+        "gecheckt.at/preise/wasserinstallateure"
+      ],
+      "confidence": "medium",
+      "group": "Sanitär",
+      "segment": "Sanitär- / Klempner",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "entfernung",
+          "label_de": "Entfernung zur nächsten Leitung",
+          "type": "number",
+          "unit": "lfm",
+          "options": [],
+          "affects": "qty",
+          "default": 3,
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, leer"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, Wohnung leer"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "oeffnung_wand"
+      ],
+      "labour_variance": 3.16,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.11,
+      "operations": [
+        {
+          "key": "leitung",
+          "label_de": "Zu- und Ablauf herstellen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.4,
+            2.8
+          ],
+          "material_per_unit": [
+            60,
+            150
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            15,
+            40
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "armatur",
+          "label_de": "Geräteanschlussventil und Siphon",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.4,
+            0.8
+          ],
+          "material_per_unit": [
+            35,
+            80
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "sanitaer.therme_wartung",
+      "trade": "sanitaer",
+      "label_de": "Thermenwartung (jährlich)",
+      "unit": "Stk",
+      "setup_hours": [
+        0.2,
+        0.4
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        170,
+        280
+      ],
+      "market_band_de": [
+        175,
+        300
+      ],
+      "band_basis": "total",
+      "sources": [
+        "werkflow.at/installateur-kosten",
+        "daibau.at/baukostenrechner/klempner",
+        "gecheckt.at/preise/wasserinstallateure"
+      ],
+      "confidence": "high",
+      "group": "Sanitär",
+      "segment": "Sanitär- / Klempner",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "typ",
+          "label_de": "Gerätetyp",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "gas",
+              "Gastherme"
+            ],
+            [
+              "brennwert",
+              "Brennwertgerät"
+            ]
+          ],
+          "affects": "variant",
+          "default": "gas",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "letzte",
+          "label_de": "Letzte Wartung",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "unter_2j",
+              "Vor unter 2 Jahren"
+            ],
+            [
+              "ueber_2j",
+              "Vor über 2 Jahren / unbekannt"
+            ]
+          ],
+          "affects": "note",
+          "default": null,
+          "note_if": {
+            "ueber_2j": "wartungsstau"
+          },
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "rauchfangkehrer",
+        "wartungsvertrag"
+      ],
+      "labour_variance": 3.0,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.06,
+      "operations": [
+        {
+          "key": "wartung",
+          "label_de": "Wartung, Reinigung, Abgasmessung",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.2,
+            2.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "material",
+          "label_de": "Dichtungen und Verschleißteile",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            25,
+            65
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "sanitaer.dichtheitspruefung",
+      "trade": "sanitaer",
+      "label_de": "Dichtheitsprüfung mit Protokoll",
+      "unit": "Stk",
+      "setup_hours": [
+        0.3,
+        0.6
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        180,
+        420
+      ],
+      "market_band_de": [
+        190,
+        450
+      ],
+      "band_basis": "total",
+      "sources": [
+        "werkflow.at/installateur-kosten",
+        "daibau.at/baukostenrechner/klempner",
+        "gecheckt.at/preise/wasserinstallateure"
+      ],
+      "confidence": "low",
+      "group": "Sanitär",
+      "segment": "Sanitär- / Klempner",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "umfang",
+          "label_de": "Umfang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "wohnung",
+              "Wohnung"
+            ],
+            [
+              "haus",
+              "Ganzes Haus"
+            ]
+          ],
+          "affects": "variant",
+          "default": "wohnung",
+          "note_if": {},
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "protokoll_versicherung"
+      ],
+      "labour_variance": 3.83,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.07,
+      "operations": [
+        {
+          "key": "pruefung",
+          "label_de": "Druckprobe durchführen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.2,
+            2.5
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "protokoll",
+          "label_de": "Protokoll erstellen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.3,
+            0.7
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "sanitaer.bad_basis",
+      "trade": "sanitaer",
+      "label_de": "Sanitärerneuerung (WC, Waschtisch, Dusche)",
+      "unit": "Stk",
+      "setup_hours": [
+        2.0,
+        4.0
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        3500,
+        7000
+      ],
+      "market_band_de": [
+        3700,
+        7500
+      ],
+      "band_basis": "total",
+      "sources": [
+        "werkflow.at/installateur-kosten",
+        "daibau.at/baukostenrechner/klempner",
+        "gecheckt.at/preise/wasserinstallateure"
+      ],
+      "confidence": "high",
+      "group": "Sanitär",
+      "segment": "Sanitär- / Klempner",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, leer"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, Wohnung leer"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "baujahr",
+          "label_de": "Baujahr des Gebäudes",
+          "type": "number",
+          "unit": "Jahr",
+          "options": [],
+          "affects": "note",
+          "default": null,
+          "note_if": {},
+          "help_de": "Vor 1990: Asbest- und Bleiprüfung nötig."
+        },
+        {
+          "key": "groesse",
+          "label_de": "Badgröße",
+          "type": "number",
+          "unit": "m2",
+          "options": [],
+          "affects": "variant",
+          "default": 6,
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "leitungen",
+          "label_de": "Leitungen erneuern?",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": false,
+          "note_if": {
+            "True": "steigleitung_zusatz"
+          },
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "fliesen_nicht_enthalten",
+        "abdichtung_nassbereich"
+      ],
+      "labour_variance": 2.98,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.03,
+      "operations": [
+        {
+          "key": "demontage",
+          "label_de": "Altbestand demontieren",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            6,
+            11
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            280,
+            600
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "rohinstallation",
+          "label_de": "Rohinstallation Wasser/Abwasser",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            10,
+            18
+          ],
+          "material_per_unit": [
+            280,
+            620
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "objekte",
+          "label_de": "Sanitärobjekte und Armaturen",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            900,
+            2200
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "montage",
+          "label_de": "Montage und Anschluss",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            8,
+            14
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "abnahme",
+          "label_de": "Dichtheitsprüfung und Übergabe",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.0,
+            2.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "sanitaer.bad_komplett",
+      "trade": "sanitaer",
+      "label_de": "Badsanierung komplett (inkl. Fliesen und Heizkörper)",
+      "unit": "Stk",
+      "setup_hours": [
+        3.0,
+        5.0
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        9000,
+        16000
+      ],
+      "market_band_de": [
+        9500,
+        17000
+      ],
+      "band_basis": "total",
+      "sources": [
+        "werkflow.at/installateur-kosten",
+        "daibau.at/baukostenrechner/klempner",
+        "gecheckt.at/preise/wasserinstallateure"
+      ],
+      "confidence": "high",
+      "group": "Sanitär",
+      "segment": "Sanitär- / Klempner",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [
+        {
+          "key": "condition",
+          "label_de": "Zustand",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "neubau",
+              "Neubau, leer"
+            ],
+            [
+              "renovierung_leer",
+              "Renovierung, Wohnung leer"
+            ],
+            [
+              "renovierung_bewohnt",
+              "Renovierung, bewohnt"
+            ],
+            [
+              "altbau_bewohnt",
+              "Altbau, bewohnt"
+            ]
+          ],
+          "affects": "condition",
+          "default": "renovierung_leer",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "access",
+          "label_de": "Zugang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "eg_oder_lift",
+              "Erdgeschoss oder Lift"
+            ],
+            [
+              "og_ohne_lift",
+              "Obergeschoss ohne Lift"
+            ],
+            [
+              "enge_treppe",
+              "Enge Treppe"
+            ]
+          ],
+          "affects": "access",
+          "default": "eg_oder_lift",
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "baujahr",
+          "label_de": "Baujahr des Gebäudes",
+          "type": "number",
+          "unit": "Jahr",
+          "options": [],
+          "affects": "note",
+          "default": null,
+          "note_if": {},
+          "help_de": "Vor 1990: Asbest- und Bleiprüfung nötig."
+        },
+        {
+          "key": "groesse",
+          "label_de": "Badgröße",
+          "type": "number",
+          "unit": "m2",
+          "options": [],
+          "affects": "qty",
+          "default": 7,
+          "note_if": {},
+          "help_de": ""
+        },
+        {
+          "key": "fliesen_alt",
+          "label_de": "Aufbau der alten Fliesen",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "duennbett",
+              "Dünnbett"
+            ],
+            [
+              "dickbett",
+              "Dickbett"
+            ],
+            [
+              "unbekannt",
+              "Unbekannt"
+            ]
+          ],
+          "affects": "variant",
+          "default": "unbekannt",
+          "note_if": {
+            "unbekannt": "dickbett_mehraufwand"
+          },
+          "help_de": ""
+        },
+        {
+          "key": "zweitbad",
+          "label_de": "Zweites Bad/WC vorhanden?",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "note",
+          "default": false,
+          "note_if": {
+            "False": "bad_nicht_nutzbar"
+          },
+          "help_de": ""
+        }
+      ],
+      "note_keys": [
+        "abdichtung_nassbereich",
+        "asbest_vor_1990",
+        "koordination_gewerke",
+        "bad_nicht_nutzbar"
+      ],
+      "labour_variance": 2.93,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.02,
+      "operations": [
+        {
+          "key": "demontage",
+          "label_de": "Komplettdemontage inkl. Fliesen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            14,
+            26
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            900,
+            2100
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "rohinstallation",
+          "label_de": "Rohinstallation und Elektro",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            14,
+            24
+          ],
+          "material_per_unit": [
+            420,
+            900
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "abdichtung",
+          "label_de": "Verbundabdichtung",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            3,
+            6
+          ],
+          "material_per_unit": [
+            120,
+            280
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "fliesen",
+          "label_de": "Fliesenarbeiten",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            18,
+            32
+          ],
+          "material_per_unit": [
+            700,
+            1600
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "objekte",
+          "label_de": "Sanitärobjekte, Armaturen, Heizkörper",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            1400,
+            3200
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "montage",
+          "label_de": "Endmontage und Übergabe",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            10,
+            18
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
       "key": "maurer.durchbruch",
       "trade": "maurer",
       "label_de": "Wanddurchbruch mit Sturz",
@@ -3045,6 +5877,9 @@
       "confidence": "medium",
       "group": "Bauen & Renovieren",
       "segment": "Maurer & Betonbau",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "statik_pflicht",
         "staub",
@@ -3175,6 +6010,9 @@
       "confidence": "medium",
       "group": "Bauen & Renovieren",
       "segment": "Maurer & Betonbau",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "statik_nicht_tragend"
       ],
@@ -3257,6 +6095,9 @@
       "confidence": "low",
       "group": "Bauen & Renovieren",
       "segment": "Metallbau",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "aufmass_vor_fertigung",
         "absturzsicherung_norm"
@@ -3363,6 +6204,9 @@
       "confidence": "medium",
       "group": "Bauen & Renovieren",
       "segment": "Gerüstbau",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "standzeit",
         "genehmigung_strasse"
@@ -3449,8 +6293,8 @@
       "label_de": "Türöffnung (zugefallen)",
       "unit": "Stk",
       "setup_hours": [
-        0.3,
-        0.6
+        0.8,
+        1.4
       ],
       "typical_size": [
         1,
@@ -3469,14 +6313,17 @@
       "confidence": "medium",
       "group": "Bauen & Renovieren",
       "segment": "Schlüsseldienst",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "identitaetsnachweis",
         "nacht_zuschlag"
       ],
-      "labour_variance": 3.83,
+      "labour_variance": 3.69,
       "site_visit_required": false,
       "quote_mode": "fixed",
-      "small_job_premium": 1.37,
+      "small_job_premium": 1.27,
       "operations": [
         {
           "key": "oeffnung",
@@ -3486,6 +6333,29 @@
           "hours_per_unit": [
             0.4,
             1.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "anfahrt",
+          "label_de": "Anfahrt",
+          "unit": "Stk",
+          "kind": "travel",
+          "hours_per_unit": [
+            0.3,
+            0.7
           ],
           "material_per_unit": [
             0.0,
@@ -3529,6 +6399,9 @@
       "confidence": "low",
       "group": "Bauen & Renovieren",
       "segment": "Steinmetz",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "aufmass_vor_fertigung"
       ],
@@ -3634,6 +6507,9 @@
       "confidence": "medium",
       "group": "Möbel & Einrichtung",
       "segment": "Tischler & Schreiner",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "aufmass_vor_fertigung",
         "altgeraet_entsorgung"
@@ -3763,6 +6639,9 @@
       "confidence": "low",
       "group": "Möbel & Einrichtung",
       "segment": "Tischler & Schreiner",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "aufmass_vor_fertigung",
         "untergrund_eben"
@@ -3892,13 +6771,16 @@
       "confidence": "medium",
       "group": "Möbel & Einrichtung",
       "segment": "Tischler & Schreiner",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "montageanleitung_bauseits"
       ],
-      "labour_variance": 1.93,
+      "labour_variance": 1.85,
       "site_visit_required": false,
       "quote_mode": "fixed",
-      "small_job_premium": 1.49,
+      "small_job_premium": 1.28,
       "operations": [
         {
           "key": "montage",
@@ -3951,6 +6833,9 @@
       "confidence": "medium",
       "group": "Küche",
       "segment": "Küchenbau",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "anschluesse_vorhanden",
         "wand_lot"
@@ -4080,6 +6965,9 @@
       "confidence": "low",
       "group": "Küche",
       "segment": "Küchenbau",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "abtransport",
         "altgeraet_entsorgung"
@@ -4163,6 +7051,9 @@
       "confidence": "medium",
       "group": "Garten & Außenbereich",
       "segment": "Garten- & Landschaftsbau",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "bewaesserung_bauseits",
         "witterung"
@@ -4269,6 +7160,9 @@
       "confidence": "medium",
       "group": "Garten & Außenbereich",
       "segment": "Garten- & Landschaftsbau",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "bewaesserung_bauseits"
       ],
@@ -4351,6 +7245,9 @@
       "confidence": "medium",
       "group": "Garten & Außenbereich",
       "segment": "Pflaster- & Straßenbau",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "unterbau_tragfaehig",
         "entwaesserung",
@@ -4481,14 +7378,17 @@
       "confidence": "medium",
       "group": "Garten & Außenbereich",
       "segment": "Garten- & Landschaftsbau",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "vogelschutz_zeitraum",
         "abtransport"
       ],
-      "labour_variance": 3.92,
+      "labour_variance": 3.99,
       "site_visit_required": false,
       "quote_mode": "fixed",
-      "small_job_premium": 1.52,
+      "small_job_premium": 1.29,
       "operations": [
         {
           "key": "schnitt",
@@ -4564,6 +7464,9 @@
       "confidence": "medium",
       "group": "Garten & Außenbereich",
       "segment": "Garten- & Landschaftsbau",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "grenzabstand",
         "leitungen_im_boden"
@@ -4647,6 +7550,9 @@
       "confidence": "low",
       "group": "Garten & Außenbereich",
       "segment": "Poolbau",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "statik_pflicht",
         "genehmigung_bau",
@@ -4777,6 +7683,9 @@
       "confidence": "medium",
       "group": "Fenster & Türen",
       "segment": "Türen- & Fensterbau",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "aufmass_vor_fertigung",
         "laibung_nacharbeit",
@@ -4907,6 +7816,9 @@
       "confidence": "low",
       "group": "Fenster & Türen",
       "segment": "Rolladenbau",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "stromanschluss_bauseits"
       ],
@@ -5012,6 +7924,9 @@
       "confidence": "low",
       "group": "Fenster & Türen",
       "segment": "Sonnenschutz & Markisen",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "untergrund_tragfaehig",
         "windklasse"
@@ -5118,6 +8033,9 @@
       "confidence": "medium",
       "group": "Fenster & Türen",
       "segment": "Glaser",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "aufmass_vor_fertigung"
       ],
@@ -5223,6 +8141,9 @@
       "confidence": "medium",
       "group": "Dacharbeiten",
       "segment": "Dachdecker",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "geruest_erforderlich",
         "witterung",
@@ -5354,6 +8275,9 @@
       "confidence": "medium",
       "group": "Dacharbeiten",
       "segment": "Spengler / Klempner",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "geruest_erforderlich",
         "witterung"
@@ -5460,6 +8384,9 @@
       "confidence": "low",
       "group": "Dacharbeiten",
       "segment": "Dachdecker",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "gefaelle",
         "witterung",
@@ -5567,13 +8494,16 @@
       "confidence": "medium",
       "group": "Dacharbeiten",
       "segment": "Schornsteinfeger",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "behoerdlich_vorgeschrieben"
       ],
-      "labour_variance": 3.45,
+      "labour_variance": 3.66,
       "site_visit_required": false,
       "quote_mode": "fixed",
-      "small_job_premium": 1.36,
+      "small_job_premium": 1.16,
       "operations": [
         {
           "key": "kehrung",
@@ -5626,15 +8556,18 @@
       "confidence": "medium",
       "group": "Heizung",
       "segment": "Heizungsinstallateur",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "anlage_entleeren",
         "hydraulischer_abgleich",
         "altgeraet_entsorgung"
       ],
-      "labour_variance": 2.79,
+      "labour_variance": 2.91,
       "site_visit_required": false,
       "quote_mode": "fixed",
-      "small_job_premium": 1.21,
+      "small_job_premium": 1.18,
       "operations": [
         {
           "key": "demontage",
@@ -5688,8 +8621,8 @@
           "unit": "Stk",
           "kind": "labor",
           "hours_per_unit": [
-            1.4,
-            2.6
+            1.1,
+            2.0
           ],
           "material_per_unit": [
             0.0,
@@ -5711,8 +8644,8 @@
           "unit": "Stk",
           "kind": "labor",
           "hours_per_unit": [
-            0.4,
-            0.8
+            0.3,
+            0.6
           ],
           "material_per_unit": [
             0.0,
@@ -5756,14 +8689,17 @@
       "confidence": "medium",
       "group": "Heizung",
       "segment": "Heizungsinstallateur",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "estrich_folgt",
         "aufbauhoehe"
       ],
-      "labour_variance": 2.44,
+      "labour_variance": 2.62,
       "site_visit_required": true,
       "quote_mode": "regie",
-      "small_job_premium": 1.09,
+      "small_job_premium": 1.1,
       "operations": [
         {
           "key": "daemmung",
@@ -5862,13 +8798,16 @@
       "confidence": "low",
       "group": "Heizung",
       "segment": "Heizungsinstallateur",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "foerderung",
         "schallschutz",
         "stromanschluss_bauseits",
         "heizlastberechnung"
       ],
-      "labour_variance": 2.21,
+      "labour_variance": 2.3,
       "site_visit_required": true,
       "quote_mode": "regie",
       "small_job_premium": 1.01,
@@ -5993,11 +8932,14 @@
       "confidence": "low",
       "group": "Heizung",
       "segment": "Kaminbau",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "rauchfangkehrer",
         "brandschutz_abstand"
       ],
-      "labour_variance": 3.02,
+      "labour_variance": 3.21,
       "site_visit_required": true,
       "quote_mode": "regie",
       "small_job_premium": 1.08,
@@ -6076,6 +9018,9 @@
       "confidence": "medium",
       "group": "Umzug & Transport",
       "segment": "Umzugsunternehmen",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "halteverbot",
         "kein_lift",
@@ -6183,6 +9128,9 @@
       "confidence": "medium",
       "group": "Umzug & Transport",
       "segment": "Transportunternehmen",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "abtransport",
         "wertgegenstaende"
@@ -6266,13 +9214,16 @@
       "confidence": "medium",
       "group": "Reinigung",
       "segment": "Gebäudereiniger",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "schluessel_uebergabe"
       ],
-      "labour_variance": 3.84,
+      "labour_variance": 3.86,
       "site_visit_required": false,
       "quote_mode": "fixed",
-      "small_job_premium": 1.17,
+      "small_job_premium": 1.1,
       "operations": [
         {
           "key": "reinigung",
@@ -6325,13 +9276,16 @@
       "confidence": "medium",
       "group": "Reinigung",
       "segment": "Gebäudereiniger",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "erreichbarkeit"
       ],
-      "labour_variance": 4.35,
+      "labour_variance": 4.5,
       "site_visit_required": false,
       "quote_mode": "fixed",
-      "small_job_premium": 1.48,
+      "small_job_premium": 1.23,
       "operations": [
         {
           "key": "fenster",
@@ -6384,13 +9338,16 @@
       "confidence": "medium",
       "group": "Reinigung",
       "segment": "Hausmeisterservice",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "schluessel_uebergabe"
       ],
-      "labour_variance": 4.12,
+      "labour_variance": 4.33,
       "site_visit_required": false,
       "quote_mode": "fixed",
-      "small_job_premium": 1.16,
+      "small_job_premium": 1.06,
       "operations": [
         {
           "key": "reinigung",
@@ -6443,14 +9400,17 @@
       "confidence": "low",
       "group": "Reinigung",
       "segment": "Schädlingsbekämpfung",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "nachkontrolle",
         "raeumung_waehrend"
       ],
-      "labour_variance": 3.75,
+      "labour_variance": 3.79,
       "site_visit_required": false,
       "quote_mode": "fixed",
-      "small_job_premium": 1.09,
+      "small_job_premium": 1.05,
       "operations": [
         {
           "key": "befund",
@@ -6526,6 +9486,9 @@
       "confidence": "low",
       "group": "Polsterarbeiten",
       "segment": "Polsterei",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "stoff_bauseits_moeglich",
         "transport_werkstatt"
@@ -6632,6 +9595,9 @@
       "confidence": "medium",
       "group": "Erneuerbare Energien",
       "segment": "Solarteur",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "netzanmeldung",
         "statik_dach",
@@ -6763,13 +9729,16 @@
       "confidence": "high",
       "group": "Montage & Allround",
       "segment": "Montageservice & Allroundhandwerker",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "regie_abrechnung"
       ],
-      "labour_variance": 2.03,
+      "labour_variance": 1.95,
       "site_visit_required": false,
       "quote_mode": "fixed",
-      "small_job_premium": 1.44,
+      "small_job_premium": 1.23,
       "operations": [
         {
           "key": "arbeit",
@@ -6822,14 +9791,17 @@
       "confidence": "medium",
       "group": "Montage & Allround",
       "segment": "Montageservice & Allroundhandwerker",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "untergrund_tragfaehig",
         "leitungsortung"
       ],
-      "labour_variance": 3.45,
+      "labour_variance": 3.47,
       "site_visit_required": false,
       "quote_mode": "fixed",
-      "small_job_premium": 1.18,
+      "small_job_premium": 1.08,
       "operations": [
         {
           "key": "montage",
@@ -6882,6 +9854,9 @@
       "confidence": "low",
       "group": "Gutachter & Sachverständige",
       "segment": "Bausachverständiger / Gutachter",
+      "messy": true,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "unabhaengigkeit",
         "laborkosten_extra"
@@ -6965,14 +9940,17 @@
       "confidence": "low",
       "group": "Fahrzeuge",
       "segment": "KFZ-Werkstatt",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "aw_modellabhaengig",
         "altoel_entsorgung"
       ],
-      "labour_variance": 3.06,
+      "labour_variance": 3.02,
       "site_visit_required": false,
       "quote_mode": "fixed",
-      "small_job_premium": 1.12,
+      "small_job_premium": 1.04,
       "operations": [
         {
           "key": "arbeit",
@@ -7048,13 +10026,16 @@
       "confidence": "medium",
       "group": "Fahrzeuge",
       "segment": "KFZ-Werkstatt",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "rdks_sensoren"
       ],
-      "labour_variance": 3.53,
+      "labour_variance": 3.65,
       "site_visit_required": false,
       "quote_mode": "fixed",
-      "small_job_premium": 1.25,
+      "small_job_premium": 1.06,
       "operations": [
         {
           "key": "wechsel",
@@ -7107,13 +10088,16 @@
       "confidence": "medium",
       "group": "Fahrzeuge",
       "segment": "Fahrradwerkstatt",
+      "messy": false,
+      "emergency_capable": false,
+      "guided_form": [],
       "note_keys": [
         "verschleissteile_extra"
       ],
-      "labour_variance": 3.66,
+      "labour_variance": 3.74,
       "site_visit_required": false,
       "quote_mode": "fixed",
-      "small_job_premium": 1.13,
+      "small_job_premium": 1.04,
       "operations": [
         {
           "key": "service",

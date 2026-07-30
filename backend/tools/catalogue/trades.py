@@ -99,7 +99,7 @@ BODEN = [
 # Bands here are per PIECE (unit Stk), so band_basis is the whole job.
 SANITAER = [
     JobType(
-        key="sanitaer.wc_tauschen", trade="sanitaer",
+        key="sanitaer.wc_tauschen", messy=False, trade="sanitaer",
         label_de="WC tauschen (wandhängend)", unit="Stk",
         setup_hours=(0.6, 1.0), typical_size=(1, 1),
         market_band_at=(280, 650), market_band_de=(300, 700),
@@ -114,7 +114,7 @@ SANITAER = [
         ],
     ),
     JobType(
-        key="sanitaer.waschtisch", trade="sanitaer",
+        key="sanitaer.waschtisch", messy=False, trade="sanitaer",
         label_de="Waschtisch mit Armatur tauschen", unit="Stk",
         setup_hours=(0.5, 0.9), typical_size=(1, 1),
         market_band_at=(220, 520), market_band_de=(240, 560),

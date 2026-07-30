@@ -31,8 +31,22 @@ bill by tonne. Quoting by container size systematically underprices.
 
 ## Coverage
 
-64 job types across all 20 groups in `business_directory`, tagged with `group`
+80 job types across all 20 groups in `business_directory`, tagged with `group`
 and `segment` so a prospect and a template line up. 15,696 scenarios simulated.
+
+**Sanitär is the depth reference.** 20 job types with 43 survey questions,
+covering the three shapes the trade actually sells: emergency call-outs
+(Notdienst, Rohrreinigung — flagged `emergency_capable`, priced at the
+Notdienst rate of 125-160 EUR/h rather than a surcharge on the normal one),
+recurring maintenance (Thermenwartung, Dichtheitsprüfung), and projects
+(Badsanierung). Every other trade should be deepened to this shape.
+
+Two corrections came out of doing it. The hourly rate was 55-80 EUR when the
+Austrian market is 68-112 — every Sanitär job had been understated by roughly
+a quarter. And the condition setup allowance was being charged to service
+calls: nobody masks a bathroom to unclog a sink, which had pushed a
+thirty-minute Rohrreinigung to 202 EUR against an 80-180 band. Jobs now carry
+a `messy` flag, and 25 of 80 do not attract protection and cleanup time.
 
 Fahrzeuge — the largest group at 2,839 businesses — is deliberately shallow.
 Vehicle repair is priced from manufacturer Arbeitswerte, 5-6 minute units
@@ -85,6 +99,10 @@ seconds by looking at a tile edge.
 
     job type
       ├─ unit, typical size, market band (AT, DE), sources
+      ├─ guided_form[]          the 4-8 taps that drive the estimate
+      │    └─ key, type, options, affects, note_if
+      ├─ messy                  does it attract protection/cleanup setup
+      ├─ emergency_capable      sellable as a Notdienst call-out
       ├─ setup_hours            fixed, does not scale
       ├─ uncertainty_spread     derived → quote_mode fixed | regie
       ├─ small_job_premium      derived
@@ -114,7 +132,7 @@ Coverage is wide, not deep: 64 job types is one to six per group, which proves
 the structure and does not cover any trade completely. A Fliesenleger does far
 more than six things.
 
-Confidence is recorded per job because it is uneven. 1 high, 49 medium, 14 low.
+Confidence is recorded per job because it is uneven. 8 high, 57 medium, 15 low.
 The `low` entries — Pool, Wärmepumpe, Markise, Einbauschrank, Geländer, Sofa,
 Gutachten, Flachdach, Rollladen, Fensterbank, Küchendemontage, Schädlings-
 bekämpfung, KFZ-Service — are plausible trade knowledge that no published band

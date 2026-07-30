@@ -9,7 +9,7 @@ def estimate(job, qty, *, country="AT", condition="renovierung_leer",
     h_lo, h_hi = hourly or HOURLY[country][job.trade]
     cu_lo, cu_hi = COND_UPLIFT[condition]
     au_lo, au_hi = ACCESS_UPLIFT[access]
-    su_lo, su_hi = COND_SETUP_ADD[condition]
+    su_lo, su_hi = COND_SETUP_ADD[condition] if getattr(job, "messy", True) else (0.0, 0.0)
     up_lo, up_hi = 1 + cu_lo + au_lo, 1 + cu_hi + au_hi
 
     work_lo = work_hi = 0.0

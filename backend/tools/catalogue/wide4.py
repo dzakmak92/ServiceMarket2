@@ -15,7 +15,7 @@ from schema import JobType as J, Operation as Op
 # across models, all marked low confidence. Anything model-specific belongs in
 # an AW lookup, which is a licensing decision rather than a modelling one.
 FAHRZEUGE = [
-    J(key="kfz.service_klein", trade="montage", group="Fahrzeuge",
+    J(key="kfz.service_klein", messy=False, trade="montage", group="Fahrzeuge",
       segment="KFZ-Werkstatt", label_de="Kleines Service (Öl und Filter)", unit="Stk",
       setup_hours=(0.2, 0.4), typical_size=(1, 1),
       market_band_at=(120, 320), market_band_de=(130, 340), band_basis="total",
@@ -25,13 +25,13 @@ FAHRZEUGE = [
           Op("material", "Öl und Filter", "Stk", (0.0, 0.0), kind="material",
              material_per_unit=(55, 150)),
       ]),
-    J(key="kfz.reifenwechsel", trade="montage", group="Fahrzeuge",
+    J(key="kfz.reifenwechsel", messy=False, trade="montage", group="Fahrzeuge",
       segment="KFZ-Werkstatt", label_de="Reifenwechsel (4 Räder, mit Wuchten)",
       unit="Stk", setup_hours=(0.1, 0.2), typical_size=(1, 1),
       market_band_at=(50, 120), market_band_de=(55, 130), band_basis="total",
       confidence="medium", note_keys=["rdks_sensoren"],
       operations=[Op("wechsel", "Räder wechseln und wuchten", "Stk", (0.6, 1.2))]),
-    J(key="fahrrad.service", trade="montage", group="Fahrzeuge",
+    J(key="fahrrad.service", messy=False, trade="montage", group="Fahrzeuge",
       segment="Fahrradwerkstatt", label_de="Fahrrad-Service (groß)", unit="Stk",
       setup_hours=(0.1, 0.3), typical_size=(1, 1),
       market_band_at=(70, 180), market_band_de=(75, 190), band_basis="total",

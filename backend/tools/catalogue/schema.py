@@ -49,6 +49,26 @@ class Operation:
 
 
 @dataclass
+class Question:
+    """One tap in the guided survey.
+
+    `affects` says what the answer changes: the quantity, a coefficient
+    variant, or only which notes are attached. Keeping that explicit is what
+    stops the form asking things that do not change the number — the fastest
+    way to make a tradesperson stop using it.
+    """
+    key: str
+    label_de: str
+    type: str                      # number | choice | bool
+    unit: str = ""
+    options: list = field(default_factory=list)   # [(value, label_de)]
+    affects: str = "note"          # qty | variant | condition | access | note
+    default: object = None
+    note_if: dict = field(default_factory=dict)   # {answer: note_key}
+    help_de: str = ""
+
+
+@dataclass
 class JobType:
     key: str
     trade: str
@@ -70,6 +90,14 @@ class JobType:
     confidence: str = "medium"
     group: str = ""          # matches business_directory."group"
     segment: str = ""        # matches business_directory.segment
+    guided_form: list = field(default_factory=list)   # list[Question]
+    # Does the job make mess? Dusty work in an occupied flat needs protection,
+    # daily cleanup and furniture moving — the COND_SETUP_ADD hours. A service
+    # call does not: nobody masks a bathroom to unclog a sink, and charging
+    # that setup pushed a 30-minute Rohrreinigung to 202 EUR against an 80-180
+    # band. Repairs, inspections and maintenance set this False.
+    messy: bool = True
+    emergency_capable: bool = False   # can be sold as a Notdienst call-out
 
 
 # Condition and access are shared across trades: a painter and a tiler are
@@ -95,17 +123,17 @@ ACCESS_UPLIFT = {
 # Hourly rates, grounded: AT Malerstunde 35-55; DE Handwerk 35-60, Großstadt
 # 50-70, Meister 70-90. Sanitär and Elektrik sit above Maler in both markets.
 HOURLY = {
-    "AT": {"maler": (38, 55), "fliesen": (42, 62), "sanitaer": (55, 80),
+    "AT": {"maler": (38, 55), "fliesen": (42, 62), "sanitaer": (68, 112),
            "elektrik": (55, 85), "trockenbau": (40, 60), "abriss": (35, 55),
            "maurer": (42, 65), "tischler": (45, 70), "garten": (35, 55),
-           "fenster": (45, 70), "dach": (45, 70), "heizung": (55, 82),
+           "fenster": (45, 70), "dach": (45, 70), "heizung": (68, 110),
            "umzug": (30, 48), "kueche": (45, 70), "montage": (35, 58),
            "reinigung": (25, 42), "polster": (40, 62), "solar": (55, 85),
            "metallbau": (48, 72), "geruest": (38, 58)},
-    "DE": {"maler": (35, 60), "fliesen": (40, 65), "sanitaer": (55, 85),
+    "DE": {"maler": (35, 60), "fliesen": (40, 65), "sanitaer": (68, 115),
            "elektrik": (55, 90), "trockenbau": (38, 62), "abriss": (35, 58),
            "maurer": (40, 68), "tischler": (45, 75), "garten": (35, 58),
-           "fenster": (45, 72), "dach": (45, 75), "heizung": (55, 88),
+           "fenster": (45, 72), "dach": (45, 75), "heizung": (68, 112),
            "umzug": (30, 50), "kueche": (45, 72), "montage": (35, 60),
            "reinigung": (25, 45), "polster": (40, 65), "solar": (55, 90),
            "metallbau": (48, 75), "geruest": (38, 60)},
@@ -113,6 +141,10 @@ HOURLY = {
 
 # EUR per tonne, by material. Bauschutt is the reference; the others differ by
 # up to an order of magnitude and the difference lands directly in the quote.
+# Notdienst is its own rate band, not a multiplier: AT 125-160 EUR/h, and a
+# weekend call-out runs 50-100% above weekday work.
+HOURLY_NOTDIENST = {"AT": (125, 160), "DE": (120, 170)}
+
 DISPOSAL_PER_T = {
     "AT": {"bauschutt": (75, 130), "aushub": (8, 26), "gruenschnitt": (30, 70),
            "sperrmuell": (130, 260), "altholz": (60, 120), "metall": (0, 0)},

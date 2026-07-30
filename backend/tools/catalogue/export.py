@@ -2,7 +2,8 @@ import sys, json; sys.path.insert(0,'.')
 from dataclasses import asdict
 from alljobs import ALL_JOBS
 from engine import estimate
-from schema import COND_UPLIFT, COND_SETUP_ADD, ACCESS_UPLIFT, HOURLY, DISPOSAL_PER_T
+from schema import (COND_UPLIFT, COND_SETUP_ADD, ACCESS_UPLIFT, HOURLY,
+                    HOURLY_NOTDIENST, DISPOSAL_PER_T)
 
 JOBS = ALL_JOBS
 
@@ -123,6 +124,30 @@ NOTES = {
   "aw_modellabhaengig": {"severity":"medium","de":"Der tatsächliche Zeitaufwand ist modellabhängig und richtet sich nach den Herstellervorgaben (Arbeitswerte)."},
   "bewaesserung_bauseits": {"severity":"low","de":"Bewässerung in den ersten Wochen ist bauseits sicherzustellen; ohne sie keine Anwachsgarantie."},
   "altbau_leitungen": {"severity":"high","de":"In Altbauten sind Leitungen häufig nicht normgerecht verlegt. Notwendige Anpassungen werden nach Aufwand verrechnet."},
+
+  # ── Sanitär depth ────────────────────────────────────────────────────
+  "bleirohre_vor_1970": {"severity":"critical","de":"Bleileitungen sind gesundheitsschädlich und in Gebäuden vor 1970 möglich. Wird Blei vorgefunden, ist der gesamte Strang zu tauschen; dies ist im Angebot nicht enthalten."},
+  "kein_absperrventil": {"severity":"high","de":"Ohne funktionierendes Absperrventil muss der Steigstrang abgesperrt werden. Abstimmung mit der Hausverwaltung und Mehraufwand sind nicht enthalten."},
+  "fallstrang_verdacht": {"severity":"high","de":"Sind mehrere Abläufe betroffen, liegt die Ursache meist im Fallstrang. Fallstrangreinigung und ggf. Kamerabefahrung werden gesondert verrechnet."},
+  "aufbauhoehe_kritisch": {"severity":"high","de":"Für eine bodengleiche Dusche ist eine ausreichende Aufbauhöhe erforderlich. Ist sie nicht gegeben, sind Ablaufvariante oder Aufbau anzupassen; Mehraufwand nach Aufwand."},
+  "abstimmung_hausgemeinschaft": {"severity":"high","de":"Arbeiten am Steigstrang erfordern Abstimmung mit Hausverwaltung und Miteigentümern sowie eine Wasserabschaltung."},
+  "koordination_gewerke": {"severity":"high","de":"Die Koordination der Folgegewerke (Elektro, Maler) ist enthalten; deren Leistungen sind es nicht."},
+  "elektro_anschluss": {"severity":"high","de":"Ein normgerechter Elektroanschluss mit ausreichender Absicherung wird vorausgesetzt; Anpassungen durch einen Elektriker sind nicht enthalten."},
+  "gefaelle_ablauf": {"severity":"medium","de":"Das erforderliche Gefälle zum Ablauf muss herstellbar sein; andernfalls ist eine Pumpenlösung nötig."},
+  "fliesen_anschluss": {"severity":"medium","de":"Beim Wannentausch werden angrenzende Fliesen beschädigt. Fliesenarbeiten sind nicht enthalten."},
+  "fliesen_folgt": {"severity":"medium","de":"Fliesen- und Malerarbeiten erfolgen durch das Folgegewerk und sind nicht enthalten."},
+  "fliesen_nicht_enthalten": {"severity":"medium","de":"Fliesen-, Maler- und Elektroarbeiten sind nicht enthalten."},
+  "steigleitung_zusatz": {"severity":"medium","de":"Die Erneuerung der Zuleitungen ist als Zusatzposition kalkuliert."},
+  "bad_nicht_nutzbar": {"severity":"medium","de":"Das Bad ist während der Arbeiten nicht nutzbar. Ohne zweites WC ist eine Ersatzlösung bauseits zu organisieren."},
+  "ersatzteil_verfuegbarkeit": {"severity":"medium","de":"Bei unbekanntem Hersteller kann die Ersatzteilbeschaffung Mehraufwand verursachen oder einen Komplettaustausch erfordern."},
+  "kamera_empfohlen": {"severity":"medium","de":"Bei wiederkehrenden Verstopfungen wird eine Kamerabefahrung empfohlen, um die Ursache zu finden."},
+  "fremdkoerper": {"severity":"medium","de":"Schäden durch Fremdkörper (Feuchttücher, Hygieneartikel) sind nicht vom Angebot gedeckt."},
+  "wartungsstau": {"severity":"medium","de":"Bei länger zurückliegender Wartung ist mit zusätzlichem Reinigungs- und Teileaufwand zu rechnen."},
+  "protokoll_versicherung": {"severity":"low","de":"Das Protokoll ist für die Vorlage bei Versicherung oder Hausverwaltung geeignet."},
+  "notdienst_pauschale": {"severity":"low","de":"Die Anfahrtspauschale wird bei Auftragserteilung angerechnet."},
+  "wartungsvertrag": {"severity":"low","de":"Im Rahmen eines Wartungsvertrags gelten reduzierte Sätze und ein bevorzugter Termin."},
+  "foerderung_barrierefrei": {"severity":"low","de":"Für barrierefreie Umbauten bestehen Förderungen (AT: Länder/Pflegefonds, DE: KfW 455-B, Pflegekasse). Antragstellung ist nicht enthalten."},
+  "silikon_wartungsfuge": {"severity":"low","de":"Silikonfugen sind Wartungsfugen und von der Gewährleistung ausgenommen (ÖNORM B 2207 / IVD)."},
   "abschaltung": {"severity":"medium","de":"Zeitweise Abschaltung der Stromversorgung ist erforderlich."},
   "foerderung": {"severity":"low","de":"Förderungsabwicklung ist nicht enthalten."},
 }
@@ -130,7 +155,8 @@ NOTES = {
 out = {"version": 1, "countries": ["AT","DE"],
        "modifiers": {"condition_uplift": COND_UPLIFT, "condition_setup_add": COND_SETUP_ADD,
                      "access_uplift": ACCESS_UPLIFT},
-       "hourly_rates": HOURLY, "disposal_per_tonne": DISPOSAL_PER_T,
+       "hourly_rates": HOURLY, "hourly_notdienst": HOURLY_NOTDIENST,
+       "disposal_per_tonne": DISPOSAL_PER_T,
        "site_visit_required": sorted(SITE_VISIT),
        "labour_variance_note": LABOUR_VARIANCE_NOTE,
        "notes": NOTES, "jobs": []}
@@ -149,6 +175,13 @@ for j in JOBS:
         "market_band_at": j.market_band_at, "market_band_de": j.market_band_de,
         "band_basis": j.band_basis, "sources": j.sources,
         "confidence": j.confidence, "group": j.group, "segment": j.segment,
+        "messy": j.messy, "emergency_capable": j.emergency_capable,
+        "guided_form": [{
+            "key": q.key, "label_de": q.label_de, "type": q.type, "unit": q.unit,
+            "options": q.options, "affects": q.affects, "default": q.default,
+            "note_if": {str(k): v for k, v in q.note_if.items()},
+            "help_de": q.help_de,
+        } for q in j.guided_form],
         "note_keys": j.note_keys,
         "labour_variance": round(spread, 2),
         "site_visit_required": j.key in SITE_VISIT,
