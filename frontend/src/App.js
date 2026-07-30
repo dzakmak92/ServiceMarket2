@@ -30,6 +30,7 @@ import CustomersPage from "./pages/pro/CustomersPage";
 import QuotesPage from "./pages/pro/QuotesPage";
 import LeadCapturePage from "./pages/pro/LeadCapturePage";
 import RecurringPage from "./pages/pro/RecurringPage";
+import EstimatePage from "./pages/pro/EstimatePage";
 import ProCalendarPage from "./pages/pro/ProCalendarPage";
 import ProInvoiceEditorPage from "./pages/pro/ProInvoiceEditorPage";
 import TaxToolkitPage from "./pages/pro/TaxToolkitPage";
@@ -186,6 +187,14 @@ function AppShell() {
           element={
             <ProtectedRoute roles={["tradesperson"]}>
               <RecurringPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/estimate"
+          element={
+            <ProtectedRoute roles={["tradesperson"]}>
+              <EstimatePage />
             </ProtectedRoute>
           }
         />
