@@ -31,12 +31,30 @@ bill by tonne. Quoting by container size systematically underprices.
 
 ## Coverage
 
-122 job types across all 20 groups in `business_directory`, tagged with `group`
-and `segment` so a prospect and a template line up.
+136 job types across all 20 groups in `business_directory`, tagged with `group`
+and `segment` so a prospect and a template line up. 96 carry a guided form,
+417 questions in total.
 
-**Four groups are deepened; the rest are wide only.** All follow the same
+**Five groups are deepened; the rest are wide only.** All follow the same
 shape, which is the template for every remaining trade: emergency, recurring,
 project.
+
+**Garten & Außenbereich.** 6 job types became 20, and it is the group where
+the product's shape is least about a one-off quote. Most of the money is
+recurring: mowing, edging, scarifying, leaf clearance, hedge trimming and
+winter service are the same customer twelve or twenty times a year. Six job
+types are that kind of work and every one is `messy=False`.
+
+Setup dominates completely at the small end here. Mowing is 0.002 h/m²
+against 0.4-0.8 h of travel and unloading, so a 150 m² lawn is almost entirely
+setup — which is exactly why the trade quotes a minimum call-out and why a flat
+€/m² rate loses money on every small garden. The catalogue produces that shape
+without being told to.
+
+Winterdienst is the clearest case in the catalogue of the contract being the
+product rather than the price. The Räum- und Streupflicht sits with the owner
+and is delegable by contract; that is what the customer is buying, and it is a
+`high` note rather than a line item.
 
 **Boden & Fliesen.** 6 job types became 20, and the group turned out to hold
 two Gewerbe rather than one. Fliesenleger (AT 42-62 EUR/h) and Bodenleger
@@ -107,7 +125,7 @@ operations are included.
 
 ## Validation
 
-244 of 244 job/country pairs land inside their published market band.
+272 of 272 job/country pairs land inside their published market band.
 
 Getting to zero misses took restating a band, not tuning a coefficient. For two
 revisions `maler.fassade` DE sat at €19.10 against a €20 floor and was written
@@ -140,7 +158,7 @@ small and setup-dominated; a boiler swap looked certain at ×1.84 only because a
 1,800-2,900 EUR appliance swamps the labour variance. Deriving the flag would
 have sent a tradesperson to inspect a window and quote a Wärmepumpe blind.
 
-`site_visit_required` is now an explicit list of 45 job types — concealed
+`site_visit_required` is now an explicit list of 52 job types — concealed
 build-up, concealed services, structural involvement, or a measurement that must
 be exact before fabrication. The spread survives under an honest name,
 `labour_variance`: how much of the price is variable labour, and therefore how
@@ -186,31 +204,35 @@ produces coefficients that describe *this* business. Nobody can copy that, and
 it is the actual moat.
 
 Coverage is uneven on purpose and the unevenness is the honest part. Three
-groups are deep — Boden & Fliesen 20, Sanitär 20, Maler 19, Elektrik 17 — and
-the other sixteen
+groups are deep — Garten 20, Boden & Fliesen 20, Sanitär 20, Maler 19,
+Elektrik 17 — and the other fifteen
 are one to six job types each, enough to prove the structure and not enough to
 cover the trade. A Fliesenleger does far more than six things.
 
-Confidence is recorded per job because it is uneven. 18 high, 72 medium, 32 low.
+Confidence is recorded per job because it is uneven. 18 high, 73 medium, 45 low.
 The `low` entries — Pool, Wärmepumpe, Markise, Einbauschrank, Geländer, Sofa,
 Gutachten, Flachdach, Rollladen, Fensterbank, Küchendemontage, Schädlings-
-bekämpfung, KFZ-Service, and the newer Maler entries WDVS, Strukturputz,
-Bodenbeschichtung, Holzschutz, Risse and Fassadenreinigung — are plausible
-trade knowledge that no published band corroborates. They must be checked with
+bekämpfung, KFZ-Service, the Maler entries WDVS, Strukturputz,
+Bodenbeschichtung, Holzschutz, Risse and Fassadenreinigung, and most of the
+new Garten work — are plausible trade knowledge that no published band
+corroborates. The count went up, not down, with the last two trades: going
+deep means reaching jobs that no price radar publishes, and saying so is the
+point of the field. They must be checked with
 a practising pro before they price anything real, and the field exists so that
 gap is visible rather than hidden behind a uniform-looking table.
 
-Six notes are `critical` and exist to prevent harm rather than to price work:
+Seven notes are `critical` and exist to prevent harm rather than to price work:
 asbestos in pre-1990 adhesives and coverings, load-bearing confirmation before
 demolition, structural sign-off for openings, roof load before PV, buried
-services before excavation, and mould beyond 0.5 m².
+services before excavation, mould beyond 0.5 m², and felling a tree that
+may be protected.
 
 ## What reads it
 
 `backend/services/estimator.py` is the only consumer, and it reimplements
 `tools/catalogue/engine.py` exactly. If the two drift, the band validation
 stops saying anything about what the app actually quotes — so
-`backend/tests/test_estimator.py` re-runs all 244 band checks through the
+`backend/tests/test_estimator.py` re-runs all 272 band checks through the
 service rather than the authoring harness, and additionally proves the quote
 positions sum back to the total they were derived from.
 

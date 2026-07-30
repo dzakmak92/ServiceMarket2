@@ -46,6 +46,10 @@ SITE_VISIT = {
     "heizung.waermepumpe", "heizung.fussbodenheizung",             # Heizlast, Aufbauhöhe
     "heizung.kaminofen",                                           # Rauchfang, Abstände
     "garten.pflaster", "garten.pool", "garten.zaun",               # Untergrund, Leitungen
+    "garten.baumfaellung", "garten.baumschnitt",                   # Standsicherheit, Fallraum
+    "garten.mauer_gabione", "garten.treppe_aussen",                # Geländesprung, Aufmaß
+    "garten.drainage", "garten.terrasse_holz",                     # Untergrund, Gefälle
+    "garten.bewaesserung",                                         # Leitungen, Wasserdruck
     "solar.pv_dach",                                               # Dachstatik
     "polster.sofa",                                                # Gestellzustand
     "gutachter.bauschaden",                                        # the visit IS the job
@@ -207,6 +211,30 @@ NOTES = {
   "schleifen_restdicke": {"severity":"medium","de":"Abschleifen setzt eine ausreichende Nutzschicht voraus. Bei zu geringer Restdicke oder durchgeschliffenen Stellen ist eine Sanierung nicht möglich; die Prüfung erfolgt vor Ort."},
   "fliesen_ersatz_farbton": {"severity":"medium","de":"Ohne Ersatzfliesen aus derselben Charge ist ein exakt gleicher Farbton und Kaliber nicht erreichbar. Ein sichtbarer Unterschied ist kein Mangel."},
   "fugenfarbe_abweichung": {"severity":"low","de":"Neue Fugenmasse trocknet farblich anders auf als die gealterte Bestandsfuge. Teilerneuerungen bleiben sichtbar."},
+  # ── Garten & Außenbereich ────────────────────────────────────────────
+  "baumschutz_satzung": {"severity":"critical","de":"Fällungen und starke Rückschnitte sind vielerorts genehmigungspflichtig (AT: Baumschutzgesetze der Länder und Gemeinden, DE: kommunale Baumschutzsatzungen). Die Genehmigung ist bauseits einzuholen und muss vor Arbeitsbeginn vorliegen."},
+  "skt_erforderlich": {"severity":"high","de":"Arbeiten in der Krone erfolgen mit Seilklettertechnik oder Hubarbeitsbühne durch qualifiziertes Personal. Bühnenmiete und Stellplatzgenehmigung sind gesondert zu bewerten."},
+  "stueckfaellung": {"severity":"high","de":"Bei beengtem Fallraum wird der Baum in Stücken abgetragen und abgeseilt. Der Mehraufwand gegenüber einer Fällung im Ganzen ist berücksichtigt."},
+  "raeumpflicht_uebertragung": {"severity":"high","de":"Die Räum- und Streupflicht bleibt beim Eigentümer und wird durch diesen Vertrag vertraglich übertragen. Umfang, Zeitfenster und Dokumentation sind im Vertrag festzuhalten."},
+  "wasseranschluss_bauseits": {"severity":"medium","de":"Wasseranschluss mit ausreichendem Druck und Durchfluss ist bauseits bereitzustellen. Druckerhöhung ist nicht enthalten."},
+  "streumittel_vorgabe": {"severity":"medium","de":"Auftausalz ist in vielen Gemeinden auf Gehwegen untersagt. Die örtliche Vorgabe ist bauseits zu prüfen."},
+  "bereitschaft_pauschale": {"severity":"medium","de":"Eine 24-Stunden-Bereitschaft wird als Saisonpauschale unabhängig von der Anzahl der Einsätze verrechnet."},
+  "bodenaustausch_moeglich": {"severity":"medium","de":"Bei verdichteten Baustellenflächen kann ein Bodenaustausch erforderlich sein. Dieser ist nicht enthalten und wird nach tatsächlichem Aufwand verrechnet."},
+  "stubben_extra": {"severity":"medium","de":"Wurzelstock fräsen oder roden ist nicht enthalten und wird gesondert angeboten."},
+  "winterfest_machen": {"severity":"medium","de":"Entleeren und Winterfestmachen der Anlage ist eine jährlich wiederkehrende Leistung und nicht im Einbaupreis enthalten."},
+  "kanalanschluss_genehmigung": {"severity":"medium","de":"Die Einleitung von Drainagewasser in den Kanal ist genehmigungspflichtig und vielerorts unzulässig. Die Klärung erfolgt bauseits."},
+  "wasseranalyse": {"severity":"low","de":"Bei Brunnen- oder Zisternenwasser ist eine Wasseranalyse zu empfehlen; eisenhaltiges Wasser verfärbt Beläge und setzt Düsen zu."},
+  "anwachsgarantie": {"severity":"low","de":"Eine Anwachsgarantie setzt die vereinbarte Bewässerung und Pflege voraus und ist nur mit Pflegevertrag möglich."},
+  "gruenschnitt_entsorgung": {"severity":"low","de":"Abtransport und Entsorgung des Grünschnitts sind kalkuliert."},
+  "gruenschnitt_verbleibt": {"severity":"low","de":"Der Grünschnitt verbleibt vor Ort; der Entsorgungsanteil entfällt."},
+  "aushub_verbleibt": {"severity":"low","de":"Der Aushub verbleibt am Grundstück; Abtransport und Deponiegebühren entfallen. Zwischenlagerung ist bauseits zu ermöglichen."},
+  "mindestpauschale": {"severity":"low","de":"Für kleine Flächen gilt eine Mindestpauschale je Einsatz — Anfahrt und Rüstzeit fallen unabhängig von der Größe an."},
+  "rollrasen_sofort_verlegen": {"severity":"low","de":"Rollrasen muss innerhalb von 24 Stunden nach Lieferung verlegt und gewässert werden. Der Termin ist witterungs- und lieferabhängig."},
+  "tor_separat": {"severity":"low","de":"Tore und Türen sind nicht im Laufmeterpreis enthalten und werden gesondert angeboten."},
+  "gelaender_separat": {"severity":"low","de":"Geländer und Handlauf sind nicht enthalten und werden gesondert angeboten."},
+  # ── added when the last seven deep-trade jobs got guided forms ───────
+  "vorwand_erforderlich": {"severity":"high","de":"Der Umbau von Stand-WC auf wandhängend erfordert eine Vorwandinstallation mit Spülkasten und tragendem Element. Fliesen-, Trockenbau- und Malerarbeiten sind nicht enthalten."},
+  "fi_nachruesten": {"severity":"high","de":"Ohne FI-Schutzschalter entspricht die Anlage nicht dem Stand der Technik. Bei Eingriffen in den Verteiler ist die Nachrüstung erforderlich (ÖVE/ÖNORM E 8001, DIN VDE 0100-410) und im Angebot berücksichtigt."},
 }
 
 out = {"version": 1, "countries": ["AT","DE"],
