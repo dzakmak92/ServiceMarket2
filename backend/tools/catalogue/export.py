@@ -195,8 +195,8 @@ NOTES = {
   "bleifarbe_vor_1960": {"severity":"high","de":"Anstriche vor etwa 1960 können Blei enthalten. Trockenes Schleifen ist dann unzulässig; staubarme Verfahren sind nicht im Angebot enthalten."},
   "fassade_haftung": {"severity":"high","de":"Die Tragfähigkeit des Altanstrichs wird vor Ort mittels Kratz- und Klebebandprobe geprüft. Ist der Untergrund kreidend oder nicht tragfähig, sind Zusatzarbeiten erforderlich."},
   "wdvs_details": {"severity":"high","de":"Sockelausbildung, Laibungen, Rollladenkästen, Fensterbänke und Dachanschluss sind gesondert zu bewerten. Sie bestimmen die Bauphysik des Systems und sind hier nur pauschal berücksichtigt."},
-  "deckkraft_farbwechsel": {"severity":"medium","de":"Bei deutlichem Farbwechsel, besonders dunkel auf hell oder bei intensiven Farbtönen, ist ein dritter Anstrich erforderlich. Dieser ist im Angebot berücksichtigt."},
-  "nikotin_sperrgrund": {"severity":"medium","de":"Nikotin-, Ruß- und Wasserflecken schlagen durch Dispersionsfarbe durch. Ein Isoliergrund ist erforderlich und im Angebot enthalten."},
+  "deckkraft_farbwechsel": {"severity":"medium","de":"Bei deutlichem Farbwechsel, besonders dunkel auf hell oder bei intensiven Farbtönen, ist ein dritter Anstrich erforderlich. Dieser ist im Grundpreis nicht enthalten und wird gesondert ausgewiesen."},
+  "nikotin_sperrgrund": {"severity":"medium","de":"Nikotin-, Ruß- und Wasserflecken schlagen durch Dispersionsfarbe durch. Ein Isoliergrund ist erforderlich und wird gesondert ausgewiesen."},
   "trocknung_nutzung": {"severity":"medium","de":"Zwischen den Anstrichen sind Trocknungszeiten einzuhalten. Die Räume sind während der Arbeiten und mindestens 24 Stunden danach nur eingeschränkt nutzbar."},
   "lack_demontage": {"severity":"medium","de":"Beschläge, Griffe und Dichtungen werden demontiert und wieder montiert. Defekte Beschläge werden nicht ersetzt."},
   "musteranstrich": {"severity":"low","de":"Farbtöne und Strukturen wirken auf der Fläche anders als auf der Musterkarte. Ein Musteranstrich vor Ausführung wird empfohlen und ist gesondert zu beauftragen."},
@@ -205,7 +205,7 @@ NOTES = {
   "restfeuchte_messung": {"severity":"high","de":"Vor Verlegung ist die Belegreife des Estrichs mittels CM-Messung nachzuweisen (Zementestrich max. 2,0 CM-%, mit Fußbodenheizung 1,8). Die Messung ist nicht enthalten; bei zu hoher Restfeuchte verschiebt sich der Termin."},
   "fbh_aufheizprotokoll": {"severity":"high","de":"Bei Fußbodenheizung ist ein Aufheiz- bzw. Funktionsheizprotokoll erforderlich und vor Verlegebeginn vorzulegen. Erstellung ist nicht enthalten."},
   "frostsicher_aussen": {"severity":"high","de":"Außenbeläge werden frostsicher und mit Gefälle ausgeführt. Bestehende Abdichtung und Untergrundaufbau werden als normgerecht angenommen."},
-  "grossformat_zweiter_mann": {"severity":"medium","de":"Großformate ab 60x120 werden zu zweit im Kombiverfahren mit Nivelliersystem verlegt. Der Mehraufwand gegenüber Standardformaten ist berücksichtigt."},
+  "grossformat_zweiter_mann": {"severity":"medium","de":"Großformate ab 60x120 werden zu zweit im Kombiverfahren mit Nivelliersystem verlegt. Ab 120x240 steigt der Aufwand nochmals deutlich und wird gesondert bewertet."},
   "belag_nicht_enthalten": {"severity":"medium","de":"Der Preis umfasst Verlegung und Verlegematerial (Kleber, Fuge, Dämmung). Fliesen bzw. Bodenbelag sind nicht enthalten und werden gesondert verrechnet."},
   "tuerblatt_kuerzen": {"severity":"medium","de":"Durch die neue Aufbauhöhe können Türblätter zu kürzen sein. Tischlerarbeiten sind nicht enthalten."},
   "schleifen_restdicke": {"severity":"medium","de":"Abschleifen setzt eine ausreichende Nutzschicht voraus. Bei zu geringer Restdicke oder durchgeschliffenen Stellen ist eine Sanierung nicht möglich; die Prüfung erfolgt vor Ort."},
@@ -214,7 +214,7 @@ NOTES = {
   # ── Garten & Außenbereich ────────────────────────────────────────────
   "baumschutz_satzung": {"severity":"critical","de":"Fällungen und starke Rückschnitte sind vielerorts genehmigungspflichtig (AT: Baumschutzgesetze der Länder und Gemeinden, DE: kommunale Baumschutzsatzungen). Die Genehmigung ist bauseits einzuholen und muss vor Arbeitsbeginn vorliegen."},
   "skt_erforderlich": {"severity":"high","de":"Arbeiten in der Krone erfolgen mit Seilklettertechnik oder Hubarbeitsbühne durch qualifiziertes Personal. Bühnenmiete und Stellplatzgenehmigung sind gesondert zu bewerten."},
-  "stueckfaellung": {"severity":"high","de":"Bei beengtem Fallraum wird der Baum in Stücken abgetragen und abgeseilt. Der Mehraufwand gegenüber einer Fällung im Ganzen ist berücksichtigt."},
+  "stueckfaellung": {"severity":"high","de":"Bei beengtem Fallraum wird der Baum in Stücken abgetragen und abgeseilt. Der Mehraufwand gegenüber einer Fällung im Ganzen wird nach tatsächlichem Aufwand verrechnet."},
   "raeumpflicht_uebertragung": {"severity":"high","de":"Die Räum- und Streupflicht bleibt beim Eigentümer und wird durch diesen Vertrag vertraglich übertragen. Umfang, Zeitfenster und Dokumentation sind im Vertrag festzuhalten."},
   "wasseranschluss_bauseits": {"severity":"medium","de":"Wasseranschluss mit ausreichendem Druck und Durchfluss ist bauseits bereitzustellen. Druckerhöhung ist nicht enthalten."},
   "streumittel_vorgabe": {"severity":"medium","de":"Auftausalz ist in vielen Gemeinden auf Gehwegen untersagt. Die örtliche Vorgabe ist bauseits zu prüfen."},
@@ -234,7 +234,7 @@ NOTES = {
   "gelaender_separat": {"severity":"low","de":"Geländer und Handlauf sind nicht enthalten und werden gesondert angeboten."},
   # ── added when the last seven deep-trade jobs got guided forms ───────
   "vorwand_erforderlich": {"severity":"high","de":"Der Umbau von Stand-WC auf wandhängend erfordert eine Vorwandinstallation mit Spülkasten und tragendem Element. Fliesen-, Trockenbau- und Malerarbeiten sind nicht enthalten."},
-  "fi_nachruesten": {"severity":"high","de":"Ohne FI-Schutzschalter entspricht die Anlage nicht dem Stand der Technik. Bei Eingriffen in den Verteiler ist die Nachrüstung erforderlich (ÖVE/ÖNORM E 8001, DIN VDE 0100-410) und im Angebot berücksichtigt."},
+  "fi_nachruesten": {"severity":"high","de":"Ohne FI-Schutzschalter entspricht die Anlage nicht dem Stand der Technik. Bei Eingriffen in den Verteiler ist die Nachrüstung erforderlich (ÖVE/ÖNORM E 8001, DIN VDE 0100-410) und wird gesondert angeboten."},
 }
 
 out = {"version": 1, "countries": ["AT","DE"],

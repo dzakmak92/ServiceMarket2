@@ -852,11 +852,11 @@
     },
     "deckkraft_farbwechsel": {
       "severity": "medium",
-      "de": "Bei deutlichem Farbwechsel, besonders dunkel auf hell oder bei intensiven Farbtönen, ist ein dritter Anstrich erforderlich. Dieser ist im Angebot berücksichtigt."
+      "de": "Bei deutlichem Farbwechsel, besonders dunkel auf hell oder bei intensiven Farbtönen, ist ein dritter Anstrich erforderlich. Dieser ist im Grundpreis nicht enthalten und wird gesondert ausgewiesen."
     },
     "nikotin_sperrgrund": {
       "severity": "medium",
-      "de": "Nikotin-, Ruß- und Wasserflecken schlagen durch Dispersionsfarbe durch. Ein Isoliergrund ist erforderlich und im Angebot enthalten."
+      "de": "Nikotin-, Ruß- und Wasserflecken schlagen durch Dispersionsfarbe durch. Ein Isoliergrund ist erforderlich und wird gesondert ausgewiesen."
     },
     "trocknung_nutzung": {
       "severity": "medium",
@@ -888,7 +888,7 @@
     },
     "grossformat_zweiter_mann": {
       "severity": "medium",
-      "de": "Großformate ab 60x120 werden zu zweit im Kombiverfahren mit Nivelliersystem verlegt. Der Mehraufwand gegenüber Standardformaten ist berücksichtigt."
+      "de": "Großformate ab 60x120 werden zu zweit im Kombiverfahren mit Nivelliersystem verlegt. Ab 120x240 steigt der Aufwand nochmals deutlich und wird gesondert bewertet."
     },
     "belag_nicht_enthalten": {
       "severity": "medium",
@@ -920,7 +920,7 @@
     },
     "stueckfaellung": {
       "severity": "high",
-      "de": "Bei beengtem Fallraum wird der Baum in Stücken abgetragen und abgeseilt. Der Mehraufwand gegenüber einer Fällung im Ganzen ist berücksichtigt."
+      "de": "Bei beengtem Fallraum wird der Baum in Stücken abgetragen und abgeseilt. Der Mehraufwand gegenüber einer Fällung im Ganzen wird nach tatsächlichem Aufwand verrechnet."
     },
     "raeumpflicht_uebertragung": {
       "severity": "high",
@@ -996,7 +996,7 @@
     },
     "fi_nachruesten": {
       "severity": "high",
-      "de": "Ohne FI-Schutzschalter entspricht die Anlage nicht dem Stand der Technik. Bei Eingriffen in den Verteiler ist die Nachrüstung erforderlich (ÖVE/ÖNORM E 8001, DIN VDE 0100-410) und im Angebot berücksichtigt."
+      "de": "Ohne FI-Schutzschalter entspricht die Anlage nicht dem Stand der Technik. Bei Eingriffen in den Verteiler ist die Nachrüstung erforderlich (ÖVE/ÖNORM E 8001, DIN VDE 0100-410) und wird gesondert angeboten."
     }
   },
   "jobs": [

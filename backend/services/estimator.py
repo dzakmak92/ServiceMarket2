@@ -31,6 +31,15 @@ total is worse than no estimate: the pro sends the positions, not the summary.
 So setup hours and disposal get their own lines, uplifts are carried in the
 labour unit prices, and `lines_net` reports what the positions actually come
 to.
+
+**Answers that did not move the number say so.** The catalogue has one
+quantity axis per job plus condition, access and Notdienst. Questions declared
+`affects="variant"` — tile format, wallpaper pattern match, felling in a
+confined space — are recorded and attach notes, but nothing in the arithmetic
+reads them yet. `answers_applied` and `answers_recorded` come back separately
+rather than letting the caller assume every question was priced, because the
+alternative is a quote whose assumptions promise work the total does not
+contain.
 """
 from __future__ import annotations
 
@@ -316,6 +325,7 @@ def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT
         "qty": round(qty, 2),
         "qty_source": (qty_question(job) or {}).get("key") or (
             "answer" if answers.get("qty") else "typical_size"),
+        **_answer_provenance(job, answers, emergency),
         "country": country, "tier": tier,
         "condition": condition, "access": access,
         "emergency": emergency, "rate_basis": rate_basis,
@@ -337,6 +347,36 @@ def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT
         "notes": notes,
         "assumptions": assumptions_text(notes),
     }
+
+
+def _answer_provenance(job: dict, answers: dict, emergency: bool) -> dict:
+    """Which answers changed the total, and which were only recorded.
+
+    Stated rather than implied. A pro reading an estimate is entitled to know
+    that picking 120x240 tiles attached a note and did not add an hour — that
+    is a limit of the model, and hiding it turns the guided form into theatre.
+    """
+    applied: list[str] = []
+    recorded: list[str] = []
+    q_key = (qty_question(job) or {}).get("key")
+
+    for q in job.get("guided_form") or []:
+        if q["key"] not in answers:
+            continue
+        if q["key"] == q_key or q["affects"] in ("condition", "access"):
+            applied.append(q["key"])
+        elif q["key"] == "zeit" and emergency:
+            applied.append(q["key"])
+        else:
+            recorded.append(q["key"])
+
+    for k in ("qty", "condition", "access"):
+        if k in answers and k not in applied and k != q_key:
+            applied.append(k)
+    if emergency and "emergency" in answers:
+        applied.append("emergency")
+
+    return {"answers_applied": applied, "answers_recorded": recorded}
 
 
 def _container(kg_high: float) -> Optional[str]:

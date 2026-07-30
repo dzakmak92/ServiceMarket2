@@ -387,6 +387,18 @@ function Result({ result, calculating }) {
         </p>
       )}
 
+      {!!result.answers_recorded?.length && (
+        // Stated, not hidden. These answers attached notes and did not change
+        // the total — the catalogue has one quantity axis plus condition,
+        // access and Notdienst. Letting the form imply otherwise would make
+        // the survey theatre.
+        <p className="text-xs text-ink-muted">
+          <Info size={12} className="inline mr-1 -mt-0.5" />
+          Preiswirksam: {result.answers_applied.join(', ') || '—'}. Nur vermerkt
+          und als Hinweis ausgewiesen: {result.answers_recorded.join(', ')}.
+        </p>
+      )}
+
       {!!result.notes.length && (
         <div className="space-y-2">
           <p className="text-xs font-medium text-ink">Annahmen und Vorbehalte</p>

@@ -236,6 +236,20 @@ stops saying anything about what the app actually quotes — so
 service rather than the authoring harness, and additionally proves the quote
 positions sum back to the total they were derived from.
 
+**Not every question changes the number.** The engine has one quantity axis per
+job plus condition, access and Notdienst. Questions declared `affects="variant"`
+— tile format, wallpaper pattern match, felling in a confined space — are
+recorded and attach notes, but nothing in the arithmetic reads them. That is a
+real limit and it is now reported rather than implied: every estimate returns
+`answers_applied` and `answers_recorded` separately, and the screen prints
+both.
+
+Five notes had been written as though the variant *was* priced ("der Mehraufwand
+ist berücksichtigt"). A note is a promise the pro forwards to a customer, so
+those were the worst kind of wrong: not an inaccurate number but an
+unenforceable commitment. They now say the work is quoted separately, and a
+test refuses any note claiming inclusion unless the job's operations cover it.
+
 The catalogue carries no `rate_key` and no prices, deliberately: it is a
 physical model of hours, material and debris. The join to a business's own
 pricing is made in the service by convention (`trade.operation` against

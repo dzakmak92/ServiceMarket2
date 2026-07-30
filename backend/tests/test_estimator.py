@@ -12,6 +12,7 @@ The **estimate's internal consistency**: the positions a pro sends must add up
 to the total the app showed them. They diverged by 1,800 EUR on a 300 m² lawn
 before the material carried by labour operations was given its own line.
 """
+import re
 import sys
 from pathlib import Path
 
@@ -146,6 +147,40 @@ check(E.estimate("maler.innenanstrich", {})["qty"] == 57.5,
       "no answer falls back to the middle of typical size, not the small end")
 check(E.estimate("maler.innenanstrich", {"qty": "  "})["qty"] == 57.5, "blank qty falls back too")
 check(E.estimate("maler.innenanstrich", {"qty": -5})["qty"] == 57.5, "negative qty falls back too")
+
+print("\n── answers that did not move the number say so ──")
+prov = E.estimate("maler.wohnung_komplett",
+                  {"wohnflaeche": 85, "untergrund": "altbau_leimfarbe",
+                   "farbwechsel": True, "condition": "altbau_bewohnt",
+                   "access": "enge_treppe", "moebel": "voll"})
+check(set(prov["answers_applied"]) == {"wohnflaeche", "condition", "access"},
+      f"priced answers reported: {prov['answers_applied']}")
+check("farbwechsel" in prov["answers_recorded"],
+      "a variant answer is reported as recorded, not as priced")
+check(not (set(prov["answers_applied"]) & set(prov["answers_recorded"])),
+      "no answer is claimed both ways")
+emerg = E.estimate("sanitaer.rohrbruch",
+                   {"zeit": "nacht_sonntag", "ort": "boden", "wasser_ab": False})
+check("zeit" in emerg["answers_applied"] and emerg["rate_basis"] == "notdienst",
+      "the one variant answer that IS priced — a night call-out — counts as applied")
+# The notes are a promise the pro forwards to a customer. A note may not claim
+# extra work is included when nothing in the arithmetic added it — five did,
+# and they were all attached to `variant` answers the engine does not read.
+# The negated forms ("nicht enthalten") are the honest majority and must not
+# trip this, so the match excludes them.
+INCLUSION = re.compile(
+    r"(?<!nicht )(?<!nicht im Angebot )(ist|sind) (berücksichtigt|enthalten|kalkuliert)")
+# Every job whose operations genuinely cover the claim. Anything else claiming
+# inclusion is a note the arithmetic does not back.
+HONEST = {"abdichtung_nassbereich", "verschnitt_muster", "altgeraet_entsorgung",
+          "staub", "gruenschnitt_entsorgung", "abtransport", "dehnungsfuge",
+          "leitungsortung", "lack_demontage", "netzanmeldung", "stueckfaellung",
+          "oeffnung_wand", "raeumpflicht_uebertragung", "grossformat_zweiter_mann",
+          "anlage_entleeren", "kein_lift", "transport_werkstatt",
+          "koordination_gewerke", "netzbetreiber_meldung", "messprotokoll_netzwerk"}
+overclaim = [k for k, n in cat["notes"].items()
+             if INCLUSION.search(n["de"]) and k not in HONEST]
+check(not overclaim, f"no note promises unpriced work: {overclaim}")
 
 print("\n── the pro's own rate wins ──")
 own = E.estimate(key, {"qty": 60}, rates={"maler.anstrich2": 9.5})
