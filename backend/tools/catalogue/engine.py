@@ -15,6 +15,7 @@ def estimate(job, qty, *, country="AT", condition="renovierung_leer",
     work_lo = work_hi = 0.0
     mat_lo = mat_hi = 0.0
     debris_lo = debris_hi = 0.0
+    disp_lo = disp_hi = 0.0
     lines = []
     for op in job.operations:
         if order[op.tier_min] > want or op.optional:
@@ -24,15 +25,19 @@ def estimate(job, qty, *, country="AT", condition="renovierung_leer",
         ml = qty * op.material_per_unit[0] * (1 + op.waste_factor)
         mh = qty * op.material_per_unit[1] * (1 + op.waste_factor)
         work_lo += wl; work_hi += wh; mat_lo += ml; mat_hi += mh
-        debris_lo += qty * op.debris_kg_per_unit[0]
-        debris_hi += qty * op.debris_kg_per_unit[1]
+        d_lo = qty * op.debris_kg_per_unit[0]
+        d_hi = qty * op.debris_kg_per_unit[1]
+        debris_lo += d_lo; debris_hi += d_hi
+        rate = DISPOSAL_PER_T[country].get(op.debris_type,
+                                           DISPOSAL_PER_T[country]["bauschutt"])
+        disp_lo += d_lo / 1000 * rate[0]
+        disp_hi += d_hi / 1000 * rate[1]
         lines.append((op, (wl, wh), (ml, mh)))
 
     setup = (job.setup_hours[0] + su_lo, job.setup_hours[1] + su_hi)
     hours = (work_lo + setup[0], work_hi + setup[1])
     labour = (hours[0] * h_lo, hours[1] * h_hi)
-    disposal = (debris_lo / 1000 * DISPOSAL_PER_T[country][0],
-                debris_hi / 1000 * DISPOSAL_PER_T[country][1])
+    disposal = (disp_lo, disp_hi)
     total = (labour[0] + mat_lo + disposal[0], labour[1] + mat_hi + disposal[1])
     return {"job": job, "qty": qty, "hours": hours, "setup": setup,
             "labour": labour, "material": (mat_lo, mat_hi),
@@ -45,7 +50,14 @@ def validate(job, *, country="AT", condition="renovierung_leer"):
     if not band:
         return None
     lo_q, hi_q = job.typical_size
-    mid_q = (lo_q + hi_q) / 2
+    # A "total" band is quoted per piece — one window, one WC — so it must be
+    # checked at qty 1. Checking at mid-size would compare a four-window job
+    # against a one-window band and fail every time.
+    mid_q = 1.0 if job.band_basis == "total" else (lo_q + hi_q) / 2
+    if job.band_basis == "per_unit":
+        # Published per-unit rates are averages over typical, larger jobs where
+        # the contractor's setup is already amortised. Check there.
+        mid_q = hi_q
     r = estimate(job, mid_q, country=country, condition=condition)
     pu = r["per_unit"]
     # Overlap is too weak a test: a range of 5..18 "overlaps" a band of 7..12

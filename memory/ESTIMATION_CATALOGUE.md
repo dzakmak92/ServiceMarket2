@@ -29,10 +29,21 @@ and the harness fails it. Without this the catalogue is just plausible numbers.
 volume: 38 m² of Estrich is 3,750–5,438 kg but only 2.5–4.9 m³. Order by weight,
 bill by tonne. Quoting by container size systematically underprices.
 
+## Coverage
+
+64 job types across all 20 groups in `business_directory`, tagged with `group`
+and `segment` so a prospect and a template line up. 15,696 scenarios simulated.
+
+Fahrzeuge — the largest group at 2,839 businesses — is deliberately shallow.
+Vehicle repair is priced from manufacturer Arbeitswerte, 5-6 minute units
+published per model through AUDATEX or DAT, not from area and condition. That
+data is licensed and model-specific; a generic h/m2 catalogue cannot compete
+with it and should not pretend to. Only the few genuinely model-independent
+operations are included.
+
 ## Validation
 
-29 of 30 per-unit job/country pairs land inside their published market band when
-measured at large size. The single failure — `maler.fassade` DE at €18.70
+127 of 128 job/country pairs land inside their published market band. The single failure — `maler.fassade` DE at €18.70
 against a €20 floor — is a scope mismatch, not a bad coefficient: published
 Fassade prices include Gerüst and this catalogue explicitly excludes it.
 
@@ -47,16 +58,20 @@ not an error — it is the product's core insight.
 removal — the same work costs 68% more per m² on a small floor than a large one.
 Flat €/m² pricing under-recovers on 83% of scenarios.
 
-**Uncertainty varies enormously, and predictably.** Jobs where you cannot see
-inside the wall — Rohrbruch ×3.68, Steckdose ×3.27, Dickbett removal ×2.88 —
-carry three times the spread of jobs where you can see everything, like painting
-or laying new floor. This yields a hard rule:
+**Site-visit necessity is declared, not derived — and the first version got
+this wrong.** With 21 job types the hi/lo spread looked like a proxy for hidden
+preconditions, and a 2.6× threshold produced a tidy rule. At 64 it collapsed:
+the spread measures what share of the price is variable labour, not how hidden
+the conditions are. Window cleaning topped the list at ×4.35 because it is
+small and setup-dominated; a boiler swap looked certain at ×1.84 only because an
+1,800-2,900 EUR appliance swamps the labour variance. Deriving the flag would
+have sent a tradesperson to inspect a window and quote a Wärmepumpe blind.
 
-> **11 of 21 job types exceed a 2.6× spread and must not be quoted fixed-price
-> without a site visit.** They are marked `quote_mode: "regie"` in the JSON.
-
-They are, without exception, demolition, plumbing repair and electrical work in
-existing fabric. That is not a coincidence and it is defensible to a customer.
+`site_visit_required` is now an explicit list of 34 job types — concealed
+build-up, concealed services, structural involvement, or a measurement that must
+be exact before fabrication. The spread survives under an honest name,
+`labour_variance`: how much of the price is variable labour, and therefore how
+fast the job converges once `pro_rates` has real data.
 
 **DE and AT differ by only ×1.04 in labour.** The meaningful differences are
 fiscal — VAT rates, §35a deductibility, Kleinunternehmer thresholds — all of
@@ -95,6 +110,19 @@ estimated against actual `job_time_logs` and writing back to `pro_rates`
 produces coefficients that describe *this* business. Nobody can copy that, and
 it is the actual moat.
 
-Coverage is 21 job types across six trades — enough to prove the model, not
-enough to cover a trade completely. Sanitär and Elektrik in particular need
-depth before launch.
+Coverage is wide, not deep: 64 job types is one to six per group, which proves
+the structure and does not cover any trade completely. A Fliesenleger does far
+more than six things.
+
+Confidence is recorded per job because it is uneven. 1 high, 49 medium, 14 low.
+The `low` entries — Pool, Wärmepumpe, Markise, Einbauschrank, Geländer, Sofa,
+Gutachten, Flachdach, Rollladen, Fensterbank, Küchendemontage, Schädlings-
+bekämpfung, KFZ-Service — are plausible trade knowledge that no published band
+corroborates. They must be checked with a practising pro before they price
+anything real, and the field exists so that gap is visible rather than hidden
+behind a uniform-looking table.
+
+Five notes are `critical` and exist to prevent harm rather than to price work:
+asbestos in pre-1990 adhesives and coverings, load-bearing confirmation before
+demolition, structural sign-off for openings, roof load before PV, and buried
+services before excavation.

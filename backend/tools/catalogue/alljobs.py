@@ -1,0 +1,25 @@
+import sys; sys.path.insert(0, '.')
+from maler import MALER
+from trades import ALL as CORE
+from wide1 import BAUEN, TISCHLER, KUECHE
+from wide2 import GARTEN, FENSTER, DACH
+from wide3 import HEIZUNG, UMZUG, REINIGUNG, POLSTER, SOLAR, MONTAGE, GUTACHTER
+from wide4 import FAHRZEUGE
+
+# Groups the core file predates the group/segment fields; tag them here so the
+# catalogue lines up with business_directory."group" for prospect matching.
+GROUP_FIX = {
+    "maler": ("Maler & Tapezierer", "Maler & Lackierer"),
+    "fliesen": ("Boden & Fliesen", "Fliesenleger"),
+    "sanitaer": ("Sanitär", "Sanitär- / Klempner"),
+    "elektrik": ("Elektrik", "Elektriker"),
+    "trockenbau": ("Trockenbau & Verputzen", "Trockenbauer"),
+    "abriss": ("Abriss & Entsorgung", "Abrissunternehmen"),
+}
+for j in MALER + CORE:
+    if not j.group:
+        j.group, j.segment = GROUP_FIX.get(j.trade, ("", ""))
+
+ALL_JOBS = (MALER + CORE + BAUEN + TISCHLER + KUECHE + GARTEN + FENSTER +
+            DACH + HEIZUNG + UMZUG + REINIGUNG + POLSTER + SOLAR + MONTAGE +
+            GUTACHTER + FAHRZEUGE)

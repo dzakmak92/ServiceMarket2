@@ -165,13 +165,13 @@ ELEKTRIK = [
     JobType(
         key="elektrik.steckdose", trade="elektrik",
         label_de="Steckdose setzen (Unterputz, Bestand)", unit="Stk",
-        setup_hours=(0.5, 0.9), typical_size=(1, 6),
+        setup_hours=(0.3, 0.6), typical_size=(1, 6),
         market_band_at=(70, 180), market_band_de=(75, 190),
         band_basis="total", note_keys=["e_befund", "altbau_leitungen"],
         operations=[
-            Op("dose", "Dose setzen, Schlitz stemmen", "Stk", (0.5, 1.0),
+            Op("dose", "Dose setzen (Dosenfräse)", "Stk", (0.28, 0.50),
                debris_kg_per_unit=(2, 6)),
-            Op("anschluss", "Verdrahten und anschließen", "Stk", (0.3, 0.6)),
+            Op("anschluss", "Verdrahten und anschließen", "Stk", (0.18, 0.32)),
             Op("material", "Dose, Einsatz, Abdeckung", "Stk", (0.0, 0.0),
                kind="material", material_per_unit=(12, 35)),
         ],

@@ -39,6 +39,10 @@ class Operation:
     material_per_unit: Range = (0.0, 0.0)   # EUR of material per unit
     waste_factor: float = 0.0       # Verschnitt on material only
     debris_kg_per_unit: Range = (0.0, 0.0)
+    # Not all debris costs the same to get rid of. Charging Bauschutt rates for
+    # clean excavated soil overstated paving by nearly 100 EUR/m2; charging them
+    # for Sperrmüll understates a clearance badly in the other direction.
+    debris_type: str = "bauschutt"
     optional: bool = False
     tier_min: str = "basic"         # basic | standard | premium
     note_keys: list[str] = field(default_factory=list)
@@ -58,6 +62,14 @@ class JobType:
     band_basis: str = "per_unit"    # per_unit | total
     sources: list[str] = field(default_factory=list)
     note_keys: list[str] = field(default_factory=list)
+    # How much to trust the band. "high" = corroborated against a published
+    # DE/AT price radar; "medium" = trade knowledge, plausible but unsourced;
+    # "low" = placeholder, must be checked with a practising pro before it
+    # prices anything real. Recorded so the gaps are visible instead of the
+    # catalogue looking uniformly authoritative.
+    confidence: str = "medium"
+    group: str = ""          # matches business_directory."group"
+    segment: str = ""        # matches business_directory.segment
 
 
 # Condition and access are shared across trades: a painter and a tiler are
@@ -84,10 +96,27 @@ ACCESS_UPLIFT = {
 # 50-70, Meister 70-90. Sanitär and Elektrik sit above Maler in both markets.
 HOURLY = {
     "AT": {"maler": (38, 55), "fliesen": (42, 62), "sanitaer": (55, 80),
-           "elektrik": (55, 85), "trockenbau": (40, 60), "abriss": (35, 55)},
+           "elektrik": (55, 85), "trockenbau": (40, 60), "abriss": (35, 55),
+           "maurer": (42, 65), "tischler": (45, 70), "garten": (35, 55),
+           "fenster": (45, 70), "dach": (45, 70), "heizung": (55, 82),
+           "umzug": (30, 48), "kueche": (45, 70), "montage": (35, 58),
+           "reinigung": (25, 42), "polster": (40, 62), "solar": (55, 85),
+           "metallbau": (48, 72), "geruest": (38, 58)},
     "DE": {"maler": (35, 60), "fliesen": (40, 65), "sanitaer": (55, 85),
-           "elektrik": (55, 90), "trockenbau": (38, 62), "abriss": (35, 58)},
+           "elektrik": (55, 90), "trockenbau": (38, 62), "abriss": (35, 58),
+           "maurer": (40, 68), "tischler": (45, 75), "garten": (35, 58),
+           "fenster": (45, 72), "dach": (45, 75), "heizung": (55, 88),
+           "umzug": (30, 50), "kueche": (45, 72), "montage": (35, 60),
+           "reinigung": (25, 45), "polster": (40, 65), "solar": (55, 90),
+           "metallbau": (48, 75), "geruest": (38, 60)},
 }
 
-DISPOSAL_PER_T = {"AT": (75, 130), "DE": (70, 140)}
+# EUR per tonne, by material. Bauschutt is the reference; the others differ by
+# up to an order of magnitude and the difference lands directly in the quote.
+DISPOSAL_PER_T = {
+    "AT": {"bauschutt": (75, 130), "aushub": (8, 26), "gruenschnitt": (30, 70),
+           "sperrmuell": (130, 260), "altholz": (60, 120), "metall": (0, 0)},
+    "DE": {"bauschutt": (70, 140), "aushub": (8, 30), "gruenschnitt": (30, 75),
+           "sperrmuell": (140, 280), "altholz": (60, 130), "metall": (0, 0)},
+}
 BAUSCHUTT_KG_PER_M3 = (1100, 1500)

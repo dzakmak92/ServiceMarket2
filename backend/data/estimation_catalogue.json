@@ -81,6 +81,62 @@
       "abriss": [
         35,
         55
+      ],
+      "maurer": [
+        42,
+        65
+      ],
+      "tischler": [
+        45,
+        70
+      ],
+      "garten": [
+        35,
+        55
+      ],
+      "fenster": [
+        45,
+        70
+      ],
+      "dach": [
+        45,
+        70
+      ],
+      "heizung": [
+        55,
+        82
+      ],
+      "umzug": [
+        30,
+        48
+      ],
+      "kueche": [
+        45,
+        70
+      ],
+      "montage": [
+        35,
+        58
+      ],
+      "reinigung": [
+        25,
+        42
+      ],
+      "polster": [
+        40,
+        62
+      ],
+      "solar": [
+        55,
+        85
+      ],
+      "metallbau": [
+        48,
+        72
+      ],
+      "geruest": [
+        38,
+        58
       ]
     },
     "DE": {
@@ -107,20 +163,156 @@
       "abriss": [
         35,
         58
+      ],
+      "maurer": [
+        40,
+        68
+      ],
+      "tischler": [
+        45,
+        75
+      ],
+      "garten": [
+        35,
+        58
+      ],
+      "fenster": [
+        45,
+        72
+      ],
+      "dach": [
+        45,
+        75
+      ],
+      "heizung": [
+        55,
+        88
+      ],
+      "umzug": [
+        30,
+        50
+      ],
+      "kueche": [
+        45,
+        72
+      ],
+      "montage": [
+        35,
+        60
+      ],
+      "reinigung": [
+        25,
+        45
+      ],
+      "polster": [
+        40,
+        65
+      ],
+      "solar": [
+        55,
+        90
+      ],
+      "metallbau": [
+        48,
+        75
+      ],
+      "geruest": [
+        38,
+        60
       ]
     }
   },
   "disposal_per_tonne": {
-    "AT": [
-      75,
-      130
-    ],
-    "DE": [
-      70,
-      140
-    ]
+    "AT": {
+      "bauschutt": [
+        75,
+        130
+      ],
+      "aushub": [
+        8,
+        26
+      ],
+      "gruenschnitt": [
+        30,
+        70
+      ],
+      "sperrmuell": [
+        130,
+        260
+      ],
+      "altholz": [
+        60,
+        120
+      ],
+      "metall": [
+        0,
+        0
+      ]
+    },
+    "DE": {
+      "bauschutt": [
+        70,
+        140
+      ],
+      "aushub": [
+        8,
+        30
+      ],
+      "gruenschnitt": [
+        30,
+        75
+      ],
+      "sperrmuell": [
+        140,
+        280
+      ],
+      "altholz": [
+        60,
+        130
+      ],
+      "metall": [
+        0,
+        0
+      ]
+    }
   },
-  "regie_threshold": 2.6,
+  "site_visit_required": [
+    "abriss.estrich",
+    "abriss.nichttragende_wand",
+    "dach.flachdach",
+    "dach.rinne",
+    "dach.ziegel_umdecken",
+    "elektrik.leitung_verlegen",
+    "elektrik.verteiler",
+    "fenster.markise",
+    "fenster.rolladen",
+    "fenster.tausch",
+    "fliesen.entfernen_dickbett",
+    "fliesen.entfernen_duennbett",
+    "garten.pflaster",
+    "garten.pool",
+    "garten.zaun",
+    "glaser.scheibe",
+    "gutachter.bauschaden",
+    "heizung.fussbodenheizung",
+    "heizung.kaminofen",
+    "heizung.waermepumpe",
+    "kueche.demontage",
+    "kueche.montage",
+    "maler.fassade",
+    "maler.tapete_entfernen",
+    "maurer.durchbruch",
+    "maurer.wand_mauern",
+    "polster.sofa",
+    "sanitaer.rohrbruch",
+    "solar.pv_dach",
+    "steinmetz.fensterbank",
+    "tischler.einbauschrank",
+    "tischler.innentuer",
+    "umzug.entruempelung",
+    "umzug.wohnung"
+  ],
+  "labour_variance_note": "share of price that is variable labour; high values converge fastest once pro_rates has real data",
   "notes": {
     "asbest_vor_1990": {
       "severity": "critical",
@@ -210,6 +402,210 @@
       "severity": "low",
       "de": "Abtransport und Deponiegebühren sind kalkuliert; Mulde bauseits stellplatzpflichtig."
     },
+    "statik_pflicht": {
+      "severity": "critical",
+      "de": "Eingriffe in tragende Bauteile erfordern eine statische Berechnung und Freigabe. Diese ist nicht im Angebot enthalten und muss vor Arbeitsbeginn vorliegen."
+    },
+    "statik_dach": {
+      "severity": "critical",
+      "de": "Die Tragfähigkeit der Dachkonstruktion für die Zusatzlast ist vor Montage nachzuweisen."
+    },
+    "leitungen_im_boden": {
+      "severity": "critical",
+      "de": "Vor Grabarbeiten sind Leitungspläne einzuholen. Schäden an nicht eingemessenen Leitungen sind nicht vom Angebot gedeckt."
+    },
+    "leitungsortung": {
+      "severity": "high",
+      "de": "Vor dem Bohren wird eine Leitungsortung durchgeführt. Für nicht ortbare Altleitungen wird keine Haftung übernommen."
+    },
+    "brandschutz_abstand": {
+      "severity": "high",
+      "de": "Die vorgeschriebenen Sicherheitsabstände zu brennbaren Bauteilen sind einzuhalten; bauseits zu prüfen."
+    },
+    "genehmigung_bau": {
+      "severity": "high",
+      "de": "Baubehördliche Genehmigung ist bauseits einzuholen und nicht im Angebot enthalten."
+    },
+    "genehmigung_strasse": {
+      "severity": "high",
+      "de": "Genehmigung für die Nutzung öffentlichen Grundes ist bauseits einzuholen."
+    },
+    "netzanmeldung": {
+      "severity": "high",
+      "de": "Anmeldung beim Netzbetreiber und Zählertausch sind nicht im Angebot enthalten."
+    },
+    "heizlastberechnung": {
+      "severity": "high",
+      "de": "Angebot basiert auf überschlägiger Auslegung. Eine Heizlastberechnung nach ÖNORM H 7500 / DIN EN 12831 wird empfohlen."
+    },
+    "geruest_erforderlich": {
+      "severity": "high",
+      "de": "Für diese Arbeiten ist ein Gerüst erforderlich; es ist nicht im Angebot enthalten."
+    },
+    "aufmass_vor_fertigung": {
+      "severity": "high",
+      "de": "Fertigung erst nach Aufmaß vor Ort. Maßabweichungen zum Plan können den Preis ändern."
+    },
+    "absturzsicherung_norm": {
+      "severity": "high",
+      "de": "Ausführung nach ÖNORM B 5371 / DIN 18065 (Geländerhöhe, Öffnungsweiten)."
+    },
+    "windklasse": {
+      "severity": "medium",
+      "de": "Markise ist für die angegebene Windklasse ausgelegt; bei Sturm einzufahren."
+    },
+    "hydraulischer_abgleich": {
+      "severity": "medium",
+      "de": "Hydraulischer Abgleich ist nicht enthalten und wird gesondert angeboten."
+    },
+    "anlage_entleeren": {
+      "severity": "medium",
+      "de": "Die Heizungsanlage muss für die Arbeiten entleert werden; Wiederbefüllung ist enthalten."
+    },
+    "estrich_folgt": {
+      "severity": "medium",
+      "de": "Estricharbeiten sind nicht enthalten und erfolgen durch das Folgegewerk."
+    },
+    "aufbauhoehe": {
+      "severity": "medium",
+      "de": "Die erforderliche Aufbauhöhe ist bauseits sicherzustellen; Türen sind ggf. zu kürzen."
+    },
+    "gefaelle": {
+      "severity": "medium",
+      "de": "Ausreichendes Gefälle zur Entwässerung wird vorausgesetzt."
+    },
+    "entwaesserung": {
+      "severity": "medium",
+      "de": "Entwässerung und Anschluss an den Kanal sind nicht enthalten."
+    },
+    "unterbau_tragfaehig": {
+      "severity": "medium",
+      "de": "Angebot gilt für tragfähigen Untergrund. Bodenaustausch bei nicht tragfähigem Untergrund nach Aufwand."
+    },
+    "laibung_nacharbeit": {
+      "severity": "medium",
+      "de": "Innen- und Außenlaibungen sind nachzuarbeiten; Malerarbeiten nicht enthalten."
+    },
+    "wand_lot": {
+      "severity": "medium",
+      "de": "Wände werden als lot- und fluchtgerecht angenommen; Ausgleich nach Aufwand."
+    },
+    "anschluesse_vorhanden": {
+      "severity": "medium",
+      "de": "Wasser-, Abwasser- und Elektroanschlüsse werden an geeigneter Position als vorhanden angenommen."
+    },
+    "stromanschluss_bauseits": {
+      "severity": "medium",
+      "de": "Bauseitiger Stromanschluss an geeigneter Stelle wird vorausgesetzt."
+    },
+    "schallschutz": {
+      "severity": "medium",
+      "de": "Einhaltung der Schallschutzgrenzwerte am Aufstellort ist zu prüfen."
+    },
+    "standzeit": {
+      "severity": "medium",
+      "de": "Die Grundmiete umfasst vier Wochen Standzeit; darüber hinaus wird wochenweise verrechnet."
+    },
+    "grenzabstand": {
+      "severity": "medium",
+      "de": "Grenzabstände und Zustimmung des Nachbarn sind bauseits zu klären."
+    },
+    "vogelschutz_zeitraum": {
+      "severity": "medium",
+      "de": "Radikalschnitt ist zwischen 1. März und 30. September gesetzlich eingeschränkt."
+    },
+    "halteverbot": {
+      "severity": "medium",
+      "de": "Halteverbotszonen sind bauseits zu beantragen; Kosten nicht enthalten."
+    },
+    "kein_lift": {
+      "severity": "medium",
+      "de": "Tragen ohne Aufzug ist kalkuliert; ab dem 3. Obergeschoss entsteht Mehraufwand."
+    },
+    "versicherung": {
+      "severity": "medium",
+      "de": "Transportversicherung deckt den gesetzlichen Rahmen; Höherwertversicherung auf Wunsch."
+    },
+    "wertgegenstaende": {
+      "severity": "medium",
+      "de": "Wertgegenstände und persönliche Unterlagen sind vor Beginn zu entnehmen."
+    },
+    "raeumung_waehrend": {
+      "severity": "medium",
+      "de": "Die Räume sind während der Behandlung und der Nachwirkzeit nicht zu betreten."
+    },
+    "nachkontrolle": {
+      "severity": "medium",
+      "de": "Eine Nachkontrolle ist im Preis enthalten; weitere Behandlungen nach Aufwand."
+    },
+    "laborkosten_extra": {
+      "severity": "medium",
+      "de": "Laboranalysen und Materialprüfungen werden gesondert verrechnet."
+    },
+    "unabhaengigkeit": {
+      "severity": "medium",
+      "de": "Das Gutachten wird unabhängig erstellt; ein bestimmtes Ergebnis kann nicht zugesagt werden."
+    },
+    "transport_werkstatt": {
+      "severity": "low",
+      "de": "Abholung und Rücklieferung in die Werkstatt sind enthalten."
+    },
+    "stoff_bauseits_moeglich": {
+      "severity": "low",
+      "de": "Beistellung des Bezugsstoffs durch den Auftraggeber ist möglich; Materialanteil entfällt dann."
+    },
+    "montageanleitung_bauseits": {
+      "severity": "low",
+      "de": "Montageanleitung und Beschläge sind bauseits beizustellen."
+    },
+    "schluessel_uebergabe": {
+      "severity": "low",
+      "de": "Schlüsselübergabe ist zu vereinbaren; Schlüsselverwaltung nach Absprache."
+    },
+    "erreichbarkeit": {
+      "severity": "low",
+      "de": "Angebot gilt für vom Boden bzw. Innenraum erreichbare Flächen."
+    },
+    "identitaetsnachweis": {
+      "severity": "low",
+      "de": "Ein Identitäts- und Wohnsitznachweis ist vor der Öffnung vorzulegen."
+    },
+    "nacht_zuschlag": {
+      "severity": "low",
+      "de": "Für Einsätze außerhalb der Geschäftszeiten gelten Zuschläge."
+    },
+    "regie_abrechnung": {
+      "severity": "low",
+      "de": "Abrechnung nach tatsächlichem Aufwand; angefangene Viertelstunden werden gerundet."
+    },
+    "behoerdlich_vorgeschrieben": {
+      "severity": "low",
+      "de": "Leistung ist behördlich vorgeschrieben; Intervalle richten sich nach der Landesverordnung."
+    },
+    "rdks_sensoren": {
+      "severity": "low",
+      "de": "RDKS-Sensoren werden geprüft; Ersatz bei Defekt nach Aufwand."
+    },
+    "verschleissteile_extra": {
+      "severity": "low",
+      "de": "Verschleißteile (Kette, Bremsbeläge, Züge) sind nicht enthalten."
+    },
+    "altoel_entsorgung": {
+      "severity": "low",
+      "de": "Altölentsorgung ist im Preis enthalten."
+    },
+    "aw_modellabhaengig": {
+      "severity": "medium",
+      "de": "Der tatsächliche Zeitaufwand ist modellabhängig und richtet sich nach den Herstellervorgaben (Arbeitswerte)."
+    },
+    "bewaesserung_bauseits": {
+      "severity": "low",
+      "de": "Bewässerung in den ersten Wochen ist bauseits sicherzustellen; ohne sie keine Anwachsgarantie."
+    },
+    "altbau_leitungen": {
+      "severity": "high",
+      "de": "In Altbauten sind Leitungen häufig nicht normgerecht verlegt. Notwendige Anpassungen werden nach Aufwand verrechnet."
+    },
     "abschaltung": {
       "severity": "medium",
       "de": "Zeitweise Abschaltung der Stromversorgung ist erforderlich."
@@ -246,10 +642,14 @@
         "fixbuddy.at/was-kostet-maler",
         "daibau.at/baukostenrechner/maler"
       ],
+      "confidence": "medium",
+      "group": "Maler & Tapezierer",
+      "segment": "Maler & Lackierer",
       "note_keys": [
         "moebel_bauseits"
       ],
-      "uncertainty_spread": 2.42,
+      "labour_variance": 2.42,
+      "site_visit_required": false,
       "quote_mode": "fixed",
       "small_job_premium": 1.35,
       "operations": [
@@ -271,6 +671,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -293,6 +694,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -315,6 +717,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -346,8 +749,12 @@
       "sources": [
         "daibau.at"
       ],
+      "confidence": "medium",
+      "group": "Maler & Tapezierer",
+      "segment": "Maler & Lackierer",
       "note_keys": [],
-      "uncertainty_spread": 2.49,
+      "labour_variance": 2.49,
+      "site_visit_required": false,
       "quote_mode": "fixed",
       "small_job_premium": 1.52,
       "operations": [
@@ -369,6 +776,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -391,6 +799,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -413,6 +822,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -444,10 +854,14 @@
       "sources": [
         "profirechner.de/malerarbeiten-kosten-rechner"
       ],
+      "confidence": "medium",
+      "group": "Maler & Tapezierer",
+      "segment": "Maler & Lackierer",
       "note_keys": [
         "untergrund_tragfaehig"
       ],
-      "uncertainty_spread": 2.56,
+      "labour_variance": 2.56,
+      "site_visit_required": false,
       "quote_mode": "fixed",
       "small_job_premium": 1.19,
       "operations": [
@@ -469,6 +883,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -491,6 +906,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -513,6 +929,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -535,6 +952,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -566,10 +984,14 @@
       "sources": [
         "handwerksratgeber.de/maler-kosten"
       ],
+      "confidence": "medium",
+      "group": "Maler & Tapezierer",
+      "segment": "Maler & Lackierer",
       "note_keys": [
         "altbau_untergrund"
       ],
-      "uncertainty_spread": 3.45,
+      "labour_variance": 3.45,
+      "site_visit_required": true,
       "quote_mode": "regie",
       "small_job_premium": 1.31,
       "operations": [
@@ -591,6 +1013,7 @@
             0.4,
             1.2
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -613,6 +1036,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -644,12 +1068,16 @@
       "sources": [
         "hausbau-magazin.at/malerkosten-oesterreich"
       ],
+      "confidence": "medium",
+      "group": "Maler & Tapezierer",
+      "segment": "Maler & Lackierer",
       "note_keys": [
         "geruest_nicht_enthalten",
         "witterung"
       ],
-      "uncertainty_spread": 2.58,
-      "quote_mode": "fixed",
+      "labour_variance": 2.58,
+      "site_visit_required": true,
+      "quote_mode": "regie",
       "small_job_premium": 1.15,
       "operations": [
         {
@@ -670,6 +1098,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -692,6 +1121,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -714,6 +1144,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -736,6 +1167,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -768,11 +1200,15 @@
         "my-hammer.at/bauschutt-entsorgen",
         "baucheck.io"
       ],
+      "confidence": "medium",
+      "group": "Boden & Fliesen",
+      "segment": "Fliesenleger",
       "note_keys": [
         "asbest_vor_1990",
         "staub"
       ],
-      "uncertainty_spread": 2.76,
+      "labour_variance": 2.76,
+      "site_visit_required": true,
       "quote_mode": "regie",
       "small_job_premium": 1.68,
       "operations": [
@@ -794,6 +1230,7 @@
             20,
             26
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -816,6 +1253,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -838,6 +1276,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -870,12 +1309,16 @@
         "baucheck.io",
         "fliesenlegung.de"
       ],
+      "confidence": "medium",
+      "group": "Boden & Fliesen",
+      "segment": "Fliesenleger",
       "note_keys": [
         "asbest_vor_1990",
         "staub",
         "dickbett_mehraufwand"
       ],
-      "uncertainty_spread": 2.88,
+      "labour_variance": 2.88,
+      "site_visit_required": true,
       "quote_mode": "regie",
       "small_job_premium": 1.39,
       "operations": [
@@ -897,6 +1340,7 @@
             45,
             75
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -919,6 +1363,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -941,6 +1386,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -972,11 +1418,15 @@
       "sources": [
         "fixbuddy.at/was-kostet-fliesen-verlegen"
       ],
+      "confidence": "medium",
+      "group": "Boden & Fliesen",
+      "segment": "Fliesenleger",
       "note_keys": [
         "untergrund_eben",
         "verschnitt_muster"
       ],
-      "uncertainty_spread": 2.53,
+      "labour_variance": 2.53,
+      "site_visit_required": false,
       "quote_mode": "fixed",
       "small_job_premium": 1.27,
       "operations": [
@@ -998,6 +1448,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1020,6 +1471,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1042,6 +1494,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1064,6 +1517,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1095,10 +1549,14 @@
       "sources": [
         "fixbuddy.at"
       ],
+      "confidence": "medium",
+      "group": "Boden & Fliesen",
+      "segment": "Fliesenleger",
       "note_keys": [
         "abdichtung_nassbereich"
       ],
-      "uncertainty_spread": 2.51,
+      "labour_variance": 2.51,
+      "site_visit_required": false,
       "quote_mode": "fixed",
       "small_job_premium": 1.2,
       "operations": [
@@ -1120,6 +1578,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1142,6 +1601,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1164,6 +1624,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1186,6 +1647,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1215,11 +1677,15 @@
       ],
       "band_basis": "per_unit",
       "sources": [],
+      "confidence": "medium",
+      "group": "Boden & Fliesen",
+      "segment": "Fliesenleger",
       "note_keys": [
         "untergrund_eben",
         "dehnungsfuge"
       ],
-      "uncertainty_spread": 2.6,
+      "labour_variance": 2.6,
+      "site_visit_required": false,
       "quote_mode": "fixed",
       "small_job_premium": 1.2,
       "operations": [
@@ -1241,6 +1707,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1263,6 +1730,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1285,6 +1753,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1314,11 +1783,15 @@
       ],
       "band_basis": "per_unit",
       "sources": [],
+      "confidence": "medium",
+      "group": "Boden & Fliesen",
+      "segment": "Fliesenleger",
       "note_keys": [
         "untergrund_eben",
         "raumklima"
       ],
-      "uncertainty_spread": 2.51,
+      "labour_variance": 2.51,
+      "site_visit_required": false,
       "quote_mode": "fixed",
       "small_job_premium": 1.12,
       "operations": [
@@ -1340,6 +1813,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1362,6 +1836,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1384,6 +1859,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "standard",
           "note_keys": []
@@ -1413,12 +1889,16 @@
       ],
       "band_basis": "total",
       "sources": [],
+      "confidence": "medium",
+      "group": "Sanitär",
+      "segment": "Sanitär- / Klempner",
       "note_keys": [
         "absperrventil",
         "altgeraet_entsorgung"
       ],
-      "uncertainty_spread": 2.69,
-      "quote_mode": "regie",
+      "labour_variance": 2.69,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
       "small_job_premium": 1.14,
       "operations": [
         {
@@ -1439,6 +1919,7 @@
             20,
             35
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1461,6 +1942,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1483,6 +1965,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1505,6 +1988,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1534,11 +2018,15 @@
       ],
       "band_basis": "total",
       "sources": [],
+      "confidence": "medium",
+      "group": "Sanitär",
+      "segment": "Sanitär- / Klempner",
       "note_keys": [
         "altgeraet_entsorgung"
       ],
-      "uncertainty_spread": 2.67,
-      "quote_mode": "regie",
+      "labour_variance": 2.67,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
       "small_job_premium": 1.16,
       "operations": [
         {
@@ -1559,6 +2047,7 @@
             15,
             30
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1581,6 +2070,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1603,6 +2093,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1632,12 +2123,16 @@
       ],
       "band_basis": "total",
       "sources": [],
+      "confidence": "medium",
+      "group": "Sanitär",
+      "segment": "Sanitär- / Klempner",
       "note_keys": [
         "rauchfangkehrer",
         "gasleitung_normgerecht",
         "foerderung"
       ],
-      "uncertainty_spread": 1.84,
+      "labour_variance": 1.84,
+      "site_visit_required": false,
       "quote_mode": "fixed",
       "small_job_premium": 1.02,
       "operations": [
@@ -1659,6 +2154,7 @@
             35,
             60
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1681,6 +2177,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1703,6 +2200,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1725,6 +2223,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1754,11 +2253,15 @@
       ],
       "band_basis": "total",
       "sources": [],
+      "confidence": "medium",
+      "group": "Sanitär",
+      "segment": "Sanitär- / Klempner",
       "note_keys": [
         "folgeschaeden",
         "oeffnung_wand"
       ],
-      "uncertainty_spread": 3.68,
+      "labour_variance": 3.68,
+      "site_visit_required": true,
       "quote_mode": "regie",
       "small_job_premium": 1.08,
       "operations": [
@@ -1780,6 +2283,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1802,6 +2306,7 @@
             30,
             90
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1824,6 +2329,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1846,6 +2352,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1858,8 +2365,8 @@
       "label_de": "Steckdose setzen (Unterputz, Bestand)",
       "unit": "Stk",
       "setup_hours": [
-        0.5,
-        0.9
+        0.3,
+        0.6
       ],
       "typical_size": [
         1,
@@ -1875,22 +2382,26 @@
       ],
       "band_basis": "total",
       "sources": [],
+      "confidence": "medium",
+      "group": "Elektrik",
+      "segment": "Elektriker",
       "note_keys": [
         "e_befund",
         "altbau_leitungen"
       ],
-      "uncertainty_spread": 3.27,
-      "quote_mode": "regie",
-      "small_job_premium": 1.63,
+      "labour_variance": 3.05,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.82,
       "operations": [
         {
           "key": "dose",
-          "label_de": "Dose setzen, Schlitz stemmen",
+          "label_de": "Dose setzen (Dosenfräse)",
           "unit": "Stk",
           "kind": "labor",
           "hours_per_unit": [
-            0.5,
-            1.0
+            0.28,
+            0.5
           ],
           "material_per_unit": [
             0.0,
@@ -1901,6 +2412,7 @@
             2,
             6
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1911,8 +2423,8 @@
           "unit": "Stk",
           "kind": "labor",
           "hours_per_unit": [
-            0.3,
-            0.6
+            0.18,
+            0.32
           ],
           "material_per_unit": [
             0.0,
@@ -1923,6 +2435,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1945,6 +2458,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -1974,11 +2488,15 @@
       ],
       "band_basis": "per_unit",
       "sources": [],
+      "confidence": "medium",
+      "group": "Elektrik",
+      "segment": "Elektriker",
       "note_keys": [
         "e_befund",
         "staub"
       ],
-      "uncertainty_spread": 2.88,
+      "labour_variance": 2.88,
+      "site_visit_required": true,
       "quote_mode": "regie",
       "small_job_premium": 1.46,
       "operations": [
@@ -2000,6 +2518,7 @@
             3,
             8
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -2022,6 +2541,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -2044,6 +2564,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -2066,6 +2587,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -2095,11 +2617,15 @@
       ],
       "band_basis": "total",
       "sources": [],
+      "confidence": "medium",
+      "group": "Elektrik",
+      "segment": "Elektriker",
       "note_keys": [
         "e_befund",
         "abschaltung"
       ],
-      "uncertainty_spread": 2.85,
+      "labour_variance": 2.85,
+      "site_visit_required": true,
       "quote_mode": "regie",
       "small_job_premium": 1.05,
       "operations": [
@@ -2121,6 +2647,7 @@
             8,
             18
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -2143,6 +2670,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -2165,6 +2693,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -2187,6 +2716,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -2216,10 +2746,14 @@
       ],
       "band_basis": "per_unit",
       "sources": [],
+      "confidence": "medium",
+      "group": "Trockenbau & Verputzen",
+      "segment": "Trockenbauer",
       "note_keys": [
         "statik_nicht_tragend"
       ],
-      "uncertainty_spread": 2.39,
+      "labour_variance": 2.39,
+      "site_visit_required": false,
       "quote_mode": "fixed",
       "small_job_premium": 1.14,
       "operations": [
@@ -2241,6 +2775,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -2263,6 +2798,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -2285,6 +2821,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -2307,6 +2844,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -2336,12 +2874,16 @@
       ],
       "band_basis": "per_unit",
       "sources": [],
+      "confidence": "medium",
+      "group": "Abriss & Entsorgung",
+      "segment": "Abrissunternehmen",
       "note_keys": [
         "asbest_vor_1990",
         "staub",
         "abtransport"
       ],
-      "uncertainty_spread": 2.87,
+      "labour_variance": 2.87,
+      "site_visit_required": true,
       "quote_mode": "regie",
       "small_job_premium": 1.2,
       "operations": [
@@ -2363,6 +2905,7 @@
             100,
             145
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -2385,6 +2928,7 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -2414,12 +2958,16 @@
       ],
       "band_basis": "per_unit",
       "sources": [],
+      "confidence": "medium",
+      "group": "Abriss & Entsorgung",
+      "segment": "Abrissunternehmen",
       "note_keys": [
         "statik_nicht_tragend",
         "asbest_vor_1990",
         "staub"
       ],
-      "uncertainty_spread": 2.81,
+      "labour_variance": 2.81,
+      "site_visit_required": true,
       "quote_mode": "regie",
       "small_job_premium": 1.34,
       "operations": [
@@ -2441,6 +2989,7 @@
             140,
             175
           ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
@@ -2463,6 +3012,4151 @@
             0.0,
             0.0
           ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "maurer.durchbruch",
+      "trade": "maurer",
+      "label_de": "Wanddurchbruch mit Sturz",
+      "unit": "Stk",
+      "setup_hours": [
+        1.5,
+        2.5
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        900,
+        2600
+      ],
+      "market_band_de": [
+        950,
+        2800
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Bauen & Renovieren",
+      "segment": "Maurer & Betonbau",
+      "note_keys": [
+        "statik_pflicht",
+        "staub",
+        "abtransport"
+      ],
+      "labour_variance": 3.09,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.05,
+      "operations": [
+        {
+          "key": "statik",
+          "label_de": "Abstützung stellen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.5,
+            3.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "durchbruch",
+          "label_de": "Durchbruch herstellen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            4.0,
+            8.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            350,
+            900
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "sturz",
+          "label_de": "Sturz einbauen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            2.0,
+            4.0
+          ],
+          "material_per_unit": [
+            180,
+            420
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "laibung",
+          "label_de": "Laibungen verputzen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            2.0,
+            4.0
+          ],
+          "material_per_unit": [
+            40,
+            90
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "maurer.wand_mauern",
+      "trade": "maurer",
+      "label_de": "Wand mauern (nichttragend)",
+      "unit": "m2",
+      "setup_hours": [
+        1.0,
+        2.0
+      ],
+      "typical_size": [
+        6,
+        25
+      ],
+      "market_band_at": [
+        55,
+        110
+      ],
+      "market_band_de": [
+        55,
+        115
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Bauen & Renovieren",
+      "segment": "Maurer & Betonbau",
+      "note_keys": [
+        "statik_nicht_tragend"
+      ],
+      "labour_variance": 2.51,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.18,
+      "operations": [
+        {
+          "key": "mauern",
+          "label_de": "Mauerwerk herstellen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.4,
+            0.68
+          ],
+          "material_per_unit": [
+            18,
+            32
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verputzen",
+          "label_de": "Verputzen beidseitig",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.24,
+            0.42
+          ],
+          "material_per_unit": [
+            6,
+            12
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "metallbau.gelaender",
+      "trade": "metallbau",
+      "label_de": "Geländer fertigen und montieren",
+      "unit": "lfm",
+      "setup_hours": [
+        1.5,
+        3.0
+      ],
+      "typical_size": [
+        3,
+        15
+      ],
+      "market_band_at": [
+        180,
+        480
+      ],
+      "market_band_de": [
+        190,
+        520
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "confidence": "low",
+      "group": "Bauen & Renovieren",
+      "segment": "Metallbau",
+      "note_keys": [
+        "aufmass_vor_fertigung",
+        "absturzsicherung_norm"
+      ],
+      "labour_variance": 2.92,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.16,
+      "operations": [
+        {
+          "key": "aufmass",
+          "label_de": "Aufmaß vor Ort",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.1,
+            0.2
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "fertigung",
+          "label_de": "Fertigung in der Werkstatt",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.2,
+            2.4
+          ],
+          "material_per_unit": [
+            70,
+            160
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "montage",
+          "label_de": "Montage und Verankerung",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.6,
+            1.2
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "geruest.standard",
+      "trade": "geruest",
+      "label_de": "Fassadengerüst (Auf-/Abbau + 4 Wochen)",
+      "unit": "m2",
+      "setup_hours": [
+        1.5,
+        3.0
+      ],
+      "typical_size": [
+        80,
+        300
+      ],
+      "market_band_at": [
+        6,
+        14
+      ],
+      "market_band_de": [
+        6,
+        15
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Bauen & Renovieren",
+      "segment": "Gerüstbau",
+      "note_keys": [
+        "standzeit",
+        "genehmigung_strasse"
+      ],
+      "labour_variance": 2.76,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.15,
+      "operations": [
+        {
+          "key": "aufbau",
+          "label_de": "Gerüst aufbauen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.05,
+            0.09
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "miete",
+          "label_de": "Gerüstmiete 4 Wochen",
+          "unit": "m2",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            2.2,
+            4.5
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "abbau",
+          "label_de": "Gerüst abbauen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.03,
+            0.06
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "schluessel.tueroeffnung",
+      "trade": "montage",
+      "label_de": "Türöffnung (zugefallen)",
+      "unit": "Stk",
+      "setup_hours": [
+        0.3,
+        0.6
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        90,
+        250
+      ],
+      "market_band_de": [
+        95,
+        280
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Bauen & Renovieren",
+      "segment": "Schlüsseldienst",
+      "note_keys": [
+        "identitaetsnachweis",
+        "nacht_zuschlag"
+      ],
+      "labour_variance": 3.83,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.37,
+      "operations": [
+        {
+          "key": "oeffnung",
+          "label_de": "Tür zerstörungsfrei öffnen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.4,
+            1.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "steinmetz.fensterbank",
+      "trade": "maurer",
+      "label_de": "Fensterbank Naturstein tauschen",
+      "unit": "Stk",
+      "setup_hours": [
+        0.8,
+        1.5
+      ],
+      "typical_size": [
+        1,
+        6
+      ],
+      "market_band_at": [
+        180,
+        450
+      ],
+      "market_band_de": [
+        190,
+        480
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "confidence": "low",
+      "group": "Bauen & Renovieren",
+      "segment": "Steinmetz",
+      "note_keys": [
+        "aufmass_vor_fertigung"
+      ],
+      "labour_variance": 3.02,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.27,
+      "operations": [
+        {
+          "key": "demontage",
+          "label_de": "Alte Bank entfernen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.5,
+            1.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            25,
+            60
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "platte",
+          "label_de": "Steinplatte nach Maß",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            90,
+            240
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "montage",
+          "label_de": "Versetzen und verfugen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.0,
+            2.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "tischler.innentuer",
+      "trade": "tischler",
+      "label_de": "Innentür inkl. Zarge tauschen",
+      "unit": "Stk",
+      "setup_hours": [
+        0.6,
+        1.2
+      ],
+      "typical_size": [
+        1,
+        5
+      ],
+      "market_band_at": [
+        380,
+        850
+      ],
+      "market_band_de": [
+        400,
+        900
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Möbel & Einrichtung",
+      "segment": "Tischler & Schreiner",
+      "note_keys": [
+        "aufmass_vor_fertigung",
+        "altgeraet_entsorgung"
+      ],
+      "labour_variance": 2.73,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.13,
+      "operations": [
+        {
+          "key": "demontage",
+          "label_de": "Alte Tür und Zarge ausbauen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.8,
+            1.5
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            30,
+            55
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "tuerblatt",
+          "label_de": "Türblatt und Zarge",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            180,
+            420
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "montage",
+          "label_de": "Zarge setzen, Tür einhängen, justieren",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            2.0,
+            3.5
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "anschluss",
+          "label_de": "Anschlussfugen schließen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.4,
+            0.8
+          ],
+          "material_per_unit": [
+            8,
+            18
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "tischler.einbauschrank",
+      "trade": "tischler",
+      "label_de": "Einbauschrank nach Maß",
+      "unit": "lfm",
+      "setup_hours": [
+        1.5,
+        3.0
+      ],
+      "typical_size": [
+        2,
+        6
+      ],
+      "market_band_at": [
+        650,
+        1600
+      ],
+      "market_band_de": [
+        700,
+        1700
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "confidence": "low",
+      "group": "Möbel & Einrichtung",
+      "segment": "Tischler & Schreiner",
+      "note_keys": [
+        "aufmass_vor_fertigung",
+        "untergrund_eben"
+      ],
+      "labour_variance": 2.91,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.07,
+      "operations": [
+        {
+          "key": "aufmass",
+          "label_de": "Aufmaß und Planung",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.4,
+            0.9
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "korpus",
+          "label_de": "Korpus und Fronten",
+          "unit": "lfm",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            320,
+            800
+          ],
+          "waste_factor": 0.06,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "fertigung",
+          "label_de": "Fertigung",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            2.5,
+            5.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "montage",
+          "label_de": "Montage vor Ort",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.5,
+            3.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "tischler.moebelmontage",
+      "trade": "tischler",
+      "label_de": "Möbelmontage (Kaufmöbel)",
+      "unit": "h",
+      "setup_hours": [
+        0.5,
+        1.0
+      ],
+      "typical_size": [
+        2,
+        8
+      ],
+      "market_band_at": [
+        50,
+        85
+      ],
+      "market_band_de": [
+        50,
+        90
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Möbel & Einrichtung",
+      "segment": "Tischler & Schreiner",
+      "note_keys": [
+        "montageanleitung_bauseits"
+      ],
+      "labour_variance": 1.93,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.49,
+      "operations": [
+        {
+          "key": "montage",
+          "label_de": "Möbel montieren",
+          "unit": "h",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.0,
+            1.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "kueche.montage",
+      "trade": "kueche",
+      "label_de": "Küchenmontage (Standardküche)",
+      "unit": "lfm",
+      "setup_hours": [
+        1.5,
+        3.0
+      ],
+      "typical_size": [
+        3,
+        8
+      ],
+      "market_band_at": [
+        190,
+        420
+      ],
+      "market_band_de": [
+        200,
+        450
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Küche",
+      "segment": "Küchenbau",
+      "note_keys": [
+        "anschluesse_vorhanden",
+        "wand_lot"
+      ],
+      "labour_variance": 3.04,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.13,
+      "operations": [
+        {
+          "key": "unterschraenke",
+          "label_de": "Unterschränke stellen und ausrichten",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.75,
+            1.3
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "oberschraenke",
+          "label_de": "Oberschränke montieren",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.55,
+            1.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "arbeitsplatte",
+          "label_de": "Arbeitsplatte zuschneiden und montieren",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.65,
+            1.2
+          ],
+          "material_per_unit": [
+            60,
+            160
+          ],
+          "waste_factor": 0.08,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "anschluss",
+          "label_de": "Geräte anschließen (E/Wasser)",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.3,
+            0.7
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "kueche.demontage",
+      "trade": "kueche",
+      "label_de": "Alte Küche demontieren und entsorgen",
+      "unit": "lfm",
+      "setup_hours": [
+        0.8,
+        1.5
+      ],
+      "typical_size": [
+        3,
+        8
+      ],
+      "market_band_at": [
+        55,
+        130
+      ],
+      "market_band_de": [
+        58,
+        140
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "confidence": "low",
+      "group": "Küche",
+      "segment": "Küchenbau",
+      "note_keys": [
+        "abtransport",
+        "altgeraet_entsorgung"
+      ],
+      "labour_variance": 3.26,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.33,
+      "operations": [
+        {
+          "key": "demontage",
+          "label_de": "Küche demontieren",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.6,
+            1.1
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            55,
+            110
+          ],
+          "debris_type": "sperrmuell",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "entsorgung",
+          "label_de": "Entsorgung",
+          "unit": "lfm",
+          "kind": "disposal",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "garten.rasen_neu",
+      "trade": "garten",
+      "label_de": "Rasen neu anlegen (Saat)",
+      "unit": "m2",
+      "setup_hours": [
+        1.5,
+        3.0
+      ],
+      "typical_size": [
+        80,
+        400
+      ],
+      "market_band_at": [
+        8,
+        20
+      ],
+      "market_band_de": [
+        8,
+        22
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Garten & Außenbereich",
+      "segment": "Garten- & Landschaftsbau",
+      "note_keys": [
+        "bewaesserung_bauseits",
+        "witterung"
+      ],
+      "labour_variance": 2.73,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.19,
+      "operations": [
+        {
+          "key": "fraesen",
+          "label_de": "Boden fräsen und planieren",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.02,
+            0.04
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "substrat",
+          "label_de": "Rasentragschicht",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.01,
+            0.025
+          ],
+          "material_per_unit": [
+            2.2,
+            4.5
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "saat",
+          "label_de": "Saat ausbringen und walzen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.008,
+            0.018
+          ],
+          "material_per_unit": [
+            0.6,
+            1.4
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "garten.rollrasen",
+      "trade": "garten",
+      "label_de": "Rollrasen verlegen",
+      "unit": "m2",
+      "setup_hours": [
+        1.5,
+        3.0
+      ],
+      "typical_size": [
+        60,
+        300
+      ],
+      "market_band_at": [
+        14,
+        30
+      ],
+      "market_band_de": [
+        15,
+        32
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Garten & Außenbereich",
+      "segment": "Garten- & Landschaftsbau",
+      "note_keys": [
+        "bewaesserung_bauseits"
+      ],
+      "labour_variance": 2.18,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.12,
+      "operations": [
+        {
+          "key": "vorbereitung",
+          "label_de": "Boden vorbereiten",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.025,
+            0.045
+          ],
+          "material_per_unit": [
+            2.0,
+            4.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verlegen",
+          "label_de": "Rollrasen verlegen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.03,
+            0.055
+          ],
+          "material_per_unit": [
+            6.0,
+            11.0
+          ],
+          "waste_factor": 0.05,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "garten.pflaster",
+      "trade": "garten",
+      "label_de": "Pflasterung (Betonstein)",
+      "unit": "m2",
+      "setup_hours": [
+        2.0,
+        4.0
+      ],
+      "typical_size": [
+        25,
+        150
+      ],
+      "market_band_at": [
+        60,
+        130
+      ],
+      "market_band_de": [
+        60,
+        140
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Garten & Außenbereich",
+      "segment": "Pflaster- & Straßenbau",
+      "note_keys": [
+        "unterbau_tragfaehig",
+        "entwaesserung",
+        "abtransport"
+      ],
+      "labour_variance": 2.67,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.06,
+      "operations": [
+        {
+          "key": "aushub",
+          "label_de": "Aushub und Abtransport (Minibagger)",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.09,
+            0.17
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            500,
+            750
+          ],
+          "debris_type": "aushub",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "unterbau",
+          "label_de": "Frostschutz und Tragschicht",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.11,
+            0.2
+          ],
+          "material_per_unit": [
+            12,
+            22
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "bettung",
+          "label_de": "Splittbettung",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.05,
+            0.11
+          ],
+          "material_per_unit": [
+            3,
+            6
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "pflastern",
+          "label_de": "Pflaster verlegen und rütteln",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.28,
+            0.52
+          ],
+          "material_per_unit": [
+            18,
+            38
+          ],
+          "waste_factor": 0.05,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "garten.hecke_schnitt",
+      "trade": "garten",
+      "label_de": "Hecke schneiden",
+      "unit": "lfm",
+      "setup_hours": [
+        0.5,
+        1.0
+      ],
+      "typical_size": [
+        15,
+        80
+      ],
+      "market_band_at": [
+        4,
+        12
+      ],
+      "market_band_de": [
+        4,
+        13
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Garten & Außenbereich",
+      "segment": "Garten- & Landschaftsbau",
+      "note_keys": [
+        "vogelschutz_zeitraum",
+        "abtransport"
+      ],
+      "labour_variance": 3.92,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.52,
+      "operations": [
+        {
+          "key": "schnitt",
+          "label_de": "Hecke schneiden",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.05,
+            0.11
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "gruenschnitt",
+          "label_de": "Grünschnitt entsorgen",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.02,
+            0.05
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            3,
+            9
+          ],
+          "debris_type": "gruenschnitt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "garten.zaun",
+      "trade": "garten",
+      "label_de": "Zaun setzen (Doppelstabmatte)",
+      "unit": "lfm",
+      "setup_hours": [
+        1.5,
+        2.5
+      ],
+      "typical_size": [
+        20,
+        100
+      ],
+      "market_band_at": [
+        45,
+        100
+      ],
+      "market_band_de": [
+        48,
+        105
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Garten & Außenbereich",
+      "segment": "Garten- & Landschaftsbau",
+      "note_keys": [
+        "grenzabstand",
+        "leitungen_im_boden"
+      ],
+      "labour_variance": 2.55,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.06,
+      "operations": [
+        {
+          "key": "fundamente",
+          "label_de": "Pfosten setzen und betonieren",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.3,
+            0.55
+          ],
+          "material_per_unit": [
+            8,
+            16
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "matten",
+          "label_de": "Matten montieren",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.2,
+            0.4
+          ],
+          "material_per_unit": [
+            22,
+            45
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "garten.pool",
+      "trade": "garten",
+      "label_de": "Pool einbauen (GFK-Becken, Standard)",
+      "unit": "Stk",
+      "setup_hours": [
+        4.0,
+        8.0
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        18000,
+        45000
+      ],
+      "market_band_de": [
+        19000,
+        48000
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "confidence": "low",
+      "group": "Garten & Außenbereich",
+      "segment": "Poolbau",
+      "note_keys": [
+        "statik_pflicht",
+        "genehmigung_bau",
+        "leitungen_im_boden"
+      ],
+      "labour_variance": 2.69,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.0,
+      "operations": [
+        {
+          "key": "aushub",
+          "label_de": "Aushub und Abtransport",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            14,
+            26
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            40000,
+            70000
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "becken",
+          "label_de": "Becken inkl. Technik",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            11000,
+            26000
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "einbau",
+          "label_de": "Einbau, Verrohrung, Technikraum",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            45,
+            90
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "umgebung",
+          "label_de": "Randgestaltung",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            12,
+            26
+          ],
+          "material_per_unit": [
+            1200,
+            3500
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "fenster.tausch",
+      "trade": "fenster",
+      "label_de": "Fenster tauschen (Kunststoff, 2-flg)",
+      "unit": "Stk",
+      "setup_hours": [
+        1.0,
+        2.0
+      ],
+      "typical_size": [
+        1,
+        8
+      ],
+      "market_band_at": [
+        650,
+        1500
+      ],
+      "market_band_de": [
+        680,
+        1600
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Fenster & Türen",
+      "segment": "Türen- & Fensterbau",
+      "note_keys": [
+        "aufmass_vor_fertigung",
+        "laibung_nacharbeit",
+        "altgeraet_entsorgung"
+      ],
+      "labour_variance": 2.52,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.1,
+      "operations": [
+        {
+          "key": "ausbau",
+          "label_de": "Altfenster ausbauen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.0,
+            1.8
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            35,
+            70
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "element",
+          "label_de": "Fensterelement",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            380,
+            800
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "einbau",
+          "label_de": "Einbau, Befestigung, Abdichtung (RAL)",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            2.5,
+            4.5
+          ],
+          "material_per_unit": [
+            35,
+            80
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "laibung",
+          "label_de": "Laibungen nacharbeiten",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.0,
+            2.0
+          ],
+          "material_per_unit": [
+            15,
+            40
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "standard",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "fenster.rolladen",
+      "trade": "fenster",
+      "label_de": "Rollladen nachrüsten (Aufsatz, elektrisch)",
+      "unit": "Stk",
+      "setup_hours": [
+        0.8,
+        1.5
+      ],
+      "typical_size": [
+        1,
+        6
+      ],
+      "market_band_at": [
+        420,
+        950
+      ],
+      "market_band_de": [
+        450,
+        1000
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "confidence": "low",
+      "group": "Fenster & Türen",
+      "segment": "Rolladenbau",
+      "note_keys": [
+        "stromanschluss_bauseits"
+      ],
+      "labour_variance": 2.6,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.15,
+      "operations": [
+        {
+          "key": "element",
+          "label_de": "Rollladenkasten und Panzer",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            230,
+            520
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "montage",
+          "label_de": "Montage",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            2.0,
+            3.5
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "elektro",
+          "label_de": "Motor anschließen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.6,
+            1.2
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "fenster.markise",
+      "trade": "fenster",
+      "label_de": "Gelenkarmmarkise montieren",
+      "unit": "Stk",
+      "setup_hours": [
+        1.0,
+        1.8
+      ],
+      "typical_size": [
+        1,
+        2
+      ],
+      "market_band_at": [
+        1400,
+        3800
+      ],
+      "market_band_de": [
+        1500,
+        4000
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "confidence": "low",
+      "group": "Fenster & Türen",
+      "segment": "Sonnenschutz & Markisen",
+      "note_keys": [
+        "untergrund_tragfaehig",
+        "windklasse"
+      ],
+      "labour_variance": 2.94,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.04,
+      "operations": [
+        {
+          "key": "markise",
+          "label_de": "Markise inkl. Motor",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            900,
+            2600
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "montage",
+          "label_de": "Konsolen setzen und montieren",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            3.0,
+            5.5
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "elektro",
+          "label_de": "Elektroanschluss",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.6,
+            1.2
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "glaser.scheibe",
+      "trade": "fenster",
+      "label_de": "Isolierglasscheibe tauschen",
+      "unit": "Stk",
+      "setup_hours": [
+        0.6,
+        1.2
+      ],
+      "typical_size": [
+        1,
+        4
+      ],
+      "market_band_at": [
+        260,
+        700
+      ],
+      "market_band_de": [
+        270,
+        750
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Fenster & Türen",
+      "segment": "Glaser",
+      "note_keys": [
+        "aufmass_vor_fertigung"
+      ],
+      "labour_variance": 3.07,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.21,
+      "operations": [
+        {
+          "key": "ausbau",
+          "label_de": "Altglas ausbauen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.5,
+            1.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            18,
+            40
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "scheibe",
+          "label_de": "Isolierglas nach Maß",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            120,
+            340
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "einbau",
+          "label_de": "Verglasen und verklotzen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.8,
+            1.6
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "dach.ziegel_umdecken",
+      "trade": "dach",
+      "label_de": "Dach umdecken (Ziegel, inkl. Lattung)",
+      "unit": "m2",
+      "setup_hours": [
+        3.0,
+        6.0
+      ],
+      "typical_size": [
+        80,
+        250
+      ],
+      "market_band_at": [
+        75,
+        160
+      ],
+      "market_band_de": [
+        80,
+        170
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Dacharbeiten",
+      "segment": "Dachdecker",
+      "note_keys": [
+        "geruest_erforderlich",
+        "witterung",
+        "asbest_vor_1990",
+        "abtransport"
+      ],
+      "labour_variance": 2.61,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.03,
+      "operations": [
+        {
+          "key": "abdecken",
+          "label_de": "Altdeckung abnehmen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.1,
+            0.2
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            40,
+            70
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "lattung",
+          "label_de": "Konterlattung und Lattung",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.12,
+            0.22
+          ],
+          "material_per_unit": [
+            6,
+            12
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "unterspann",
+          "label_de": "Unterspannbahn",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.05,
+            0.1
+          ],
+          "material_per_unit": [
+            2.5,
+            5.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "eindecken",
+          "label_de": "Neu eindecken",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.28,
+            0.5
+          ],
+          "material_per_unit": [
+            22,
+            45
+          ],
+          "waste_factor": 0.06,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "dach.rinne",
+      "trade": "dach",
+      "label_de": "Dachrinne erneuern",
+      "unit": "lfm",
+      "setup_hours": [
+        1.5,
+        3.0
+      ],
+      "typical_size": [
+        10,
+        40
+      ],
+      "market_band_at": [
+        45,
+        110
+      ],
+      "market_band_de": [
+        48,
+        115
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Dacharbeiten",
+      "segment": "Spengler / Klempner",
+      "note_keys": [
+        "geruest_erforderlich",
+        "witterung"
+      ],
+      "labour_variance": 2.89,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.19,
+      "operations": [
+        {
+          "key": "demontage",
+          "label_de": "Altrinne demontieren",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.1,
+            0.2
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            2,
+            5
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "rinne",
+          "label_de": "Rinne und Fallrohr",
+          "unit": "lfm",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            18,
+            42
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "montage",
+          "label_de": "Rinneisen setzen und montieren",
+          "unit": "lfm",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.35,
+            0.65
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "dach.flachdach",
+      "trade": "dach",
+      "label_de": "Flachdach abdichten (Bitumen 2-lagig)",
+      "unit": "m2",
+      "setup_hours": [
+        2.5,
+        5.0
+      ],
+      "typical_size": [
+        50,
+        200
+      ],
+      "market_band_at": [
+        60,
+        130
+      ],
+      "market_band_de": [
+        62,
+        135
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "confidence": "low",
+      "group": "Dacharbeiten",
+      "segment": "Dachdecker",
+      "note_keys": [
+        "gefaelle",
+        "witterung",
+        "abtransport"
+      ],
+      "labour_variance": 2.45,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.05,
+      "operations": [
+        {
+          "key": "untergrund",
+          "label_de": "Untergrund vorbereiten",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.08,
+            0.16
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "daemmung",
+          "label_de": "Dämmung verlegen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.1,
+            0.18
+          ],
+          "material_per_unit": [
+            18,
+            34
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "abdichtung",
+          "label_de": "Zweilagige Abdichtung",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.25,
+            0.45
+          ],
+          "material_per_unit": [
+            14,
+            28
+          ],
+          "waste_factor": 0.08,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "dach.kaminkehren",
+      "trade": "dach",
+      "label_de": "Kaminkehrung und Messung",
+      "unit": "Stk",
+      "setup_hours": [
+        0.2,
+        0.4
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        45,
+        120
+      ],
+      "market_band_de": [
+        50,
+        130
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Dacharbeiten",
+      "segment": "Schornsteinfeger",
+      "note_keys": [
+        "behoerdlich_vorgeschrieben"
+      ],
+      "labour_variance": 3.45,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.36,
+      "operations": [
+        {
+          "key": "kehrung",
+          "label_de": "Kehrung und Abgasmessung",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.4,
+            0.9
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "heizung.heizkoerper",
+      "trade": "heizung",
+      "label_de": "Heizkörper tauschen",
+      "unit": "Stk",
+      "setup_hours": [
+        0.8,
+        1.5
+      ],
+      "typical_size": [
+        1,
+        8
+      ],
+      "market_band_at": [
+        320,
+        750
+      ],
+      "market_band_de": [
+        340,
+        800
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Heizung",
+      "segment": "Heizungsinstallateur",
+      "note_keys": [
+        "anlage_entleeren",
+        "hydraulischer_abgleich",
+        "altgeraet_entsorgung"
+      ],
+      "labour_variance": 2.79,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.21,
+      "operations": [
+        {
+          "key": "demontage",
+          "label_de": "Altheizkörper demontieren",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.6,
+            1.1
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            25,
+            55
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "koerper",
+          "label_de": "Heizkörper und Ventile",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            140,
+            340
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "montage",
+          "label_de": "Montieren und anschließen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.4,
+            2.6
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "befuellen",
+          "label_de": "Befüllen und entlüften",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.4,
+            0.8
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "heizung.fussbodenheizung",
+      "trade": "heizung",
+      "label_de": "Fußbodenheizung verlegen (Nass)",
+      "unit": "m2",
+      "setup_hours": [
+        2.0,
+        4.0
+      ],
+      "typical_size": [
+        40,
+        150
+      ],
+      "market_band_at": [
+        55,
+        110
+      ],
+      "market_band_de": [
+        58,
+        115
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Heizung",
+      "segment": "Heizungsinstallateur",
+      "note_keys": [
+        "estrich_folgt",
+        "aufbauhoehe"
+      ],
+      "labour_variance": 2.44,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.09,
+      "operations": [
+        {
+          "key": "daemmung",
+          "label_de": "Systemplatte verlegen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.08,
+            0.15
+          ],
+          "material_per_unit": [
+            11,
+            20
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "rohr",
+          "label_de": "Heizrohr verlegen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.1,
+            0.18
+          ],
+          "material_per_unit": [
+            6,
+            12
+          ],
+          "waste_factor": 0.05,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "verteiler",
+          "label_de": "Verteiler anschließen und abdrücken",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.05,
+            0.1
+          ],
+          "material_per_unit": [
+            6,
+            14
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "heizung.waermepumpe",
+      "trade": "heizung",
+      "label_de": "Luft-Wasser-Wärmepumpe einbauen",
+      "unit": "Stk",
+      "setup_hours": [
+        2.0,
+        4.0
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        14000,
+        30000
+      ],
+      "market_band_de": [
+        15000,
+        32000
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "confidence": "low",
+      "group": "Heizung",
+      "segment": "Heizungsinstallateur",
+      "note_keys": [
+        "foerderung",
+        "schallschutz",
+        "stromanschluss_bauseits",
+        "heizlastberechnung"
+      ],
+      "labour_variance": 2.21,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.01,
+      "operations": [
+        {
+          "key": "demontage",
+          "label_de": "Altanlage demontieren",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            3.0,
+            6.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            80,
+            200
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "geraet",
+          "label_de": "Wärmepumpe inkl. Speicher",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            9000,
+            18000
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "montage",
+          "label_de": "Aufstellung, Hydraulik, Elektro",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            24,
+            45
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "inbetriebnahme",
+          "label_de": "Inbetriebnahme und Einregulierung",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            3.0,
+            6.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "heizung.kaminofen",
+      "trade": "heizung",
+      "label_de": "Kaminofen anschließen",
+      "unit": "Stk",
+      "setup_hours": [
+        0.8,
+        1.5
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        450,
+        1400
+      ],
+      "market_band_de": [
+        480,
+        1500
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "confidence": "low",
+      "group": "Heizung",
+      "segment": "Kaminbau",
+      "note_keys": [
+        "rauchfangkehrer",
+        "brandschutz_abstand"
+      ],
+      "labour_variance": 3.02,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.08,
+      "operations": [
+        {
+          "key": "anschluss",
+          "label_de": "Rauchrohr und Anschluss herstellen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            2.5,
+            5.0
+          ],
+          "material_per_unit": [
+            120,
+            340
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "bodenplatte",
+          "label_de": "Bodenplatte / Funkenschutz",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.5,
+            1.0
+          ],
+          "material_per_unit": [
+            80,
+            220
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "standard",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "umzug.wohnung",
+      "trade": "umzug",
+      "label_de": "Wohnungsumzug",
+      "unit": "m3",
+      "setup_hours": [
+        1.0,
+        2.0
+      ],
+      "typical_size": [
+        20,
+        60
+      ],
+      "market_band_at": [
+        28,
+        60
+      ],
+      "market_band_de": [
+        30,
+        65
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Umzug & Transport",
+      "segment": "Umzugsunternehmen",
+      "note_keys": [
+        "halteverbot",
+        "kein_lift",
+        "versicherung"
+      ],
+      "labour_variance": 3.23,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.06,
+      "operations": [
+        {
+          "key": "verpacken",
+          "label_de": "Verpacken und sichern",
+          "unit": "m3",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.25,
+            0.5
+          ],
+          "material_per_unit": [
+            2.5,
+            6.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "tragen",
+          "label_de": "Aus- und Einladen",
+          "unit": "m3",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.28,
+            0.52
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "transport",
+          "label_de": "Transport",
+          "unit": "m3",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.1,
+            0.2
+          ],
+          "material_per_unit": [
+            3.0,
+            7.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "umzug.entruempelung",
+      "trade": "umzug",
+      "label_de": "Entrümpelung",
+      "unit": "m3",
+      "setup_hours": [
+        1.0,
+        2.0
+      ],
+      "typical_size": [
+        10,
+        50
+      ],
+      "market_band_at": [
+        40,
+        95
+      ],
+      "market_band_de": [
+        42,
+        100
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Umzug & Transport",
+      "segment": "Transportunternehmen",
+      "note_keys": [
+        "abtransport",
+        "wertgegenstaende"
+      ],
+      "labour_variance": 3.51,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.11,
+      "operations": [
+        {
+          "key": "raeumen",
+          "label_de": "Räumen und tragen",
+          "unit": "m3",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.45,
+            0.85
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            120,
+            220
+          ],
+          "debris_type": "sperrmuell",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "entsorgung",
+          "label_de": "Entsorgung",
+          "unit": "m3",
+          "kind": "disposal",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "reinigung.grundreinigung",
+      "trade": "reinigung",
+      "label_de": "Grundreinigung Wohnung",
+      "unit": "m2",
+      "setup_hours": [
+        0.5,
+        1.0
+      ],
+      "typical_size": [
+        50,
+        140
+      ],
+      "market_band_at": [
+        4,
+        12
+      ],
+      "market_band_de": [
+        4,
+        13
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Reinigung",
+      "segment": "Gebäudereiniger",
+      "note_keys": [
+        "schluessel_uebergabe"
+      ],
+      "labour_variance": 3.84,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.17,
+      "operations": [
+        {
+          "key": "reinigung",
+          "label_de": "Grundreinigung aller Flächen",
+          "unit": "m2",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.06,
+            0.13
+          ],
+          "material_per_unit": [
+            0.2,
+            0.5
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "reinigung.fenster",
+      "trade": "reinigung",
+      "label_de": "Fensterreinigung",
+      "unit": "Stk",
+      "setup_hours": [
+        0.3,
+        0.7
+      ],
+      "typical_size": [
+        8,
+        30
+      ],
+      "market_band_at": [
+        6,
+        18
+      ],
+      "market_band_de": [
+        6,
+        20
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Reinigung",
+      "segment": "Gebäudereiniger",
+      "note_keys": [
+        "erreichbarkeit"
+      ],
+      "labour_variance": 4.35,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.48,
+      "operations": [
+        {
+          "key": "fenster",
+          "label_de": "Fenster beidseitig reinigen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.1,
+            0.25
+          ],
+          "material_per_unit": [
+            0.2,
+            0.6
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "reinigung.hausbetreuung",
+      "trade": "reinigung",
+      "label_de": "Hausbetreuung (Stiegenhaus, pro Besuch)",
+      "unit": "Stk",
+      "setup_hours": [
+        0.2,
+        0.4
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        45,
+        130
+      ],
+      "market_band_de": [
+        48,
+        140
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Reinigung",
+      "segment": "Hausmeisterservice",
+      "note_keys": [
+        "schluessel_uebergabe"
+      ],
+      "labour_variance": 4.12,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.16,
+      "operations": [
+        {
+          "key": "reinigung",
+          "label_de": "Stiegenhaus reinigen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.0,
+            2.5
+          ],
+          "material_per_unit": [
+            3,
+            8
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "reinigung.schaedlinge",
+      "trade": "reinigung",
+      "label_de": "Schädlingsbekämpfung (Erstbehandlung)",
+      "unit": "Stk",
+      "setup_hours": [
+        0.4,
+        0.8
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        180,
+        480
+      ],
+      "market_band_de": [
+        190,
+        500
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "confidence": "low",
+      "group": "Reinigung",
+      "segment": "Schädlingsbekämpfung",
+      "note_keys": [
+        "nachkontrolle",
+        "raeumung_waehrend"
+      ],
+      "labour_variance": 3.75,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.09,
+      "operations": [
+        {
+          "key": "befund",
+          "label_de": "Befund und Ortung",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.5,
+            1.2
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "behandlung",
+          "label_de": "Behandlung",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.0,
+            2.5
+          ],
+          "material_per_unit": [
+            45,
+            140
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "polster.sofa",
+      "trade": "polster",
+      "label_de": "Sofa neu beziehen (3-Sitzer)",
+      "unit": "Stk",
+      "setup_hours": [
+        0.8,
+        1.5
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        900,
+        2400
+      ],
+      "market_band_de": [
+        950,
+        2500
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "confidence": "low",
+      "group": "Polsterarbeiten",
+      "segment": "Polsterei",
+      "note_keys": [
+        "stoff_bauseits_moeglich",
+        "transport_werkstatt"
+      ],
+      "labour_variance": 3.1,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.03,
+      "operations": [
+        {
+          "key": "demontage",
+          "label_de": "Altbezug abnehmen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            2.0,
+            4.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "stoff",
+          "label_de": "Bezugsstoff",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            280,
+            700
+          ],
+          "waste_factor": 0.12,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "polstern",
+          "label_de": "Polsterung erneuern und beziehen",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            10,
+            20
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "solar.pv_dach",
+      "trade": "solar",
+      "label_de": "PV-Anlage Schrägdach",
+      "unit": "kWp",
+      "setup_hours": [
+        3.0,
+        6.0
+      ],
+      "typical_size": [
+        5,
+        15
+      ],
+      "market_band_at": [
+        1300,
+        2100
+      ],
+      "market_band_de": [
+        1250,
+        2000
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Erneuerbare Energien",
+      "segment": "Solarteur",
+      "note_keys": [
+        "netzanmeldung",
+        "statik_dach",
+        "geruest_erforderlich",
+        "foerderung"
+      ],
+      "labour_variance": 2.12,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.04,
+      "operations": [
+        {
+          "key": "montage_system",
+          "label_de": "Unterkonstruktion montieren",
+          "unit": "kWp",
+          "kind": "labor",
+          "hours_per_unit": [
+            2.5,
+            4.5
+          ],
+          "material_per_unit": [
+            140,
+            260
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "module",
+          "label_de": "Module und Wechselrichter",
+          "unit": "kWp",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            650,
+            1050
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "dc_ac",
+          "label_de": "DC/AC-Verkabelung",
+          "unit": "kWp",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.5,
+            3.0
+          ],
+          "material_per_unit": [
+            60,
+            130
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "inbetriebnahme",
+          "label_de": "Inbetriebnahme und Anmeldung",
+          "unit": "kWp",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.8,
+            1.6
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "montage.stunde",
+      "trade": "montage",
+      "label_de": "Allround-Handwerker (Regiestunde)",
+      "unit": "h",
+      "setup_hours": [
+        0.4,
+        0.8
+      ],
+      "typical_size": [
+        2,
+        8
+      ],
+      "market_band_at": [
+        45,
+        80
+      ],
+      "market_band_de": [
+        45,
+        85
+      ],
+      "band_basis": "per_unit",
+      "sources": [],
+      "confidence": "high",
+      "group": "Montage & Allround",
+      "segment": "Montageservice & Allroundhandwerker",
+      "note_keys": [
+        "regie_abrechnung"
+      ],
+      "labour_variance": 2.03,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.44,
+      "operations": [
+        {
+          "key": "arbeit",
+          "label_de": "Handwerkerleistung nach Aufwand",
+          "unit": "h",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.0,
+            1.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "montage.tv_wandhalterung",
+      "trade": "montage",
+      "label_de": "TV-Wandhalterung montieren",
+      "unit": "Stk",
+      "setup_hours": [
+        0.3,
+        0.6
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        90,
+        240
+      ],
+      "market_band_de": [
+        95,
+        250
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Montage & Allround",
+      "segment": "Montageservice & Allroundhandwerker",
+      "note_keys": [
+        "untergrund_tragfaehig",
+        "leitungsortung"
+      ],
+      "labour_variance": 3.45,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.18,
+      "operations": [
+        {
+          "key": "montage",
+          "label_de": "Halterung dübeln und ausrichten",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.0,
+            2.0
+          ],
+          "material_per_unit": [
+            15,
+            45
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "gutachter.bauschaden",
+      "trade": "montage",
+      "label_de": "Bauschadengutachten",
+      "unit": "Stk",
+      "setup_hours": [
+        1.0,
+        2.0
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        900,
+        2500
+      ],
+      "market_band_de": [
+        950,
+        2600
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "confidence": "low",
+      "group": "Gutachter & Sachverständige",
+      "segment": "Bausachverständiger / Gutachter",
+      "note_keys": [
+        "unabhaengigkeit",
+        "laborkosten_extra"
+      ],
+      "labour_variance": 3.96,
+      "site_visit_required": true,
+      "quote_mode": "regie",
+      "small_job_premium": 1.05,
+      "operations": [
+        {
+          "key": "ortstermin",
+          "label_de": "Ortstermin und Aufnahme",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            3.0,
+            6.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "gutachten",
+          "label_de": "Auswertung und Gutachten",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            8.0,
+            18.0
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "kfz.service_klein",
+      "trade": "montage",
+      "label_de": "Kleines Service (Öl und Filter)",
+      "unit": "Stk",
+      "setup_hours": [
+        0.2,
+        0.4
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        120,
+        320
+      ],
+      "market_band_de": [
+        130,
+        340
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "confidence": "low",
+      "group": "Fahrzeuge",
+      "segment": "KFZ-Werkstatt",
+      "note_keys": [
+        "aw_modellabhaengig",
+        "altoel_entsorgung"
+      ],
+      "labour_variance": 3.06,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.12,
+      "operations": [
+        {
+          "key": "arbeit",
+          "label_de": "Ölwechsel, Filter, Sichtprüfung",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.8,
+            1.5
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "material",
+          "label_de": "Öl und Filter",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            55,
+            150
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "kfz.reifenwechsel",
+      "trade": "montage",
+      "label_de": "Reifenwechsel (4 Räder, mit Wuchten)",
+      "unit": "Stk",
+      "setup_hours": [
+        0.1,
+        0.2
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        50,
+        120
+      ],
+      "market_band_de": [
+        55,
+        130
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Fahrzeuge",
+      "segment": "KFZ-Werkstatt",
+      "note_keys": [
+        "rdks_sensoren"
+      ],
+      "labour_variance": 3.53,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.25,
+      "operations": [
+        {
+          "key": "wechsel",
+          "label_de": "Räder wechseln und wuchten",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            0.6,
+            1.2
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        }
+      ]
+    },
+    {
+      "key": "fahrrad.service",
+      "trade": "montage",
+      "label_de": "Fahrrad-Service (groß)",
+      "unit": "Stk",
+      "setup_hours": [
+        0.1,
+        0.3
+      ],
+      "typical_size": [
+        1,
+        1
+      ],
+      "market_band_at": [
+        70,
+        180
+      ],
+      "market_band_de": [
+        75,
+        190
+      ],
+      "band_basis": "total",
+      "sources": [],
+      "confidence": "medium",
+      "group": "Fahrzeuge",
+      "segment": "Fahrradwerkstatt",
+      "note_keys": [
+        "verschleissteile_extra"
+      ],
+      "labour_variance": 3.66,
+      "site_visit_required": false,
+      "quote_mode": "fixed",
+      "small_job_premium": 1.13,
+      "operations": [
+        {
+          "key": "service",
+          "label_de": "Komplettservice",
+          "unit": "Stk",
+          "kind": "labor",
+          "hours_per_unit": [
+            1.2,
+            2.5
+          ],
+          "material_per_unit": [
+            0.0,
+            0.0
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
+          "optional": false,
+          "tier_min": "basic",
+          "note_keys": []
+        },
+        {
+          "key": "kleinteile",
+          "label_de": "Kleinteile und Schmiermittel",
+          "unit": "Stk",
+          "kind": "material",
+          "hours_per_unit": [
+            0.0,
+            0.0
+          ],
+          "material_per_unit": [
+            12,
+            35
+          ],
+          "waste_factor": 0.0,
+          "debris_kg_per_unit": [
+            0.0,
+            0.0
+          ],
+          "debris_type": "bauschutt",
           "optional": false,
           "tier_min": "basic",
           "note_keys": []
