@@ -330,29 +330,68 @@ async def get(pro_id: str, invoice_id: str) -> Optional[dict]:
     return inv
 
 
+# What the list may be ordered by. An allow-list because the column name is
+# interpolated into the SQL — a caller-supplied ORDER BY is an injection.
+SORTABLE = {
+    "date": "i.issue_date",
+    "invoice_number": "i.invoice_number",
+    "amount": "i.gross_total",
+    "customer": "c.name",
+    "due_date": "i.due_date",
+}
+
+
 async def list_for_pro(pro_id: str, *, status: Optional[str] = None,
                        payment_state: Optional[str] = None,
                        job_id: Optional[str] = None, customer_id: Optional[str] = None,
+                       type: Optional[str] = None,
+                       q: Optional[str] = None, year: Optional[int] = None,
+                       month: Optional[int] = None, sort_by: str = "date",
+                       order: str = "desc",
                        limit: int = 50, offset: int = 0) -> dict:
+    """The invoice list, with the filters the screen actually offers.
+
+    Search, year, month and sorting are here because the UI has always sent
+    them and this function has always dropped them: the tab strip, the search
+    box, the period picker and both sort selects were inert, and the list was
+    whatever the first fifty rows happened to be.
+    """
     where = ["i.pro_id = $1"]
     args: list[Any] = [pro_id]
     for col, val, cast in (("status", status, "::invoice_status"),
                            ("payment_state", payment_state, "::payment_state"),
+                           ("type", type, "::invoice_type"),
                            ("job_id", job_id, ""), ("customer_id", customer_id, "")):
         if val:
             args.append(val)
             where.append(f"i.{col} = ${len(args)}{cast}")
+    if q and q.strip():
+        args.append(f"%{q.strip()}%")
+        i = len(args)
+        where.append(f"(i.invoice_number ilike ${i} or c.name ilike ${i} "
+                     f"or j.title ilike ${i})")
+    if year:
+        args.append(year)
+        where.append(f"extract(year from i.issue_date) = ${len(args)}")
+    if month:
+        args.append(month)
+        where.append(f"extract(month from i.issue_date) = ${len(args)}")
+
     clause = " and ".join(where)
-    total = await pg.fetchval(f"select count(*) from invoices i where {clause}", *args)
+    joins = ("left join customers c on c.id = i.customer_id "
+             "left join jobs j on j.id = i.job_id")
+    total = await pg.fetchval(
+        f"select count(*) from invoices i {joins} where {clause}", *args)
+
+    col = SORTABLE.get(sort_by, SORTABLE["date"])
+    direction = "asc" if str(order).lower() == "asc" else "desc"
     args.extend([limit, offset])
     rows = await pg.fetch(
         f"""
         select i.*, c.name as customer_name, j.job_number, j.title as job_title
-          from invoices i
-          left join customers c on c.id = i.customer_id
-          left join jobs j on j.id = i.job_id
+          from invoices i {joins}
          where {clause}
-         order by i.issue_date desc nulls first, i.created_at desc
+         order by {col} {direction} nulls last, i.created_at desc
          limit ${len(args)-1} offset ${len(args)}
         """, *args)
     return {"invoices": rows, "total": total}

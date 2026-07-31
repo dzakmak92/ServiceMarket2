@@ -15,12 +15,22 @@ export default function ProHomePage() {
 
   useEffect(() => {
     api.get('/api/profile/pro').then(r => setProProfile(r.data)).catch(() => {});
-    // TODO(Phase 3): repoint at the new quote model. The marketplace job feed
-    // and bid list are gone; these widgets render empty until then.
+    // Neither of these was ever fetched, so the four stat tiles read 0 and the
+    // job list was permanently empty regardless of how much work the business
+    // had. The marketplace feed they were written for is gone; the equivalent
+    // now is simply this business's own quotes and jobs.
+    api.get('/api/quotes', { params: { limit: 200 } })
+      .then(r => setQuotes(r.data?.quotes || [])).catch(() => {});
+    api.get('/api/jobs', { params: { limit: 6 } })
+      .then(r => setRecentJobs(r.data?.jobs || [])).catch(() => {});
   }, []);
 
   const isPro = isPremiumTier(proProfile?.plan_tier);
-  const pendingQuotes = quotes.filter(q => q.status === 'pending').length;
+  // `pending` is not a member of quote_status — the enum is
+  // draft|sent|viewed|accepted|rejected|expired — so this tile read 0
+  // even once the quotes were being fetched.
+  const pendingQuotes = quotes.filter(
+    q => ['sent', 'viewed'].includes(q.status)).length;
   const acceptedQuotes = quotes.filter(q => q.status === 'accepted').length;
 
   return (
@@ -42,7 +52,7 @@ export default function ProHomePage() {
                 </span>
               </div>
               <div>
-                <p className="text-paper/70 text-sm">Welcome back</p>
+                <p className="text-paper/70 text-sm">{t('pro_welcome_back')}</p>
                 <h1 className="text-paper font-headings font-bold text-2xl">
                   {proProfile?.business_name || user?.name}
                 </h1>
@@ -73,10 +83,10 @@ export default function ProHomePage() {
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
           {[
-            { label: 'Pending Quotes', value: pendingQuotes, color: 'text-amber-deep', bg: 'bg-amber/10' },
-            { label: 'Accepted', value: acceptedQuotes, color: 'text-green-pos', bg: 'bg-green-pos/10' },
-            { label: 'Jobs Done', value: proProfile?.completed_jobs_count || 0, color: 'text-teal', bg: 'bg-teal/10' },
-            { label: 'Rating', value: proProfile?.rating_avg ? proProfile.rating_avg.toFixed(1) : '—', color: 'text-amber-deep', bg: 'bg-amber/10' },
+            { label: t('pro_stat_open_quotes'), value: pendingQuotes, color: 'text-amber-deep', bg: 'bg-amber/10' },
+            { label: t('pro_stat_accepted'), value: acceptedQuotes, color: 'text-green-pos', bg: 'bg-green-pos/10' },
+            { label: t('pro_stat_jobs_done'), value: proProfile?.completed_jobs_count || 0, color: 'text-teal', bg: 'bg-teal/10' },
+            { label: t('pro_stat_rating'), value: proProfile?.rating_avg ? proProfile.rating_avg.toFixed(1) : '—', color: 'text-amber-deep', bg: 'bg-amber/10' },
           ].map(s => (
             <div key={s.label} className="card-lg text-center shadow-md">
               <div className={`text-2xl font-headings font-bold ${s.color}`}>{s.value}</div>
@@ -90,7 +100,7 @@ export default function ProHomePage() {
           <div className="bg-amber/10 border border-amber/30 rounded-[18px] p-6 mb-8 flex items-center justify-between gap-4 flex-wrap">
             <div>
               <h3 className="font-headings font-bold text-ink text-lg">{t('pro_upgrade_banner_title')}</h3>
-              <p className="text-ink-muted text-sm mt-1">No contact fees · Priority job access · PRO badge</p>
+              <p className="text-ink-muted text-sm mt-1">{t('pro_upsell_features')}</p>
             </div>
             <Link to="/billing" className="btn-amber flex-shrink-0" data-testid="upgrade-pro-banner">
               {t('pro_plan_upgrade')} <ArrowRight size={16} />

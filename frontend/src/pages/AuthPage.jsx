@@ -72,22 +72,27 @@ export default function AuthPage() {
           <span className="text-paper font-headings font-bold text-xl">ServiceMarket</span>
         </div>
         <div className="relative">
+          {/* Was marketplace copy — "Europe's marketplace for local
+              tradespeople" — beside three invented figures (50K+ verified
+              pros, 200K+ jobs done, 4.8 average rating) and "Trusted by 200K+
+              users". None of them are measurements of anything; they are the
+              first thing a prospective customer reads, and they are not true.
+              Replaced with what the product actually does. */}
           <h2 className="text-paper font-headings font-bold text-4xl leading-tight">
-            Find trusted pros.<br />Get the job done.
+            {t('auth_hero_title')}
           </h2>
           <p className="text-paper/70 mt-4 text-lg">
-            Europe's marketplace for local tradespeople.
+            {t('auth_hero_subtitle')}
           </p>
-          <div className="flex gap-6 mt-8">
-            {[['50K+', 'Verified Pros'], ['200K+', 'Jobs Done'], ['4.8', 'Avg Rating']].map(([num, label]) => (
-              <div key={label}>
-                <p className="text-paper font-headings font-bold text-2xl">{num}</p>
-                <p className="text-paper/60 text-sm">{label}</p>
-              </div>
+          <ul className="mt-8 space-y-2 text-paper/70">
+            {['auth_hero_point_1', 'auth_hero_point_2', 'auth_hero_point_3'].map((k) => (
+              <li key={k} className="flex items-start gap-2">
+                <span className="text-amber mt-0.5">·</span>{t(k)}
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
-        <p className="text-paper/40 text-xs relative">GDPR compliant · Trusted by 200K+ users</p>
+        <p className="text-paper/40 text-xs relative">{t('auth_hero_footer')}</p>
       </div>
 
       {/* Right panel - form */}
@@ -232,15 +237,20 @@ export default function AuthPage() {
             </button>
           </form>
 
-          {/* Demo credentials */}
-          <div className="mt-6 p-4 bg-cream-soft rounded-[14px] border border-sm-border">
-            <p className="text-xs font-semibold text-ink-muted mb-2 uppercase tracking-wide">Demo accounts</p>
-            <div className="space-y-1 text-xs text-ink-soft">
-              <p><span className="font-medium">Homeowner:</span> homeowner@test.com · Test123!</p>
-              <p><span className="font-medium">Pro:</span> pro@test.com · Test123!</p>
-              <p><span className="font-medium">Admin:</span> admin@servicemarket.eu · Admin123!</p>
+          {/* Demo credentials — development builds only.
+              This shipped to production: three working logins printed on the
+              public sign-in page, one of them an admin account. CRA sets
+              NODE_ENV=production for `build`, so the block is compiled out of
+              every deployed bundle rather than merely hidden. */}
+          {process.env.NODE_ENV !== 'production' && (
+            <div className="mt-6 p-4 bg-cream-soft rounded-[14px] border border-sm-border">
+              <p className="text-xs font-semibold text-ink-muted mb-2 uppercase tracking-wide">{t('auth_demo_accounts')}</p>
+              <div className="space-y-1 text-xs text-ink-soft">
+                <p><span className="font-medium">Homeowner:</span> homeowner@test.com · Test123!</p>
+                <p><span className="font-medium">Pro:</span> pro@test.com · Test123!</p>
+              </div>
             </div>
-          </div>
+          )}
 
           <p className="text-center text-xs text-ink-faint mt-6">
             By signing up, you agree to our{' '}

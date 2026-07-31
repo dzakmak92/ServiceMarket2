@@ -43,9 +43,15 @@ export default function MyInvoicesPage() {
   const load = async () => {
     setLoading(true);
     try {
+      // The tab strip mixes three different columns — document status,
+      // payment state and document type — so each tab has to be sent as the
+      // filter it actually is. `payment_status` was none of them, and the API
+      // dropped it, which is why every tab showed the same list.
       const params = new URLSearchParams();
-      if (statusFilter !== 'all') params.set('payment_status', statusFilter);
-      if (sourceFilter !== 'all') params.set('source', sourceFilter);
+      if (statusFilter === 'issued') params.set('status', 'issued');
+      else if (statusFilter === 'cancelled') params.set('status', 'cancelled');
+      else if (statusFilter === 'storno') params.set('type', 'storno');
+      else if (statusFilter !== 'all') params.set('payment_state', statusFilter);
       if (search) params.set('q', search);
       if (year) params.set('year', year);
       if (month) params.set('month', month);
@@ -54,7 +60,23 @@ export default function MyInvoicesPage() {
       params.set('page', page);
       params.set('per_page', perPage);
       const { data } = await api.get(`/api/invoices?${params.toString()}`);
-      setRows(data.invoices || []);
+      // Normalised once here rather than at thirty call sites. This page was
+      // written against the Mongo shape and reads brutto_total, invoice_date,
+      // payment_due_days, payment_status, is_storno and
+      // customer_snapshot.name — the Postgres list returns gross_total,
+      // issue_date, payment_terms_days, payment_state, type and
+      // customer_name. Every row therefore rendered "€ 0,00", "—" and
+      // "fällig in undefined Tagen" while the totals above them were right.
+      setRows((data.invoices || []).map((r) => ({
+        ...r,
+        brutto_total: Number(r.gross_total || 0),
+        netto_total: Number(r.net_total || 0),
+        invoice_date: r.issue_date,
+        payment_due_days: r.payment_terms_days,
+        payment_status: r.payment_state,
+        is_storno: r.type === 'storno',
+        customer_snapshot: r.customer_snapshot || { name: r.customer_name },
+      })));
       setTotal(data.total ?? (data.invoices || []).length);
     } finally { setLoading(false); }
   };

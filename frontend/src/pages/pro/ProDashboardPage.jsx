@@ -67,12 +67,23 @@ export default function ProDashboard() {
       api.get('/api/profile/pro'),
       api.get('/api/invoices/stats').catch(() => ({ data: null })),
       api.get('/api/invoices/cashflow').catch(() => ({ data: null })),
-    ]).then(([p, s, cf]) => {
+      // `quotes` was initialised to [] and never fetched, so the win rate,
+      // the monthly-activity chart, the category breakdown and the recent-
+      // quotes list were all permanently empty no matter how many quotes the
+      // business had sent. Four panels of the landing screen showing zero.
+      api.get('/api/quotes', { params: { limit: 200 } }).catch(() => ({ data: null })),
+    ]).then(([p, s, cf, q]) => {
       setProProfile(p.data);
-      // TODO(Phase 3): win-rate + monthly-activity charts repoint at the new
-      // quote model. Invoice stats and cash flow are unaffected.
       setInvStats(s.data);
       setCashflow(cf.data);
+      setQuotes((q.data?.quotes || []).map((row) => ({
+        ...row,
+        // The chart buckets by the month a quote went out; a draft that was
+        // never sent has no date and should not count as this month's work.
+        sent_at: row.sent_at || row.created_at,
+        price: Number(row.gross_total || 0),
+        job_category: row.job_title || row.title || 'other',
+      })));
     }).finally(() => setLoading(false));
   }, []);
 
@@ -112,7 +123,7 @@ export default function ProDashboard() {
 
   if (loading) return (
     <div className="min-h-screen bg-cream flex items-center justify-center">
-      <div className="animate-pulse text-ink-muted text-sm">Loading dashboard…</div>
+      <div className="animate-pulse text-ink-muted text-sm">{t('dash_loading')}</div>
     </div>
   );
 
@@ -127,33 +138,33 @@ export default function ProDashboard() {
         {/* ── Revenue KPIs ─────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <KpiCard
-            label="Revenue this month"
+            label={t('dash_revenue_month')}
             value={fmtEur(invStats?.this_month_brutto || 0)}
-            sub={`${invStats?.issued_count || 0} invoices YTD`}
+            sub={t('dash_invoices_ytd', { n: invStats?.issued_count || 0 })}
             icon={Euro}
             color="text-teal"
             bg="bg-teal/10"
           />
           <KpiCard
-            label="Outstanding"
+            label={t('dash_outstanding')}
             value={fmtEur(invStats?.pending_brutto || 0)}
-            sub={`${invStats?.pending_count || 0} unpaid`}
+            sub={t('dash_unpaid', { n: invStats?.pending_count || 0 })}
             icon={AlertCircle}
             color={invStats?.pending_brutto > 0 ? 'text-amber-deep' : 'text-ink-muted'}
             bg="bg-amber/10"
           />
           <KpiCard
-            label="Quote win rate"
+            label={t('dash_win_rate')}
             value={`${successRate}%`}
-            sub={`${acceptedQuotes} of ${totalQuotes} won`}
+            sub={t('dash_won_of', { won: acceptedQuotes, total: totalQuotes })}
             icon={TrendingUp}
             color="text-green-pos"
             bg="bg-green-pos/10"
           />
           <KpiCard
-            label="Avg rating"
+            label={t('dash_avg_rating')}
             value={proProfile?.rating_avg ? proProfile.rating_avg.toFixed(1) : '—'}
-            sub={`${proProfile?.completed_jobs_count || 0} jobs done`}
+            sub={t('dash_jobs_done', { n: proProfile?.completed_jobs_count || 0 })}
             icon={Star}
             color="text-amber-deep"
             bg="bg-amber/10"
@@ -167,19 +178,19 @@ export default function ProDashboard() {
               <CheckCircle2 size={18} className="text-teal" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-ink-muted uppercase font-bold tracking-wide">Total paid revenue YTD</p>
+              <p className="text-xs text-ink-muted uppercase font-bold tracking-wide">{t('dash_paid_ytd')}</p>
               <p className="text-2xl font-headings font-bold text-teal">{fmtEur(invStats.paid_brutto)}</p>
             </div>
             <Link to="/my-invoices" className="btn-ghost text-xs flex-shrink-0">
-              View invoices <ArrowRight size={12} />
+              {t('dash_view_invoices')} <ArrowRight size={12} />
             </Link>
           </div>
         )}
 
         {/* ── Monthly Activity chart ───────────────────────── */}
         <div className="card-lg">
-          <h2 className="font-headings font-bold text-ink mb-1 text-base">Monthly activity</h2>
-          <p className="text-xs text-ink-muted mb-4">Quotes sent vs won this year</p>
+          <h2 className="font-headings font-bold text-ink mb-1 text-base">{t('dash_monthly_activity')}</h2>
+          <p className="text-xs text-ink-muted mb-4">{t('dash_sent_vs_won')}</p>
           <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={monthlyData}>
               <defs>
@@ -192,8 +203,8 @@ export default function ProDashboard() {
               <XAxis dataKey="month" tick={{ fill: '#7d8a9a', fontSize: 11 }} />
               <YAxis tick={{ fill: '#7d8a9a', fontSize: 11 }} width={28} />
               <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #f0e3c8', fontSize: 12 }} />
-              <Area type="monotone" dataKey="quotes" stroke="#2d6a7f" fill="url(#gTeal)" strokeWidth={2} name="Sent" />
-              <Area type="monotone" dataKey="won" stroke="#f5a623" fill="none" strokeWidth={2} strokeDasharray="4 4" name="Won" />
+              <Area type="monotone" dataKey="quotes" stroke="#2d6a7f" fill="url(#gTeal)" strokeWidth={2} name={t('dash_sent')} />
+              <Area type="monotone" dataKey="won" stroke="#f5a623" fill="none" strokeWidth={2} strokeDasharray="4 4" name={t('dash_won')} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -276,12 +287,12 @@ export default function ProDashboard() {
           /* Upsell locked cards */
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <LockedFeature
-              title="Cash flow timeline"
-              desc="See expected payments week by week based on invoice due dates."
+              title={t('dash_cashflow_title')}
+              desc={t('dash_cashflow_desc')}
             />
             <LockedFeature
-              title="Win rate by category"
-              desc="Discover which trade categories you win most and optimise your focus."
+              title={t('dash_winrate_title')}
+              desc={t('dash_winrate_desc')}
             />
           </div>
         )}
@@ -289,7 +300,7 @@ export default function ProDashboard() {
         {/* ── Recent Quotes ────────────────────────────────── */}
         <div className="card-lg">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-headings font-bold text-ink text-base">Recent quotes</h2>
+            <h2 className="font-headings font-bold text-ink text-base">{t('dash_recent_quotes')}</h2>
             <Link to="/quotes" className="text-teal text-xs hover:underline">{t('btn_view_all')}</Link>
           </div>
           {recentQuotes.length === 0 ? (

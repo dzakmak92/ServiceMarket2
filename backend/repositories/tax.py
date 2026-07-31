@@ -350,11 +350,34 @@ async def dashboard(pro_id: str, year: int) -> dict:
         """, pro_id)
     review = await pg.fetchval(
         "select count(*) from expenses where pro_id = $1 and needs_review", pro_id)
+
+    # The quarter the pro is standing in, and what it currently owes. The
+    # screen showed "Quartal undefined" because nothing here supplied it.
+    q = (date.today().month - 1) // 3 + 1
+    this_q = await ust_va(pro_id, year, quarter=q)
+    klein = await pg.fetchval(
+        "select is_kleinunternehmer from pro_profiles where id = $1", pro_id)
+    expenses_gross = sum(c["gross"] for c in e["by_category"])
+
     return {
         **e,
         "outstanding": float(open_inv["outstanding"]),
         "open_invoices": int(open_inv["n"]),
         "receipts_needing_review": int(review or 0),
+        # The names the tax dashboard reads. It asked for `revenue_brutto`,
+        # `outstanding_brutto`, `expenses_brutto`, `profit_eur`,
+        # `ust_due_this_quarter`, `current_quarter` and `is_kleinunternehmer`;
+        # this returned none of them, so every tile on the screen read
+        # EUR 0,00 for a business with real turnover, and the USt line read
+        # "Quartal undefined". Supplied here rather than translated in the
+        # component, so the two cannot drift apart again.
+        "revenue_brutto": float(e["income_gross"]),
+        "outstanding_brutto": float(open_inv["outstanding"]),
+        "expenses_brutto": float(expenses_gross),
+        "profit_eur": float(e["income_net"]) - float(expenses_gross),
+        "current_quarter": f"Q{q}",
+        "ust_due_this_quarter": float(this_q["payable"]),
+        "is_kleinunternehmer": bool(klein),
     }
 
 

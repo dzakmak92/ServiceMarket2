@@ -78,11 +78,31 @@ def _lines(items) -> list[dict]:
 @router.get("")
 async def list_invoices(status: Optional[str] = None, payment_state: Optional[str] = None,
                         job_id: Optional[str] = None, customer_id: Optional[str] = None,
+                        type: Optional[str] = Query(
+                            default=None, pattern="^(standard|abschlag|schluss|storno)$"),
+                        q: Optional[str] = None,
+                        year: Optional[int] = None,
+                        month: Optional[int] = Query(default=None, ge=1, le=12),
+                        sort_by: str = Query(default="date"),
+                        order: str = Query(default="desc", pattern="^(asc|desc)$"),
+                        page: Optional[int] = Query(default=None, ge=1),
+                        per_page: Optional[int] = Query(default=None, ge=1, le=200),
                         limit: int = Query(default=50, le=200), offset: int = 0,
                         user: dict = Depends(get_current_user)):
+    """The invoice list.
+
+    `page`/`per_page` are accepted alongside `limit`/`offset` because that is
+    what the screen sends. Dropping them meant the pager moved and the list
+    did not.
+    """
     pro_id = await require_pro_id(user)
+    if per_page:
+        limit = per_page
+        offset = (page - 1) * per_page if page else offset
     return await repo.list_for_pro(pro_id, status=status, payment_state=payment_state,
                                    job_id=job_id, customer_id=customer_id,
+                                   type=type, q=q, year=year, month=month,
+                                   sort_by=sort_by, order=order,
                                    limit=limit, offset=offset)
 
 
@@ -132,8 +152,17 @@ async def stats(year: Optional[int] = None, user: dict = Depends(get_current_use
           count(*)                                                        as issued_count,
           coalesce(sum(paid_total), 0)                                    as paid_brutto,
           count(*) filter (where payment_state = 'paid')                  as paid_count,
-          coalesce(sum(outstanding) filter (where outstanding > 0), 0)    as pending_brutto,
-          count(*) filter (where outstanding > 0)                         as pending_count,
+          -- Receivables, so a cancelled invoice and the credit note that
+          -- cancelled it are both out. Without the exclusion the dashboard
+          -- told a tradesperson they were owed money on an invoice they had
+          -- themselves cancelled, and it is the one figure on the screen
+          -- they would act on.
+          coalesce(sum(outstanding) filter (
+            where outstanding > 0 and cancelled_at is null
+              and type <> 'storno'), 0)                                   as pending_brutto,
+          count(*) filter (
+            where outstanding > 0 and cancelled_at is null
+              and type <> 'storno')                                       as pending_count,
           coalesce(sum(gross_total) filter (
             where date_trunc('month', issue_date) = date_trunc('month', current_date)
           ), 0)                                                           as this_month_brutto
