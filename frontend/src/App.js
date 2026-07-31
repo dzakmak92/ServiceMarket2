@@ -26,6 +26,7 @@ import RemovalPage from "./pages/legal/RemovalPage";
 import ProHomePage from "./pages/pro/ProHomePage";
 import ProDashboard from "./pages/pro/ProDashboardPage";
 import BillingPage from "./pages/pro/BillingPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import OverduePage from "./pages/pro/OverduePage";
 import MyInvoicesPage from "./pages/pro/MyInvoicesPage";
 import CustomersPage from "./pages/pro/CustomersPage";
@@ -111,6 +112,8 @@ function AppShell() {
     location.pathname.startsWith("/sub/") ||
     location.pathname.startsWith("/accountant/") ||
     location.pathname.startsWith("/pay/") ||
+    location.pathname === "/forgot-password" ||
+    location.pathname === "/reset-password" ||
     location.pathname === "/privacy" ||
     location.pathname === "/terms" ||
     location.pathname === "/imprint" ||
@@ -131,6 +134,11 @@ function AppShell() {
       <ErrorBoundary t={t} key={location.pathname}>
       <Routes>
         <Route path="/auth" element={<AuthRoute />} />
+        {/* Public by necessity: the person using these is locked out. Both
+            the request form and the redemption form live on one component —
+            the mail lands back on /reset-password?token=…. */}
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ForgotPasswordPage />} />
         <Route path="/onboarding" element={<OnboardingRoute />} />
 
         {/* Legal & privacy pages — public, reachable by anyone */}

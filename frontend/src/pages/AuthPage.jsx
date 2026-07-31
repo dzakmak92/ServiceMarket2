@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLang } from '../contexts/LangContext';
 import { Hammer, Eye, EyeOff, ArrowRight } from 'lucide-react';
@@ -235,6 +235,17 @@ export default function AuthPage() {
               }
               {!loading && <ArrowRight size={16} />}
             </button>
+
+            {/* There was no way back into an account at all: no reset, no
+                token, and not even a link telling a locked-out user that
+                recovery exists. */}
+            {mode === 'login' && (
+              <Link to="/forgot-password"
+                    className="block text-center text-xs text-ink-muted hover:text-teal mt-3"
+                    data-testid="auth-forgot-link">
+                {t('auth_forgot')}
+              </Link>
+            )}
           </form>
 
           {/* Demo credentials — development builds only.

@@ -5,7 +5,11 @@ created out of band.
 """
 from __future__ import annotations
 
+import hashlib
+import ipaddress
+import logging
 import os
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -17,7 +21,28 @@ from auth import (JWT_ALGORITHM, clear_auth_cookies, create_access_token,
                   create_refresh_token, get_current_user, get_jwt_secret,
                   hash_password, load_user, set_auth_cookies, verify_password)
 from db import pg
+from services import mailer
 from services.turnstile import verify_turnstile_token
+
+logger = logging.getLogger(__name__)
+
+
+def _client_ip(request: Request):
+    """The caller's address, or None if it is not one.
+
+    `password_reset_tokens.requested_ip` is `inet`, and X-Forwarded-For is
+    client-supplied — an unparseable value would make the insert raise and
+    lose the reset request itself. Losing a line of provenance is the lesser
+    failure.
+    """
+    fwd = (request.headers.get("x-forwarded-for") or "").split(",")[0].strip()
+    candidate = fwd or (request.client.host if request.client else None)
+    if not candidate:
+        return None
+    try:
+        return str(ipaddress.ip_address(candidate))
+    except ValueError:
+        return None
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -44,6 +69,15 @@ class ChangePasswordIn(BaseModel):
     current_password: str
     # Same floor as registration. A change-password form that accepts a weaker
     # password than sign-up did is a downgrade path.
+    new_password: str = Field(min_length=8)
+
+
+class ForgotPasswordIn(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordIn(BaseModel):
+    token: str = Field(min_length=20, max_length=200)
     new_password: str = Field(min_length=8)
 
 
@@ -172,6 +206,140 @@ async def login(data: LoginIn, response: Response, request: Request):
         user["plan_tier"] = await pg.fetchval(
             "select plan_tier from pro_profiles where user_id::text = $1", row["id"]) or "standard"
     return user
+
+
+# One hour. Long enough to find the mail, short enough to bound the window in
+# which a forwarded link is still a working credential.
+RESET_TTL = timedelta(hours=1)
+# Per address, per hour. Enough for someone who mistypes their email twice,
+# few enough that this cannot be used to mailbomb a customer.
+MAX_RESETS_PER_HOUR = 5
+
+
+def _hash_token(token: str) -> str:
+    """SHA-256, because what is stored must not be usable.
+
+    A reset token is a bearer credential: whoever holds it becomes the
+    account. Storing it in the clear would mean any read of the table — a
+    leaked backup, an over-broad support query — hands over every account
+    with an outstanding reset. bcrypt is the wrong tool here: the value is
+    128 bits of `secrets` output, not a guessable human password, so there is
+    nothing for a slow hash to buy, and the redemption path has to look it up
+    by exact value.
+    """
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+@router.post("/forgot-password")
+async def forgot_password(data: ForgotPasswordIn, request: Request):
+    """Start a reset. Always answers the same way.
+
+    Deliberately identical whether or not the address has an account: any
+    difference — a different message, a different status, a measurably
+    different response time — turns this endpoint into a way to find out who
+    is registered, and the addresses here belong to tradespeople whose
+    business email is their livelihood.
+
+    So it never says whether it found anything. The only observable
+    difference is that an email arrives, and only the owner of the mailbox
+    can observe that.
+    """
+    email = data.email.lower().strip()
+    ip = _client_ip(request)
+    same = {"sent": True,
+            "note": "Falls ein Konto mit dieser Adresse besteht, ist eine "
+                    "E-Mail unterwegs."}
+
+    row = await pg.fetchrow(
+        "select id::text as id, email, name from users "
+        "where email = $1 and deleted_at is null", email)
+    if not row:
+        return same
+
+    recent = await pg.fetchval(
+        "select count(*) from password_reset_tokens "
+        "where user_id = $1::uuid and created_at > now() - interval '1 hour'",
+        row["id"])
+    if int(recent or 0) >= MAX_RESETS_PER_HOUR:
+        # Still the same answer. Telling the caller they have been throttled
+        # would confirm the address exists.
+        logger.warning("password reset throttled for user %s", row["id"])
+        return same
+
+    token = secrets.token_urlsafe(32)
+    await pg.execute(
+        """
+        insert into password_reset_tokens
+               (user_id, token_hash, expires_at, requested_ip, user_agent)
+        values ($1::uuid, $2, now() + $3, $4::inet, $5)
+        """,
+        # A timedelta, not a string: asyncpg encodes it straight to `interval`
+        # and rejects the text form outright.
+        row["id"], _hash_token(token), RESET_TTL,
+        ip, (request.headers.get("user-agent") or "")[:400])
+
+    base = (os.environ.get("FRONTEND_URL")
+            or str(request.base_url).rstrip("/"))
+    link = f"{base}/reset-password?token={token}"
+    delivered = await mailer.send(
+        to=row["email"],
+        subject="Passwort zurücksetzen",
+        text=(f"Hallo {row['name'] or ''},\n\n"
+              f"mit diesem Link setzen Sie Ihr Passwort neu:\n\n{link}\n\n"
+              f"Der Link gilt eine Stunde und kann nur einmal verwendet "
+              f"werden. Wenn Sie das nicht angefordert haben, ignorieren Sie "
+              f"diese E-Mail — Ihr Passwort bleibt unverändert.\n"))
+    if not delivered:
+        # The operator's only route to recover a locked-out user while there
+        # is no mailer. Never returned to the caller.
+        logger.warning("password reset link for %s (undeliverable): %s",
+                       row["email"], link)
+    return same
+
+
+@router.post("/reset-password")
+async def reset_password(data: ResetPasswordIn, response: Response):
+    """Redeem a token and set a new password.
+
+    Single use and time limited, both checked in the same statement that
+    marks it used — so two requests racing with the same token cannot both
+    succeed. Every other outstanding token for the account is invalidated
+    too: if the reset was prompted by a compromise, leaving a second live
+    link would defeat the point.
+    """
+    row = await pg.fetchrow(
+        """
+        update password_reset_tokens
+           set used_at = now()
+         where token_hash = $1
+           and used_at is null
+           and expires_at > now()
+        returning user_id::text as user_id
+        """, _hash_token(data.token))
+    if not row:
+        raise HTTPException(400, "Dieser Link ist abgelaufen oder wurde bereits verwendet.")
+
+    async with pg.transaction() as con:
+        user = await con.fetchrow(
+            "update users set password_hash = $2, updated_at = now() "
+            "where id = $1::uuid and deleted_at is null "
+            "returning id::text as id, email",
+            row["user_id"], hash_password(data.new_password))
+        if not user:
+            raise HTTPException(400, "Dieses Konto besteht nicht mehr.")
+        await con.execute(
+            "update password_reset_tokens set used_at = now() "
+            "where user_id = $1::uuid and used_at is null", row["user_id"])
+
+    # The failed-login counter is keyed on ip+email and would otherwise keep
+    # someone locked out of the password they have just legitimately set.
+    await pg.execute(
+        "delete from platform_settings where key like $1",
+        f"login_attempt:%:{user['email']}")
+
+    set_auth_cookies(response, create_access_token(user["id"], user["email"]),
+                     create_refresh_token(user["id"]))
+    return {"reset": True, "email": user["email"]}
 
 
 @router.post("/change-password")

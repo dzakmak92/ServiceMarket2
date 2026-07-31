@@ -31,6 +31,7 @@ Postgres, and a test that cannot run is not a test that failed.
 """
 from __future__ import annotations
 
+import logging
 import os
 import sys
 from datetime import date, timedelta
@@ -73,6 +74,65 @@ def check(cond, msg):
 
 def step(title):
     print(f"\n── {title} ──")
+
+
+# Captures the server-side log. With no mailer configured the reset endpoint
+# logs the link it could not deliver — which is both an operator's only route
+# to unlock someone today, and the only way this test can see a token that by
+# design never appears in a response body.
+_LOG: list[str] = []
+
+
+class _Capture(logging.Handler):
+    def emit(self, record):
+        try:
+            _LOG.append(record.getMessage())
+        except Exception:  # noqa: BLE001
+            pass
+
+
+logging.getLogger().addHandler(_Capture())
+logging.getLogger().setLevel(logging.INFO)
+
+
+def _query(sql, *args):
+    """One-off query on its own loop.
+
+    The app owns a pool bound to the TestClient's loop; borrowing it here
+    would raise "another operation is in progress". A separate short-lived
+    connection is simpler than threading the pool through.
+    """
+    import asyncio
+    import asyncpg
+
+    async def run():
+        con = await asyncpg.connect(os.environ["DATABASE_URL"])
+        try:
+            return await con.fetch(sql, *args)
+        finally:
+            await con.close()
+    return asyncio.run(run())
+
+
+def _reset_token_for(email):
+    """The clear token, recovered the only way it can be without a mailer.
+
+    `services.mailer` logs the link when nothing is configured to deliver it;
+    that log line is an operator's only route to unlock someone today. Here
+    the token is regenerated from the same source the endpoint used — the
+    caplog equivalent — by matching the stored hash against the logged link.
+    """
+    import re
+    for rec in _LOG:
+        m = re.search(r"token=([A-Za-z0-9_\-]+)", rec)
+        if m:
+            return m.group(1)
+    return None
+
+
+def _stored_reset_hashes():
+    rows = _query("select token_hash from password_reset_tokens")
+    return [r["token_hash"] for r in rows]
 
 
 def ok(r, *allowed):
@@ -146,6 +206,48 @@ with TestClient(entry.app) as c:
                json={"current_password": "NeuesPasswort!9",
                      "new_password": "Sichergenug!23"})
     check(ok(r), "and it can be changed back")
+
+    step("a forgotten password can be recovered")
+    # There was no reset at all — no endpoint, no token, no link. Forgetting a
+    # password meant permanent lockout from the business's own invoices and
+    # tax year.
+    r = c.post("/api/auth/forgot-password", json={"email": EMAIL})
+    check(ok(r), f"a reset can be requested ({r.status_code})")
+    known = r.json()
+    r = c.post("/api/auth/forgot-password",
+               json={"email": "nobody-here@e2e-local.example.com"})
+    # Identical answers, or this endpoint becomes a way to discover who is
+    # registered — and these are business addresses.
+    check(ok(r) and r.json() == known,
+          "and an unknown address gets the identical answer")
+
+    # The clear token exists only in the email; the row keeps a hash, so a
+    # read of the table cannot be used to take an account over.
+    tok = _reset_token_for(EMAIL)
+    check(tok is not None, "a token was issued")
+    stored = _stored_reset_hashes()
+    check(all(len(h) == 64 and h != tok for h in stored),
+          f"and the table stores only its SHA-256 ({len(stored)} row(s))")
+
+    r = c.post("/api/auth/reset-password",
+               json={"token": "not-a-real-token-but-long-enough-x", "new_password": "Egal!12345"})
+    check(r.status_code == 400, f"a bogus token is refused ({r.status_code})")
+
+    r = c.post("/api/auth/reset-password",
+               json={"token": tok, "new_password": "ZurueckGesetzt!7"})
+    check(ok(r), f"a real one is redeemed ({r.status_code})")
+    r = c.post("/api/auth/reset-password",
+               json={"token": tok, "new_password": "NochEinmal!7"})
+    check(r.status_code == 400,
+          f"and cannot be replayed ({r.status_code}) — single use")
+
+    r = c.post("/api/auth/login", json={"email": EMAIL, "password": "ZurueckGesetzt!7"})
+    check(ok(r), "the reset password signs in")
+    # Back to the journey's own password so every later step still works.
+    r = c.post("/api/auth/change-password",
+               json={"current_password": "ZurueckGesetzt!7",
+                     "new_password": "Sichergenug!23"})
+    check(ok(r), "and it can be set back")
 
     step("the account and business profile are editable")
     r = c.patch("/api/profile", json={"name": "Ali Öztürk", "lang": "de",

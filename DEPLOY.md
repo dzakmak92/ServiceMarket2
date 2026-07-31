@@ -36,9 +36,24 @@ Settings → Environment Variables. Set for **Production** *and* **Preview**.
 | `ENVIRONMENT` | `production` | Makes auth cookies `Secure` |
 | `PURGE_SECRET` | a long random string | `openssl rand -base64 32`. Authenticates the nightly erasure job. **Without it the job refuses and no account is ever deleted** — see below |
 | `CRON_SECRET` | the *same* string as `PURGE_SECRET` | Vercel sends this as `Authorization: Bearer` on every cron invocation; the endpoint accepts either header |
+| `RESEND_API_KEY` | Resend API key | **Required for password reset.** Without it no reset mail is sent and locked-out users cannot get back in — see below |
+| `MAIL_FROM` | `no-reply@your-domain.at` | Must be a domain verified with your mail provider |
+| `SMTP_HOST` etc. | *(alternative to Resend)* | `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_STARTTLS`. Used only when `RESEND_API_KEY` is unset |
 
 If the password contains `@ / # ? : % & +`, percent-encode it — it sits
 between `:` and `@` in a URL and an unencoded `@` truncates the hostname.
+
+### Password reset needs a mailer
+
+`POST /api/auth/forgot-password` issues a single-use token and emails a link.
+The token machinery is complete — hashed at rest, one hour, one use, all
+outstanding tokens invalidated on redemption — but **delivery needs a
+provider**. Set `RESEND_API_KEY` and `MAIL_FROM`, or the `SMTP_*` variables.
+
+Until one is set the endpoint still answers normally (it deliberately never
+reveals whether an address is registered) and writes the undelivered link to
+the server log at WARNING. That is the only way to unlock someone in the
+meantime, and it is not a substitute for configuring the mailer.
 
 ### The erasure job
 
