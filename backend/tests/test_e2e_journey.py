@@ -336,6 +336,10 @@ with TestClient(entry.app) as c:
     check(len(preview_lines) > 1,
           f"and inherits {len(preview_lines)} positions, not one collapsed line")
 
+    # The exact three calls the invoice editor makes, in order. Every one of
+    # them was unreachable from the UI: the screen fetched two endpoints that
+    # do not exist, posted the wrong field names, and nothing anywhere called
+    # /issue — so no invoice could ever get a number.
     r = c.post(f"/api/jobs/{job_id}/draft-invoice", json={})
     check(ok(r, 201, 200), f"the invoice is created -> {r.status_code}")
     inv = r.json() if r.status_code < 400 else {}

@@ -84,28 +84,25 @@ Two capabilities are blocked on decisions that are not mine to make:
 These are real and verified. They are not one-line changes, and several are
 product decisions rather than defects.
 
-### The invoice path has no working screen
+### ~~The invoice path has no working screen~~ — fixed
 
-The API is complete and the journey test drives it end to end. The UI cannot.
+The editor is rewritten against the real API and driven end to end in a
+browser: `/invoice-from-project/{id}` → 4 inherited positions → draft
+(€2.031,08 net / €2.437,30 gross) → issue → **RG-2026-0005** on the list.
 
-- `ProInvoiceEditorPage` — the only invoice-creation screen reachable from a
-  job — fetches `/api/invoices/draft-from-project/{id}` or
-  `/api/invoices/draft-from-job/{jobId}`. Neither is mounted. The mounted
-  equivalents are `GET /api/jobs/{id}/invoice-preview` and
-  `POST /api/jobs/{id}/draft-invoice`.
-- Even if the draft loaded, the create payload uses `line_items`/`unit_net`/
-  `homeowner_id`/`payment_due_days` where the model expects `lines`/
-  `unit_price`/`customer_id`/`payment_terms_days`. `ExternalInvoiceModal` has
-  the identical mismatch.
-- **No screen anywhere calls `POST /api/invoices/{id}/issue`.** Drafts get no
-  number, payments are refused against them, and `stats`, `cashflow` and the
-  tax figures all filter `status <> 'draft'`.
-- `InvoiceFromProjectRedirect` reads `r.data?.job_id` from `GET /api/jobs/{id}`;
-  `jobs` has no such column — the job *is* the row. It always navigates to
-  `/jobs/none/invoice`.
-- `MyInvoicesPage` sends nine filter, search, sort and page parameters; the
-  endpoint accepts six different ones. The tab strip, search box and
-  pagination are inert.
+What it used to do: fetch two endpoints that do not exist, post `line_items`/
+`unit_net`/`homeowner_id`/`payment_due_days` where the API takes `lines`/
+`unit_price`/`customer_id`/`payment_terms_days`, and never call `/issue` at
+all, so no invoice could ever get a number. It also applied a flat 20 % VAT
+to every line, which is the exact defect the Postgres rewrite exists to stop.
+It now shows the server's per-line treatment and never computes tax itself.
+
+`InvoiceFromProjectRedirect` read `r.data.job_id` from `GET /api/jobs/{id}` —
+a column `jobs` does not have, because the job *is* the row — so it always
+navigated to `/jobs/none/invoice`. It is a plain redirect now.
+
+Still open here: `ExternalInvoiceModal` in `MyInvoicesPage` has the same
+payload mismatch for free-form invoices with no job behind them.
 
 ### The customer portal shows no quote
 
@@ -142,11 +139,15 @@ endpoints, which are mounted and have no caller).
 - **Intra-EU reverse charge likewise.** It requires
   `customer_has_valid_vat_id`, read from `vat_id_validated_at` — a column
   nothing in the codebase ever writes. There is no VIES check.
-- **§35a is printed for everyone**, including Austrian and business
-  customers. `tax_rules.is_35a_eligible()` restricts it correctly to German
-  private customers and is dead code; the PDF gates only on `deductible > 0`.
-  The deductible base is also overstated, because `kind` defaults to `labor`
-  in three places, so any untagged line prints as deductible labour.
+- ~~**§35a is printed for everyone**~~ — fixed. `is_35a_eligible()` had the
+  rule right and no caller, so every invoice with an hour of labour on it
+  told an Austrian household about a German deduction it cannot take, and a
+  German GmbH about one it cannot use. The split is still always printed; the
+  claim is gated, read from the frozen `customer_snapshot` so a historic
+  invoice reprints exactly as the customer received it. Four cases are
+  covered in `test_invoice_pdf.py`. The invoice editor now also makes `kind`
+  an explicit per-line choice rather than defaulting everything to labour,
+  which was overstating the deductible base.
 - **`kind='other'` disappears from the split**, so an invoice with such a
   line prints a labour + material breakdown that does not reconcile to the
   net total, with nothing explaining the difference.

@@ -173,7 +173,7 @@ function CookieBanner({ preferencesOpen, setPreferencesOpen }) {
   }
 
   return (
-    <div className="fixed bottom-3 left-3 right-3 sm:bottom-6 sm:left-6 sm:right-auto sm:max-w-md z-50 bg-paper border border-sm-border rounded-[18px] shadow-2xl p-4 animate-slide-up" data-testid="cookie-banner">
+    <div className="fixed bottom-20 left-3 right-3 md:bottom-6 md:left-6 md:right-auto md:max-w-md z-50 bg-paper border border-sm-border rounded-[18px] shadow-2xl p-4 animate-slide-up" data-testid="cookie-banner">
       <h3 className="font-headings font-bold text-ink mb-1 text-base">{t('cookie_title')}</h3>
       <p className="text-xs text-ink-muted mb-3 leading-relaxed">
         {t('cookie_desc')}{' '}

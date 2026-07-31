@@ -61,7 +61,13 @@ CHECKS = [
     ("20% VAT band shown",                       lambda t: "20% USt" in t),
     ("10% VAT band shown",                       lambda t: "10% USt" in t),
     ("0% band shown for the §13b line",          lambda t: "0% USt" in t),
-    ("§35a labour/material split shown",         lambda t: "35a" in t and "Lohnanteil" in t),
+    # The split is always printed — it costs nothing and helps any customer
+    # read the invoice. The §35a *claim* is not: this customer is Austrian and
+    # private, and § 35a EStG is a German deduction. The previous assertion
+    # expected the claim here, which is the defect it was written to protect.
+    ("labour/material split shown",              lambda t: "Aufteilung der Leistung" in t
+                                                            and "Lohn- und Fahrtkosten" in t),
+    ("but no §35a claim to an Austrian customer", lambda t: "35a" not in t),
     ("§13b reverse-charge note present",         lambda t: "13b" in t),
     ("prior Abschläge deducted",                 lambda t: "Abschlagszahlungen" in t),
     ("remaining balance shown",                  lambda t: "Restbetrag" in t),
@@ -81,6 +87,32 @@ def main() -> int:
         print(("  ok   " if ok else "  FAIL ") + name)
         if not ok:
             fails.append(name)
+
+    # § 35a is gated on who is reading the invoice. `is_35a_eligible` had the
+    # rule right and no caller, so the claim went onto every invoice with an
+    # hour of labour on it — telling an Austrian household about a German
+    # deduction it cannot take, and a German GmbH about one it cannot use.
+    print()
+    for country, ctype, expected, who in [
+        ("DE", "private",  True,  "a German private customer"),
+        ("DE", "business", False, "a German business"),
+        ("AT", "private",  False, "an Austrian private customer"),
+        ("AT", "business", False, "an Austrian business"),
+    ]:
+        inv = {**INVOICE,
+               "customer_snapshot": {**INVOICE["customer_snapshot"],
+                                     "country": country, "type": ctype}}
+        txt = "\n".join(p.extract_text()
+                        for p in PdfReader(BytesIO(render_invoice_pdf(inv))).pages)
+        for ok, name in (
+            (("35a" in txt) is expected,
+             f"§35a {'shown' if expected else 'not shown'} to {who}"),
+            ("Aufteilung der Leistung" in txt,
+             f"and the split is still printed for {who}"),
+        ):
+            print(("  ok   " if ok else "  FAIL ") + name)
+            if not ok:
+                fails.append(name)
 
     # A malformed IBAN must omit the QR rather than print a dead one that
     # scans to nothing — the customer would believe they had paid.

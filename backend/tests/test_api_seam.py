@@ -98,7 +98,10 @@ EXPECTED_MISSING = {
     "/api/analytics/pro-insights": "analytics not ported",
     "/api/invoices/export.zip": "bulk export not ported",
     "/api/invoices/templates/list": "template picker not ported",
-    "/api/jobs/{}/change-orders/{}/draft-invoice": "Nachtrag→invoice not ported",
+    # Nachtrag→invoice needed no endpoint of its own in the end:
+    # POST /jobs/{id}/draft-invoice already inherits every approved change
+    # order and flips it to `invoiced`, so the rewritten editor gets it for
+    # free and nothing calls a separate path any more.
 }
 
 print("── every endpoint the UI calls is either mounted or a written-down gap ──")

@@ -3,129 +3,167 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import {
-  Receipt, Plus, Trash2, Loader2, AlertCircle, Download, Send, FileText,
-  ChevronLeft, Share2, CheckCircle2,
+  Receipt, Plus, Trash2, Loader2, AlertCircle, ChevronLeft, CheckCircle2,
+  FileText, Lock,
 } from 'lucide-react';
 
-const VAT_RATE = 20;
-const fmtEur = (v) => new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
+/**
+ * Raise an invoice for a job.
+ *
+ * This screen existed and could not work. It fetched
+ * `/api/invoices/draft-from-project/{id}` and `/api/invoices/draft-from-job/{id}`
+ * — neither is mounted — so the draft never loaded and the page rendered an
+ * error card. Had it loaded, the create call sent `line_items` with
+ * `unit_net`, `homeowner_id` and `payment_due_days` where the API takes
+ * `lines` with `unit_price`, `customer_id` and `payment_terms_days`; Pydantic
+ * drops unknown fields, so it would have created an empty, customer-less
+ * draft and reported success. And nothing here — or anywhere else in the
+ * frontend — ever called `/issue`, so no invoice could ever get a number.
+ *
+ * Two things it deliberately no longer does.
+ *
+ * **It does not compute VAT.** It used to apply a flat 20 % to every line.
+ * That is exactly what the Postgres rewrite exists to stop: an invoice mixing
+ * 20 % labour with 10 % material or a §13b position is defective if it shows
+ * one rate. The server resolves the treatment per line and returns the
+ * figures; this screen displays them.
+ *
+ * **It does not build the lines from scratch when there is a quote.**
+ * `POST /jobs/{id}/draft-invoice` inherits every accepted position with its
+ * `kind` and `tax_treatment` intact — which is what keeps the §35a split
+ * honest — and pulls in approved Nachträge, flipping them to `invoiced` so
+ * they cannot be billed twice. Re-typing that in the browser would throw all
+ * of it away.
+ */
+
+const KINDS = ['labor', 'material', 'travel', 'other'];
+const fmtEur = (v) =>
+  new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' })
+    .format(Number(v || 0));
 
 export default function ProInvoiceEditorPage() {
   const { t } = useLang();
   const navigate = useNavigate();
   const { jobId } = useParams();
   const [search] = useSearchParams();
-  const fromProject = search.get('from_project');
-  const fromCo = search.get('from_co');
-  const [draft, setDraft] = useState(null);
-  const [items, setItems] = useState([]);
+
+  const [job, setJob] = useState(null);
+  const [lines, setLines] = useState([]);
+  const [invoice, setInvoice] = useState(null);   // the draft, once created
+  const [terms, setTerms] = useState(14);
   const [note, setNote] = useState('');
-  const [dueDays, setDueDays] = useState(14);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     (async () => {
       try {
-        // When invoicing from a PM project (incl. Nachträge / change orders) we
-        // load a job-independent draft so it works even if the original Job was
-        // removed/archived. Otherwise fall back to the job-based draft.
-        const draftUrl = fromProject
-          ? `/api/invoices/draft-from-project/${fromProject}`
-          : `/api/invoices/draft-from-job/${jobId}`;
-        const { data } = await api.get(draftUrl);
-        setDraft(data);
-        let prefilled = data.line_items;
-        // Optional pre-fill from PM project (materials + labour) or a change order
-        if (fromProject && fromCo) {
-          try {
-            const { data: co } = await api.post(`/api/jobs/${fromProject}/change-orders/${fromCo}/draft-invoice`);
-            if (co.line_items && co.line_items.length) {
-              prefilled = co.line_items;
-              if (co.note) setNote(co.note);
-            }
-          } catch (e) {
-            console.warn('change-order prefill failed, using job draft', e);
-          }
-        } else if (fromProject) {
-          try {
-            const { data: pj } = await api.post(`/api/jobs/${fromProject}/draft-invoice`);
-            if (pj.line_items && pj.line_items.length) {
-              prefilled = pj.line_items;
-              if (pj.note) setNote(pj.note);
-            }
-          } catch (e) {
-            console.warn('project prefill failed, using job draft', e);
-          }
-        }
-        setItems(prefilled);
+        const [{ data: j }, { data: pv }] = await Promise.all([
+          api.get(`/api/jobs/${jobId}`),
+          api.get(`/api/jobs/${jobId}/invoice-preview`),
+        ]);
+        setJob(j);
+        setLines((pv.lines || []).map((l, i) => ({
+          key: `p${i}`,
+          description: l.description || '',
+          qty: Number(l.qty ?? 1),
+          unit: l.unit || 'pcs',
+          unit_price: Number(l.unit_price ?? 0),
+          kind: l.kind || 'labor',
+          inherited: true,
+        })));
       } catch (e) {
-        setError(e?.response?.data?.detail || t('error_generic'));
+        setError(e?.response?.data?.detail || t('proinv_load_failed'));
       } finally { setLoading(false); }
     })();
-  }, [jobId, fromProject, fromCo, t]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobId]);
 
+  // Net only. The VAT depends on the treatment the server resolves per line —
+  // country, customer type, Bauleistung — and guessing it here would put a
+  // number on the screen that the issued invoice then contradicts.
+  const net = useMemo(
+    () => lines.reduce((s, l) => s + (Number(l.qty) || 0) * (Number(l.unit_price) || 0), 0),
+    [lines]);
+
+  // A draft's `net_total`/`gross_total` are zero in the database — they are
+  // computed by `issue()`, which is correct, but it meant this screen asked
+  // the pro to confirm "€ 0,00" against five positions that plainly are not.
+  // The per-line figures are real (generated columns), so the draft total is
+  // summed from them and the server's own totals are used once issued.
   const totals = useMemo(() => {
-    const vat = draft?.is_kleinunternehmer ? 0 : VAT_RATE;
-    let net = 0, vatAmt = 0, brutto = 0;
-    items.forEach((li) => {
-      const qty = parseFloat(li.qty) || 0;
-      const unit = parseFloat(li.unit_net) || 0;
-      const ln = Math.round(qty * unit * 100) / 100;
-      const lv = Math.round(ln * vat) / 100;
-      net += ln;
-      vatAmt += lv;
-      brutto += ln + lv;
-    });
-    return { net: Math.round(net * 100) / 100, vat: Math.round(vatAmt * 100) / 100, brutto: Math.round(brutto * 100) / 100, vatRate: vat };
-  }, [items, draft?.is_kleinunternehmer]);
+    if (!invoice) return { net, gross: null };
+    if (invoice.status !== 'draft') {
+      return { net: Number(invoice.net_total), gross: Number(invoice.gross_total) };
+    }
+    const ls = invoice.lines || [];
+    return {
+      net: ls.reduce((s2, l) => s2 + Number(l.net_amount || 0), 0),
+      gross: ls.reduce((s2, l) => s2 + Number(l.net_amount || 0) + Number(l.vat_amount || 0), 0),
+    };
+  }, [invoice, net]);
 
-  const updateItem = (i, key, val) => setItems((arr) => arr.map((it, ix) => ix === i ? { ...it, [key]: val } : it));
-  const removeItem = (i) => setItems((arr) => arr.filter((_, ix) => ix !== i));
-  const addItem = () => setItems((arr) => [...arr, { description: '', qty: 1, unit_net: 0 }]);
+  const setLine = (i, key, val) =>
+    setLines((arr) => arr.map((l, ix) => (ix === i ? { ...l, [key]: val } : l)));
+  const addLine = () =>
+    setLines((arr) => [...arr, {
+      key: `n${arr.length}${Date.now()}`, description: '', qty: 1,
+      unit: 'pcs', unit_price: 0, kind: 'labor',
+    }]);
+  const removeLine = (i) => setLines((arr) => arr.filter((_, ix) => ix !== i));
 
-  const submit = async () => {
-    setSubmitting(true);
-    setError('');
+  const payload = () => lines
+    .filter((l) => l.description.trim())
+    .map((l, i) => ({
+      position: i + 1,
+      description: l.description.trim(),
+      qty: Number(l.qty) || 1,
+      unit: l.unit || 'pcs',
+      unit_price: Number(l.unit_price) || 0,
+      kind: l.kind,
+    }));
+
+  /** Create the draft, inheriting from the accepted quote where there is one. */
+  const createDraft = async () => {
+    setBusy('draft'); setError('');
     try {
-      if (items.some((it) => !it.description?.trim())) throw new Error(t('proinv_err_desc'));
-      const payload = {
-        job_id: fromProject ? (draft?.job?.id || null) : jobId,
-        homeowner_id: draft?.homeowner?.id || null,
-        change_order_id: fromCo || null,
-        project_id: fromProject || null,
-        line_items: items.map((it) => ({
-          description: it.description,
-          qty: parseFloat(it.qty) || 1,
-          unit_net: parseFloat(it.unit_net) || 0,
-        })),
-        note: note || null,
-        payment_due_days: parseInt(dueDays, 10) || 14,
-      };
-      const { data } = await api.post('/api/invoices', payload);
-      navigate(`/my-invoices?new=${data.id}`);
+      const { data } = await api.post(`/api/jobs/${jobId}/draft-invoice`);
+      // Only replace the positions when the pro actually changed them —
+      // otherwise the server's inherited lines, which carry tax_treatment and
+      // source_quote_line_id, would be thrown away and rebuilt without them.
+      const edited = lines.some((l) => !l.inherited)
+        || lines.length !== (data.lines || []).length;
+      let inv = data;
+      if (edited) {
+        const { data: replaced } =
+          await api.put(`/api/invoices/${data.id}/lines`, { lines: payload() });
+        inv = replaced;
+      }
+      setInvoice(inv);
     } catch (e) {
-      setError(e?.response?.data?.detail || e?.message || t('error_generic'));
-    } finally { setSubmitting(false); }
+      setError(e?.response?.data?.detail || t('proinv_draft_failed'));
+    } finally { setBusy(''); }
   };
 
-  if (loading) {
-    return <div className="min-h-screen bg-cream flex items-center justify-center"><Loader2 size={28} className="text-teal animate-spin" /></div>;
-  }
-  if (error && !draft) {
-    return (
-      <div className="min-h-screen bg-cream pb-12">
-        <div className="page-container py-8 max-w-2xl">
-          <button onClick={() => navigate(-1)} className="btn-ghost mb-4"><ChevronLeft size={14} /> {t('btn_back')}</button>
-          <div className="card-lg flex items-start gap-3" data-testid="proinv-error-card">
-            <AlertCircle size={18} className="text-red-warn mt-0.5" />
-            <p className="text-sm text-ink">{error}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  /** Freeze it. The number is allocated here and the lines become immutable. */
+  const issue = async () => {
+    setBusy('issue'); setError('');
+    try {
+      const { data } = await api.post(`/api/invoices/${invoice.id}/issue`, {
+        payment_terms_days: parseInt(terms, 10) || 14,
+      });
+      navigate(`/my-invoices?new=${data.id}`);
+    } catch (e) {
+      setError(e?.response?.data?.detail || t('proinv_issue_failed'));
+    } finally { setBusy(''); }
+  };
+
+  if (loading) return (
+    <div className="min-h-screen bg-cream flex items-center justify-center">
+      <Loader2 size={28} className="text-teal animate-spin" />
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-cream pb-24">
@@ -137,150 +175,180 @@ export default function ProInvoiceEditorPage() {
         <div className="flex items-start gap-3 mb-6">
           <Receipt size={28} className="text-teal" />
           <div>
-            <h1 className="text-3xl font-headings font-bold text-ink">{t('proinv_create_title')}</h1>
-            <p className="text-ink-muted text-sm">{t('proinv_create_subtitle')}</p>
-          </div>
-        </div>
-
-        {/* Already-invoiced warning */}
-        {draft?.already_invoiced && (
-          <div className="card-lg mb-4 border-amber/50 bg-amber/8 flex items-start gap-3" data-testid="already-invoiced-warning">
-            <AlertCircle size={16} className="text-amber flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-semibold text-ink text-sm">Invoice already exists</p>
-              <p className="text-xs text-ink-muted mt-0.5">
-                This job already has invoice <strong>{draft.existing_invoice_number}</strong>.
-                Only one invoice per completed job is allowed. View or edit the existing invoice instead.
-              </p>
-              <a href="/my-invoices" className="btn-ghost text-xs mt-2 inline-flex">View invoices →</a>
-            </div>
-          </div>
-        )}
-
-        {/* Customer block */}
-        <div className="card-lg mb-4" data-testid="proinv-customer">
-          <p className="text-[10px] uppercase tracking-wider font-bold text-ink-muted mb-2">{t('proinv_customer')}</p>
-          <p className="font-semibold text-ink">{draft?.homeowner?.name || '—'}</p>
-          <p className="text-sm text-ink-soft">{draft?.homeowner?.address || ''}</p>
-          <p className="text-sm text-ink-soft">{draft?.homeowner?.postal_code} {draft?.homeowner?.city}</p>
-          <p className="text-[11px] text-ink-muted mt-2 italic">{t('proinv_job_ref')}: {draft?.job?.title} ({draft?.job?.category})</p>
-        </div>
-
-        {/* Line items */}
-        <div className="card-lg mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-[10px] uppercase tracking-wider font-bold text-ink-muted">{t('proinv_lines')}</p>
-            <button onClick={addItem} className="btn-ghost text-xs" data-testid="proinv-add-line">
-              <Plus size={12} /> {t('proinv_add_line')}
-            </button>
-          </div>
-          <div className="space-y-2">
-            {/* Column headers */}
-            <div className="grid grid-cols-12 gap-2 px-1">
-              <span className="col-span-6 text-[10px] uppercase font-bold text-ink-muted tracking-wide">{t('proinv_col_description') || 'Description'}</span>
-              <span className="col-span-2 text-[10px] uppercase font-bold text-ink-muted tracking-wide text-center">{t('proinv_col_qty') || 'Qty'}</span>
-              <span className="col-span-3 text-[10px] uppercase font-bold text-ink-muted tracking-wide text-right">{t('proinv_col_unit_price') || 'Unit Price'}</span>
-            </div>
-            {items.map((it, i) => (
-              <div key={i} className="grid grid-cols-12 gap-2 items-center" data-testid={`proinv-line-${i}`}>
-                <input
-                  value={it.description}
-                  onChange={(e) => updateItem(i, 'description', e.target.value)}
-                  className="sm-input col-span-6 text-sm"
-                  placeholder={t('proinv_desc_ph')}
-                />
-                <input
-                  type="number"
-                  step="0.5"
-                  min="0"
-                  value={it.qty}
-                  onChange={(e) => updateItem(i, 'qty', e.target.value)}
-                  className="sm-input col-span-2 text-sm"
-                  placeholder="1"
-                />
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={it.unit_net}
-                  onChange={(e) => updateItem(i, 'unit_net', e.target.value)}
-                  className="sm-input col-span-3 text-sm"
-                  placeholder="0.00"
-                />
-                <button onClick={() => removeItem(i)} className="text-ink-muted hover:text-red-warn col-span-1" aria-label="remove">
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            ))}
-            {items.length === 0 && (
-              <p className="text-center text-ink-muted py-4 text-sm">{t('proinv_no_lines')}</p>
-            )}
-          </div>
-        </div>
-
-        {/* Totals */}
-        <div className="card-lg mb-4" data-testid="proinv-totals">
-          <div className="space-y-1 text-sm">
-            <div className="flex justify-between"><span className="text-ink-soft">{t('proinv_net')}</span><span className="text-ink">{fmtEur(totals.net)}</span></div>
-            <div className="flex justify-between">
-              <span className="text-ink-soft">{t('proinv_vat')} ({totals.vatRate}%)</span>
-              <span className="text-ink">{fmtEur(totals.vat)}</span>
-            </div>
-            <div className="flex justify-between border-t border-sm-border pt-2 mt-2">
-              <span className="font-bold text-ink">{t('proinv_total')}</span>
-              <span className="font-bold text-ink text-lg" data-testid="proinv-brutto">{fmtEur(totals.brutto)}</span>
-            </div>
-          </div>
-          {draft?.is_kleinunternehmer && (
-            <p className="text-[11px] text-ink-muted mt-3 italic">{t('proinv_kleinunternehmer_note')}</p>
-          )}
-        </div>
-
-        <div className="card-lg mb-4 space-y-3">
-          <div>
-            <label className="block text-sm font-medium text-ink mb-1">{t('proinv_due_days')}</label>
-            <input
-              type="number"
-              min="0"
-              max="90"
-              value={dueDays}
-              onChange={(e) => setDueDays(e.target.value)}
-              className="sm-input w-32"
-              data-testid="proinv-due-days"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-ink mb-1">{t('proinv_note')}</label>
-            <textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="sm-textarea"
-              rows={2}
-              placeholder={t('proinv_note_ph')}
-              data-testid="proinv-note"
-            />
+            <h1 className="text-3xl font-headings font-bold text-ink">
+              {t('proinv_create_title')}
+            </h1>
+            <p className="text-ink-muted text-sm">{job?.title} · {job?.job_number}</p>
           </div>
         </div>
 
         {error && (
-          <div className="flex items-center gap-2 text-red-warn bg-red-50 rounded-[14px] p-3 mb-4 text-sm">
-            <AlertCircle size={14} /> {error}
+          <div className="card-lg mb-4 flex items-start gap-3 border-red-warn/40"
+               data-testid="proinv-error-card">
+            <AlertCircle size={18} className="text-red-warn mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-ink">{error}</p>
           </div>
         )}
 
-        <button
-          onClick={submit}
-          disabled={submitting || items.length === 0 || draft?.already_invoiced}
-          className="btn-primary w-full py-3"
-          data-testid="proinv-submit"
-        >
-          {submitting ? (
-            <><Loader2 size={16} className="animate-spin" /> {t('btn_processing')}</>
-          ) : (
-            <><FileText size={16} /> {t('proinv_create_btn')}</>
+        {/* ── Step 1: the positions ─────────────────────────────────── */}
+        <div className="card-lg mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[10px] uppercase tracking-wider font-bold text-ink-muted">
+              {t('proinv_lines')}
+            </p>
+            {!invoice && (
+              <button onClick={addLine} className="btn-ghost text-xs"
+                      data-testid="proinv-add-line">
+                <Plus size={12} /> {t('proinv_add_line')}
+              </button>
+            )}
+          </div>
+
+          {lines.length === 0 && !invoice && (
+            <p className="text-sm text-ink-muted py-3">{t('proinv_no_lines')}</p>
           )}
-        </button>
-        <p className="text-xs text-center text-ink-muted mt-2">{t('proinv_create_help')}</p>
+
+          <div className="space-y-3">
+            {(invoice ? invoice.lines : lines).map((l, i) => (
+              invoice ? (
+                <div key={l.id} className="flex items-start justify-between gap-3 text-sm
+                                           border-b border-sm-border pb-2 last:border-0">
+                  <span className="text-ink min-w-0">
+                    {l.description}
+                    <span className="block text-[11px] text-ink-muted">
+                      {Number(l.qty)} {l.unit} × {fmtEur(l.unit_price)} · {t(`kind_${l.kind}`)}
+                      {' · '}{Number(l.vat_rate)}% USt
+                    </span>
+                  </span>
+                  <span className="text-ink whitespace-nowrap">{fmtEur(l.net_amount)}</span>
+                </div>
+              ) : (
+                <div key={l.key} className="space-y-2 border-b border-sm-border pb-3 last:border-0">
+                  <div className="flex items-center gap-2">
+                    <input
+                      className="input flex-1"
+                      value={l.description}
+                      onChange={(e) => setLine(i, 'description', e.target.value)}
+                      placeholder={t('description')}
+                      aria-label={t('description')}
+                      data-testid={`proinv-desc-${i}`}
+                    />
+                    <button onClick={() => removeLine(i)}
+                            className="p-2 text-ink-muted hover:text-red-warn"
+                            aria-label={t('remove')} title={t('remove')}>
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <label className="text-[11px] text-ink-muted">
+                      {t('qty')}
+                      <input type="number" min="0" step="0.01" className="input w-full mt-0.5"
+                             value={l.qty}
+                             onChange={(e) => setLine(i, 'qty', e.target.value)} />
+                    </label>
+                    <label className="text-[11px] text-ink-muted">
+                      {t('unit')}
+                      <input className="input w-full mt-0.5" value={l.unit}
+                             onChange={(e) => setLine(i, 'unit', e.target.value)} />
+                    </label>
+                    <label className="text-[11px] text-ink-muted">
+                      {t('unit_price')}
+                      <input type="number" min="0" step="0.01" className="input w-full mt-0.5"
+                             value={l.unit_price}
+                             onChange={(e) => setLine(i, 'unit_price', e.target.value)} />
+                    </label>
+                    {/* `kind` drives the §35a labour/material split on the
+                        printed invoice. It defaulted to labour everywhere,
+                        which overstates what a German customer may deduct —
+                        so it is an explicit choice here. */}
+                    <label className="text-[11px] text-ink-muted">
+                      {t('proinv_kind')}
+                      <select className="input w-full mt-0.5" value={l.kind}
+                              onChange={(e) => setLine(i, 'kind', e.target.value)}>
+                        {KINDS.map((k) => <option key={k} value={k}>{t(`kind_${k}`)}</option>)}
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              )
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between mt-4 pt-3 border-t border-sm-border">
+            <span className="text-sm text-ink-muted">{t('proinv_net_total')}</span>
+            <span className="text-xl font-headings font-bold text-ink">
+              {fmtEur(totals.net)}
+            </span>
+          </div>
+          {invoice && totals.gross !== null && (
+            <div className="flex items-center justify-between mt-1">
+              <span className="text-sm text-ink-muted">{t('proinv_gross_total')}</span>
+              <span className="text-xl font-headings font-bold text-ink">
+                {fmtEur(totals.gross)}
+              </span>
+            </div>
+          )}
+          {!invoice && (
+            <p className="text-[11px] text-ink-muted mt-2">{t('proinv_vat_note')}</p>
+          )}
+        </div>
+
+        {/* ── Step 2: terms, then draft ─────────────────────────────── */}
+        {!invoice ? (
+          <>
+            <div className="card-lg mb-4">
+              <label htmlFor="proinv-terms"
+                     className="block text-[10px] uppercase tracking-wider font-bold text-ink-muted mb-1">
+                {t('proinv_terms_days')}
+              </label>
+              <input id="proinv-terms" type="number" min="0" max="180"
+                     className="input w-full sm:w-40" value={terms}
+                     onChange={(e) => setTerms(e.target.value)} />
+              <label htmlFor="proinv-note"
+                     className="block text-[10px] uppercase tracking-wider font-bold text-ink-muted mb-1 mt-3">
+                {t('notes')}
+              </label>
+              <textarea id="proinv-note" rows={2} className="input w-full"
+                        value={note} onChange={(e) => setNote(e.target.value)} />
+            </div>
+            <button
+              onClick={createDraft}
+              disabled={busy === 'draft' || !payload().length}
+              className="btn-primary w-full"
+              data-testid="proinv-create-draft"
+            >
+              {busy === 'draft'
+                ? <Loader2 size={16} className="animate-spin" />
+                : <><FileText size={16} /> {t('proinv_create_draft')}</>}
+            </button>
+          </>
+        ) : (
+          <>
+            {/* A draft has no number and no legal effect. Say so, because the
+                difference decides whether the customer can be sent it. */}
+            <div className="card-lg mb-4 border-amber/40 bg-amber/5 flex items-start gap-3"
+                 data-testid="proinv-draft-notice">
+              <AlertCircle size={16} className="text-amber-deep mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-ink">{t('proinv_draft_title')}</p>
+                <p className="text-xs text-ink-muted mt-0.5">{t('proinv_draft_help')}</p>
+              </div>
+            </div>
+            <button
+              onClick={issue}
+              disabled={busy === 'issue'}
+              className="btn-primary w-full"
+              data-testid="proinv-issue"
+            >
+              {busy === 'issue'
+                ? <Loader2 size={16} className="animate-spin" />
+                : <><Lock size={16} /> {t('proinv_issue')}</>}
+            </button>
+            <p className="text-[11px] text-ink-muted text-center mt-2 inline-flex items-center gap-1 w-full justify-center">
+              <CheckCircle2 size={11} /> {t('proinv_issue_help')}
+            </p>
+          </>
+        )}
       </div>
     </div>
   );

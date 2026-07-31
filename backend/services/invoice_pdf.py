@@ -25,6 +25,7 @@ from decimal import Decimal
 from io import BytesIO
 from typing import Any, Optional
 
+from services import tax_rules
 from services.epc_qr import build_epc_qr_png
 
 logger = logging.getLogger(__name__)
@@ -202,12 +203,27 @@ def render_invoice_pdf(invoice: dict) -> bytes:
     # excluded. Showing labour alone understates what the customer can claim.
     deductible = labor + travel
     if deductible:
+        # The split itself is always printed — it costs nothing and helps any
+        # customer read the invoice. The *claim* is gated, because § 35a is a
+        # German income-tax deduction available to private individuals only.
+        # This was ungated: an Austrian household was told about a German
+        # deduction it cannot take, and a German GmbH about one it cannot use,
+        # on every invoice with an hour of labour on it. `is_35a_eligible` has
+        # been sitting in tax_rules with the correct rule and no caller.
+        #
+        # Read from the frozen customer_snapshot rather than the live customer
+        # row, so a historic invoice reprints exactly as the customer received
+        # it even after they move country or become a business.
+        ctx = tax_rules.TaxContext(
+            supplier_country=(invoice.get("invoice_country") or "AT"),
+            customer_country=(cust.get("country") or invoice.get("invoice_country") or "AT"),
+            customer_is_business=(cust.get("type") == "business"),
+        )
         el.append(Paragraph(
-            f"<b>Aufteilung gemäß § 35a EStG</b> — Lohn- und Fahrtkosten: "
+            f"<b>Aufteilung der Leistung</b> — Lohn- und Fahrtkosten: "
             f"{_eur(deductible)} · Materialanteil: {_eur(material)}", small))
-        el.append(Paragraph(
-            "Der ausgewiesene Lohnanteil ist steuerlich absetzbar. Voraussetzung "
-            "ist die Zahlung per Überweisung (keine Barzahlung).", small))
+        if tax_rules.is_35a_eligible(ctx):
+            el.append(Paragraph(tax_rules.note_35a(), small))
         el.append(Spacer(1, 4 * mm))
 
     # ── Mandatory legal notes ──────────────────────────────────────────

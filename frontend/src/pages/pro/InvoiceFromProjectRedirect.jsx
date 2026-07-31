@@ -1,34 +1,21 @@
-import React, { useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import api from '../../api/client';
-import { Loader2 } from 'lucide-react';
+import React from 'react';
+import { useParams, Navigate } from 'react-router-dom';
 
 /**
- * Resolves a PM project's job_id then redirects to the existing invoice
- * editor with `?from_project=<id>` so the editor knows to import the
- * project's materials + labour as prefilled line items.
+ * `/invoice-from-project/:id` → `/jobs/:id/invoice`.
+ *
+ * There is nothing to resolve. This fetched `GET /api/jobs/{id}` and read
+ * `r.data.job_id` — a column `jobs` does not have, because the job *is* the
+ * row — so it always fell back to the literal string 'none' and navigated to
+ * `/jobs/none/invoice`. That URL is the target of the "create invoice" link
+ * on the job overview and of the approved-Nachtrag button on the billing tab,
+ * so both led to a dead page.
+ *
+ * Kept as a route rather than deleted: links to it exist in the wild, and a
+ * redirect is cheaper than hunting every one of them down.
  */
 export default function InvoiceFromProjectRedirect() {
   const { id } = useParams();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    let cancelled = false;
-    const co = new URLSearchParams(window.location.search).get('co');
-    api.get(`/api/jobs/${id}`)
-      .then((r) => {
-        if (cancelled) return;
-        const jobId = r.data?.job_id || 'none';
-        const coParam = co ? `&from_co=${co}` : '';
-        navigate(`/jobs/${jobId}/invoice?from_project=${id}${coParam}`, { replace: true });
-      })
-      .catch(() => navigate('/projects', { replace: true }));
-    return () => { cancelled = true; };
-  }, [id, navigate]);
-
-  return (
-    <div className="min-h-screen bg-cream flex items-center justify-center" data-testid="pm-invoice-redirect">
-      <Loader2 size={28} className="text-teal animate-spin" />
-    </div>
-  );
+  const co = new URLSearchParams(window.location.search).get('co');
+  return <Navigate to={`/jobs/${id}/invoice${co ? `?from_co=${co}` : ''}`} replace />;
 }
