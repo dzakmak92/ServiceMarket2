@@ -185,52 +185,83 @@ export default function LeadCapturePage() {
           </div>
         )}
 
+        {/* Every field is labelled, and the label is tied to its input with
+            htmlFor/id. This form had none: it was placeholders only, with the
+            required marker appended *inside* the placeholder — so the one cue
+            that a field is mandatory disappeared the moment the user typed a
+            character, and a screen reader announced nothing at all. */}
         <form onSubmit={submit} className="card-lg space-y-3" data-testid="lead-form">
-          <input className="input w-full" required minLength={3} value={form.title}
-                 onChange={(e) => set('title', e.target.value)}
-                 placeholder={`${t('job_title') || 'Auftrag'} *`} data-testid="lead-title" />
+          <Field id="lead-title-f" label={t('job_title')} required>
+            <input id="lead-title-f" className="input w-full" required minLength={3}
+                   value={form.title} onChange={(e) => set('title', e.target.value)}
+                   data-testid="lead-title" />
+          </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <select className="input" value={form.source} onChange={(e) => set('source', e.target.value)}>
-              {SOURCES.map((s) => <option key={s} value={s}>{t(`source_${s}`) || s}</option>)}
-            </select>
-            <select className="input" value={form.urgency} onChange={(e) => set('urgency', e.target.value)}>
-              {URGENCY.map((u) => <option key={u} value={u}>{t(`urgency_${u}`) || u}</option>)}
-            </select>
+            <Field id="lead-source-f" label={t('lead_source')}>
+              <select id="lead-source-f" className="input w-full" value={form.source}
+                      onChange={(e) => set('source', e.target.value)}>
+                {SOURCES.map((s) => <option key={s} value={s}>{t(`source_${s}`)}</option>)}
+              </select>
+            </Field>
+            <Field id="lead-urgency-f" label={t('lead_urgency')}>
+              <select id="lead-urgency-f" className="input w-full" value={form.urgency}
+                      onChange={(e) => set('urgency', e.target.value)}>
+                {URGENCY.map((u) => <option key={u} value={u}>{t(`urgency_${u}`)}</option>)}
+              </select>
+            </Field>
           </div>
 
-          <select className="input w-full" value={form.mode} onChange={(e) => set('mode', e.target.value)}>
-            <option value="simple">{t('mode_simple') || 'Einfacher Auftrag'}</option>
-            <option value="project">{t('mode_project') || 'Projekt (Aufgaben, Gantt)'}</option>
-            <option value="recurring">{t('mode_recurring') || 'Wiederkehrend'}</option>
-          </select>
+          <Field id="lead-mode-f" label={t('lead_mode')}>
+            <select id="lead-mode-f" className="input w-full" value={form.mode}
+                    onChange={(e) => set('mode', e.target.value)}>
+              <option value="simple">{t('mode_simple')}</option>
+              <option value="project">{t('mode_project')}</option>
+              <option value="recurring">{t('mode_recurring')}</option>
+            </select>
+          </Field>
 
           <div className="pt-2 border-t border-cream-dark">
-            <p className="text-sm font-medium text-ink mb-2">{t('customer') || 'Kunde'}</p>
-            <input className="input w-full mb-2" required value={form.customer.name}
-                   onChange={(e) => setCust('name', e.target.value)}
-                   placeholder={`${t('name') || 'Name'} *`} data-testid="lead-customer-name" />
-            <div className="grid grid-cols-2 gap-3 mb-2">
-              <input className="input" type="email" value={form.customer.email}
-                     onChange={(e) => setCust('email', e.target.value)}
-                     placeholder={t('email') || 'E-Mail'} />
-              <input className="input" value={form.customer.phone}
-                     onChange={(e) => setCust('phone', e.target.value)}
-                     placeholder={t('phone') || 'Telefon'} />
+            <p className="text-sm font-medium text-ink mb-2">{t('customer')}</p>
+            <Field id="lead-cust-name-f" label={t('name')} required>
+              <input id="lead-cust-name-f" className="input w-full" required
+                     value={form.customer.name}
+                     onChange={(e) => setCust('name', e.target.value)}
+                     data-testid="lead-customer-name" />
+            </Field>
+            <div className="grid grid-cols-2 gap-3 mt-2">
+              <Field id="lead-cust-email-f" label={t('email')}>
+                <input id="lead-cust-email-f" className="input w-full" type="email"
+                       value={form.customer.email}
+                       onChange={(e) => setCust('email', e.target.value)} />
+              </Field>
+              <Field id="lead-cust-phone-f" label={t('phone')}>
+                <input id="lead-cust-phone-f" className="input w-full" type="tel"
+                       value={form.customer.phone}
+                       onChange={(e) => setCust('phone', e.target.value)} />
+              </Field>
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              <input className="input" value={form.customer.postal_code}
-                     onChange={(e) => setCust('postal_code', e.target.value)}
-                     placeholder={t('postal_code') || 'PLZ'} />
-              <input className="input col-span-2" value={form.customer.city}
-                     onChange={(e) => setCust('city', e.target.value)}
-                     placeholder={t('city') || 'Ort'} />
+            <div className="grid grid-cols-3 gap-3 mt-2">
+              <Field id="lead-cust-plz-f" label={t('postal_code')}>
+                <input id="lead-cust-plz-f" className="input w-full"
+                       value={form.customer.postal_code}
+                       onChange={(e) => setCust('postal_code', e.target.value)} />
+              </Field>
+              <div className="col-span-2">
+                <Field id="lead-cust-city-f" label={t('city')}>
+                  <input id="lead-cust-city-f" className="input w-full"
+                         value={form.customer.city}
+                         onChange={(e) => setCust('city', e.target.value)} />
+                </Field>
+              </div>
             </div>
           </div>
 
-          <textarea className="input w-full" rows={3} value={form.description}
-                    onChange={(e) => set('description', e.target.value)}
-                    placeholder={t('description') || 'Beschreibung'} />
+          <Field id="lead-desc-f" label={t('description')}>
+            <textarea id="lead-desc-f" className="input w-full" rows={3}
+                      value={form.description}
+                      onChange={(e) => set('description', e.target.value)} />
+          </Field>
 
           <button type="submit" className="btn-primary w-full" disabled={saving || !ready}
                   data-testid="lead-save">
@@ -244,6 +275,19 @@ export default function LeadCapturePage() {
           </p>
         </form>
       </div>
+    </div>
+  );
+}
+
+/** A label bound to its control, with the required marker outside the input
+    so it survives the user typing. */
+function Field({ id, label, required, children }) {
+  return (
+    <div>
+      <label htmlFor={id} className="block text-xs font-medium text-ink-soft mb-1">
+        {label}{required && <span className="text-red-warn ml-0.5" aria-hidden="true">*</span>}
+      </label>
+      {children}
     </div>
   );
 }
