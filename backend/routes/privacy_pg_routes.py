@@ -13,6 +13,7 @@ must, and tells the user which is which — see `repositories/privacy.py`.
 from __future__ import annotations
 
 import io
+import ipaddress
 import json
 import logging
 import zipfile
@@ -36,10 +37,23 @@ def _ip(request: Request) -> Optional[str]:
     Taken for the consent trail only. Art. 7(1) wants the circumstances of
     consent demonstrable, and an address with no timestamp beside it would
     prove nothing while still being personal data.
+
+    Validated before it is returned, because the three columns it feeds are
+    `inet` and asyncpg raises DataError on anything that is not an address —
+    which would lose the consent record itself. The header is client-supplied
+    data on the way in, so `X-Forwarded-For: nonsense` is enough to make the
+    insert fail; dropping an unparseable address costs a line of provenance,
+    while the alternative costs the evidence the article asks for.
     """
     fwd = request.headers.get("x-forwarded-for", "")
     first = fwd.split(",")[0].strip() if fwd else ""
-    return first or (request.client.host if request.client else None)
+    candidate = first or (request.client.host if request.client else None)
+    if not candidate:
+        return None
+    try:
+        return str(ipaddress.ip_address(candidate))
+    except ValueError:
+        return None
 
 
 class ConsentIn(BaseModel):

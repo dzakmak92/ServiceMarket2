@@ -236,7 +236,7 @@ async def storno(pro_id: str, invoice_id: str, reason: str) -> dict:
               net_total, vat_total, gross_total, labor_net, material_net, travel_net,
               has_reverse_charge, storno_of_id, storno_reason,
               pro_snapshot, customer_snapshot, payment_terms_days, note)
-            values ($1,$2,$3,'storno','issued',current_date,$4,$5,$6,$7,
+            values ($1,$2,$3,'storno','draft',current_date,$4,$5,$6,$7,
                     $8,$9,$10,$11,$12,$19,$13,$14,$15,$16::jsonb,$17::jsonb,0,$18)
             returning *
             """,
@@ -261,6 +261,20 @@ async def storno(pro_id: str, invoice_id: str, reason: str) -> dict:
                 l["qty"], l["unit"], -_d(l["unit_price"]), l["discount_pct"],
                 l["tax_treatment"], l["vat_rate"],
             )
+
+        # The Storno is built as a draft and issued once its lines are in,
+        # because `invoice_lines_enforce_immutability` refuses an INSERT whose
+        # parent is not a draft. Creating it as 'issued' — which is what this
+        # did — meant the very next statement raised restrict_violation and
+        # took the whole transaction with it, so no Storno was ever committed
+        # and a wrong invoice could never be corrected. That is the one thing
+        # GoBD and § 11 UStG absolutely require, and it had never worked.
+        #
+        # The number is allocated by the BEFORE trigger on this update, so the
+        # Storno still lands in the same gap-free sequence.
+        st = await con.fetchrow(
+            "update invoices set status = 'issued' where id = $1 returning *",
+            st["id"])
 
         # Permitted by the immutability trigger — these columns are in its
         # mutable set precisely so an invoice can be cancelled without editing.

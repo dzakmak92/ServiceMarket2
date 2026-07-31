@@ -27,8 +27,15 @@ REFRESH_TTL = timedelta(days=7)
 # Columns a caller may see. password_hash is never among them — the previous
 # implementation fetched the whole document and popped it afterwards, which
 # only works as long as nobody forgets.
+# `id` is selected as text, not as the uuid the column holds, and that is
+# load-bearing rather than cosmetic. /api/auth/login already returned
+# `id::text as id`, so the same key arrived as a str from one code path and a
+# uuid.UUID from the other. asyncpg accepts either against a uuid column, but
+# raises DataError when a UUID is handed to a parameter the query casts with
+# `::text` — which is how `/api/auth/me` came to 500 for every tradesperson
+# while login looked fine.
 USER_COLUMNS = (
-    "id, legacy_id, email, name, given_name, family_name, role, country, lang, "
+    "id::text as id, legacy_id, email, name, given_name, family_name, role, country, lang, "
     "phone, address, postal_code, city, onboarding_complete, is_email_verified, "
     "banned, notif_email, notif_email_marketing, notif_new_message, "
     "notif_job_status, notif_payment_receipt, policy_version_accepted, "

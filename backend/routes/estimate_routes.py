@@ -264,7 +264,10 @@ async def estimate_to_quote(body: EstimateToQuoteIn,
         # band once it is sitting in a list a week later. The column is
         # numeric, so the catalogue's three words map onto it.
         "ai_confidence": CONFIDENCE_SCORE.get(ref["job"]["confidence"]),
-        "ai_sources": ["estimation_catalogue/" + estimator.catalogue()["version"],
+        # str(): the catalogue stamps its version as an integer, and
+        # concatenating it raised TypeError on every single call — this
+        # endpoint had never once succeeded.
+        "ai_sources": [f"estimation_catalogue/{estimator.catalogue()['version']}",
                        ref["job"]["key"]],
     }
 

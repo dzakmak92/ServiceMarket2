@@ -358,8 +358,21 @@ PURGE_BY_PRO = [
     "delete from job_time_logs l using jobs j where j.id = l.job_id and j.pro_id = $1",
     "delete from job_materials m using jobs j where j.id = m.job_id and j.pro_id = $1",
     "delete from job_tasks t using jobs j where j.id = t.job_id and j.pro_id = $1",
-    "delete from change_orders c using jobs j where j.id = c.job_id and j.pro_id = $1",
-    "delete from quotes where pro_id = $1",
+    """delete from change_orders c using jobs j
+        where j.id = c.job_id and j.pro_id = $1
+          and not exists (select 1 from invoice_lines l
+                           where l.source_change_order_id = c.id)""",
+    # Quotes only where no issued invoice line still points at one of their
+    # positions. `invoice_lines.source_quote_line_id` is ON DELETE SET NULL,
+    # which is an UPDATE on invoice_lines — and the immutability trigger
+    # refuses that, aborting the whole purge with restrict_violation. The
+    # account then never gets deleted and the cron retries the same failure
+    # forever. Same reasoning as jobs and customers below: what an issued
+    # invoice depends on is retained.
+    """delete from quotes q where q.pro_id = $1
+         and not exists (select 1 from invoice_lines l
+                           join quote_lines ql on ql.id = l.source_quote_line_id
+                          where ql.quote_id = q.id)""",
     "delete from recurring_contracts where pro_id = $1",
     # Jobs and customers only where no invoice depends on them. An invoice
     # without its customer is not a record anyone can defend to a tax office.

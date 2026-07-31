@@ -239,23 +239,32 @@ async def year_end_pdf(year: int = Query(default=None),
     y = year or date.today().year
     from services.tax_pdf import render_tax_year_pdf
 
-    eur = await repo.eur(pro_id, y)
-    pro = await pg.fetchrow("select * from pro_profiles where id = $1", pro_id) or {}
-    liab = tax_at.liability(eur["income_net"], eur["expenses_net"])
+    # Every dict goes to the renderer exactly as its producer returned it.
+    # The reshaping this used to do invented five keys the renderer then read
+    # and the producers never had, so the endpoint raised KeyError on every
+    # request. `dashboard` is `eur` plus the receivables the PDF needs, so it
+    # replaces the separate `eur` call rather than adding a query.
+    data = await repo.dashboard(pro_id, y)
+    pro = await pg.fetchrow(
+        "select * from pro_profiles where id = $1", pro_id) or {}
     pdf = render_tax_year_pdf(
         year=y,
-        pro_snapshot={"name": pro.get("business_name") or "",
-                      "address": pro.get("business_address") or "",
-                      "city": pro.get("business_city") or "",
-                      "vat_id": pro.get("vat_id") or "",
-                      "tax_number": pro.get("tax_number") or ""},
-        revenue={"paid_brutto": eur["income_gross"], "netto": eur["income_net"]},
-        expenses={"brutto": sum(c["gross"] for c in eur["by_category"]),
-                  "netto": eur["expenses_net"], "by_category": eur["by_category"]},
+        pro_snapshot={
+            "name": pro.get("business_name") or "",
+            "business_name": pro.get("business_name") or "",
+            "address": pro.get("business_address") or "",
+            "city": pro.get("business_city") or "",
+            # The renderer's key for the UID; the column is `vat_id`.
+            "invoice_tax_id": pro.get("vat_id") or "",
+            "tax_number": pro.get("tax_number") or "",
+            "is_kleinunternehmer": bool(pro.get("is_kleinunternehmer")),
+        },
+        eur=data,
+        outstanding=data["outstanding"],
+        ust_by_quarter={f"Q{q}": await repo.ust_va(pro_id, y, quarter=q)
+                        for q in (1, 2, 3, 4)},
         mileage=await repo.mileage(pro_id, y),
-        svs=liab["svs"], est=liab["income_tax"],
-        ust_buckets_by_q={f"Q{q}": await repo.ust_va(pro_id, y, quarter=q)
-                          for q in (1, 2, 3, 4)})
+        liability=tax_at.liability(data["income_net"], data["expenses_net"]))
     return Response(content=pdf, media_type="application/pdf",
                     headers={"Content-Disposition":
                              f'attachment; filename="Steuer-{y}.pdf"'})

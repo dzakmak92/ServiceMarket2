@@ -34,6 +34,16 @@ async def verify_turnstile_token(token: str, remote_ip: Optional[str] = None) ->
         logger.warning("TURNSTILE_SECRET_KEY not set — refusing verification")
         return False
 
+    # The bypass this module's own docstring has always promised, and which
+    # was never implemented: TEST_SECRET_KEYS was defined and referenced
+    # nowhere. Without it a preview deployment or an integration test cannot
+    # get past onboarding, and onboarding is what creates the pro_profiles row
+    # every other endpoint requires — so the whole application is unreachable
+    # in any environment that has no live Cloudflare.
+    if secret in TEST_SECRET_KEYS:
+        logger.info("Turnstile running with a Cloudflare test key — not verifying")
+        return True
+
     if not token:
         return False
 

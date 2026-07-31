@@ -172,13 +172,17 @@ async def datev_csv(pro_id: str, year: int) -> str:
 
     Column names are German because that is what the accountant's import
     mapping expects.
+
+    Built through `_csv` like the other two exports rather than with its own
+    `csv.writer`: the hand-rolled one omitted the UTF-8 BOM, so this file —
+    alone of the three — arrived in Excel with every umlaut in a supplier or
+    customer name mangled.
     """
     start, end = _period(year)
-    buf = io.StringIO()
-    w = csv.writer(buf, delimiter=";")
-    w.writerow(["Umsatz", "Soll_Haben", "Belegdatum", "Belegfeld1",
-                "Buchungstext", "Konto", "Gegenkonto", "USt_Prozent",
-                "USt_Betrag", "Leistungsdatum", "Typ"])
+    header = ["Umsatz", "Soll_Haben", "Belegdatum", "Belegfeld1",
+              "Buchungstext", "Konto", "Gegenkonto", "USt_Prozent",
+              "USt_Betrag", "Leistungsdatum", "Typ"]
+    out: list[list] = []
 
     invoices = await pg.fetch(
         """
@@ -194,7 +198,7 @@ async def datev_csv(pro_id: str, year: int) -> str:
     for r in invoices:
         pct = (Decimal(str(r["vat_total"])) / Decimal(str(r["net_total"])) * 100
                ) if Decimal(str(r["net_total"] or 0)) else Decimal(0)
-        w.writerow([
+        out.append([
             f"{r['gross_total']:.2f}".replace(".", ","),
             "S", r["issue_date"].strftime("%d%m%Y") if r["issue_date"] else "",
             r["invoice_number"], f"{r['t']} {r['customer']}"[:60],
@@ -212,7 +216,7 @@ async def datev_csv(pro_id: str, year: int) -> str:
          order by expense_date
         """, pro_id, start, end)
     for r in expenses:
-        w.writerow([
+        out.append([
             f"{r['gross_amount']:.2f}".replace(".", ","),
             "H", r["expense_date"].strftime("%d%m%Y"), "",
             f"{r['category']} {r['vendor'] or ''}"[:60],
@@ -220,7 +224,7 @@ async def datev_csv(pro_id: str, year: int) -> str:
             f"{r['vat_amount']:.2f}".replace(".", ","),
             r["expense_date"].strftime("%d%m%Y"), "Beleg",
         ])
-    return buf.getvalue()
+    return _csv(header, out)
 
 
 # ── Expenses ───────────────────────────────────────────────────────────
@@ -397,11 +401,9 @@ def _csv(header: list[str], rows: list[list]) -> str:
     every umlaut in a supplier name arrives mangled. Neither is a detail an
     accountant will debug — they will just say the export is broken.
     """
-    import csv as _csvmod
-    import io
     buf = io.StringIO()
-    w = _csvmod.writer(buf, delimiter=";", quoting=_csvmod.QUOTE_MINIMAL,
-                       lineterminator="\r\n")
+    w = csv.writer(buf, delimiter=";", quoting=csv.QUOTE_MINIMAL,
+                   lineterminator="\r\n")
     w.writerow(header)
     for r in rows:
         w.writerow(r)
