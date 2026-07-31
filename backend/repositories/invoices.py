@@ -338,6 +338,10 @@ SORTABLE = {
     "amount": "i.gross_total",
     "customer": "c.name",
     "due_date": "i.due_date",
+    # The names the screen's own <select> sends. Aliased rather than renamed
+    # in the UI so a browser holding an older bundle keeps working.
+    "invoice_date": "i.issue_date",
+    "total_brutto": "i.gross_total",
 }
 
 

@@ -118,7 +118,14 @@ export function useNotifications(user) {
         }
       });
       es.onerror = () => {
-        // Browser auto-reconnects; nothing to do.
+        // The notifications router is not mounted, so this URL is served the
+        // SPA's index.html. EventSource then rejects the text/html MIME type,
+        // fires onerror, and — because the browser auto-reconnects — does it
+        // again every few seconds for the life of the session, on every page.
+        // Close it after the connection has failed outright; the 90-second
+        // poll above is the fallback and covers the same ground.
+        if (es.readyState === EventSource.CLOSED) return;
+        try { es.close(); } catch { /* noop */ }
       };
     } catch {
       /* SSE not supported — polling handles it */

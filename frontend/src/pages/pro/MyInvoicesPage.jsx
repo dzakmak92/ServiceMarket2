@@ -13,6 +13,16 @@ import {
 
 const MYINV_TAB_KEYS = ['all', 'issued', 'partial', 'paid', 'storno', 'cancelled'];
 
+/** The frozen counterparty, whatever shape the driver handed it back in. */
+function snapshotName(row) {
+  const snap = row.customer_snapshot;
+  if (!snap) return '';
+  if (typeof snap === 'string') {
+    try { return JSON.parse(snap).name || ''; } catch { return ''; }
+  }
+  return snap.name || '';
+}
+
 const fmtEur = (v) => new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
 const fmtDate = (iso) => (iso ? new Date(iso).toLocaleDateString('de-AT', { day: '2-digit', month: 'short', year: 'numeric' }) : '—');
 
@@ -75,7 +85,12 @@ export default function MyInvoicesPage() {
         payment_due_days: r.payment_terms_days,
         payment_status: r.payment_state,
         is_storno: r.type === 'storno',
-        customer_snapshot: r.customer_snapshot || { name: r.customer_name },
+        // The join's `customer_name` wins over the frozen snapshot. asyncpg
+        // hands jsonb back as a *string* unless a codec is registered, so
+        // `customer_snapshot.name` was reading a property off a string and
+        // every row showed "—" even for issued invoices that carry the whole
+        // customer record.
+        customer_snapshot: { name: r.customer_name || snapshotName(r) },
       })));
       setTotal(data.total ?? (data.invoices || []).length);
     } finally { setLoading(false); }
@@ -220,14 +235,14 @@ export default function MyInvoicesPage() {
 
         {/* Year + Month filter row */}
         <div className="flex items-center flex-wrap gap-2 mb-4" data-testid="myinv-period-filter">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">Period:</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">{t('period')}</span>
           <select
             value={year || ''}
             onChange={(e) => { setYear(e.target.value ? parseInt(e.target.value, 10) : null); setMonth(null); setPage(1); }}
             className="sm-input text-xs h-8 py-0 max-w-[120px]"
             data-testid="myinv-filter-year"
           >
-            <option value="">All years</option>
+            <option value="">{t('all_years')}</option>
             {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => (
               <option key={y} value={y}>{y}</option>
             ))}
@@ -269,22 +284,22 @@ export default function MyInvoicesPage() {
           >
             <Download size={12} /> {t('myinv_export_all_pdf') || 'Export all as PDF'}
           </button>
-          <span className="ml-auto text-xs text-ink-muted" data-testid="myinv-total-count">{total} invoices</span>
+          <span className="ml-auto text-xs text-ink-muted" data-testid="myinv-total-count">{t('myinv_count', { n: total })}</span>
         </div>
 
         {/* Sort row */}
         <div className="flex items-center gap-2 mb-4 flex-wrap">
           <ArrowUpDown size={13} className="text-ink-muted flex-shrink-0" />
-          <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">Sort:</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">{t('sort')}</span>
           <select
             value={sortBy}
             onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
             className="sm-input text-xs h-8 py-0"
             data-testid="myinv-sort-by"
           >
-            <option value="invoice_date">Date</option>
-            <option value="total_brutto">Amount</option>
-            <option value="invoice_number">Invoice #</option>
+            <option value="invoice_date">{t('sort_date')}</option>
+            <option value="total_brutto">{t('sort_amount')}</option>
+            <option value="invoice_number">{t('sort_number')}</option>
           </select>
           <button
             onClick={() => { setSortOrder((o) => o === 'desc' ? 'asc' : 'desc'); setPage(1); }}
@@ -292,7 +307,7 @@ export default function MyInvoicesPage() {
             data-testid="myinv-sort-order"
             title={sortOrder === 'desc' ? 'Newest / Highest first' : 'Oldest / Lowest first'}
           >
-            {sortOrder === 'desc' ? '↓ Desc' : '↑ Asc'}
+            {sortOrder === 'desc' ? `↓ ${t('sort_desc')}` : `↑ ${t('sort_asc')}`}
           </button>
         </div>
 

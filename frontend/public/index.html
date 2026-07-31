@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#0D9488" />
-        <meta name="description" content="Find and hire trusted local tradespeople – ServiceMarket" />
+        <meta name="description" content="Von der Anfrage bis zur bezahlten Rechnung: Angebote, Aufträge, Stunden und Steuer für das Handwerk in Österreich und Deutschland." />
         <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
 
         <!-- iOS PWA support (required for Web Push on iOS 16.4+) -->
@@ -12,9 +12,13 @@
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="ServiceMarket" />
         <link rel="apple-touch-icon" href="%PUBLIC_URL%/icon-192.png" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap" rel="stylesheet" />
+        <!-- No Google-hosted webfont. Requesting one transmits every
+             visitor's IP address to Google in the United States before they
+             have consented to anything, which LG München I (3 O 17493/20)
+             held to be an Art. 6 DSGVO breach and awarded damages for. On a
+             product sold on DACH compliance that is not a detail. The font
+             stack below falls back to the system UI face; if the exact Inter
+             cut matters, self-host the woff2 rather than restoring this. -->
         <!--
         manifest.json provides metadata used when your web app is installed on a
         user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
@@ -28,9 +32,11 @@
         work correctly both with client-side routing and a non-root public URL.
         Learn how to configure a non-root public URL by running `npm run build`.
         -->
-        <title>Emergent | Fullstack App</title>
+        <title>ServiceMarket</title>
         <script>window.addEventListener("error",function(e){if(e.error instanceof DOMException&&e.error.name==="DataCloneError"&&e.message&&e.message.includes("PerformanceServerTiming")){e.stopImmediatePropagation();e.preventDefault()}},true);</script>
-        <script src="https://assets.emergent.sh/scripts/emergent-main.js"></script>
+        <!-- Removed: a third-party script from the scaffolding vendor,
+             loaded on every page with full access to the authenticated
+             origin. Nothing in the product depends on it. -->
     </head>
     <body>
         <noscript>You need to enable JavaScript to run this app.</noscript>

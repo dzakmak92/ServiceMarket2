@@ -5,7 +5,8 @@ import "@/App.css";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import api from "./api/client";
 import { startAutoFlush } from "./offline/queue";
-import { LangProvider } from "./contexts/LangContext";
+import { LangProvider, useLang } from "./contexts/LangContext";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { CookieConsentProvider } from "./contexts/CookieConsentContext";
 
 import Header from "./components/Header";
@@ -94,6 +95,7 @@ function OnboardingRoute() {
 
 function AppShell() {
   const { user, loading } = useAuth();
+  const { t } = useLang();
   // Replay anything captured offline as soon as the connection returns.
   React.useEffect(() => startAutoFlush(api), []);
   const location = useLocation();
@@ -119,6 +121,13 @@ function AppShell() {
     <div className="App min-h-screen bg-cream">
       {showChrome && <Header />}
 
+      {/* One boundary around the whole route tree. React unmounts the entire
+          app on an uncaught render error, so a single bad field reference —
+          `monthly_fees` coming back as a list and being handed to toFixed —
+          left a tradesperson looking at a blank browser window with no way
+          back but the back button. Keyed on the path so navigating away
+          clears it. */}
+      <ErrorBoundary t={t} key={location.pathname}>
       <Routes>
         <Route path="/auth" element={<AuthRoute />} />
         <Route path="/onboarding" element={<OnboardingRoute />} />
@@ -300,6 +309,7 @@ function AppShell() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </ErrorBoundary>
 
       {showChrome && <MobileNav />}
       {showChrome && <InstallPrompt />}

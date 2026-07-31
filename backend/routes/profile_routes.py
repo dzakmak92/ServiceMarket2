@@ -111,7 +111,12 @@ async def _payload(pro_id: str) -> dict:
     # render as "0.0 stars" and read like a bad rating.
     data["rating_avg"] = None
     data["reviews_count"] = 0
-    data["monthly_fees"] = []
+    # A number, not a list. This was `[]` — the marketplace's per-lead fee
+    # records — and the settings screen renders it with `.toFixed(2)`, so the
+    # whole page threw "toFixed is not a function" and rendered nothing at
+    # all. There are no lead fees in the one-sided product; the subscription
+    # is billed elsewhere, so the figure a pro owes this month is zero.
+    data["monthly_fees"] = 0.0
     if data.get("logo_file_id"):
         try:
             data["logo_url"] = await storage.signed_url_for(data["logo_file_id"])

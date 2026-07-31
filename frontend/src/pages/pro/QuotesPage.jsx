@@ -190,7 +190,10 @@ export default function QuotesPage() {
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
                 className="input w-full mb-4" data-testid="quote-status-filter">
           <option value="">{t('all_statuses') || 'Alle Status'}</option>
-          {['draft', 'sent', 'viewed', 'accepted', 'rejected', 'expired', 'converted']
+          {/* The members of the quote_status enum. `converted` is not one —
+              filtering by it returned nothing — and `negotiating` and
+              `superseded` are real states the picker could not select. */}
+          {['draft', 'sent', 'viewed', 'negotiating', 'accepted', 'rejected', 'expired', 'superseded']
             .map((s) => <option key={s} value={s}>{t(`quote_status_${s}`) || s}</option>)}
         </select>
 

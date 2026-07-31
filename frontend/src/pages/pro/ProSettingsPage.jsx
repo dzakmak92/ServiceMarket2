@@ -173,12 +173,15 @@ export default function ProSettingsPage() {
   };
 
   const isPro = isPremiumTier(proProfile?.plan_tier);
-  const rating = proProfile?.rating_avg || 0;
+  // Number(): the API is the source of these and it has already sent a
+  // list where a figure was expected. A settings page that cannot be
+  // opened is worse than one showing 0.
+  const rating = Number(proProfile?.rating_avg) || 0;
   const reviewsCount = proProfile?.reviews_count || 0;
   const jobsDone = proProfile?.completed_jobs_count || 0;
   const yrs = proProfile?.years_experience || 0;
   const hr = proProfile?.hourly_rate || 0;
-  const monthlyFees = proProfile?.monthly_fees || 0;
+  const monthlyFees = Number(proProfile?.monthly_fees) || 0;
 
   const ICONS = {
     about_me: User, services_areas: Briefcase, notifications: Bell, portfolio: ImageIcon, account: SettingsIcon, privacy: Shield, invoice_details: Receipt,
