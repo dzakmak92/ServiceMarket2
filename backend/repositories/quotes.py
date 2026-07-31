@@ -135,13 +135,33 @@ async def get(pro_id: str, quote_id: str) -> Optional[dict]:
 
 
 async def get_by_share_token(token: str) -> Optional[dict]:
-    """Customer-portal view. Token-scoped, not pro-scoped: returns the sent
-    tiers for the job so the customer can compare and pick one."""
+    """Everything the customer's link should show.
+
+    This used to return the job's id, pro_id, customer_id and title, and the
+    quotes. The page it feeds renders the business, the progress, the
+    Nachträge, the invoices and the site diary — so it showed none of those,
+    and the customer could not see who was doing their work, what it would
+    cost, or what had been done.
+
+    Token-scoped, not pro-scoped, and deliberately narrow: the person holding
+    this link is the customer, so they get the documents addressed to them and
+    the state of their own job. No margins, no material cost prices, no other
+    customers, no drafts of anything.
+    """
     job = await pg.fetchrow(
-        "select id, pro_id, customer_id, title from jobs "
-        "where share_token = $1 and deleted_at is null", token)
+        """
+        select j.id, j.pro_id, j.customer_id, j.job_number, j.title,
+               j.description, j.status::text as status,
+               j.site_address, j.site_postal_code, j.site_city,
+               j.scheduled_start, j.scheduled_end, j.started_at,
+               j.completed_at, j.abnahme_at, j.abnahme_signed_by,
+               j.contract_amount, j.created_at
+          from jobs j
+         where j.share_token = $1 and j.deleted_at is null
+        """, token)
     if not job:
         return None
+
     quotes = await pg.fetch(
         "select * from quotes where job_id = $1 "
         "and status in ('sent','viewed','negotiating','accepted') "
@@ -150,7 +170,56 @@ async def get_by_share_token(token: str) -> Optional[dict]:
     for q in quotes:
         q["lines"] = await pg.fetch(
             "select * from quote_lines where quote_id = $1 order by position", q["id"])
-    return {"job": job, "quotes": quotes}
+
+    # Who is doing the work. A customer with an anonymous link is being asked
+    # to approve money without knowing who is asking.
+    pro = await pg.fetchrow(
+        """
+        select p.business_name, p.business_address, p.business_postal_code,
+               p.business_city, p.vat_id, p.logo_file_id,
+               u.email, u.phone
+          from pro_profiles p join users u on u.id = p.user_id
+         where p.id = $1
+        """, job["pro_id"])
+
+    tasks = await pg.fetchrow(
+        "select count(*) as total, count(*) filter (where column_key = 'done') "
+        "as done from job_tasks where job_id = $1", job["id"])
+    total, done = int(tasks["total"] or 0), int(tasks["done"] or 0)
+
+    change_orders = await pg.fetch(
+        "select id, co_number, title, description, net_amount, vat_rate, "
+        "status, sent_at, decided_at, approved_by "
+        "from change_orders where job_id = $1 and status <> 'draft' "
+        "order by created_at", job["id"])
+
+    # Issued invoices only: a draft is not a document anyone has been given.
+    invoices = await pg.fetch(
+        "select invoice_number, type::text as type, status::text as status, "
+        "payment_state::text as payment_state, issue_date, due_date, "
+        "gross_total, paid_total, outstanding from invoices "
+        "where job_id = $1 and status <> 'draft' "
+        "order by issue_date, invoice_number", job["id"])
+
+    # `job_diary` has no visibility flag, so nothing here is filtered by one.
+    # The Bautagebuch is the record of what was done on site and the customer
+    # is entitled to see their own; photos are storage keys and are left out
+    # until the portal can sign them.
+    diary = await pg.fetch(
+        "select entry_date, text, hours from job_diary "
+        "where job_id = $1 and text <> '' "
+        "order by entry_date desc limit 10", job["id"])
+
+    return {
+        "job": job,
+        "quotes": quotes,
+        "pro": dict(pro) if pro else {},
+        "progress": {"tasks_total": total, "tasks_done": done,
+                     "pct": round(done / total * 100) if total else 0},
+        "change_orders": [dict(c) for c in change_orders],
+        "invoices": [dict(i) for i in invoices],
+        "diary": [dict(d) for d in diary],
+    }
 
 
 async def replace_lines(pro_id: str, quote_id: str, lines: list[dict]) -> dict:

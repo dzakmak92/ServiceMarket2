@@ -104,7 +104,11 @@ export default function Header() {
         ...(hasTaxToolkit ? [{ to: '/tax', label: t('nav_tax') }] : []),
         { to: '/recurring', label: t('nav_recurring') },
         { to: '/schedule', label: t('nav_schedule') },
-        { to: '/pro-calendar', label: t('nav_pro_calendar') },
+        // /pro-calendar is the marketplace booking calendar. Every endpoint
+        // it calls — /api/bookings, /api/availability — belongs to a router
+        // that is not mounted, so the page loads and does nothing. Unlinked
+        // rather than deleted: the route still exists, and the scheduling it
+        // was meant to do is now /schedule.
         { to: '/billing', label: t('nav_billing') },
       ]
     : [];

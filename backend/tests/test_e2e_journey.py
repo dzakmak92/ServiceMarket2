@@ -212,6 +212,18 @@ with TestClient(entry.app) as c:
     if token:
         pr = c.get(f"/api/portal/{token}")
         check(ok(pr, 200, 404), f"the portal answers ({pr.status_code})")
+        # What the customer is shown. Every one of these was absent from the
+        # payload, so the screen rendered none of it and the accept button had
+        # nothing to act on.
+        portal = pr.json() if pr.status_code == 200 else {}
+        check(bool((portal.get("pro") or {}).get("business_name")),
+              "and names the business doing the work")
+        check(len(portal.get("quotes") or []) > 0,
+              f"and carries the quote ({len(portal.get('quotes') or [])})")
+        check(all(q.get("lines") for q in portal.get("quotes") or []),
+              "with its positions, not just a total")
+        for key in ("progress", "change_orders", "invoices", "diary"):
+            check(key in portal, f"and {key}")
 
     r = c.post(f"/api/quotes/{quote_id}/accept")
     check(ok(r), "acceptance works")

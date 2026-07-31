@@ -52,7 +52,8 @@ export default function MobileNav() {
     { to: '/recurring', icon: Repeat, label: t('nav_recurring') || 'Wartung' },
     { to: '/estimate', icon: Calculator, label: t('nav_estimate') || 'Kalkulation' },
     ...(hasPm ? [{ to: '/projects', icon: Briefcase, label: t('nav_projects') }] : []),
-    { to: '/pro-calendar', icon: CalendarDays, label: t('nav_pro_calendar') || 'My Calendar' },
+    // Removed: the marketplace booking calendar, whose endpoints are not
+    // mounted. /schedule below is the working planner.
   ];
   const morePro = [
     ...(hasToolkit ? [{ to: '/my-invoices', icon: Receipt, label: t('nav_my_invoices') }] : []),

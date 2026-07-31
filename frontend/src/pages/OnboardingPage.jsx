@@ -4,7 +4,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLang } from '../contexts/LangContext';
 import api from '../api/client';
 import Turnstile from 'react-turnstile';
-import OnboardingClaimStep from '../components/OnboardingClaimStep';
 import {
   Hammer, ChevronRight, ChevronLeft, CheckCircle2,
   Upload, FileText, Loader2, AlertCircle,
@@ -125,8 +124,13 @@ export default function OnboardingPage() {
   // ──────────────────────────────────────────────
   // Render
   // ──────────────────────────────────────────────
-  const totalSteps = role === 'tradesperson' ? 5 : 3;
-  const securityStep = role === 'tradesperson' ? 4 : 2;
+  // Four steps: country, business details, documents, security. There were
+  // five — step 3 asked the new tradesperson to find and claim their listing
+  // in the business directory. That is a marketplace feature, `/api/directory`
+  // is not mounted, and the step showed an empty map and an empty search to
+  // every single person signing up.
+  const totalSteps = 4;
+  const securityStep = 3;
   const stepIndex = step;
 
   return (
@@ -297,11 +301,6 @@ export default function OnboardingPage() {
                 t={t}
               />
             </>
-          )}
-
-          {/* STEP 3 — Claim business / join the family (PRO ONLY) */}
-          {step === 3 && (
-            <OnboardingClaimStep defaultQuery={form.company_name} t={t} />
           )}
 
           {/* STEP 4 — Security check & finish */}
