@@ -383,67 +383,316 @@ function SvsTab({ year, t }) {
 }
 
 // ──────────────────────────────────────────────
-// Receipts (with optional OCR upload)
+// Belege — the expense ledger the EÜR is computed from
 // ──────────────────────────────────────────────
+/**
+ * Entering an expense.
+ *
+ * This tab existed and did nothing. It POSTed multipart/form-data at
+ * /api/tax/receipts, which is a JSON endpoint taking an ExpenseIn — every
+ * upload 422'd. It read `data.receipts`, and the payload key is `expenses` —
+ * so the list was empty even when rows existed. It rendered `receipt_date`
+ * and `amount_brutto`, and the columns are `expense_date` and `gross_amount`
+ * — so a row that did arrive showed a blank date and no figure. Three
+ * independent mismatches, all invisible, and between them no expense could
+ * ever be recorded from the UI.
+ *
+ * The consequence was not a broken tab. It was that the EÜR reported income
+ * against zero expenses and the USt-VA claimed no input VAT — numbers that
+ * are confidently wrong rather than obviously missing, on the screen a
+ * tradesperson hands to their accountant.
+ *
+ * There is no OCR endpoint in this deployment and photo estimation is out of
+ * scope, so the form is typed. The receipt image is uploaded separately and
+ * attached by `storage_ref`: §132 BAO wants the document kept for seven
+ * years, and that is served by storing it, not by reading it.
+ */
 function ReceiptsTab({ year, t }) {
-  const [receipts, setReceipts] = useState([]);
-  const [uploading, setUploading] = useState(false);
+  const [rows, setRows] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [busyId, setBusyId] = useState(null);
   const [error, setError] = useState('');
-  const load = () => api.get(`/api/tax/receipts?year=${year}`).then((r) => setReceipts(r.data.receipts || [])).catch(() => {});
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+
+  const blank = () => ({
+    expense_date: new Date().toISOString().slice(0, 10),
+    vendor: '', category: 'Material', description: '',
+    gross_amount: '', vat_rate: 20, vat_deductible: true,
+    payment_method: 'card', job_id: '',
+    storage_ref: null, filename: null,
+  });
+  const [form, setForm] = useState(blank());
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [{ data }, { data: cats }] = await Promise.all([
+        api.get(`/api/tax/expenses?year=${year}&limit=500`),
+        api.get('/api/tax/expense-categories').catch(() => ({ data: { categories: [] } })),
+      ]);
+      setRows(data.expenses || []);
+      setCategories(cats.categories || []);
+    } catch (e) {
+      setError(e?.response?.data?.detail || t('error_generic'));
+    } finally { setLoading(false); }
+  };
+
   useEffect(() => {
     load();
+    api.get('/api/jobs', { params: { limit: 100 } })
+      .then((r) => setJobs(r.data.jobs || [])).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year]);
-  const handleFile = async (e) => {
+
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  // The image goes through the generic upload route, which is what stores a
+  // file in this application. Only the ref is kept — a row holding a signed
+  // URL renders a broken image an hour later.
+  const attach = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploading(true); setError('');
+    setError('');
     try {
       const fd = new FormData();
       fd.append('file', file);
-      await api.post('/api/tax/receipts', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-      e.target.value = '';
-      load();
+      fd.append('kind', 'receipt');
+      const { data } = await api.post('/api/uploads', fd,
+        { headers: { 'Content-Type': 'multipart/form-data' } });
+      setForm((f) => ({ ...f, storage_ref: data.storage_ref, filename: data.filename }));
     } catch (ex) {
       setError(ex?.response?.data?.detail || t('error_generic'));
-    } finally { setUploading(false); }
+    } finally { e.target.value = ''; }
   };
+
+  const startEdit = (r) => {
+    setEditing(r.id);
+    setForm({
+      expense_date: (r.expense_date || '').slice(0, 10),
+      vendor: r.vendor || '', category: r.category || 'Sonstige',
+      description: r.description || '',
+      gross_amount: r.gross_amount ?? '', vat_rate: r.vat_rate ?? 20,
+      vat_deductible: r.vat_deductible !== false,
+      payment_method: r.payment_method || 'card',
+      job_id: r.job_id || '',
+      storage_ref: r.storage_ref || null, filename: r.filename || null,
+    });
+    setOpen(true);
+  };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!form.gross_amount) return;
+    setSaving(true); setError('');
+    // gross, not net: a tradesperson reads the Brutto off the paper in their
+    // hand. The server derives net and VAT from it.
+    const body = {
+      expense_date: form.expense_date,
+      vendor: form.vendor.trim() || undefined,
+      category: form.category,
+      description: form.description.trim() || undefined,
+      gross_amount: Number(form.gross_amount),
+      vat_rate: Number(form.vat_rate),
+      vat_deductible: !!form.vat_deductible,
+      payment_method: form.payment_method || undefined,
+      job_id: form.job_id || undefined,
+      storage_ref: form.storage_ref || undefined,
+      filename: form.filename || undefined,
+    };
+    try {
+      if (editing) await api.patch(`/api/tax/expenses/${editing}`, body);
+      else await api.post('/api/tax/expenses', body);
+      setOpen(false); setEditing(null); setForm(blank());
+      await load();
+    } catch (ex) {
+      setError(ex?.response?.data?.detail || t('error_generic'));
+    } finally { setSaving(false); }
+  };
+
+  const remove = async (id) => {
+    setBusyId(id); setError('');
+    try {
+      await api.delete(`/api/tax/expenses/${id}`);
+      await load();
+    } catch (ex) {
+      setError(ex?.response?.data?.detail || t('error_generic'));
+    } finally { setBusyId(null); }
+  };
+
+  const total = useMemo(
+    () => rows.reduce((s, r) => s + Number(r.gross_amount || 0), 0), [rows]);
+  const deductibleVat = useMemo(
+    () => rows.reduce((s, r) => s + (r.vat_deductible === false ? 0 : Number(r.vat_amount || 0)), 0),
+    [rows]);
+
   return (
     <div className="space-y-4">
-      <div className="card-lg">
-        <label className="block">
-          <p className="text-xs uppercase font-bold text-ink-muted tracking-wider mb-2 flex items-center gap-2"><Upload size={12} /> {t('tax_upload_receipt')}</p>
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/heic,application/pdf"
-            onChange={handleFile}
-            disabled={uploading}
-            className="block w-full text-xs"
-            data-testid="tax-receipt-upload"
-          />
-          {uploading && <Loader2 size={14} className="animate-spin text-teal mt-2" />}
-          {error && <p className="text-xs text-red-warn mt-2">{error}</p>}
-          <p className="text-[11px] text-ink-muted mt-2">{t('tax_upload_help')}</p>
-        </label>
+      <div className="card-lg flex items-center justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase font-bold text-ink-muted tracking-wider">
+            {t('tax_expenses_total')} {year}
+          </p>
+          <p className="font-headings font-bold text-ink text-xl" data-testid="tax-expense-total">
+            {fmtEur(total)}
+          </p>
+          <p className="text-[11px] text-ink-muted">
+            {t('tax_expenses_input_vat')}: {fmtEur(deductibleVat)} · {rows.length} {t('tax_tab_receipts')}
+          </p>
+        </div>
+        <button type="button" className="btn-primary text-sm"
+                onClick={() => { setEditing(null); setForm(blank()); setOpen((o) => !o); }}
+                data-testid="tax-expense-new">
+          {open ? t('cancel') : t('tax_expense_add')}
+        </button>
       </div>
-      <div className="space-y-2">
-        {receipts.map((r) => (
-          <div key={r.id} className="card-lg" data-testid={`tax-receipt-${r.id}`}>
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div>
-                <p className="font-semibold text-ink">{r.vendor || t('tax_unknown_vendor')}</p>
-                <p className="text-xs text-ink-muted">
-                  {r.receipt_date ? new Date(r.receipt_date).toLocaleDateString() : '—'}
-                  {r.category && <span className="ml-2">· {r.category}</span>}
-                  {r.vat_rate != null && <span className="ml-2">· {r.vat_rate}%</span>}
-                </p>
-              </div>
-              {r.amount_brutto != null && <p className="font-bold text-ink">{fmtEur(r.amount_brutto)}</p>}
-            </div>
+
+      {error && (
+        <div className="card flex items-start gap-2 text-sm text-red-warn" data-testid="tax-expense-error">
+          <AlertCircle size={16} className="mt-0.5 shrink-0" /><span>{error}</span>
+        </div>
+      )}
+
+      {open && (
+        <form onSubmit={submit} className="card-lg space-y-3" data-testid="tax-expense-form">
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block">
+              <span className="text-xs text-ink-muted">{t('date')}</span>
+              <input type="date" required className="input w-full" value={form.expense_date}
+                     onChange={(e) => set('expense_date', e.target.value)}
+                     data-testid="tax-expense-date" />
+            </label>
+            <label className="block">
+              <span className="text-xs text-ink-muted">{t('tax_expense_vendor')}</span>
+              <input className="input w-full" value={form.vendor}
+                     placeholder="Baumarkt" onChange={(e) => set('vendor', e.target.value)}
+                     data-testid="tax-expense-vendor" />
+            </label>
           </div>
-        ))}
-        {receipts.length === 0 && <p className="text-center text-ink-muted py-6 text-sm">{t('tax_no_receipts')}</p>}
-      </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <label className="block">
+              <span className="text-xs text-ink-muted">{t('tax_expense_gross')} *</span>
+              <input type="number" step="0.01" min="0" required className="input w-full"
+                     value={form.gross_amount}
+                     onChange={(e) => set('gross_amount', e.target.value)}
+                     data-testid="tax-expense-gross" />
+            </label>
+            <label className="block">
+              <span className="text-xs text-ink-muted">{t('vat')} %</span>
+              <select className="input w-full" value={form.vat_rate}
+                      onChange={(e) => set('vat_rate', e.target.value)}
+                      data-testid="tax-expense-vat">
+                {[20, 13, 10, 0].map((v) => <option key={v} value={v}>{v}%</option>)}
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-xs text-ink-muted">{t('category')}</span>
+              <select className="input w-full" value={form.category}
+                      onChange={(e) => set('category', e.target.value)}
+                      data-testid="tax-expense-category">
+                {categories.map((cx) => <option key={cx} value={cx}>{cx}</option>)}
+              </select>
+            </label>
+          </div>
+
+          <input className="input w-full" placeholder={t('description')} value={form.description}
+                 onChange={(e) => set('description', e.target.value)} />
+
+          <div className="grid grid-cols-2 gap-3">
+            <select className="input" value={form.payment_method}
+                    onChange={(e) => set('payment_method', e.target.value)}>
+              {['card', 'transfer', 'sepa', 'cash', 'sofort', 'other'].map((m) => (
+                <option key={m} value={m}>{t(`pay_${m}`)}</option>
+              ))}
+            </select>
+            <select className="input" value={form.job_id}
+                    onChange={(e) => set('job_id', e.target.value)}
+                    data-testid="tax-expense-job">
+              <option value="">{t('tax_expense_no_job')}</option>
+              {jobs.map((j) => (
+                <option key={j.id} value={j.id}>
+                  {j.job_number ? `${j.job_number} · ` : ''}{j.title}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Input VAT is only reclaimable against a valid supplier invoice —
+              a Kassabon without a UID above the small-amount threshold is not
+              one, and claiming it is the pro's exposure, not ours. */}
+          <label className="flex items-start gap-2 text-xs text-ink-muted">
+            <input type="checkbox" checked={form.vat_deductible} className="mt-0.5"
+                   onChange={(e) => set('vat_deductible', e.target.checked)}
+                   data-testid="tax-expense-deductible" />
+            <span>{t('tax_expense_vat_deductible')}</span>
+          </label>
+
+          <label className="block">
+            <span className="text-xs text-ink-muted flex items-center gap-1.5">
+              <Upload size={12} /> {t('tax_upload_receipt')}
+            </span>
+            <input type="file" accept="image/jpeg,image/png,image/heic,application/pdf"
+                   onChange={attach} className="block w-full text-xs mt-1"
+                   data-testid="tax-receipt-upload" />
+            {form.filename && (
+              <span className="text-[11px] text-green-pos">✓ {form.filename}</span>
+            )}
+            <span className="block text-[11px] text-ink-muted mt-1">{t('tax_upload_help')}</span>
+          </label>
+
+          <button type="submit" className="btn-primary w-full" disabled={saving || !form.gross_amount}
+                  data-testid="tax-expense-save">
+            {saving ? <Loader2 size={16} className="animate-spin mx-auto" />
+                    : (editing ? t('save') : t('tax_expense_add'))}
+          </button>
+        </form>
+      )}
+
+      {loading ? (
+        <div className="flex justify-center py-8"><Loader2 size={22} className="text-teal animate-spin" /></div>
+      ) : (
+        <div className="space-y-2">
+          {rows.map((r) => (
+            <div key={r.id} className="card-lg" data-testid="tax-expense-row">
+              <div className="flex items-start justify-between flex-wrap gap-2">
+                <div className="min-w-0">
+                  <p className="font-semibold text-ink truncate">
+                    {r.vendor || t('tax_unknown_vendor')}
+                  </p>
+                  <p className="text-xs text-ink-muted">
+                    {r.expense_date ? new Date(r.expense_date).toLocaleDateString('de-AT') : '—'}
+                    {r.category && <span className="ml-2">· {r.category}</span>}
+                    {r.vat_rate != null && <span className="ml-2">· {r.vat_rate}%</span>}
+                    {r.vat_deductible === false && (
+                      <span className="ml-2 text-amber-deep">· {t('tax_expense_no_vat')}</span>
+                    )}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-ink">{fmtEur(r.gross_amount)}</p>
+                  <p className="text-[11px] text-ink-muted">{t('net')} {fmtEur(r.net_amount)}</p>
+                </div>
+              </div>
+              <div className="flex gap-2 mt-2">
+                <button type="button" className="btn-ghost text-xs" onClick={() => startEdit(r)}
+                        data-testid="tax-expense-edit">{t('edit')}</button>
+                <button type="button" className="btn-ghost text-xs text-red-warn"
+                        disabled={busyId === r.id} onClick={() => remove(r.id)}
+                        data-testid="tax-expense-delete">{t('delete')}</button>
+              </div>
+            </div>
+          ))}
+          {rows.length === 0 && (
+            <p className="text-center text-ink-muted py-6 text-sm" data-testid="tax-expense-empty">
+              {t('tax_no_receipts')}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -703,6 +703,53 @@ with TestClient(entry.app) as c:
     check(float(r.json().get("expenses_net") or 0) > 0 if r.status_code < 400 else False,
           "and appears in the EÜR")
 
+    # The Belege tab looked like it worked and could not record anything: it
+    # POSTed multipart at a JSON endpoint, read `data.receipts` where the key
+    # is `expenses`, and rendered `receipt_date`/`amount_brutto` against
+    # columns called `expense_date`/`gross_amount`. Three mismatches, none
+    # visible, and between them the EÜR reported income against no expenses at
+    # all. These are the calls the rewritten tab makes, in its order.
+    r = c.get("/api/tax/expense-categories")
+    cats = r.json().get("categories") if r.status_code < 400 else []
+    check(ok(r) and "Material" in (cats or []),
+          f"the category list the form is built from answers ({len(cats or [])})")
+
+    r = c.get("/api/tax/expenses", params={"year": y, "limit": 500})
+    listed = r.json().get("expenses") if r.status_code < 400 else None
+    check(listed is not None, "the ledger lists under the key the tab now reads")
+    check(bool(listed) and all(
+        {"expense_date", "gross_amount", "net_amount", "vat_amount"} <= set(e)
+        for e in listed), "with the column names it now renders")
+
+    # Gross in, because a tradesperson reads the Brutto off the paper.
+    r = c.post("/api/tax/expenses", json={
+        "expense_date": str(date.today()), "vendor": "Werkzeug Meier",
+        "category": "Werkzeug", "gross_amount": 240.0, "vat_rate": 20,
+        "vat_deductible": True, "payment_method": "card"})
+    check(ok(r, 201, 200), f"an expense is entered by hand -> {r.status_code}")
+    exp = r.json() if r.status_code < 400 else {}
+    exp_id = exp.get("id")
+    check(abs(float(exp.get("net_amount") or 0) - 200.0) < 0.02,
+          f"and the server derives the net from the gross ({exp.get('net_amount')})")
+    check(abs(float(exp.get("vat_amount") or 0) - 40.0) < 0.02,
+          f"and the input VAT with it ({exp.get('vat_amount')})")
+
+    if exp_id:
+        r = c.patch(f"/api/tax/expenses/{exp_id}", json={"gross_amount": 120.0})
+        check(ok(r), "a correction is accepted")
+        check(abs(float(r.json().get("net_amount") or 0) - 100.0) < 0.02
+              if r.status_code < 400 else False,
+              "and re-derives net and VAT rather than leaving them stale")
+        check(r.json().get("category") == "Werkzeug" if r.status_code < 400 else False,
+              "without resetting the category the pro chose")
+
+        eur_before = c.get("/api/tax/eur", params={"year": y}).json().get("expenses_net")
+        r = c.delete(f"/api/tax/expenses/{exp_id}")
+        check(ok(r), "and it can be deleted")
+        eur_after = c.get("/api/tax/eur", params={"year": y}).json().get("expenses_net")
+        check(float(eur_after) < float(eur_before),
+              f"which the EÜR reflects ({eur_before} -> {eur_after})")
+
     step("the accountant gets a link")
     r = c.post("/api/tax/accountant-share", params={"year": y})
     check(ok(r, 201, 200), "a share link is minted")
