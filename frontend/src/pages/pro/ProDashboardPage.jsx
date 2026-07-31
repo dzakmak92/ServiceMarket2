@@ -172,16 +172,19 @@ export default function ProDashboard() {
         </div>
 
         {/* ── Paid YTD highlight ───────────────────────────── */}
+        {/* Wraps below 640px. As a single flex row the label wrapped onto
+            three lines and the amount ran under the button on a 390px phone —
+            the device this is meant to be read on. */}
         {invStats && invStats.paid_brutto > 0 && (
-          <div className="card-lg bg-teal/5 border-teal/20 flex items-center gap-4" data-testid="revenue-ytd-banner">
+          <div className="card-lg bg-teal/5 border-teal/20 flex flex-wrap items-center gap-3 sm:gap-4" data-testid="revenue-ytd-banner">
             <div className="w-10 h-10 rounded-full bg-teal/15 flex items-center justify-center flex-shrink-0">
               <CheckCircle2 size={18} className="text-teal" />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-[8rem]">
               <p className="text-xs text-ink-muted uppercase font-bold tracking-wide">{t('dash_paid_ytd')}</p>
               <p className="text-2xl font-headings font-bold text-teal">{fmtEur(invStats.paid_brutto)}</p>
             </div>
-            <Link to="/my-invoices" className="btn-ghost text-xs flex-shrink-0">
+            <Link to="/my-invoices" className="btn-ghost text-xs flex-shrink-0 w-full sm:w-auto justify-center">
               {t('dash_view_invoices')} <ArrowRight size={12} />
             </Link>
           </div>
@@ -216,10 +219,10 @@ export default function ProDashboard() {
             <div className="card-lg" data-testid="cashflow-chart">
               <div className="flex items-center gap-2 mb-1">
                 <Euro size={15} className="text-teal" />
-                <h2 className="font-headings font-bold text-ink text-base">Cash flow timeline</h2>
+                <h2 className="font-headings font-bold text-ink text-base">{t('dash_cashflow_title')}</h2>
                 <span className="pro-badge text-[9px] px-1.5 py-0.5">PRO</span>
               </div>
-              <p className="text-xs text-ink-muted mb-3">Expected payments by invoice due date (next 12 weeks)</p>
+              <p className="text-xs text-ink-muted mb-3">{t('dash_cashflow_desc')}</p>
               {cashflow?.overdue > 0 && (
                 <div className="flex items-center gap-2 bg-red-warn/10 border border-red-warn/20 rounded-xl px-3 py-1.5 mb-3 text-xs text-red-warn font-semibold">
                   <AlertCircle size={12} /> {fmtEur(cashflow.overdue)} overdue — follow up now
@@ -332,7 +335,7 @@ export default function ProDashboard() {
           <div className="bg-teal/5 border border-teal/20 rounded-[18px] p-5 flex items-center justify-between gap-4 flex-wrap">
             <div>
               <h3 className="font-headings font-bold text-ink text-base">{t('pro_upgrade_banner_title')}</h3>
-              <p className="text-ink-muted text-sm mt-0.5">Cash flow timeline · Win rate analytics · Priority job access</p>
+              <p className="text-ink-muted text-sm mt-0.5">{t('pro_upgrade_banner_desc')}</p>
             </div>
             <Link to="/billing" className="btn-primary flex-shrink-0 text-sm" data-testid="dashboard-upgrade-cta">
               {t('pro_plan_upgrade')} <ArrowRight size={14} />

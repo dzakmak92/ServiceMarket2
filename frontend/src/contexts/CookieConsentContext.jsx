@@ -1,3 +1,4 @@
+import { useLang } from './LangContext';
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../api/client';
 
@@ -104,6 +105,10 @@ export function CookieConsentProvider({ children }) {
 // ──────────────────────────────────────────────
 function CookieBanner({ preferencesOpen, setPreferencesOpen }) {
   const ctx = useContext(CookieConsentCtx);
+  // Art. 7(2) DSGVO wants the request for consent in clear, plain language.
+  // This dialogue was English on a German-first product, and it is the first
+  // thing a customer opening their tradesperson's link is shown.
+  const { t } = useLang();
   const [analytics, setAnalytics] = useState(ctx.consent?.cookies_analytics ?? false);
   const [marketing, setMarketing] = useState(ctx.consent?.cookies_marketing ?? false);
 
@@ -111,30 +116,29 @@ function CookieBanner({ preferencesOpen, setPreferencesOpen }) {
     return (
       <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/40 backdrop-blur-sm p-3 sm:p-6" data-testid="cookie-preferences-modal">
         <div className="bg-paper rounded-[18px] shadow-2xl w-full max-w-lg p-5 animate-slide-up">
-          <h2 className="font-headings text-xl font-bold text-ink mb-1">Cookie preferences</h2>
+          <h2 className="font-headings text-xl font-bold text-ink mb-1">{t('cookie_prefs_title')}</h2>
           <p className="text-xs text-ink-muted mb-4">
-            We use cookies to make ServiceMarket work, to understand usage, and (with your consent) to personalise.
-            You can change your choice anytime via the link in the footer.
+            {t('cookie_prefs_desc')}
           </p>
 
           <div className="space-y-3 mb-5">
             <PreferenceRow
-              title="Essential cookies"
-              description="Required for login, security and language preference. Always on."
+              title={t('cookie_essential_title')}
+              description={t('cookie_essential_desc')}
               checked
               disabled
               testid="cookie-pref-essential"
             />
             <PreferenceRow
-              title="Analytics cookies"
-              description="Anonymous usage statistics that help us improve the platform."
+              title={t('cookie_analytics_title')}
+              description={t('cookie_analytics_desc')}
               checked={analytics}
               onChange={setAnalytics}
               testid="cookie-pref-analytics"
             />
             <PreferenceRow
-              title="Marketing cookies"
-              description="Used to show you relevant ads on other sites. Off by default."
+              title={t('cookie_marketing_title')}
+              description={t('cookie_marketing_desc')}
               checked={marketing}
               onChange={setMarketing}
               testid="cookie-pref-marketing"
@@ -147,21 +151,21 @@ function CookieBanner({ preferencesOpen, setPreferencesOpen }) {
               className="btn-ghost flex-1 text-sm"
               data-testid="cookie-reject-all-btn"
             >
-              Reject all
+              {t('cookie_reject_all')}
             </button>
             <button
               onClick={() => ctx.savePreferences({ cookies_analytics: analytics, cookies_marketing: marketing })}
               className="btn-primary flex-1 text-sm"
               data-testid="cookie-save-preferences-btn"
             >
-              Save preferences
+              {t('cookie_save_prefs')}
             </button>
           </div>
           <button
             onClick={() => setPreferencesOpen(false)}
             className="block mx-auto mt-3 text-xs text-ink-muted hover:text-ink"
           >
-            Close
+            {t('cookie_close')}
           </button>
         </div>
       </div>
@@ -170,10 +174,10 @@ function CookieBanner({ preferencesOpen, setPreferencesOpen }) {
 
   return (
     <div className="fixed bottom-3 left-3 right-3 sm:bottom-6 sm:left-6 sm:right-auto sm:max-w-md z-50 bg-paper border border-sm-border rounded-[18px] shadow-2xl p-4 animate-slide-up" data-testid="cookie-banner">
-      <h3 className="font-headings font-bold text-ink mb-1 text-base">We use cookies</h3>
+      <h3 className="font-headings font-bold text-ink mb-1 text-base">{t('cookie_title')}</h3>
       <p className="text-xs text-ink-muted mb-3 leading-relaxed">
-        Essential cookies keep ServiceMarket running. With your consent we'd also use cookies to analyse usage and (optionally) for marketing.{' '}
-        <a href="/privacy" className="text-teal hover:underline">Privacy Policy</a>
+        {t('cookie_desc')}{' '}
+        <a href="/privacy" className="text-teal hover:underline">{t('cookie_privacy_link')}</a>
       </p>
       <div className="flex gap-2 flex-wrap">
         <button
@@ -181,21 +185,21 @@ function CookieBanner({ preferencesOpen, setPreferencesOpen }) {
           className="btn-ghost text-xs flex-1 min-w-[80px]"
           data-testid="cookie-essential-only-btn"
         >
-          Essential only
+          {t('cookie_essential')}
         </button>
         <button
           onClick={() => setPreferencesOpen(true)}
           className="btn-ghost text-xs flex-1 min-w-[80px]"
           data-testid="cookie-preferences-btn"
         >
-          Customise
+          {t('cookie_customise')}
         </button>
         <button
           onClick={() => ctx.acceptAll()}
           className="btn-primary text-xs flex-1 min-w-[80px]"
           data-testid="cookie-accept-all-btn"
         >
-          Accept all
+          {t('cookie_accept')}
         </button>
       </div>
     </div>
