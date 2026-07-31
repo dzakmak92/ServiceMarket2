@@ -351,14 +351,18 @@ export default function QuotesPage() {
             {quotes.map((q) => (
               <div key={q.id} className="card" data-testid="quote-row">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="font-headings font-bold text-ink truncate">
+                  {/* The whole row is the way in — opening a quote to read it,
+                      change it, revise it or print it was not possible from
+                      anywhere before this link existed. */}
+                  <Link to={`/quotes/${q.id}`} className="min-w-0 flex-1 group"
+                        data-testid="quote-open">
+                    <div className="font-headings font-bold text-ink truncate group-hover:text-teal">
                       {q.title || q.job_title || (t('quote') || 'Angebot')}
                     </div>
                     <div className="text-sm text-ink-muted truncate">
                       {[q.quote_number, q.customer_name, q.job_number].filter(Boolean).join(' · ')}
                     </div>
-                  </div>
+                  </Link>
                   <div className="text-right shrink-0">
                     <div className="font-headings font-bold text-ink">{fmtEur(q.gross_total)}</div>
                     <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[11px] ${STATUS_STYLE[q.status] || 'bg-cream-dark text-ink-muted'}`}>

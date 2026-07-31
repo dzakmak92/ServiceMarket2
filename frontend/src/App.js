@@ -31,6 +31,7 @@ import OverduePage from "./pages/pro/OverduePage";
 import MyInvoicesPage from "./pages/pro/MyInvoicesPage";
 import CustomersPage from "./pages/pro/CustomersPage";
 import QuotesPage from "./pages/pro/QuotesPage";
+import QuoteEditorPage from "./pages/pro/QuoteEditorPage";
 import LeadCapturePage from "./pages/pro/LeadCapturePage";
 import RecurringPage from "./pages/pro/RecurringPage";
 import EstimatePage from "./pages/pro/EstimatePage";
@@ -221,6 +222,14 @@ function AppShell() {
           element={
             <ProtectedRoute roles={["tradesperson"]}>
               <QuotesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/quotes/:quoteId"
+          element={
+            <ProtectedRoute roles={["tradesperson"]}>
+              <QuoteEditorPage />
             </ProtectedRoute>
           }
         />

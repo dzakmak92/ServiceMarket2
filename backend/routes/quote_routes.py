@@ -36,6 +36,14 @@ class QuoteLineIn(BaseModel):
     vat_rate: Optional[float] = None
     is_optional: bool = False
     is_selected: bool = True
+    # The join back to pro_rates, and the only reason acceptance can learn what
+    # this business actually charges. The repository has always stored it and
+    # the estimator has always produced one per position, but this model did
+    # not declare it — so Pydantic dropped it on every request that came
+    # through a route. Creation survived only because the estimator writes to
+    # the repository directly; the moment a quote was edited or revised, the
+    # key was gone and accepting it taught nothing.
+    rate_key: Optional[str] = Field(default=None, max_length=120)
 
 
 class QuoteIn(BaseModel):

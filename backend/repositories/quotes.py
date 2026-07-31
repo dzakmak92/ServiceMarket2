@@ -126,8 +126,19 @@ async def create_tiers(pro_id: str, job_id: str, tiers: dict[str, list[dict]],
 
 
 async def get(pro_id: str, quote_id: str) -> Optional[dict]:
+    # Joined the same way list_for_pro joins, plus the job's share token. A
+    # quote on its own carries only ids, so a screen showing one had no name
+    # to put on it and no link to hand the customer — which is why the only
+    # way to see those was the list.
     q = await pg.fetchrow(
-        "select * from quotes where id = $1 and pro_id = $2", quote_id, pro_id)
+        """
+        select q.*, c.name as customer_name, j.job_number,
+               j.title as job_title, j.share_token
+          from quotes q
+          left join customers c on c.id = q.customer_id
+          left join jobs j on j.id = q.job_id
+         where q.id = $1 and q.pro_id = $2
+        """, quote_id, pro_id)
     if q:
         q["lines"] = await pg.fetch(
             "select * from quote_lines where quote_id = $1 order by position", quote_id)

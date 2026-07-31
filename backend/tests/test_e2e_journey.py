@@ -332,8 +332,52 @@ with TestClient(entry.app) as c:
           "and every position kept its rate_key, so acceptance can learn from it")
     check(float(q.get("net_total") or 0) > 0, f"net total {q.get('net_total')}")
 
+    # The editor puts a name and a link on the screen, and a bare quote row
+    # carries neither — only ids. Without the join there was nothing to head
+    # the page with, which is part of why the only view of a quote was a list.
+    check(bool(q.get("customer_name")), "and names the customer it is addressed to")
+    check(bool(q.get("share_token")), "and carries the link the customer opens")
+
     r = c.get(f"/api/quotes/{quote_id}/pdf")
     check(ok(r) and r.content[:4] == b"%PDF", "the Angebot renders as a PDF")
+
+    step("the quote can be changed — the whole editing half was unreachable")
+    # Line editing, versioned revision and the PDF have all been complete in
+    # the backend since Phase 3 and nothing called any of them. A customer who
+    # rang up asking for a different tap could not be answered.
+    before = q.get("net_total")
+    # Exactly the payload the editor sends, rate_key included. QuoteLineIn did
+    # not declare rate_key, so Pydantic dropped it on every edit and revision:
+    # the quote survived, the link back to pro_rates did not, and accepting an
+    # edited quote taught the business nothing. Creation was unaffected only
+    # because the estimator writes to the repository and never crosses a model.
+    edited = [{**{k: l[k] for k in ("kind", "description", "unit", "rate_key")},
+               "position": i + 1, "qty": float(l["qty"]) + 1,
+               "unit_price": float(l["unit_price"])}
+              for i, l in enumerate(q.get("lines", []))]
+    r = c.put(f"/api/quotes/{quote_id}/lines", json={"lines": edited})
+    check(ok(r), f"a draft's positions can be replaced -> {r.status_code}")
+    check(float(r.json().get("net_total") or 0) > float(before or 0)
+          if r.status_code < 400 else False,
+          "and the server recomputes the total rather than trusting the client")
+    check(all(l.get("rate_key") for l in r.json().get("lines", []))
+          if r.status_code < 400 else False,
+          "and every position keeps its rate_key, so acceptance can still learn")
+
+    r = c.post(f"/api/quotes/{quote_id}/revise", json={"lines": edited})
+    check(ok(r, 201, 200), f"a revision is created -> {r.status_code}")
+    revised = r.json() if r.status_code < 400 else {}
+    check(revised.get("version") == 2, f"as version 2 ({revised.get('version')})")
+    check(str(revised.get("supersedes_id")) == str(quote_id),
+          "pointing back at the version it replaces")
+    old = c.get(f"/api/quotes/{quote_id}").json()
+    check(old.get("status") == "superseded",
+          f"and version 1 is superseded, not rewritten ({old.get('status')})")
+    # From here on the revision is the live document — editing v1 would be
+    # editing a version the customer may already have seen.
+    quote_id = revised.get("id") or quote_id
+    r = c.put(f"/api/quotes/{quote_id}/lines", json={"lines": edited})
+    check(ok(r), "the new version is the one that is editable")
 
     step("it is sent and the customer accepts")
     r = c.post(f"/api/quotes/{quote_id}/send")
