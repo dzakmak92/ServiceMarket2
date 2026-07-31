@@ -71,6 +71,8 @@ def _build_app():
         from routes.estimate_routes import router as estimate_router
         from routes.invoice_routes import router as invoice_router
         from routes.job_routes import router as job_router
+        from routes.privacy_pg_routes import (me_router as privacy_me_router,
+                                              router as privacy_router)
         from routes.profile_routes import router as profile_router
         from routes.recurring_routes import router as recurring_router
         from routes.template_routes import router as template_router
@@ -90,7 +92,7 @@ def _build_app():
 
         for r in (auth_router, customer_router, job_router, quote_router,
                   profile_router, recurring_router, template_router,
-                  estimate_router,
+                  estimate_router, privacy_router, privacy_me_router,
                   quote_invoice_router, invoice_router, tax_router,
                   pm_router, pm_timer_router, pm_tpl_router,
                   pm_sub_router, upload_router,

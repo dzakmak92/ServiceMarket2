@@ -93,13 +93,6 @@ EXPECTED_MISSING = {
     "/api/push/unsubscribe": "web push not ported",
     "/api/push/test": "web push not ported",
     "/api/push/public-key": "web push not ported",
-    "/api/me": "account deletion not ported",
-    "/api/me/export": "DSGVO export not ported",
-    "/api/me/consent": "consent trail not ported",
-    "/api/me/cancel-deletion": "account deletion not ported",
-    "/api/me/marketing-prefs": "superseded by PATCH /api/profile",
-    "/api/privacy/data-rights-request": "DSGVO surface not ported",
-    "/api/privacy/removal-request": "DSGVO surface not ported",
     "/api/profile/pro/portfolio": "portfolio not ported",
     "/api/profile/pro/portfolio/{}": "portfolio not ported",
     "/api/analytics/pro-insights": "analytics not ported",
@@ -148,6 +141,14 @@ for path, what in [
     ("/api/tax/year-end.pdf", "year-end dossier"),
     ("/api/tax/accountant-share", "accountant link"),
     ("/api/tax/public/accountant/{}", "what the accountant sees"),
+    ("/api/me/export", "Art. 15 / 20 data export"),
+    ("/api/me", "Art. 17 erasure"),
+    ("/api/me/cancel-deletion", "undoing it inside the grace period"),
+    ("/api/me/deletion", "what erasure would and would not delete"),
+    ("/api/me/consent", "Art. 7 consent trail"),
+    ("/api/me/marketing-prefs", "Art. 7(3) withdrawal"),
+    ("/api/privacy/data-rights-request", "Art. 12-22 request register"),
+    ("/api/privacy/removal-request", "Art. 21 objection"),
 ]:
     check(path in mounted, f"{what}: {path}")
 

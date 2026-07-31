@@ -29,6 +29,20 @@ export default function PrivacySettings() {
     user?.deletion_scheduled_for || null
   );
   const [cancellingDelete, setCancellingDelete] = useState(false);
+  // What deletion would actually do, computed from this account's own data.
+  const [plan, setPlan] = useState(null);
+
+  useEffect(() => {
+    let live = true;
+    api.get('/api/me/deletion')
+      .then(({ data }) => {
+        if (!live) return;
+        setPlan(data.plan);
+        if (data.scheduled) setDeleteScheduled(data.scheduled.scheduled_for);
+      })
+      .catch(() => {});
+    return () => { live = false; };
+  }, []);
 
   // Keep marketing toggle in sync with the user prop
   useEffect(() => setMarketing(!!user?.notif_email_marketing), [user]);
@@ -192,18 +206,49 @@ export default function PrivacySettings() {
           <div>
             <h3 className="font-semibold text-ink text-sm">Delete my account</h3>
             <p className="text-[11px] text-ink-muted mt-0.5">
-              Permanently removes your account and personal data. A 7-day grace period lets you
-              cancel by mistake. Some data (invoices) must be kept for 7 years to comply with
-              Austrian tax law and will be anonymised, not deleted.
+              Löscht Ihr Konto und Ihre personenbezogenen Daten. Innerhalb der
+              Widerrufsfrist von {plan?.grace_days ?? 7} Tagen können Sie das
+              rückgängig machen.
             </p>
           </div>
         </div>
 
+        {/* Computed from this account, not a blurb. What is retained depends
+            on whether invoices were ever issued and when — telling everyone
+            "invoices are kept for seven years" is wrong for a pro who has
+            never issued one, and vague for one who has. */}
+        {plan && !deleteScheduled && (
+          <div className="rounded-[12px] bg-cream-soft border border-sm-border p-3 mb-3 space-y-2"
+               data-testid="privacy-delete-plan">
+            <p className="text-xs font-medium text-ink">Wird gelöscht</p>
+            <ul className="text-[11px] text-ink-muted list-disc pl-4 space-y-0.5">
+              {plan.deletes.map((d) => <li key={d}>{d}</li>)}
+            </ul>
+            {plan.retained.length > 0 && (
+              <>
+                <p className="text-xs font-medium text-ink pt-1">Bleibt erhalten</p>
+                <ul className="text-[11px] text-ink-muted list-disc pl-4 space-y-0.5">
+                  {plan.retained.map((r) => (
+                    <li key={r.what}>
+                      {r.de} — {r.count} {r.count === 1 ? 'Eintrag' : 'Einträge'},
+                      {' '}bis {new Date(r.until).toLocaleDateString('de-AT')} ({r.basis})
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            <p className="text-[11px] text-ink-muted pt-1">{plan.retained_note}</p>
+          </div>
+        )}
+
         {deleteScheduled ? (
           <div className="rounded-[12px] bg-amber/10 border border-amber/30 p-3 space-y-2" data-testid="privacy-delete-scheduled">
             <p className="text-sm text-ink">
-              <strong>Deletion scheduled for {new Date(deleteScheduled).toLocaleString()}.</strong>{' '}
-              You can still cancel and restore your account until then.
+              <strong>
+                Löschung vorgemerkt für {new Date(deleteScheduled).toLocaleString('de-AT')}.
+              </strong>{' '}
+              Bis dahin können Sie das Konto weiter nutzen und die Löschung
+              zurücknehmen.
             </p>
             <button
               onClick={cancelDelete}
