@@ -49,8 +49,8 @@ export default function GanttTab({ projectId, t }) {
         name: tk.title,
         start: isoDay(start),
         end: isoDay(end),
-        progress: tk.column === 'done' ? 100 : tk.column === 'doing' ? 50 : 0,
-        custom_class: tk.column === 'done' ? 'bar-done' : tk.column === 'doing' ? 'bar-doing' : 'bar-todo',
+        progress: tk.column_key === 'done' ? 100 : tk.column_key === 'doing' ? 50 : 0,
+        custom_class: tk.column_key === 'done' ? 'bar-done' : tk.column_key === 'doing' ? 'bar-doing' : 'bar-todo',
       };
     });
 

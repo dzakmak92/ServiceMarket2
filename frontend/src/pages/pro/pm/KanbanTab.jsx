@@ -33,15 +33,15 @@ export default function KanbanTab({ projectId, t }) {
   // Group tasks by column with stable ordering
   const byColumn = useMemo(() => {
     const out = { todo: [], doing: [], done: [] };
-    for (const tk of tasks) (out[tk.column] || out.todo).push(tk);
-    for (const k of Object.keys(out)) out[k].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    for (const tk of tasks) (out[tk.column_key] || out.todo).push(tk);
+    for (const k of Object.keys(out)) out[k].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
     return out;
   }, [tasks]);
 
   const addTask = async (column) => {
     const title = (newTitle[column] || '').trim();
     if (!title) return;
-    await api.post(`/api/jobs/${projectId}/tasks`, { title, column });
+    await api.post(`/api/jobs/${projectId}/tasks`, { title, column_key: column });
     setNewTitle((s) => ({ ...s, [column]: '' }));
     await load();
   };
@@ -56,12 +56,12 @@ export default function KanbanTab({ projectId, t }) {
   // One-tap move between columns — far more reliable than drag-and-drop,
   // especially on touch devices. dir = -1 (left) or +1 (right).
   const moveTask = async (task, dir) => {
-    const target = ORDER[ORDER.indexOf(task.column) + dir];
+    const target = ORDER[ORDER.indexOf(task.column_key) + dir];
     if (!target) return;
     setMovingId(task.id);
-    setTasks((prev) => prev.map((tk) => (tk.id === task.id ? { ...tk, column: target } : tk))); // optimistic
+    setTasks((prev) => prev.map((tk) => (tk.id === task.id ? { ...tk, column_key: target } : tk))); // optimistic
     try {
-      await api.patch(`/api/jobs/${projectId}/tasks/${task.id}`, { column: target });
+      await api.patch(`/api/jobs/${projectId}/tasks/${task.id}`, { column_key: target });
     } catch (e) {
       console.error('move failed', e);
       load(); // revert
@@ -216,13 +216,17 @@ function TemplatesModal({ projectId, onClose, onApplied, t }) {
     try {
       const base = Number(baseAmounts[tpl.id]) || 0;
       const { data } = await api.post(
-        `/api/jobs/${projectId}/apply-template?template_id=${encodeURIComponent(tpl.id)}&base_amount=${base}`
+        `/api/pm/templates/${encodeURIComponent(tpl.id)}/apply/${projectId}?base_amount=${base}`
       );
-      const parts = [`${data.tasks_created || data.created || 0} ${t('pm_tab_kanban').toLowerCase()}`];
-      if (data.materials_created) parts.push(`${data.materials_created} ${t('pm_tab_materials').toLowerCase()}`);
-      if (data.payments_created) parts.push(`${data.payments_created} ${t('pm_milestones').toLowerCase()}`);
+      const applied = data.applied || {};
+      const parts = [`${applied.tasks || 0} ${t('pm_tab_kanban').toLowerCase()}`];
+      if (applied.materials) parts.push(`${applied.materials} ${t('pm_tab_materials').toLowerCase()}`);
       toast.success(`${t('pm_template_applied')}: ${parts.join(' · ')}`);
-      if (data.milestone_skipped_no_iban) toast.info(t('pm_template_iban_skip'));
+      // Milestones come back computed but unwritten: the payment rail is the
+      // last phase, and creating payment rows before it exists leaves orphans.
+      if ((data.milestones || []).length) {
+        toast.info(`${data.milestones.length} ${t('pm_milestones')} — ${t('pm_milestones_manual') || 'noch manuell anzulegen'}`);
+      }
       onApplied();
     } catch (e) {
       toast.error(e?.response?.data?.detail || 'Failed');

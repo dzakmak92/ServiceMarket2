@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import {
   Loader2, Plus, X, Send, Check, Ban, FileText, AlertCircle, Trash2, Copy,
+  Calculator,
 } from 'lucide-react';
 
 const fmtEur = (v) =>
@@ -215,6 +217,17 @@ export default function QuotesPage() {
                 {t('no_jobs_for_quote') || 'Sie brauchen zuerst einen Auftrag.'}
               </p>
             )}
+
+            {/* The way in for someone who does not yet know what to charge.
+                Offered beside the template picker rather than buried in the
+                nav, because this is the moment the question comes up. */}
+            <Link to={`/estimate${jobId ? `?job=${jobId}` : ''}`}
+                  className="flex items-center gap-2 text-xs text-ink-muted hover:text-ink"
+                  data-testid="quote-to-estimate">
+              <Calculator size={13} />
+              {t('quote_via_estimate')
+                || 'Positionen aus der Schnellkalkulation berechnen lassen'}
+            </Link>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <select className="input" value={templateId}

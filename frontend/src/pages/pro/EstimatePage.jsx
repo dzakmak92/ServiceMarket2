@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import {
@@ -35,6 +36,10 @@ const CONFIDENCE = {
 
 export default function EstimatePage() {
   const { t } = useLang();
+  // Entered from a job or from the quote form, the target is already known.
+  // Making the pro pick it again from a list they just came from is the kind
+  // of small friction that stops a tool being used on site.
+  const [params] = useSearchParams();
   const [meta, setMeta] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [query, setQuery] = useState('');
@@ -49,11 +54,12 @@ export default function EstimatePage() {
   const [calculating, setCalculating] = useState(false);
 
   const [myJobs, setMyJobs] = useState([]);
-  const [targetJob, setTargetJob] = useState('');
+  const [targetJob, setTargetJob] = useState(params.get('job') || '');
   const [allTiers, setAllTiers] = useState(false);
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
+  const [createdQuote, setCreatedQuote] = useState(false);
   const [accuracy, setAccuracy] = useState(null);
   const [showAccuracy, setShowAccuracy] = useState(false);
 
@@ -147,6 +153,7 @@ export default function EstimatePage() {
         job_key: selected.job.key, answers, tier,
         job_id: targetJob || null,
       });
+      setCreatedQuote(false);
       setNotice('Schätzung gemerkt. Sobald der Auftrag abgerechnet ist, '
         + 'vergleicht die App die tatsächlichen Stunden damit.');
     } catch (e) {
@@ -166,7 +173,8 @@ export default function EstimatePage() {
         job_id: targetJob, all_tiers: allTiers,
       });
       const n = (data.quotes || []).length;
-      setNotice(`${n} ${n === 1 ? 'Angebot' : 'Angebote'} erstellt — unter Angebote zu finden.`);
+      setNotice(`${n} ${n === 1 ? 'Angebot' : 'Angebote'} erstellt.`);
+      setCreatedQuote(true);
       api.get('/api/estimate/accuracy').then(({ data: a }) => setAccuracy(a)).catch(() => {});
     } catch (e) {
       setError(e?.response?.data?.detail || 'Das Angebot konnte nicht erstellt werden');
@@ -211,7 +219,15 @@ export default function EstimatePage() {
           </div>
         )}
         {notice && (
-          <div className="card mb-3 text-sm text-ink" data-testid="estimate-notice">{notice}</div>
+          <div className="card mb-3 text-sm text-ink flex items-center justify-between gap-3"
+               data-testid="estimate-notice">
+            <span>{notice}</span>
+            {createdQuote && (
+              <Link to="/quotes" className="btn-secondary shrink-0 text-xs py-1 px-3">
+                Zu den Angeboten
+              </Link>
+            )}
+          </div>
         )}
 
         {!selected ? (
