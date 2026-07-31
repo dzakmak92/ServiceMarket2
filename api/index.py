@@ -83,7 +83,8 @@ def _build_app():
         from routes.quote_routes import (invoice_router as quote_invoice_router,
                                          public_router as portal_router,
                                          router as quote_router)
-        from routes.tax_pg_routes import router as tax_router
+        from routes.tax_pg_routes import (public_router as tax_public_router,
+                                          router as tax_router)
         from routes.upload_routes import (portal_router as upload_portal_router,
                                           router as upload_router)
 
@@ -94,6 +95,7 @@ def _build_app():
                   pm_router, pm_timer_router, pm_tpl_router,
                   pm_sub_router, upload_router,
                   portal_router, pm_portal_router, pm_sub_portal,
+                  tax_public_router,
                   upload_portal_router):
             app.include_router(r, prefix="/api")
     except Exception as exc:  # noqa: BLE001 — must not propagate

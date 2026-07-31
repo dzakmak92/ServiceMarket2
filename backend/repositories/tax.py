@@ -319,3 +319,137 @@ async def dashboard(pro_id: str, year: int) -> dict:
         "open_invoices": int(open_inv["n"]),
         "receipts_needing_review": int(review or 0),
     }
+
+
+# ── Fahrtenbuch ────────────────────────────────────────────────────────
+# The Austrian Kilometergeld rate. Stated as a constant with its year so a
+# stale figure shows up in a diff instead of hiding inside an expression.
+KM_RATE_EUR = 0.50
+KM_RATE_YEAR = 2026
+
+
+async def mileage(pro_id: str, year: int) -> dict:
+    """Travel billed on work that was actually finished this year.
+
+    Built from the `travel` positions on accepted quotes rather than from a
+    separate log, because a separate log is a thing nobody fills in. What a pro
+    charged for getting there is already recorded on every quote they sent, and
+    it is the same figure the Finanzamt would want to see substantiated.
+
+    The kilometres are derived, not measured, and labelled as such. A
+    Fahrtenbuch that satisfies §16 EStG needs date, destination, purpose and
+    odometer readings; this has the first three and infers the fourth from the
+    money. It is a starting point for an accountant, not a substitute for the
+    book — and the response says so rather than letting the number look
+    authoritative.
+    """
+    start, end = _period(year)
+    rows = await pg.fetch(
+        """
+        select j.completed_at::date as trip_date, j.title, j.site_city,
+               j.site_postal_code, q.quote_number,
+               sum(l.net_amount) as travel_net
+          from quote_lines l
+          join quotes q on q.id = l.quote_id
+          join jobs j on j.id = q.job_id
+         where q.pro_id = $1 and q.status = 'accepted'
+           and l.kind = 'travel' and l.is_selected
+           and j.completed_at >= $2 and j.completed_at < $3
+           and j.deleted_at is null
+         group by j.completed_at, j.title, j.site_city, j.site_postal_code,
+                  q.quote_number
+        having sum(l.net_amount) > 0
+         order by j.completed_at
+        """, pro_id, start, end)
+
+    trips = [{
+        "date": r["trip_date"],
+        "job_title": r["title"],
+        "destination": " ".join(filter(None, [r["site_postal_code"], r["site_city"]])),
+        "reference": r["quote_number"],
+        "travel_net_eur": float(r["travel_net"]),
+        "implied_km": round(float(r["travel_net"]) / KM_RATE_EUR, 1),
+    } for r in rows]
+    total = round(sum(t["travel_net_eur"] for t in trips), 2)
+    return {
+        "year": year,
+        "km_rate_eur": KM_RATE_EUR,
+        "km_rate_year": KM_RATE_YEAR,
+        "trip_count": len(trips),
+        "total_net_eur": total,
+        "implied_km": round(total / KM_RATE_EUR, 1) if total else 0,
+        "trips": trips,
+        "basis": "Aus den Anfahrts-Positionen angenommener Angebote zu "
+                 "abgeschlossenen Aufträgen.",
+        "caveat": "Die Kilometer sind aus dem verrechneten Betrag abgeleitet, "
+                  "nicht gemessen. Ein Fahrtenbuch nach § 16 EStG verlangt "
+                  "zusätzlich Kilometerstände; diese Aufstellung ersetzt es "
+                  "nicht.",
+    }
+
+
+# ── CSV exports ────────────────────────────────────────────────────────
+def _csv(header: list[str], rows: list[list]) -> str:
+    """Semicolon-separated with a UTF-8 BOM.
+
+    Both are for Excel in a German locale, which is where these files go. A
+    comma-separated file opens as one column per row, and without the BOM
+    every umlaut in a supplier name arrives mangled. Neither is a detail an
+    accountant will debug — they will just say the export is broken.
+    """
+    import csv as _csvmod
+    import io
+    buf = io.StringIO()
+    w = _csvmod.writer(buf, delimiter=";", quoting=_csvmod.QUOTE_MINIMAL,
+                       lineterminator="\r\n")
+    w.writerow(header)
+    for r in rows:
+        w.writerow(r)
+    return "\ufeff" + buf.getvalue()
+
+
+def _de(v) -> str:
+    """1234.5 -> "1234,50". German decimal comma, no thousands separator —
+    a separator would need quoting and accountants import these raw."""
+    return f"{float(v or 0):.2f}".replace(".", ",")
+
+
+async def revenue_csv(pro_id: str, year: int) -> str:
+    start, end = _period(year)
+    rows = await pg.fetch(
+        """
+        select i.issue_date, i.invoice_number, i.net_total, i.vat_total,
+               i.gross_total, i.status, c.name as customer, c.country
+          from invoices i
+          left join customers c on c.id = i.customer_id
+         where i.pro_id = $1 and i.status <> 'draft'
+           and i.issue_date >= $2 and i.issue_date < $3
+         order by i.issue_date, i.invoice_number
+        """, pro_id, start, end)
+    return _csv(
+        ["Belegdatum", "Rechnungsnummer", "Kunde", "Land", "Netto", "USt",
+         "Brutto", "Status"],
+        [[r["issue_date"].strftime("%d.%m.%Y"), r["invoice_number"] or "",
+          r["customer"] or "", r["country"] or "", _de(r["net_total"]),
+          _de(r["vat_total"]), _de(r["gross_total"]), r["status"]]
+         for r in rows])
+
+
+async def expenses_csv(pro_id: str, year: int) -> str:
+    start, end = _period(year)
+    rows = await pg.fetch(
+        """
+        select expense_date, vendor, category, description, net_amount,
+               vat_rate, vat_amount, gross_amount, vat_deductible, filename
+          from expenses
+         where pro_id = $1 and expense_date >= $2 and expense_date < $3
+         order by expense_date
+        """, pro_id, start, end)
+    return _csv(
+        ["Belegdatum", "Lieferant", "Kategorie", "Bezeichnung", "Netto",
+         "USt-Satz", "USt", "Brutto", "Vorsteuerabzug", "Beleg"],
+        [[r["expense_date"].strftime("%d.%m.%Y"), r["vendor"] or "",
+          r["category"], r["description"] or "", _de(r["net_amount"]),
+          _de(r["vat_rate"]), _de(r["vat_amount"]), _de(r["gross_amount"]),
+          "ja" if r["vat_deductible"] else "nein", r["filename"] or ""]
+         for r in rows])

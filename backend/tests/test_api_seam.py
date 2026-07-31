@@ -77,16 +77,15 @@ EXPECTED_MISSING = {
        if p.startswith(("/api/admin/", "/api/directory/", "/api/bookings",
                         "/api/availability", "/api/feedback"))},
     # ── Phase 8: the payment rail is deliberately last ─────────────────
+    # Narrow on purpose. A blanket "/payments" match also swallowed
+    # /api/invoices/{}/payments, which exists and works — recording a
+    # manual bank transfer against an invoice needs no PSP. The rot check
+    # below is what caught that.
     **{p: "payments deferred to phase 8" for p in calls
        if p.startswith(("/api/billing/", "/api/pay-link/", "/api/payouts"))
-       or "/payments" in p},
+       or "/jobs/" in p and "/payments" in p
+       or "/portal/" in p and "/payments" in p},
     # ── Not yet ported, each still on the list ─────────────────────────
-    "/api/tax/receipts": "tax toolkit not ported",
-    "/api/tax/mileage": "tax toolkit not ported",
-    "/api/tax/income-tax": "tax toolkit not ported",
-    "/api/tax/svs": "tax toolkit not ported",
-    "/api/tax/accountant-share": "tax toolkit not ported",
-    "/api/tax/public/accountant/{}": "tax toolkit not ported",
     "/api/notifications": "notifications not ported",
     "/api/notifications/read-all": "notifications not ported",
     "/api/notifications/{}/read": "notifications not ported",
@@ -139,8 +138,28 @@ for path, what in [
     ("/api/jobs/{}/export-pdf", "Job File export"),
     ("/api/estimate", "estimation"),
     ("/api/estimate/accuracy", "estimate accuracy"),
+    ("/api/tax/receipts", "receipts, under the name the UI uses"),
+    ("/api/tax/mileage", "Fahrtenbuch"),
+    ("/api/tax/svs", "SVS estimate"),
+    ("/api/tax/income-tax", "Einkommensteuer estimate"),
+    ("/api/tax/exports/revenue.csv", "revenue export"),
+    ("/api/tax/exports/expenses.csv", "expense export"),
+    ("/api/tax/exports/datev-full.csv", "DATEV export"),
+    ("/api/tax/year-end.pdf", "year-end dossier"),
+    ("/api/tax/accountant-share", "accountant link"),
+    ("/api/tax/public/accountant/{}", "what the accountant sees"),
 ]:
     check(path in mounted, f"{what}: {path}")
+
+print("\n── the exemption list does not rot ──")
+# An entry that names a route which now exists is a lie the next reader
+# believes. Porting something must delete its exemption, and this is what
+# makes that mandatory rather than tidy.
+stale = sorted(p for p in EXPECTED_MISSING if _PARAM.sub("{}", p) in mounted)
+check(not stale, f"{len(stale)} exemption(s) for endpoints that now exist: {stale}")
+# And an exemption for a path nobody calls any more is dead weight.
+orphan = sorted(p for p in EXPECTED_MISSING if p not in calls)
+check(not orphan, f"{len(orphan)} exemption(s) for endpoints nobody calls: {orphan}")
 
 print("\n── field names agree across the seam ──")
 # The Kanban bug: Pydantic drops unknown fields silently, so a frontend
