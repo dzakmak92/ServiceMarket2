@@ -52,8 +52,12 @@ export default function ProHomePage() {
             <p className="text-paper/80 text-lg">{t('pro_hero_subtitle')}</p>
 
             <div className="flex gap-4 mt-6 flex-wrap">
-              <Link to="/browse-jobs" className="btn-amber">
-                {t('btn_browse_jobs')} <ArrowRight size={16} />
+              {/* /browse-jobs was the marketplace, removed by the migration.
+                  It is not a route any more, so the catch-all bounced the
+                  most prominent button on the pro home screen back to the
+                  home screen. Work now starts with a lead of your own. */}
+              <Link to="/leads/new" className="btn-amber">
+                {t('nav_capture_lead')} <ArrowRight size={16} />
               </Link>
               {!isPro && (
                 <Link to="/billing" className="hero-secondary-btn">
@@ -97,8 +101,8 @@ export default function ProHomePage() {
         {/* Recent open jobs */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-headings font-bold text-ink">Latest Jobs Near You</h2>
-            <Link to="/browse-jobs" className="text-teal text-sm font-medium hover:underline">{t('btn_view_all')}</Link>
+            <h2 className="text-xl font-headings font-bold text-ink">{t('nav_projects')}</h2>
+            <Link to="/projects" className="text-teal text-sm font-medium hover:underline">{t('btn_view_all')}</Link>
           </div>
           {recentJobs.length === 0 ? (
             <div className="card-lg text-center py-10">
@@ -108,7 +112,7 @@ export default function ProHomePage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {recentJobs.map(job => (
-                <Link key={job.id} to={`/jobs/${job.id}`} className="card-md hover:shadow-lg block">
+                <Link key={job.id} to={`/projects/${job.id}`} className="card-md hover:shadow-lg block">
                   <div className="flex justify-between items-start gap-3">
                     <div className="flex-1 min-w-0">
                       <span className="text-xs px-2 py-0.5 bg-cream-deep text-ink-soft rounded-full capitalize">

@@ -290,13 +290,13 @@ export default function ProDashboard() {
         <div className="card-lg">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-headings font-bold text-ink text-base">Recent quotes</h2>
-            <Link to="/my-quotes" className="text-teal text-xs hover:underline">{t('btn_view_all')}</Link>
+            <Link to="/quotes" className="text-teal text-xs hover:underline">{t('btn_view_all')}</Link>
           </div>
           {recentQuotes.length === 0 ? (
             <div className="text-center py-8">
               <Briefcase size={28} className="text-ink-muted mx-auto mb-2" />
-              <p className="text-ink-muted text-sm">No quotes yet — browse open jobs</p>
-              <Link to="/browse-jobs" className="btn-primary text-xs mt-3 inline-flex">Browse jobs</Link>
+              <p className="text-ink-muted text-sm">{t('quotes_empty_hint')}</p>
+              <Link to="/leads/new" className="btn-primary text-xs mt-3 inline-flex">{t('nav_capture_lead')}</Link>
             </div>
           ) : (
             <div className="space-y-2">

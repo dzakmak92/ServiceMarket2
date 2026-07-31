@@ -89,11 +89,22 @@ export default function Header() {
       ]
     : [];
 
+  // Customers, Quotes, lead capture, Recurring, the Estimator and the
+  // Schedule are routed, working pages that appeared only in MobileNav —
+  // which is `md:hidden`. On a laptop they were reachable only by typing the
+  // URL, which for six of the product's core screens is the same as not
+  // shipping them.
   const moreLinks = user?.role === 'tradesperson'
     ? [
+        { to: '/leads/new', label: t('nav_capture_lead') },
+        { to: '/customers', label: t('nav_customers') },
+        { to: '/quotes', label: t('nav_quotes') },
+        { to: '/estimate', label: t('nav_estimate') },
         ...(hasToolkit ? [{ to: '/my-invoices', label: t('nav_my_invoices') }] : []),
         ...(hasTaxToolkit ? [{ to: '/tax', label: t('nav_tax') }] : []),
-        { to: '/pro-calendar', label: t('nav_pro_calendar') || 'My Calendar' },
+        { to: '/recurring', label: t('nav_recurring') },
+        { to: '/schedule', label: t('nav_schedule') },
+        { to: '/pro-calendar', label: t('nav_pro_calendar') },
         { to: '/billing', label: t('nav_billing') },
       ]
     : [];

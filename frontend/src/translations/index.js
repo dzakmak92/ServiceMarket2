@@ -1,5 +1,6 @@
 const t = {
   en: {
+    quotes_empty_hint: 'No quotes yet — capture an enquiry to get started.',
     error_boundary_title: 'This view could not be loaded.', error_boundary_body: 'Your data is safely stored. Please reload the page.', error_boundary_reload: 'Reload',
     nav_customers: 'Customers', nav_quotes: 'Quotes', nav_capture_lead: 'New enquiry', nav_recurring: 'Maintenance', nav_estimate: 'Estimate', nav_schedule: 'Schedule',
     // Nav
@@ -1150,6 +1151,7 @@ const t = {
   },
 
   de: {
+    quotes_empty_hint: 'Noch keine Angebote — erfassen Sie eine Anfrage, um zu starten.',
     error_boundary_title: 'Diese Ansicht konnte nicht geladen werden.', error_boundary_body: 'Ihre Daten sind sicher gespeichert. Bitte laden Sie die Seite neu.', error_boundary_reload: 'Neu laden',
     nav_customers: 'Kunden', nav_quotes: 'Angebote', nav_capture_lead: 'Anfrage', nav_recurring: 'Wartung', nav_estimate: 'Kalkulation', nav_schedule: 'Termine',
     nav_home: 'Startseite', nav_post_job: 'Job posten', nav_find_pros: 'Profis finden',
@@ -2194,6 +2196,7 @@ const t = {
   },
 
   tr: {
+    quotes_empty_hint: 'Henüz teklif yok — başlamak için bir talep girin.',
     error_boundary_title: 'Bu görünüm yüklenemedi.', error_boundary_body: 'Verileriniz güvende. Lütfen sayfayı yenileyin.', error_boundary_reload: 'Yenile',
     nav_customers: 'Müşteriler', nav_quotes: 'Teklifler', nav_capture_lead: 'Yeni talep', nav_recurring: 'Bakım', nav_estimate: 'Hesaplama', nav_schedule: 'Program',
     nav_home: 'Ana Sayfa', nav_post_job: 'İş Yayınla', nav_find_pros: 'Uzman Bul',
@@ -3169,6 +3172,7 @@ const t = {
   },
 
   es: {
+    quotes_empty_hint: 'Aún no hay presupuestos — registre una solicitud para empezar.',
     error_boundary_title: 'No se pudo cargar esta vista.', error_boundary_body: 'Sus datos están guardados. Vuelva a cargar la página.', error_boundary_reload: 'Recargar',
     nav_customers: 'Clientes', nav_quotes: 'Presupuestos', nav_capture_lead: 'Nueva solicitud', nav_recurring: 'Mantenimiento', nav_estimate: 'Cálculo', nav_schedule: 'Agenda',
     nav_home: 'Inicio', nav_post_job: 'Publicar Trabajo', nav_find_pros: 'Buscar Profesionales',
