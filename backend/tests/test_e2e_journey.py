@@ -571,6 +571,25 @@ with TestClient(entry.app) as c:
     r = c.post("/api/me/cancel-deletion")
     check(ok(r), "and it can be cancelled")
 
+    step("the erasure job is reachable by the scheduler that must call it")
+    # Vercel Cron issues GET with `Authorization: Bearer`, and this was a POST
+    # behind a custom header — so it could not be scheduled at all, and the
+    # Art. 17 grace period expired with nothing happening.
+    os.environ["PURGE_SECRET"] = "journey-test-secret"
+    r = c.get("/api/me/purge-due")
+    check(r.status_code == 403, f"an unauthenticated GET is refused ({r.status_code})")
+    r = c.get("/api/me/purge-due", headers={"Authorization": "Bearer wrong"})
+    check(r.status_code == 403, f"a wrong bearer is refused ({r.status_code})")
+    r = c.get("/api/me/purge-due",
+              headers={"Authorization": "Bearer journey-test-secret"})
+    check(ok(r), f"the scheduler's GET + bearer runs it ({r.status_code})")
+    r = c.post("/api/me/purge-due", headers={"x-purge-secret": "journey-test-secret"})
+    check(ok(r), f"and the original POST + header still works ({r.status_code})")
+    del os.environ["PURGE_SECRET"]
+    r = c.get("/api/me/purge-due")
+    check(r.status_code == 503,
+          f"with no secret configured it fails closed rather than running ({r.status_code})")
+
     step("a business cannot see another's data")
     # Leave something on the job that is actually worth leaking. The first
     # Nachtrag was marked `invoiced` when the draft was created, and

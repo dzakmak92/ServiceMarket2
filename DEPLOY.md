@@ -34,9 +34,23 @@ Settings → Environment Variables. Set for **Production** *and* **Preview**.
 | `REACT_APP_TURNSTILE_SITE_KEY` | Turnstile **site** key | Public by design |
 | `REACT_APP_BACKEND_URL` | *(leave empty)* | The API is same-origin under `/api` |
 | `ENVIRONMENT` | `production` | Makes auth cookies `Secure` |
+| `PURGE_SECRET` | a long random string | `openssl rand -base64 32`. Authenticates the nightly erasure job. **Without it the job refuses and no account is ever deleted** — see below |
+| `CRON_SECRET` | the *same* string as `PURGE_SECRET` | Vercel sends this as `Authorization: Bearer` on every cron invocation; the endpoint accepts either header |
 
 If the password contains `@ / # ? : % & +`, percent-encode it — it sits
 between `:` and `@` in a URL and an unencoded `@` truncates the hostname.
+
+### The erasure job
+
+`vercel.json` schedules `GET /api/me/purge-due` at 03:00 daily. That endpoint
+is what actually carries out an Art. 17 request once the grace period has
+expired — until it runs, a user who asked to be deleted is only *scheduled*
+for deletion.
+
+It fails closed: with no `PURGE_SECRET` it returns 503 rather than running
+unauthenticated, because an endpoint that erases accounts must never be
+reachable by accident. Set both variables, then confirm after the first
+night that the run is in the Vercel cron log.
 
 ## 3 · Deploy and verify
 

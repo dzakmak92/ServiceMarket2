@@ -13,6 +13,7 @@ must, and tells the user which is which — see `repositories/privacy.py`.
 from __future__ import annotations
 
 import io
+import hmac
 import ipaddress
 import json
 import logging
@@ -234,7 +235,7 @@ async def cancel_deletion(user: dict = Depends(get_current_user)):
 
 
 # ── The job that carries it out ────────────────────────────────────────
-@me_router.post("/purge-due")
+@me_router.api_route("/purge-due", methods=["GET", "POST"])
 async def purge_due(request: Request):
     """Delete every account whose grace period has expired.
 
@@ -243,11 +244,22 @@ async def purge_due(request: Request):
     endpoint that erases accounts must fail closed, and a misconfigured
     deployment that silently allowed anyone to call it would be the worst
     possible bug in this file.
+
+    GET as well as POST, and `Authorization: Bearer` as well as the custom
+    header, because Vercel Cron only issues GET and only sends a bearer
+    token — so as a POST-with-custom-header this could not be scheduled at
+    all, which is why nothing was calling it. Art. 17 erasure that is
+    implemented, tested, and never triggered is not erasure: the grace period
+    expired and the account sat there.
     """
     import os
     secret = os.environ.get("PURGE_SECRET")
     if not secret:
         raise HTTPException(503, "PURGE_SECRET is not configured.")
-    if request.headers.get("x-purge-secret") != secret:
+    supplied = (request.headers.get("x-purge-secret")
+                or (request.headers.get("authorization") or "").removeprefix("Bearer ").strip())
+    # compare_digest: this is a bare shared secret on an endpoint that deletes
+    # accounts, and `==` on a str leaks its length and prefix through timing.
+    if not secret or not hmac.compare_digest(supplied or "", secret):
         raise HTTPException(403, "Forbidden")
     return await repo.purge_due()

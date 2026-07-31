@@ -10,6 +10,12 @@
       "includeFiles": "backend/**"
     }
   },
+  "crons": [
+    {
+      "path": "/api/me/purge-due",
+      "schedule": "0 3 * * *"
+    }
+  ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index" },
     { "source": "/(.*)", "destination": "/index.html" }
