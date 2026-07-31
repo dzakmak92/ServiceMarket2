@@ -383,6 +383,36 @@ with TestClient(entry.app) as c:
         check(float(mine["amount"]) == 55.5 and mine["is_manual"],
               "and is marked manual so learning will not overwrite it")
 
+    step("the job can actually be moved along")
+    # The detail screen's status dropdown offered active/on_hold/done/archived
+    # — names from the old pm_projects table that are not members of the
+    # job_status enum — and PATCHed them onto /api/jobs/{id}, where JobPatch
+    # declares no `status` field so Pydantic dropped them. Both halves were
+    # broken, so a job could never leave `accepted`. That starves the
+    # estimator: estimates.measured() only counts completed/invoiced/closed,
+    # so the rate-learning loop had no input it could ever receive.
+    r = c.get(f"/api/jobs/{job_id}")
+    allowed = r.json().get("allowed_transitions") if r.status_code < 400 else None
+    check(allowed is not None, "the job payload states which moves are legal")
+    check(set(allowed or []) == {"scheduled", "in_progress", "cancelled"},
+          f"and from accepted those are exactly the three ({allowed})")
+
+    r = c.patch(f"/api/jobs/{job_id}", json={"status": "in_progress"})
+    check(ok(r) and r.json().get("status") == "accepted",
+          "the generic PATCH still refuses to move status, as it always did")
+
+    r = c.patch(f"/api/jobs/{job_id}/status", json={"status": "closed"})
+    check(r.status_code == 409,
+          f"an illegal jump is refused as a conflict -> {r.status_code}")
+    check("accepted" in r.text and "closed" in r.text,
+          "naming both ends of the move it would not make")
+
+    for nxt in ("scheduled", "in_progress"):
+        r = c.patch(f"/api/jobs/{job_id}/status", json={"status": nxt})
+        check(ok(r) and r.json().get("status") == nxt, f"the job moves to {nxt}")
+    check(bool(r.json().get("started_at")) if r.status_code < 400 else False,
+          "and in_progress stamped started_at")
+
     step("the work happens")
     r = c.post(f"/api/jobs/{job_id}/tasks", json={"title": "Abkleben", "column_key": "todo"})
     check(ok(r, 201, 200), "a task is created")
@@ -460,6 +490,11 @@ with TestClient(entry.app) as c:
     r = c.post(f"/api/jobs/{job_id}/abnahme", json={
         "signed_by": "H. Beispiel", "note": "Ohne Mängel übernommen."})
     check(ok(r, 200, 201), "Abnahme is recorded")
+
+    r = c.patch(f"/api/jobs/{job_id}/status", json={"status": "completed"})
+    check(ok(r) and r.json().get("status") == "completed", "and the job is completed")
+    check(bool(r.json().get("completed_at")) if r.status_code < 400 else False,
+          "with completed_at stamped, which is what the calibration reads")
 
     step("the invoice inherits the accepted quote")
     r = c.get(f"/api/jobs/{job_id}/invoice-preview")

@@ -3,33 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import {
-  Briefcase, Loader2, Plus, ChevronRight, CheckCircle, Clock, Pause, Archive,
+  Briefcase, Loader2, Plus, ChevronRight, CheckCircle, Clock,
   TrendingUp, AlertTriangle, Search, Filter, Calendar as CalendarIcon,
-  Sparkles, FileText, Receipt,
 } from 'lucide-react';
+import { STATUS_META, OPEN, EARNED } from '../../utils/jobStatus';
 
 const fmtEur = (v) => new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
-
-// The nine members of the `job_status` enum, in the order a job moves
-// through them. The previous four — active/on_hold/done/archived — were not
-// members of anything: the filter matched nothing, every card fell back to
-// "active", and the tab strip could not select a real job.
-const STATUS_META = {
-  lead:        { i: Sparkles,    cls: 'text-ink-muted bg-cream-deep',   dot: 'bg-ink-muted', key: 'pm_status_lead' },
-  quoted:      { i: FileText,    cls: 'text-teal bg-teal/10',           dot: 'bg-teal',      key: 'pm_status_quoted' },
-  accepted:    { i: CheckCircle, cls: 'text-teal bg-teal/10',           dot: 'bg-teal',      key: 'pm_status_accepted' },
-  scheduled:   { i: CalendarIcon,cls: 'text-amber-deep bg-amber/10',    dot: 'bg-amber',     key: 'pm_status_scheduled' },
-  in_progress: { i: Clock,       cls: 'text-amber-deep bg-amber/10',    dot: 'bg-amber',     key: 'pm_status_in_progress' },
-  completed:   { i: CheckCircle, cls: 'text-green-pos bg-green-pos/10', dot: 'bg-green-pos', key: 'pm_status_completed' },
-  invoiced:    { i: Receipt,     cls: 'text-green-pos bg-green-pos/10', dot: 'bg-green-pos', key: 'pm_status_invoiced' },
-  closed:      { i: Archive,     cls: 'text-ink-muted bg-cream-deep',   dot: 'bg-ink-muted', key: 'pm_status_closed' },
-  cancelled:   { i: Pause,       cls: 'text-ink-muted bg-cream-deep',   dot: 'bg-ink-muted', key: 'pm_status_cancelled' },
-};
-
-// Which of them count as work still in hand, for the default filter and the
-// pipeline tile.
-const OPEN = ['lead', 'quoted', 'accepted', 'scheduled', 'in_progress'];
-const EARNED = ['completed', 'invoiced', 'closed'];
 
 export default function PMProjectsPage() {
   const { t } = useLang();

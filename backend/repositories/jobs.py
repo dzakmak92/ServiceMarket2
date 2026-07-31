@@ -241,6 +241,11 @@ async def detail(pro_id: str, job_id: str) -> Optional[dict]:
     job["documents"] = await pg.fetch(
         "select * from job_documents where job_id = $1 order by created_at", job_id)
 
+    # The status dropdown is built from this, not from a copy of TRANSITIONS
+    # in JavaScript. Two copies of a state machine drift, and the one that
+    # drifts is the one the user is looking at.
+    job["allowed_transitions"] = sorted(TRANSITIONS.get(job["status"], set()))
+
     if job["mode"] == "project":
         job["tasks"] = await pg.fetch(
             "select * from job_tasks where job_id = $1 order by column_key, sort_order", job_id)

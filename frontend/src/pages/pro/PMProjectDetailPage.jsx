@@ -11,6 +11,7 @@ import {
   Copy, RefreshCw, ExternalLink, Save, LayoutDashboard, CalendarDays, UserPlus, X, Eye, Receipt,
   ScanBarcode, Camera, Image as ImageIcon, FileDown,
 } from 'lucide-react';
+import { statusLabel } from '../../utils/jobStatus';
 import ErrorBoundary from '../../components/ErrorBoundary';
 import OverviewTab from './pm/OverviewTab';
 import KanbanTab from './pm/KanbanTab';
@@ -135,28 +136,57 @@ export default function PMProjectDetailPage() {
 // ──────────────────────────────────────────────
 function ProjectStatusSelect({ project, reload, t }) {
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  // Only the moves the backend would accept, straight from the job payload.
+  // A terminal job (closed, cancelled) has none, so the control is read-only
+  // rather than a dropdown that rejects everything in it.
+  const next = project.allowed_transitions || [];
+
   const onChange = async (e) => {
-    setBusy(true);
+    const status = e.target.value;
+    if (status === project.status) return;
+    setBusy(true); setError('');
     try {
-      await api.patch(`/api/jobs/${project.id}`, { status: e.target.value });
+      await api.patch(`/api/jobs/${project.id}/status`, { status });
       await reload();
+    } catch (err) {
+      // set_status returns the legal moves in its message; showing it is more
+      // use than "something went wrong".
+      setError(err?.response?.data?.detail || t('generic_error'));
+      e.target.value = project.status;
     } finally { setBusy(false); }
   };
+
+  if (!next.length) {
+    return (
+      <span className="text-xs text-ink-muted" data-testid="pm-status-final">
+        {statusLabel(project.status, t)}
+      </span>
+    );
+  }
+
   return (
-    <div className="flex items-center gap-2">
-      <select
-        defaultValue={project.status}
-        onChange={onChange}
-        disabled={busy}
-        className="sm-select text-xs"
-        data-testid="pm-status-select"
-      >
-        <option value="active">{t('pm_status_active')}</option>
-        <option value="on_hold">{t('pm_status_on_hold')}</option>
-        <option value="done">{t('pm_status_done')}</option>
-        <option value="archived">{t('pm_status_archived')}</option>
-      </select>
-      {busy && <Loader2 size={14} className="text-teal animate-spin" />}
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-2">
+        <select
+          value={project.status}
+          onChange={onChange}
+          disabled={busy}
+          className="sm-select text-xs"
+          data-testid="pm-status-select"
+        >
+          {/* Current first, so the control reads as "it is X, move it to…". */}
+          <option value={project.status}>{statusLabel(project.status, t)}</option>
+          {next.map((s) => (
+            <option key={s} value={s}>{statusLabel(s, t)}</option>
+          ))}
+        </select>
+        {busy && <Loader2 size={14} className="text-teal animate-spin" />}
+      </div>
+      {error && (
+        <span className="text-[11px] text-red-warn" data-testid="pm-status-error">{error}</span>
+      )}
     </div>
   );
 }
