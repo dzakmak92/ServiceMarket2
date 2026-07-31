@@ -257,6 +257,30 @@ with TestClient(entry.app) as c:
     check(r.json().get("text") == "Erste Lage aufgetragen." if r.status_code < 400 else False,
           "with its text, not an empty row")
 
+    step("an extra is agreed on site and becomes a Nachtrag")
+    # The doc calls unbilled verbal extras the biggest silent margin leak, so
+    # this has to end up on the invoice with a real amount and its own kind.
+    r = c.post(f"/api/jobs/{job_id}/change-orders", json={
+        "title": "Zusätzliche Spachtelung Altbauwand",
+        "description": "Untergrund schlechter als angenommen",
+        "net_amount": 480.0, "vat_rate": 20, "kind": "labor"})
+    check(ok(r, 201, 200), f"a Nachtrag is raised -> {r.status_code}")
+    co = r.json() if r.status_code < 400 else {}
+    co_id = co.get("id")
+    check(float(co.get("net_amount") or 0) == 480.0,
+          f"and carries its amount ({co.get('net_amount')}), not 0")
+    if co_id:
+        r = c.post(f"/api/jobs/{job_id}/change-orders/{co_id}/send")
+        check(ok(r), "it is sent to the customer for approval")
+        r = c.post(f"/api/portal/{token}/change-orders/{co_id}/approve",
+                   json={"name": "Frau Beispiel"})
+        check(ok(r, 200, 201), f"and the customer approves it -> {r.status_code}")
+        r = c.get(f"/api/jobs/{job_id}/invoice-preview")
+        descs = [l["description"] for l in r.json().get("lines", [])] \
+            if r.status_code < 400 else []
+        check(any("Nachtrag" in d for d in descs),
+              f"so it appears on the invoice preview ({len(descs)} lines)")
+
     r = c.post(f"/api/jobs/{job_id}/timer/start")
     check(ok(r, 201, 200), "the timer starts")
     r = c.post(f"/api/jobs/{job_id}/timer/stop")
@@ -341,6 +365,19 @@ with TestClient(entry.app) as c:
         if wrong_id:
             r = c.post(f"/api/invoices/{wrong_id}/issue", json={})
             check(ok(r), "and issued")
+
+            # "Mark paid" settled the balance with method='manual', which is
+            # not a member of the payment_method enum, so it 500'd every time
+            # the button was pressed. Checked here and then undone, because
+            # the Storno below needs the invoice unpaid.
+            r = c.post(f"/api/invoices/{wrong_id}/mark-paid")
+            check(ok(r), f"'mark paid' settles it in one action "
+                         f"-> {r.status_code}")
+            settled = r.json() if r.status_code < 400 else {}
+            check(settled.get("payment_state") == "paid",
+                  f"and the invoice reads paid ({settled.get('payment_state')})")
+            for p in settled.get("payments", []):
+                c.delete(f"/api/invoices/{wrong_id}/payments/{p['id']}")
             wrong_no = r.json().get("invoice_number") if r.status_code < 400 else None
             r = c.post(f"/api/invoices/{wrong_id}/storno",
                        json={"reason": "Position doppelt verrechnet"})
@@ -359,6 +396,22 @@ with TestClient(entry.app) as c:
                        json={"reason": "Nochmal"})
             check(r.status_code in (400, 409),
                   f"and it cannot be stornoed twice ({r.status_code})")
+
+            # The cancellation must net to zero, not subtract twice. The
+            # rollups excluded the cancelled original while still counting its
+            # negative mirror, so cancelling a 300 EUR invoice took 300 EUR
+            # off turnover and pushed receivables negative.
+            r = c.get("/api/tax/dashboard", params={"year": date.today().year})
+            d = r.json() if r.status_code < 400 else {}
+            check(float(d.get("outstanding") or 0) >= 0,
+                  f"receivables are not negative after a Storno "
+                  f"({d.get('outstanding')})")
+            r = c.get(f"/api/customers/{customer_id}")
+            ltv = float((r.json() or {}).get("lifetime_value") or 0) \
+                if r.status_code < 400 else -1
+            check(abs(ltv - float(inv["gross_total"])) < 0.01,
+                  f"and lifetime value is the one invoice that stands "
+                  f"({ltv} vs {inv['gross_total']})")
 
     step("the numbers reach the tax toolkit")
     y = date.today().year
@@ -467,6 +520,24 @@ with TestClient(entry.app) as c:
     check(ok(r), "and it can be cancelled")
 
     step("a business cannot see another's data")
+    # Leave something on the job that is actually worth leaking. The first
+    # Nachtrag was marked `invoiced` when the draft was created, and
+    # to_invoice_lines only returns approved ones — so without this the leak
+    # check below would pass against an empty list and prove nothing.
+    r = c.post(f"/api/jobs/{job_id}/change-orders", json={
+        "title": "Vertraulicher Nachtrag", "net_amount": 999.0,
+        "vat_rate": 20, "kind": "labor"})
+    bait_id = r.json().get("id") if r.status_code < 400 else None
+    if bait_id:
+        c.post(f"/api/jobs/{job_id}/change-orders/{bait_id}/send")
+        c.post(f"/api/portal/{token}/change-orders/{bait_id}/approve",
+               json={"name": "Frau Beispiel"})
+        r = c.get(f"/api/jobs/{job_id}/invoice-preview")
+        owner_sees = [l["description"] for l in r.json().get("lines", [])] \
+            if r.status_code < 400 else []
+        check(any("Vertraulicher" in d for d in owner_sees),
+              f"the owner's preview shows the new Nachtrag ({len(owner_sees)} lines)")
+
     # The second business borrows the same client rather than getting its own.
     # A second TestClient would open a second event loop, and the asyncpg pool
     # belongs to the first one — every query through it fails with
@@ -479,12 +550,50 @@ with TestClient(entry.app) as c:
                                        "name": "Fremder Betrieb",
                                        "accepted_terms": True, "accepted_privacy": True})
     c.post("/api/auth/login", json={"email": other, "password": "Sichergenug!23"})
+    # It has to onboard. Without a pro_profiles row require_pro_id 404s every
+    # business endpoint, so every assertion below would pass for the wrong
+    # reason — "refused" would mean "you have no business", not "that is not
+    # yours". A tenancy test against an account that cannot reach any tenant
+    # tests nothing.
+    r = c.post("/api/auth/onboarding", json={
+        "country": "AT", "name": "Bea", "surname": "Fremd",
+        "phone": "+43 660 7654321", "address": "Fremdgasse 1",
+        "postal_code": "1200", "city": "Wien",
+        "contact_person": "Bea Fremd", "company_name": "Fremder Betrieb e.U.",
+        "licence_file_id": "documents/placeholder-licence"})
+    check(ok(r), f"the second business onboards too -> {r.status_code}")
+    check(c.get("/api/customers").status_code == 200,
+          "and can reach its own (empty) data, so a refusal below means "
+          "'not yours' rather than 'no business'")
+
     for path in (f"/api/jobs/{job_id}", f"/api/quotes/{quote_id}",
                  f"/api/customers/{customer_id}"):
         rr = c.get(path)
         check(rr.status_code in (403, 404), f"{path} is refused ({rr.status_code})")
     rr = c.post(f"/api/jobs/{job_id}/tasks", json={"title": "Fremd", "column_key": "todo"})
     check(rr.status_code in (403, 404), f"and writing is refused ({rr.status_code})")
+
+    # The interesting leaks are not the GETs — those were always scoped. They
+    # are the writes that accept a foreign id and then read through it.
+    rr = c.post("/api/invoices", json={
+        "customer_id": customer_id,
+        "lines": [{"description": "Fremd", "qty": 1, "unit_price": 1}]})
+    check(rr.status_code in (403, 404),
+          f"an invoice cannot be drafted against another business's customer "
+          f"({rr.status_code})")
+    rr = c.post("/api/invoices", json={
+        "job_id": job_id,
+        "lines": [{"description": "Fremd", "qty": 1, "unit_price": 1}]})
+    check(rr.status_code in (403, 404),
+          f"nor against their job ({rr.status_code})")
+    # This one leaked approved Nachtrag titles and amounts to anyone holding
+    # a job uuid, because only the quote half of the query was scoped.
+    rr = c.get(f"/api/jobs/{job_id}/invoice-preview")
+    leaked = rr.json().get("lines", []) if rr.status_code == 200 else []
+    check(not leaked,
+          f"and the invoice preview discloses nothing ({rr.status_code}, "
+          f"{len(leaked)} lines)")
+
     c.cookies.clear()
     c.cookies.update(mine)
 

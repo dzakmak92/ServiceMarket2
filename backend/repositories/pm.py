@@ -318,11 +318,18 @@ async def overview(pro_id: str, job_id: str) -> dict:
         """, job_id)
     inv = await pg.fetchrow(
         """
+        -- Two different predicates on purpose. What was invoiced and paid
+        -- includes cancelled documents, because the Storno that cancels one
+        -- is already in the sum with a negative total and the pair has to
+        -- net to zero — excluding the original subtracted the amount twice.
+        -- Outstanding is a receivable, and neither a cancelled invoice nor a
+        -- credit note is one.
         select coalesce(sum(net_total), 0) as invoiced_net,
                coalesce(sum(paid_total), 0) as paid,
-               coalesce(sum(outstanding), 0) as outstanding
+               coalesce(sum(outstanding) filter (
+                   where cancelled_at is null and type <> 'storno'), 0) as outstanding
           from invoices
-         where job_id = $1 and status <> 'draft' and cancelled_at is null
+         where job_id = $1 and status <> 'draft'
         """, job_id)
 
     total, done = int(tasks["total"] or 0), int(tasks["done"] or 0)

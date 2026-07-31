@@ -368,9 +368,15 @@ async def to_invoice_lines(pro_id: str, job_id: str) -> list[dict]:
                 "source_quote_line_id": str(l["id"]),
             })
 
+    # Joined to `jobs` on pro_id, not scoped by job_id alone. The accepted
+    # quote above is already scoped, so an unscoped change-order query was the
+    # one line through which any authenticated pro who knew a job UUID could
+    # read another business's Nachtrag titles and amounts — via
+    # /jobs/{id}/invoice-preview, which does not otherwise check ownership.
     cos = await pg.fetch(
-        "select * from change_orders where job_id = $1 and status = 'approved' "
-        "order by created_at", job_id)
+        "select c.* from change_orders c join jobs j on j.id = c.job_id "
+        "where c.job_id = $1 and j.pro_id = $2 and c.status = 'approved' "
+        "order by c.created_at", job_id, pro_id)
     for i, co in enumerate(cos, start=len(lines) + 1):
         lines.append({
             "position": i,

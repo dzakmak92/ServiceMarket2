@@ -97,8 +97,13 @@ async def overdue(user: dict = Depends(get_current_user)):
 async def create_invoice(body: InvoiceIn, user: dict = Depends(get_current_user)):
     pro_id = await require_pro_id(user)
     data = body.model_dump(exclude={"lines", "type"}, exclude_none=True)
-    inv = await repo.create_draft(pro_id, invoice_type=body.type,
-                                  lines=_lines(body.lines), **data)
+    try:
+        inv = await repo.create_draft(pro_id, invoice_type=body.type,
+                                      lines=_lines(body.lines), **data)
+    except LookupError as exc:
+        # A customer_id or job_id belonging to another business — answered the
+        # same way a nonexistent one is, so the 404 discloses nothing.
+        raise HTTPException(404, str(exc)) from exc
     return await repo.get(pro_id, str(inv["id"]))
 
 
@@ -199,8 +204,16 @@ async def mark_paid(invoice_id: str, user: dict = Depends(get_current_user)):
     if outstanding <= 0:
         return inv
     try:
-        await repo.record_payment(pro_id, invoice_id,
-                                  {"amount": outstanding, "method": "manual"})
+        # "transfer", not "manual": `invoice_payments.method` is the
+        # payment_method enum (transfer, card, sepa, sofort, cash, other) and
+        # 'manual' is not a member, so this raised 22P02 and the button 500'd
+        # every time it was pressed. Bank transfer is what a tradesperson
+        # ticking off a settled invoice by hand almost always means; the note
+        # records that nobody chose it explicitly.
+        await repo.record_payment(
+            pro_id, invoice_id,
+            {"amount": outstanding, "method": "transfer",
+             "note": "Als bezahlt markiert (Zahlungsart nicht erfasst)"})
     except LookupError as exc:
         raise HTTPException(404, str(exc)) from exc
     except ValueError as exc:

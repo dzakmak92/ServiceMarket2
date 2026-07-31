@@ -308,11 +308,16 @@ async def delete_expense(pro_id: str, expense_id: str) -> bool:
 async def dashboard(pro_id: str, year: int) -> dict:
     """Headline numbers for the tax page."""
     e = await eur(pro_id, year)
+    # Receivables, not turnover, so the two exclusions are different from the
+    # ones used for lifetime value: a cancelled invoice cannot be collected,
+    # and a Storno is a credit note rather than a debt. Counting the Storno
+    # while dropping the invoice it cancels made outstanding go negative.
     open_inv = await pg.fetchrow(
         """
         select coalesce(sum(outstanding), 0) as outstanding, count(*) as n
           from invoices
          where pro_id = $1 and status <> 'draft' and cancelled_at is null
+           and type <> 'storno'
            and payment_state in ('unpaid','partial','overdue')
         """, pro_id)
     review = await pg.fetchval(

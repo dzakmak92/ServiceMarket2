@@ -31,6 +31,23 @@ def _d(v: Any) -> Decimal:
     return Decimal(str(v or 0))
 
 
+async def _assert_owned(pro_id: str, *, customer_id: Optional[str] = None,
+                        job_id: Optional[str] = None) -> None:
+    """Refuse ids belonging to another business.
+
+    Raises LookupError, which every caller already maps to a 404 — the same
+    answer a nonexistent id gets, so probing cannot distinguish "not yours"
+    from "not there".
+    """
+    for table, value in (("customers", customer_id), ("jobs", job_id)):
+        if not value:
+            continue
+        if not await pg.fetchval(
+                f"select 1 from {table} where id = $1 and pro_id = $2",
+                value, pro_id):
+            raise LookupError(f"{table[:-1].capitalize()} not found")
+
+
 async def _tax_context(pro_id: str, customer_id: Optional[str],
                        *, is_bauleistung: bool = False) -> tax_rules.TaxContext:
     pro = await pg.fetchrow(
@@ -58,6 +75,13 @@ async def create_draft(pro_id: str, *, job_id: Optional[str] = None,
                        **fields) -> dict:
     """Create a draft and its lines. Drafts are freely editable; nothing is
     frozen and no number is consumed until issue()."""
+    # Both ids come straight off the request, and the foreign keys point at
+    # `customers(id)` and `jobs(id)` with nothing tying either to `pro_id`.
+    # Without this check, posting another business's customer uuid returned
+    # their name from the invoice list and, at issue(), froze their whole row
+    # — address, email, phone, vat_id, private notes — into an immutable
+    # `customer_snapshot` that erasure is then obliged to keep for ten years.
+    await _assert_owned(pro_id, customer_id=customer_id, job_id=job_id)
     ctx = await _tax_context(pro_id, customer_id)
     allowed = {"service_date_start", "service_date_end", "due_date",
                "payment_terms_days", "note", "storno_of_id", "corrects_id"}
@@ -283,6 +307,12 @@ async def storno(pro_id: str, invoice_id: str, reason: str) -> dict:
             "status = 'cancelled', storno_reason = $3 where id = $1",
             invoice_id, st["id"], (reason or "").strip()[:500])
 
+    # Outside the transaction, like issue() and record_payment(). Without it
+    # the customer's lifetime value keeps counting an invoice that has just
+    # been cancelled — it is only ever recomputed on issue and on payment,
+    # and a cancellation is neither.
+    if st["customer_id"]:
+        await customers_repo.refresh_rollups(str(st["customer_id"]))
     return dict(st)
 
 

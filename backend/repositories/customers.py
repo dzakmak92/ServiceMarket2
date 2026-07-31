@@ -167,11 +167,16 @@ async def refresh_rollups(customer_id: str) -> None:
           last_job_at = (
             select max(coalesce(j.completed_at, j.created_at)) from jobs j
              where j.customer_id = c.id and j.deleted_at is null),
+          -- Cancelled invoices are counted, not excluded. A Storno is a real
+          -- document with a negative total, and it is already in this sum;
+          -- dropping the original it cancels subtracts the amount a second
+          -- time, so a cancelled 300 EUR invoice took 300 EUR off lifetime
+          -- value instead of leaving it unchanged. Keeping both lets the
+          -- pair net to zero, which is what actually happened.
           lifetime_value = coalesce((
             select sum(i.gross_total) from invoices i
              where i.customer_id = c.id
-               and i.status <> 'draft'
-               and i.cancelled_at is null), 0)
+               and i.status <> 'draft'), 0)
         where c.id = $1
         """,
         customer_id,
