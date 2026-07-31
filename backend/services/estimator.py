@@ -538,11 +538,24 @@ def survey(job_key: str) -> dict:
             "help_de": "Einsatz außerhalb der regulären Arbeitszeit",
         })
 
+    # Which tiers actually produce a different estimate for this job type.
+    # The tier machinery is real — an operation carrying `tier_min` is dropped
+    # below that tier — but only 4 of the 136 job types use it and none gates
+    # anything to `premium`. So for almost every job "basic", "standard" and
+    # "premium" are the same number, and a UI offering three options would be
+    # showing the customer three identical prices. Stated here so the screen
+    # can offer the choice only where there is one.
+    tiers_present = sorted(
+        {o.get("tier_min") or "basic" for o in job["operations"]},
+        key=lambda t: TIER_ORDER.get(t, 0))
+
     return {
         "job": {k: job[k] for k in (
             "key", "trade", "label_de", "unit", "group", "segment", "confidence",
             "typical_size", "band_basis", "site_visit_required", "quote_mode",
             "small_job_premium", "messy", "emergency_capable")},
+        "tiers_differ": len(tiers_present) > 1,
+        "tiers_present": tiers_present,
         "form": form,
         "always_notes": [{"key": k, **cat["notes"][k]}
                          for k in (job.get("note_keys") or []) if k in cat["notes"]],

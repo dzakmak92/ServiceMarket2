@@ -237,6 +237,29 @@ check(len(meta["groups"]) >= 20, f"{len(meta['groups'])} directory groups")
 check(set(meta["conditions"]) == set(cat["modifiers"]["condition_uplift"]),
       "meta lists the condition vocabulary the estimator accepts")
 
+
+print("\n── tiers are only offered where the catalogue distinguishes them ──")
+# The machinery is real: an operation carrying `tier_min` is dropped below
+# that tier. The data is not — only 4 of 136 job types use it, and none gates
+# anything to `premium`. So for almost every job all three tiers resolve to
+# the same estimate, and a UI offering the choice would show the customer
+# three identical prices.
+_tiered = [j["key"] for j in E.jobs()
+           if E.survey(j["key"])["tiers_differ"]]
+check(len(_tiered) >= 1, f"{len(_tiered)} job type(s) actually tier")
+for _k in _tiered[:1]:
+    _lo = E.estimate(_k, {}, country="AT", tier="basic", rates={}, calibration=None)
+    _hi = E.estimate(_k, {}, country="AT", tier="standard", rates={}, calibration=None)
+    check(_lo["total_net"] != _hi["total_net"],
+          f"{_k}: basic and standard differ ({_lo['total_net'][1]} vs {_hi['total_net'][1]})")
+# And where they do not, survey() says so rather than letting the screen guess.
+_flat = next(j["key"] for j in E.jobs()
+             if not E.survey(j["key"])["tiers_differ"])
+_a = E.estimate(_flat, {}, country="AT", tier="basic", rates={}, calibration=None)
+_b = E.estimate(_flat, {}, country="AT", tier="premium", rates={}, calibration=None)
+check(_a["total_net"] == _b["total_net"],
+      f"{_flat}: tiers_differ is false and the numbers agree")
+
 print("\n" + ("ALL PASS" if not fails else f"{len(fails)} FAILURE(S)"))
 for f in fails:
     print("  ·", f)

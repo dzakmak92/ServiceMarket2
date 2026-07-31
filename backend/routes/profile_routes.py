@@ -102,10 +102,23 @@ async def _payload(pro_id: str) -> dict:
     data["id"] = str(data["id"])
     data["user_id"] = str(data["user_id"])
     data["completed_jobs_count"] = completed
-    # Invoicing is core to the one-sided product, not an add-on tier, so the
-    # toolkit is always available. The flag stays because the navigation still
-    # gates on it.
+    # All three toolkits are on, and nothing enforces them anyway.
+    #
+    # `has_invoice_toolkit` was hardcoded true; `has_tax_toolkit` and
+    # `has_pm_toolkit` were never set at all, so they arrived as undefined and
+    # the navigation — which is the only thing that reads them — hid Projekte
+    # and Steuer. Meanwhile no route on this API checks any of them: /api/tax/*
+    # and the whole project surface serve anyone who asks. The result was the
+    # worst of both: the paid features were free *and* hidden, reachable only
+    # by typing the URL.
+    #
+    # Until there is a billing rail to enforce against, they are declared on.
+    # Hiding working features from your own users costs more than it protects,
+    # and a flag that says "no" while the endpoint says "yes" is a lie the
+    # next reader has to discover.
     data["has_invoice_toolkit"] = True
+    data["has_tax_toolkit"] = True
+    data["has_pm_toolkit"] = True
     data["portfolio_photos"] = data.get("portfolio_photos") or []
     # No reviews exist without a marketplace. Absent, not zero — zero would
     # render as "0.0 stars" and read like a bad rating.

@@ -5,6 +5,7 @@ import { useLang } from '../../contexts/LangContext';
 import {
   Loader2, Search, AlertTriangle, ArrowLeft, Calculator, FileText,
   Trash2, Clock, Package, Info, MapPin, TrendingUp, Bookmark,
+  RefreshCw, Coins, Pencil, RotateCcw, Check, Layers,
 } from 'lucide-react';
 
 const fmtEur = (v) =>
@@ -62,6 +63,13 @@ export default function EstimatePage() {
   const [createdQuote, setCreatedQuote] = useState(false);
   const [accuracy, setAccuracy] = useState(null);
   const [showAccuracy, setShowAccuracy] = useState(false);
+  const [calibrating, setCalibrating] = useState(false);
+  // The rate card and the tier comparison: both endpoints existed, were
+  // tested, and had no caller anywhere in the frontend.
+  const [rates, setRates] = useState(null);
+  const [showRates, setShowRates] = useState(false);
+  const [compare, setCompare] = useState(null);
+  const [comparing, setComparing] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -79,6 +87,9 @@ export default function EstimatePage() {
         api.get('/api/estimate/accuracy')
           .then(({ data }) => { if (live) setAccuracy(data); })
           .catch(() => {});
+        api.get('/api/profile/pro/rates')
+          .then(({ data }) => { if (live) setRates(data.rates || []); })
+          .catch(() => { if (live) setRates([]); });
       } catch (e) {
         if (live) setError(e?.response?.data?.detail || 'Katalog konnte nicht geladen werden');
       } finally {
@@ -183,6 +194,49 @@ export default function EstimatePage() {
     }
   };
 
+  /** Rebuild the speed correction from every finished, timed job.
+      Rebuilt rather than nudged, so correcting one bad timer entry actually
+      fixes the number instead of leaving it baked in. */
+  const recalibrate = async () => {
+    setCalibrating(true); setError('');
+    try {
+      const { data } = await api.post('/api/estimate/calibrate');
+      const { data: a } = await api.get('/api/estimate/accuracy');
+      setAccuracy(a);
+      setNotice(`Neu berechnet aus ${data.jobs_measured} `
+        + `${data.jobs_measured === 1 ? 'Auftrag' : 'Aufträgen'}.`);
+    } catch (e) {
+      setError(e?.response?.data?.detail || 'Die Neuberechnung ist fehlgeschlagen');
+    } finally { setCalibrating(false); }
+  };
+
+  /** The same answers at all three tiers. The escape from pure price
+      comparison: a customer choosing between options is not a customer
+      choosing the cheapest of eight quotes. */
+  const compareTiers = async () => {
+    setComparing(true); setError('');
+    try {
+      const { data } = await api.post('/api/estimate/compare', {
+        job_key: selected.job.key, answers,
+      });
+      setCompare(data.tiers || null);
+    } catch (e) {
+      setError(e?.response?.data?.detail || 'Der Vergleich ist fehlgeschlagen');
+    } finally { setComparing(false); }
+  };
+
+  const saveRate = async (key, amount, label, unit) => {
+    const { data } = await api.put('/api/profile/pro/rates',
+                                   { key, amount, label, unit });
+    setRates((rs) => rs.map((r) => (r.key === key ? { ...r, ...data } : r)));
+  };
+
+  const resetRate = async (key) => {
+    await api.delete(`/api/profile/pro/rates/${encodeURIComponent(key)}`);
+    const { data } = await api.get('/api/profile/pro/rates');
+    setRates(data.rates || []);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center">
@@ -233,7 +287,11 @@ export default function EstimatePage() {
         {!selected ? (
           <>
             <AccuracyCard data={accuracy} open={showAccuracy}
-                          onToggle={() => setShowAccuracy((o) => !o)} />
+                          onToggle={() => setShowAccuracy((o) => !o)}
+                          onRecalibrate={recalibrate} calibrating={calibrating} />
+            <RateCard rates={rates} open={showRates}
+                      onToggle={() => setShowRates((o) => !o)}
+                      onSave={saveRate} onReset={resetRate} />
             <JobPicker meta={meta} jobs={visible} query={query} setQuery={setQuery}
                        group={group} setGroup={setGroup} onPick={openJob} />
           </>
@@ -242,9 +300,15 @@ export default function EstimatePage() {
             <SurveyForm survey={selected} answers={answers} set={set}
                         tier={tier} setTier={setTier} />
             <Result result={result} calculating={calculating} />
+            {result && selected.tiers_differ && (
+              <TierCompare tiers={compare} busy={comparing} tier={tier}
+                           onCompare={compareTiers}
+                           onPick={(k) => { setTier(k); setCompare(null); }} />
+            )}
             {result && (
               <QuoteBox jobs={myJobs} targetJob={targetJob} setTargetJob={setTargetJob}
                         allTiers={allTiers} setAllTiers={setAllTiers}
+                        tiersDiffer={!!selected.tiers_differ}
                         creating={creating} onCreate={createQuote}
                         saving={saving} onSave={saveEstimate} />
             )}
@@ -528,7 +592,7 @@ function Stat({ icon: Icon, label, value, sub }) {
   );
 }
 
-function QuoteBox({ jobs, targetJob, setTargetJob, allTiers, setAllTiers,
+function QuoteBox({ jobs, targetJob, setTargetJob, allTiers, setAllTiers, tiersDiffer,
                    creating, onCreate, saving, onSave }) {
   return (
     <div className="card-lg mb-4 space-y-3" data-testid="estimate-quote-box">
@@ -544,11 +608,18 @@ function QuoteBox({ jobs, targetJob, setTargetJob, allTiers, setAllTiers,
           </option>
         ))}
       </select>
-      <label className="flex items-center gap-2 text-xs text-ink-muted">
-        <input type="checkbox" checked={allTiers} onChange={(e) => setAllTiers(e.target.checked)} />
-        Alle drei Varianten anlegen — eine Wahl zwischen Optionen ist keine Wahl
-        zwischen acht Preisen.
-      </label>
+      {/* Offered only where the catalogue actually distinguishes the tiers.
+          For 132 of the 136 job types every tier resolves to the same
+          operations, so ticking this produced three identical quotes — worse
+          than one, because the customer sees a choice that is not one. */}
+      {tiersDiffer && (
+        <label className="flex items-center gap-2 text-xs text-ink-muted">
+          <input type="checkbox" checked={allTiers}
+                 onChange={(e) => setAllTiers(e.target.checked)} />
+          Alle drei Varianten anlegen — eine Wahl zwischen Optionen ist keine
+          Wahl zwischen acht Preisen.
+        </label>
+      )}
       <button type="button" className="btn-primary w-full flex items-center justify-center gap-2"
               disabled={!targetJob || creating} onClick={onCreate} data-testid="estimate-create-quote">
         {creating ? <Loader2 className="animate-spin" size={16} /> : <Calculator size={16} />}
@@ -571,7 +642,7 @@ function QuoteBox({ jobs, targetJob, setTargetJob, allTiers, setAllTiers,
   );
 }
 
-function AccuracyCard({ data, open, onToggle }) {
+function AccuracyCard({ data, open, onToggle, onRecalibrate, calibrating }) {
   if (!data || !data.jobs_measured) return null;
   const o = data.overall;
   const enough = o?.applies;
@@ -607,6 +678,17 @@ function AccuracyCard({ data, open, onToggle }) {
 
       {open && (
         <div className="mt-3 space-y-1">
+          {/* Rebuilt from scratch, not nudged — so correcting one bad timer
+              entry actually fixes the figure. The endpoint existed and had no
+              caller, which left the loop closed on the server and open on the
+              screen. */}
+          <button type="button" onClick={onRecalibrate} disabled={calibrating}
+                  className="btn-ghost text-xs mb-2" data-testid="estimate-recalibrate">
+            {calibrating
+              ? <Loader2 size={12} className="animate-spin" />
+              : <RefreshCw size={12} />}
+            Neu berechnen
+          </button>
           {data.jobs.map((j) => (
             <div key={j.estimate_id}
                  className={`flex items-baseline justify-between gap-2 text-xs py-1
@@ -631,6 +713,177 @@ function AccuracyCard({ data, open, onToggle }) {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+
+/**
+ * What this business charges, and the evidence for it.
+ *
+ * `GET/PUT/DELETE /api/profile/pro/rates` were mounted, tested and called by
+ * nothing — so the input every estimate, quote line and invoice default
+ * depends on had no screen at all. The rates are learned from accepted quotes
+ * (median over samples), which means the cold start is covered; what was
+ * missing was any way to see them or correct one.
+ */
+function RateCard({ rates, open, onToggle, onSave, onReset }) {
+  const [editing, setEditing] = useState(null);
+  const [value, setValue] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  if (!rates || rates.length === 0) return null;
+
+  const commit = async (r) => {
+    const amount = parseFloat(value);
+    if (!(amount > 0)) { setEditing(null); return; }
+    setBusy(true);
+    try { await onSave(r.key, amount, r.label, r.unit); }
+    finally { setBusy(false); setEditing(null); }
+  };
+
+  const manual = rates.filter((r) => r.is_manual).length;
+
+  return (
+    <div className="card-lg mb-4" data-testid="estimate-rates">
+      <button type="button" onClick={onToggle} className="w-full text-left">
+        <p className="text-xs text-ink-muted flex items-center gap-1">
+          <Coins size={12} />Aus Ihren angenommenen Angeboten gelernt
+        </p>
+        <div className="flex items-baseline justify-between gap-3 mt-1">
+          <p className="font-headings font-bold text-ink text-xl">
+            {rates.length} {rates.length === 1 ? 'Preis' : 'Preise'}
+          </p>
+          <span className="text-xs text-ink-muted">
+            {manual > 0 ? `${manual} selbst gesetzt` : 'alle gelernt'}
+          </span>
+        </div>
+      </button>
+
+      {open && (
+        <div className="mt-3 space-y-1">
+          {rates.map((r) => (
+            <div key={r.key}
+                 className="flex items-center justify-between gap-2 text-xs py-1.5
+                            border-b border-sm-border/60"
+                 data-testid={`estimate-rate-${r.key}`}>
+              <span className="text-ink min-w-0">
+                {r.label || r.key}
+                <span className="block text-[11px] text-ink-muted">
+                  {/* The spread, because a rate built from prices between 38
+                      and 92 means something different from one built from
+                      prices between 61 and 64. */}
+                  {r.n_samples > 0
+                    ? `${r.n_samples} ${r.n_samples === 1 ? 'Angebot' : 'Angebote'}`
+                      + (r.low != null && r.high != null && r.low !== r.high
+                          ? ` · ${fmtEur2(r.low)}–${fmtEur2(r.high)}` : '')
+                    : 'ohne Belege'}
+                  {r.is_manual && ' · selbst gesetzt'}
+                </span>
+              </span>
+              {editing === r.key ? (
+                <span className="flex items-center gap-1 shrink-0">
+                  <input
+                    type="number" min="0" step="0.01" autoFocus
+                    className="input h-8 w-24 text-xs" value={value}
+                    onChange={(e) => setValue(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') commit(r); }}
+                    aria-label={r.label || r.key}
+                  />
+                  <button type="button" className="btn-primary h-8 px-2 text-xs"
+                          disabled={busy} onClick={() => commit(r)}>
+                    <Check size={12} />
+                  </button>
+                </span>
+              ) : (
+                <span className="flex items-center gap-2 shrink-0">
+                  <span className="text-ink font-medium whitespace-nowrap">
+                    {fmtEur2(r.amount)}{r.unit ? ` / ${r.unit}` : ''}
+                  </span>
+                  <button type="button"
+                          className="text-ink-muted hover:text-teal p-1"
+                          aria-label="Preis ändern" title="Preis ändern"
+                          onClick={() => { setEditing(r.key); setValue(String(r.amount)); }}>
+                    <Pencil size={12} />
+                  </button>
+                  {r.is_manual && (
+                    // Reverting restores the learned median; the samples kept
+                    // accruing underneath the override the whole time.
+                    <button type="button"
+                            className="text-ink-muted hover:text-red-warn p-1"
+                            aria-label="Auf gelernten Wert zurücksetzen"
+                            title="Auf gelernten Wert zurücksetzen"
+                            onClick={() => onReset(r.key)}>
+                      <RotateCcw size={12} />
+                    </button>
+                  )}
+                </span>
+              )}
+            </div>
+          ))}
+          <p className="text-[11px] text-ink-muted pt-2">
+            Ein selbst gesetzter Preis wird vom Lernen nicht mehr überschrieben.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+/**
+ * The same answers at all three tiers.
+ *
+ * `POST /api/estimate/compare` was mounted and unused. The tier select on the
+ * quote form only tagged one quote; there was no way to see what the other
+ * two would cost, which is the whole point of offering three.
+ */
+function TierCompare({ tiers, busy, tier, onCompare, onPick }) {
+  // Only rendered for job types whose catalogue entry actually gates an
+  // operation by tier — see `tiers_differ` in estimator.survey(). Offering a
+  // choice between three identical prices makes the product look broken and
+  // the tradesperson look careless.
+  const LABELS = { basic: 'Basis', standard: 'Standard', premium: 'Premium' };
+  if (!tiers) {
+    return (
+      <button type="button" onClick={onCompare} disabled={busy}
+              className="btn-ghost w-full mb-4 text-sm" data-testid="estimate-compare">
+        {busy ? <Loader2 size={14} className="animate-spin" /> : <Layers size={14} />}
+        Alle drei Varianten vergleichen
+      </button>
+    );
+  }
+  return (
+    <div className="card-lg mb-4" data-testid="estimate-compare-result">
+      <p className="text-xs text-ink-muted mb-3">
+        Dieselben Angaben, drei Ausführungen. Ein Kunde, der zwischen Varianten
+        wählt, vergleicht nicht mehr nur den Preis.
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {['basic', 'standard', 'premium'].map((k) => {
+          const e = tiers[k];
+          if (!e) return null;
+          const [lo, hi] = e.total_net || [0, 0];
+          return (
+            <button
+              key={k} type="button" onClick={() => onPick(k)}
+              className={`card p-3 text-left transition-colors
+                          ${tier === k ? 'border-teal bg-teal/5' : 'hover:border-teal/40'}`}
+              data-testid={`estimate-tier-${k}`}
+            >
+              <p className="text-[10px] uppercase font-bold tracking-wider text-ink-muted">
+                {LABELS[k]}
+              </p>
+              <p className="font-headings font-bold text-ink text-lg mt-0.5">
+                {lo === hi ? fmtEur2(lo) : `${fmtEur2(lo)}–${fmtEur2(hi)}`}
+              </p>
+              <p className="text-[11px] text-ink-muted mt-0.5">
+                {fmtNum(e.hours?.[0])}–{fmtNum(e.hours?.[1])} h · netto
+              </p>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
