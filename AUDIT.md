@@ -104,16 +104,13 @@ navigated to `/jobs/none/invoice`. It is a plain redirect now.
 Still open here: `ExternalInvoiceModal` in `MyInvoicesPage` has the same
 payload mismatch for free-form invoices with no job behind them.
 
-### The customer portal shows no quote
+### ~~The customer portal shows no quote~~ — fixed
 
-`GET /api/portal/{token}` returns `{job, quotes}`. `PMPublicStatusPage`
-renders `data.title`, `data.progress_pct`, `data.pro`, `data.change_orders`,
-`data.payments`, `data.financials`, `data.diary_recent` — none of which exist
-in that payload — and never touches `data.quotes`.
-`POST /api/portal/{token}/quotes/{id}/accept` works and has no caller. The
-customer cannot accept a quote; only the pro can, on their behalf. The
-Abnahme form reads `job.abnahme_at`, which the portal's job projection does
-not select, so it reappears after signing and can be submitted forever.
+`PMPublicStatusPage` rendered seven keys the payload does not contain and
+never touched `data.quotes`, and `POST /api/portal/{token}/quotes/{id}/accept`
+had no caller — the customer could not accept a quote, only the pro could on
+their behalf. Both halves are now wired and the journey test asserts the
+portal carries the quote with its positions.
 
 ### Whole feature areas are UI shells over nothing
 
@@ -210,15 +207,33 @@ endpoints, which are mounted and have no caller).
 
 ### Mounted, working, and with no screen
 
-Still stranded: rate card (`/api/profile/pro/rates` — the input every estimate
-and quote depends on), `POST /api/estimate/compare` and `/calibrate`,
-`GET /api/tax/liability` (the "what you actually owe" number the toolkit is
-sold on), tiered quotes (`POST /api/quotes/tiered`), job documents, time-log
-listing and correction, pro-side Abnahme, and the consent history the backend
-maintains for the data subject to read.
+Recomputed against the mounted app: **138 distinct paths, 25 never referenced
+from `frontend/src`.** Excluding infrastructure (`/api/health`, `/api/docs`,
+`/api/openapi.json`, `/api/auth/refresh`, the cron `/api/me/purge-due`,
+`/api/quotes/expire-stale`, the `/api/uploads/file` legacy alias, the
+`/api/tax/receipts/{id}` alias, and the Stripe webhook) and paths built from
+a variable segment that the scan cannot see (`/api/quotes/{id}/send|accept|
+reject`, which `QuotesPage` calls as `` `/api/quotes/${id}/${path}` ``), what
+is genuinely stranded and user-facing is:
 
-Reached since: the expense CRUD behind the EÜR, quote revision and the quote
-PDF, customer detail/edit/delete, and `GET /api/invoices/overdue` (dunning).
+- `GET/POST /api/jobs/{id}/documents` + `DELETE .../{doc_id}` and
+  `GET /api/portal/{token}/documents` — file attachments on a job.
+  `AttachmentUploader` exists as a component and is imported nowhere.
+- `GET/POST /api/jobs/{id}/time-logs` — listing and correcting logged hours.
+  Only start/stop is reachable, so a mistyped session cannot be fixed.
+- `POST /api/jobs/{id}/abnahme` — pro-side handover sign-off. The customer
+  can sign in the portal; the pro cannot record it on site.
+- `POST /api/quotes/tiered` — Basic/Standard/Premium in one call, the escape
+  from pure price comparison. The UI creates one tier at a time.
+- `GET /api/tax/liability` — the "what you actually owe" number.
+- `GET /api/me/consent/history` — the Art. 7(1) trail.
+- `GET /api/tax/exports/datev.csv` — only the `datev-full.csv` variant is
+  called.
+
+Reached since this list was first written: the rate card
+(`/api/profile/pro/rates`, GET/PUT/DELETE, from `EstimatePage`), the expense
+CRUD behind the EÜR, quote revision and the quote PDF, customer
+detail/edit/delete, and `GET /api/invoices/overdue` (dunning).
 
 ### ~~The job status dropdown~~ — fixed
 
