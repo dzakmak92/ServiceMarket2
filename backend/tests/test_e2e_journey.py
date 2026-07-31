@@ -447,6 +447,24 @@ with TestClient(entry.app) as c:
                   f"and lifetime value is the one invoice that stands "
                   f"({ltv} vs {inv['gross_total']})")
 
+    step("the dunning list shows who to chase, and nothing else")
+    r = c.get("/api/invoices/overdue")
+    check(ok(r), f"the overdue list answers ({r.status_code})")
+    od = r.json().get("invoices", []) if r.status_code < 400 else []
+    # A credit note is unpaid and past due by construction — it is money the
+    # pro owes, not money owed to them. Listing it means chasing your own
+    # customer for a refund you issued.
+    # Meaningful rather than vacuous: this business definitely has a Storno by
+    # now — it was created two steps ago — so its absence here is a result,
+    # not an artefact of an empty list.
+    allinv = c.get("/api/invoices", params={"limit": 200}).json().get("invoices", [])
+    stornos = [i["invoice_number"] for i in allinv if i["type"] == "storno"]
+    check(len(stornos) > 0, f"the business has a Storno on file ({stornos})")
+    check(not [i for i in od if i["type"] == "storno"],
+          f"and it is not in the dunning list ({len(od)} row(s) there)")
+    check(all(float(i["outstanding"]) > 0 for i in od),
+          "nor anything already settled")
+
     step("the numbers reach the tax toolkit")
     y = date.today().year
     r = c.get("/api/tax/eur", params={"year": y})

@@ -18,9 +18,14 @@ const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct
 const fmtEur = (v) => new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
 
 // ─── KPI tile ────────────────────────────────────────────────────────────────
-function KpiCard({ label, value, sub, icon: Icon, color, bg }) {
+function KpiCard({ label, value, sub, icon: Icon, color, bg, to }) {
+  // A figure a pro is meant to act on should be the thing they can press.
+  // "Offene Forderungen" was a number with nowhere to go.
+  const Wrap = to ? Link : 'div';
+  const props = to ? { to, className: 'card-lg flex flex-col gap-2 hover:border-teal/40 transition-colors' }
+                   : { className: 'card-lg flex flex-col gap-2' };
   return (
-    <div className="card-lg flex flex-col gap-2" data-testid={`kpi-${label.toLowerCase().replace(/\s+/g,'-')}`}>
+    <Wrap {...props} data-testid={`kpi-${label.toLowerCase().replace(/\s+/g,'-')}`}>
       <div className="flex items-center justify-between">
         <span className="text-xs text-ink-muted">{label}</span>
         <div className={`w-8 h-8 rounded-full ${bg} flex items-center justify-center flex-shrink-0`}>
@@ -29,7 +34,7 @@ function KpiCard({ label, value, sub, icon: Icon, color, bg }) {
       </div>
       <p className={`text-2xl font-headings font-bold leading-none ${color}`}>{value}</p>
       {sub && <p className="text-[11px] text-ink-muted">{sub}</p>}
-    </div>
+    </Wrap>
   );
 }
 
@@ -152,6 +157,7 @@ export default function ProDashboard() {
             icon={AlertCircle}
             color={invStats?.pending_brutto > 0 ? 'text-amber-deep' : 'text-ink-muted'}
             bg="bg-amber/10"
+            to={invStats?.pending_count > 0 ? '/overdue' : undefined}
           />
           <KpiCard
             label={t('dash_win_rate')}

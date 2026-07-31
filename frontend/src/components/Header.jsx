@@ -101,6 +101,7 @@ export default function Header() {
         { to: '/quotes', label: t('nav_quotes') },
         { to: '/estimate', label: t('nav_estimate') },
         ...(hasToolkit ? [{ to: '/my-invoices', label: t('nav_my_invoices') }] : []),
+        ...(hasToolkit ? [{ to: '/overdue', label: t('nav_overdue') }] : []),
         ...(hasTaxToolkit ? [{ to: '/tax', label: t('nav_tax') }] : []),
         { to: '/recurring', label: t('nav_recurring') },
         { to: '/schedule', label: t('nav_schedule') },

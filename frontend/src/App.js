@@ -26,6 +26,7 @@ import RemovalPage from "./pages/legal/RemovalPage";
 import ProHomePage from "./pages/pro/ProHomePage";
 import ProDashboard from "./pages/pro/ProDashboardPage";
 import BillingPage from "./pages/pro/BillingPage";
+import OverduePage from "./pages/pro/OverduePage";
 import MyInvoicesPage from "./pages/pro/MyInvoicesPage";
 import CustomersPage from "./pages/pro/CustomersPage";
 import QuotesPage from "./pages/pro/QuotesPage";
@@ -220,6 +221,14 @@ function AppShell() {
           element={
             <ProtectedRoute roles={["tradesperson"]}>
               <MyInvoicesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/overdue"
+          element={
+            <ProtectedRoute roles={["tradesperson"]}>
+              <OverduePage />
             </ProtectedRoute>
           }
         />

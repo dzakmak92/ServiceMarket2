@@ -434,17 +434,32 @@ async def delete_payment(pro_id: str, invoice_id: str, payment_id: str) -> bool:
 
 
 async def overdue_for_pro(pro_id: str) -> list[dict]:
-    """Feeds the dunning ladder (Phase 7). Needs no PSP: a reminder email
-    with the existing EPC-QR PDF attached is already actionable."""
+    """Who owes money, and how late.
+
+    Needs no PSP: a reminder carrying the existing EPC-QR PDF is already
+    actionable, and the pro can send it themselves.
+
+    `type <> 'storno'` because a credit note is unpaid and past its due date
+    by construction — it is money the pro owes, not money owed to them — and
+    putting it in a dunning list means chasing your own customer for a refund
+    you issued.
+    """
     return await pg.fetch(
         """
-        select i.*, c.name as customer_name, c.email as customer_email,
+        select i.id, i.invoice_number, i.type::text as type,
+               i.payment_state::text as payment_state,
+               i.issue_date, i.due_date, i.gross_total, i.paid_total,
+               i.outstanding,
+               c.name as customer_name, c.email as customer_email,
+               c.phone as customer_phone,
                current_date - i.due_date as days_overdue
           from invoices i
           left join customers c on c.id = i.customer_id
          where i.pro_id = $1
            and i.status <> 'draft' and i.cancelled_at is null
+           and i.type <> 'storno'
            and i.payment_state in ('unpaid','partial','overdue')
            and i.due_date < current_date
+           and i.outstanding > 0
          order by i.due_date
         """, pro_id)
