@@ -5,16 +5,31 @@ import { useLang } from '../../contexts/LangContext';
 import {
   Briefcase, Loader2, Plus, ChevronRight, CheckCircle, Clock, Pause, Archive,
   TrendingUp, AlertTriangle, Search, Filter, Calendar as CalendarIcon,
+  Sparkles, FileText, Receipt,
 } from 'lucide-react';
 
 const fmtEur = (v) => new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
 
+// The nine members of the `job_status` enum, in the order a job moves
+// through them. The previous four — active/on_hold/done/archived — were not
+// members of anything: the filter matched nothing, every card fell back to
+// "active", and the tab strip could not select a real job.
 const STATUS_META = {
-  active:    { i: Clock,         cls: 'text-amber-deep bg-amber/10',         dot: 'bg-amber',         key: 'pm_status_active' },
-  on_hold:   { i: Pause,         cls: 'text-ink-muted bg-cream-deep',        dot: 'bg-ink-muted',     key: 'pm_status_on_hold' },
-  done:      { i: CheckCircle,   cls: 'text-green-pos bg-green-pos/10',      dot: 'bg-green-pos',     key: 'pm_status_done' },
-  archived:  { i: Archive,       cls: 'text-ink-muted bg-cream-deep',        dot: 'bg-ink-muted',     key: 'pm_status_archived' },
+  lead:        { i: Sparkles,    cls: 'text-ink-muted bg-cream-deep',   dot: 'bg-ink-muted', key: 'pm_status_lead' },
+  quoted:      { i: FileText,    cls: 'text-teal bg-teal/10',           dot: 'bg-teal',      key: 'pm_status_quoted' },
+  accepted:    { i: CheckCircle, cls: 'text-teal bg-teal/10',           dot: 'bg-teal',      key: 'pm_status_accepted' },
+  scheduled:   { i: CalendarIcon,cls: 'text-amber-deep bg-amber/10',    dot: 'bg-amber',     key: 'pm_status_scheduled' },
+  in_progress: { i: Clock,       cls: 'text-amber-deep bg-amber/10',    dot: 'bg-amber',     key: 'pm_status_in_progress' },
+  completed:   { i: CheckCircle, cls: 'text-green-pos bg-green-pos/10', dot: 'bg-green-pos', key: 'pm_status_completed' },
+  invoiced:    { i: Receipt,     cls: 'text-green-pos bg-green-pos/10', dot: 'bg-green-pos', key: 'pm_status_invoiced' },
+  closed:      { i: Archive,     cls: 'text-ink-muted bg-cream-deep',   dot: 'bg-ink-muted', key: 'pm_status_closed' },
+  cancelled:   { i: Pause,       cls: 'text-ink-muted bg-cream-deep',   dot: 'bg-ink-muted', key: 'pm_status_cancelled' },
 };
+
+// Which of them count as work still in hand, for the default filter and the
+// pipeline tile.
+const OPEN = ['lead', 'quoted', 'accepted', 'scheduled', 'in_progress'];
+const EARNED = ['completed', 'invoiced', 'closed'];
 
 export default function PMProjectsPage() {
   const { t } = useLang();
@@ -28,14 +43,16 @@ export default function PMProjectsPage() {
   const [pickJob, setPickJob] = useState('');
 
   // Filter / search state
-  const [statusFilter, setStatusFilter] = useState('active');
+  const [statusFilter, setStatusFilter] = useState('open');
   const [search, setSearch] = useState('');
 
   const load = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/api/jobs');
-      setProjects(data.projects || []);
+      // `jobs`, not `projects`. GET /api/jobs returns {jobs, total}; reading
+      // the wrong key made this list permanently empty regardless of filter.
+      const { data } = await api.get('/api/jobs', { params: { limit: 200 } });
+      setProjects(data.jobs || []);
     } catch (e) {
       if (e?.response?.status === 402) setNeedsToolkit(true);
     } finally { setLoading(false); }
@@ -70,25 +87,27 @@ export default function PMProjectsPage() {
 
   // ─── Aggregate stats across all visible projects ───
   const stats = useMemo(() => {
-    const acc = { active: 0, on_hold: 0, done: 0, archived: 0, totalRevenue: 0, totalPotential: 0 };
+    const acc = { open: 0, done: 0, totalRevenue: 0, totalPotential: 0 };
     for (const p of projects) {
-      acc[p.status || 'active'] = (acc[p.status || 'active'] || 0) + 1;
-      const rev = Number(p.quote_price_eur || 0);
-      if (p.status === 'done') acc.totalRevenue += rev;
-      else if (p.status === 'active') acc.totalPotential += rev;
+      const rev = Number(p.contract_amount || 0);
+      if (EARNED.includes(p.status)) { acc.done += 1; acc.totalRevenue += rev; }
+      else if (OPEN.includes(p.status)) { acc.open += 1; acc.totalPotential += rev; }
     }
     return acc;
   }, [projects]);
 
   const filtered = useMemo(() => {
     let arr = projects;
-    if (statusFilter !== 'all') arr = arr.filter((p) => (p.status || 'active') === statusFilter);
+    if (statusFilter === 'open') arr = arr.filter((p) => OPEN.includes(p.status));
+    else if (statusFilter === 'done') arr = arr.filter((p) => EARNED.includes(p.status));
+    else if (statusFilter !== 'all') arr = arr.filter((p) => p.status === statusFilter);
     if (search.trim()) {
       const q = search.toLowerCase();
       arr = arr.filter((p) =>
         (p.title || '').toLowerCase().includes(q) ||
-        (p.customer?.name || '').toLowerCase().includes(q) ||
-        (p.job_category || '').toLowerCase().includes(q),
+        (p.customer_name || '').toLowerCase().includes(q) ||
+        (p.job_number || '').toLowerCase().includes(q) ||
+        (p.category || '').toLowerCase().includes(q),
       );
     }
     return arr;
@@ -130,7 +149,7 @@ export default function PMProjectsPage() {
             icon={Clock}
             iconCls="text-amber-deep"
             label={t('pm_stat_active')}
-            value={stats.active}
+            value={stats.open}
             data-testid="pm-stat-active"
           />
           <StatTile
@@ -205,14 +224,14 @@ export default function PMProjectsPage() {
           </div>
           <div className="flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-hide flex-nowrap">
             <Filter size={12} className="text-ink-muted flex-shrink-0" />
-            {['all', 'active', 'on_hold', 'done', 'archived'].map((s) => (
+            {['open', 'done', 'all', 'lead', 'quoted', 'accepted', 'scheduled', 'in_progress', 'invoiced', 'cancelled'].map((s) => (
               <button
                 key={s}
                 onClick={() => setStatusFilter(s)}
                 className={`text-[11px] px-2 py-1 rounded-[8px] transition-colors capitalize flex-shrink-0 whitespace-nowrap ${statusFilter === s ? 'bg-teal text-paper' : 'text-ink-muted hover:bg-cream-deep'}`}
                 data-testid={`pm-filter-${s}`}
               >
-                {s === 'all' ? t('pm_filter_all') : t(`pm_status_${s}`)}
+                {s === 'all' ? t('pm_filter_all') : s === 'open' ? t('pm_stat_active') : s === 'done' ? t('pm_stat_done') : t(`pm_status_${s}`)}
               </button>
             ))}
           </div>
@@ -251,9 +270,9 @@ function StatTile({ icon: Icon, iconCls, label, value, sub, ...rest }) {
 }
 
 function ProjectCard({ p, t }) {
-  const meta = STATUS_META[p.status] || STATUS_META.active;
+  const meta = STATUS_META[p.status] || STATUS_META.lead;
   const Icon = meta.i;
-  const revenue = Number(p.quote_price_eur || 0);
+  const revenue = Number(p.contract_amount || 0);
   return (
     <Link
       to={`/projects/${p.id}`}
@@ -270,7 +289,7 @@ function ProjectCard({ p, t }) {
             </span>
           </div>
           <p className="text-xs text-ink-muted truncate mt-0.5">
-            {p.customer?.name || '—'} · {p.job_category || '—'}
+            {p.customer_name || '—'} · {p.job_number || p.category || '—'}
           </p>
         </div>
       </div>
@@ -283,9 +302,9 @@ function ProjectCard({ p, t }) {
               <p className="text-lg font-headings font-bold text-ink">{fmtEur(revenue)}</p>
             </>
           )}
-          {p.customer?.city && (
+          {(p.site_city || p.customer_city) && (
             <p className="text-[11px] text-ink-muted mt-1 inline-flex items-center gap-1">
-              <CalendarIcon size={10} /> {p.customer.city}
+              <CalendarIcon size={10} /> {p.site_city || p.customer_city}
             </p>
           )}
         </div>

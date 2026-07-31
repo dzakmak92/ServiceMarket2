@@ -44,13 +44,13 @@ export default function OverviewTab({ projectId, t, onJumpTab }) {
 
   // Tick every second while a timer for THIS project is running
   useEffect(() => {
-    if (!timer || timer.project_id !== projectId) return;
+    if (!timer || timer.job_id !== projectId) return;
     const i = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(i);
   }, [timer, projectId]);
 
   const toggleTimer = async () => {
-    if (timer && timer.project_id === projectId) {
+    if (timer && timer.job_id === projectId) {
       await api.post(`/api/jobs/${projectId}/timer/stop`);
     } else {
       await api.post(`/api/jobs/${projectId}/timer/start`);
@@ -62,16 +62,22 @@ export default function OverviewTab({ projectId, t, onJumpTab }) {
 
   if (loading || !data) return <div className="flex justify-center py-10"><Loader2 size={24} className="text-teal animate-spin" /></div>;
 
-  const isTimerOnThis = timer && timer.project_id === projectId;
+  const isTimerOnThis = timer && timer.job_id === projectId;
   const timerElapsedSec = isTimerOnThis ? Math.floor((now - new Date(timer.started_at).getTime()) / 1000) : 0;
   const hh = String(Math.floor(timerElapsedSec / 3600)).padStart(2, '0');
   const mm = String(Math.floor((timerElapsedSec % 3600) / 60)).padStart(2, '0');
   const ss = String(timerElapsedSec % 60).padStart(2, '0');
 
-  const pl = data.pl;
+  // Defaulted rather than destructured. Every one of these came back
+  // undefined against the Postgres API and `pl.profit_eur` threw on render —
+  // and because Overview is the default tab and the app has no error
+  // boundary, the whole job detail page went blank.
+  const pl = data.pl || {};
   const job = data.job || {};
   const cust = data.customer || {};
-  const profitPositive = pl.profit_eur > 0;
+  const quote = data.quote || {};
+  const invoices = data.invoices || [];
+  const profitPositive = (pl.profit_eur || 0) > 0;
 
   return (
     <div className="space-y-4" data-testid="pm-overview-tab">
@@ -100,7 +106,7 @@ export default function OverviewTab({ projectId, t, onJumpTab }) {
 
         <div className="card-lg p-4" data-testid="pm-overview-hours">
           <p className="text-[10px] uppercase font-bold text-ink-muted tracking-wider">{t('pm_overview_labour')}</p>
-          <p className="text-2xl font-headings font-bold text-ink mt-0.5">{pl.labour_hours.toFixed(1)} h</p>
+          <p className="text-2xl font-headings font-bold text-ink mt-0.5">{Number(pl.labour_hours || 0).toFixed(1)} h</p>
           <p className="text-[11px] text-ink-muted mt-1">× {fmtEur(pl.labour_rate_eur)}/h = {fmtEur(pl.labour_cost_eur)}</p>
         </div>
 
@@ -144,7 +150,7 @@ export default function OverviewTab({ projectId, t, onJumpTab }) {
           </div>
           <h3 className="font-headings font-bold text-ink text-base mb-1">{job.title || '—'}</h3>
           <p className="text-[11px] text-ink-muted mb-3">
-            {job.category} · {job.postal_code} {job.city}
+            {job.category || job.job_number} · {job.site_postal_code} {job.site_city}
           </p>
           {job.description && (
             <div className="bg-cream-soft rounded-[10px] p-3 mb-3 max-h-32 overflow-y-auto">
@@ -163,8 +169,8 @@ export default function OverviewTab({ projectId, t, onJumpTab }) {
           {(!job.photos || job.photos.length === 0) && (
             <p className="text-xs text-ink-muted inline-flex items-center gap-1"><ImageIcon size={11} /> {t('pm_overview_no_photos')}</p>
           )}
-          {job.lat && job.lng && (
-            <a href={`https://www.google.com/maps?q=${job.lat},${job.lng}`} target="_blank" rel="noopener noreferrer" className="text-xs text-teal hover:underline inline-flex items-center gap-1 mt-2">
+          {job.site_lat && job.site_lng && (
+            <a href={`https://www.google.com/maps?q=${job.site_lat},${job.site_lng}`} target="_blank" rel="noopener noreferrer" className="text-xs text-teal hover:underline inline-flex items-center gap-1 mt-2">
               <MapPin size={11} /> {t('pm_overview_open_map')}
             </a>
           )}
@@ -195,17 +201,17 @@ export default function OverviewTab({ projectId, t, onJumpTab }) {
           </div>
 
           {/* Chat snippet */}
-          {data.chat.thread_id && (
+          {data.chat?.thread_id && (
             <div className="mt-3 pt-3 border-t border-sm-border">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[10px] uppercase font-bold text-ink-muted tracking-wider flex items-center gap-1"><MessageSquare size={10} /> {t('pm_overview_chat_recent')}</p>
                 <Link to={`/messages?thread=${data.chat.thread_id}`} className="text-[11px] text-teal hover:underline" data-testid="pm-overview-open-chat">{t('pm_overview_open_chat')}</Link>
               </div>
-              {data.chat.messages.length === 0 ? (
+              {(data.chat?.messages || []).length === 0 ? (
                 <p className="text-xs text-ink-muted italic">{t('pm_overview_chat_empty')}</p>
               ) : (
                 <ul className="space-y-1.5">
-                  {data.chat.messages.map((m) => (
+                  {(data.chat?.messages || []).map((m) => (
                     <li key={m.id} className={`text-xs rounded-[8px] px-2 py-1.5 ${m.sent_by_me ? 'bg-teal/10 text-ink' : 'bg-cream-soft text-ink'}`}>
                       <span className="font-semibold text-[10px] uppercase">{m.sent_by_me ? t('pm_overview_chat_me') : (cust.name || 'Customer')}: </span>
                       {m.body}
@@ -225,13 +231,13 @@ export default function OverviewTab({ projectId, t, onJumpTab }) {
             <CheckCircle2 size={16} className="text-green-pos" />
             <p className="text-xs uppercase font-bold text-ink-muted tracking-wider">{t('pm_overview_quote')}</p>
           </div>
-          <p className="text-2xl font-headings font-bold text-ink">{fmtEur(data.quote.price_eur)}</p>
-          {data.quote.travel_cost_eur > 0 && (
-            <p className="text-xs text-ink-muted">+ {fmtEur(data.quote.travel_cost_eur)} {t('pm_overview_travel')}</p>
+          <p className="text-2xl font-headings font-bold text-ink">{fmtEur(quote.net_total)}</p>
+          {false && (
+            <p className="text-xs text-ink-muted">+ {''} {t('pm_overview_travel')}</p>
           )}
-          {data.quote.message && <p className="text-sm text-ink-soft mt-2 italic">"{data.quote.message}"</p>}
-          {data.quote.accepted_at && (
-            <p className="text-[11px] text-ink-muted mt-2 inline-flex items-center gap-1"><CalendarIcon size={10} /> {t('pm_overview_accepted')} {fmtDate(data.quote.accepted_at)}</p>
+          {quote.intro && <p className="text-sm text-ink-soft mt-2 italic">"{quote.intro}"</p>}
+          {quote.decided_at && (
+            <p className="text-[11px] text-ink-muted mt-2 inline-flex items-center gap-1"><CalendarIcon size={10} /> {t('pm_overview_accepted')} {fmtDate(quote.decided_at)}</p>
           )}
         </div>
 
@@ -249,16 +255,16 @@ export default function OverviewTab({ projectId, t, onJumpTab }) {
               {t('pm_overview_create_invoice')} →
             </Link>
           </div>
-          {data.invoices.length === 0 ? (
+          {invoices.length === 0 ? (
             <p className="text-xs text-ink-muted py-2 italic">{t('pm_overview_no_invoices')}</p>
           ) : (
             <ul className="space-y-1.5">
-              {data.invoices.map((inv) => (
+              {invoices.map((inv) => (
                 <li key={inv.id} className="flex items-center justify-between text-sm py-1.5 px-2 rounded-[8px] hover:bg-cream-soft" data-testid={`pm-overview-invoice-${inv.id}`}>
                   <Link to={`/my-invoices?new=${inv.id}`} className="font-mono text-xs text-teal hover:underline">{inv.invoice_number}</Link>
                   <div className="flex items-center gap-2">
-                    <span className="text-ink font-medium">{fmtEur(inv.brutto_total)}</span>
-                    <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full ${inv.status === 'paid' ? 'bg-green-pos/15 text-green-pos' : 'bg-amber/15 text-amber-deep'}`}>{inv.status}</span>
+                    <span className="text-ink font-medium">{fmtEur(inv.gross_total)}</span>
+                    <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full ${inv.payment_state === 'paid' ? 'bg-green-pos/15 text-green-pos' : 'bg-amber/15 text-amber-deep'}`}>{inv.payment_state}</span>
                   </div>
                 </li>
               ))}
@@ -273,11 +279,11 @@ export default function OverviewTab({ projectId, t, onJumpTab }) {
           <AlertTriangle size={16} className="text-ink-soft rotate-180" />
           <p className="text-xs uppercase font-bold text-ink-muted tracking-wider">{t('pm_overview_activity')}</p>
         </div>
-        {data.activity.length === 0 ? (
+        {(data.activity || []).length === 0 ? (
           <p className="text-xs text-ink-muted italic">{t('pm_overview_no_activity')}</p>
         ) : (
           <ul className="space-y-2.5">
-            {data.activity.map((a, i) => {
+            {(data.activity || []).map((a, i) => {
               const Icon = ACTIVITY_ICON[a.kind] || FileText;
               return (
                 <li key={i} className="flex items-start gap-3" data-testid={`pm-overview-activity-${i}`}>

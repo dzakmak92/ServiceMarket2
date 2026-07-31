@@ -1,5 +1,7 @@
 const t = {
   en: {
+    error_boundary_title: 'This view could not be loaded.', error_boundary_body: 'Your data is safely stored. Please reload the page.', error_boundary_reload: 'Reload',
+    nav_customers: 'Customers', nav_quotes: 'Quotes', nav_capture_lead: 'New enquiry', nav_recurring: 'Maintenance', nav_estimate: 'Estimate', nav_schedule: 'Schedule',
     // Nav
     nav_home: 'Home', nav_post_job: 'Post a Job', nav_find_pros: 'Find Pros',
     nav_my_jobs: 'My Jobs', nav_messages: 'Messages', nav_browse_jobs: 'Browse Jobs',
@@ -854,6 +856,7 @@ const t = {
     pm_status_note_label: 'Public status note (visible to customer)',
     pm_status_note_help: 'Short message rendered at the top of the customer page (max 280 chars).',
     pm_status_active: 'Active', pm_status_on_hold: 'On hold', pm_status_done: 'Done', pm_status_archived: 'Archived',
+    pm_status_lead: 'Lead', pm_status_quoted: 'Quoted', pm_status_accepted: 'Accepted', pm_status_scheduled: 'Scheduled', pm_status_in_progress: 'In progress', pm_status_completed: 'Completed', pm_status_invoiced: 'Invoiced', pm_status_closed: 'Closed', pm_status_cancelled: 'Cancelled',
     pm_progress: 'Progress', pm_tasks_total: 'Tasks', pm_pro: 'Your Pro',
     pm_public_title_suffix: ' · Project status',
     pm_public_intro: 'Live status page shared by your service provider.',
@@ -1147,6 +1150,8 @@ const t = {
   },
 
   de: {
+    error_boundary_title: 'Diese Ansicht konnte nicht geladen werden.', error_boundary_body: 'Ihre Daten sind sicher gespeichert. Bitte laden Sie die Seite neu.', error_boundary_reload: 'Neu laden',
+    nav_customers: 'Kunden', nav_quotes: 'Angebote', nav_capture_lead: 'Anfrage', nav_recurring: 'Wartung', nav_estimate: 'Kalkulation', nav_schedule: 'Termine',
     nav_home: 'Startseite', nav_post_job: 'Job posten', nav_find_pros: 'Profis finden',
     nav_my_jobs: 'Meine Jobs', nav_messages: 'Nachrichten', nav_browse_jobs: 'Jobs durchsuchen',
     nav_my_quotes: 'Meine Angebote', nav_my_invoices: 'Meine Rechnungen', nav_pro_calendar: 'Mein Kalender',
@@ -1928,6 +1933,7 @@ const t = {
     pm_status_note_label: 'Öffentliche Statusnotiz (für Kunden sichtbar)',
     pm_status_note_help: 'Kurze Nachricht oben auf der Kundenseite (max. 280 Zeichen).',
     pm_status_active: 'Aktiv', pm_status_on_hold: 'Pausiert', pm_status_done: 'Erledigt', pm_status_archived: 'Archiviert',
+    pm_status_lead: 'Anfrage', pm_status_quoted: 'Angebot gelegt', pm_status_accepted: 'Beauftragt', pm_status_scheduled: 'Terminisiert', pm_status_in_progress: 'In Arbeit', pm_status_completed: 'Fertiggestellt', pm_status_invoiced: 'Verrechnet', pm_status_closed: 'Abgeschlossen', pm_status_cancelled: 'Storniert',
     pm_progress: 'Fortschritt', pm_tasks_total: 'Aufgaben', pm_pro: 'Dein Profi',
     pm_public_title_suffix: ' · Projektstatus',
     pm_public_intro: 'Live-Status von Deinem Dienstleister.',
@@ -2188,6 +2194,8 @@ const t = {
   },
 
   tr: {
+    error_boundary_title: 'Bu görünüm yüklenemedi.', error_boundary_body: 'Verileriniz güvende. Lütfen sayfayı yenileyin.', error_boundary_reload: 'Yenile',
+    nav_customers: 'Müşteriler', nav_quotes: 'Teklifler', nav_capture_lead: 'Yeni talep', nav_recurring: 'Bakım', nav_estimate: 'Hesaplama', nav_schedule: 'Program',
     nav_home: 'Ana Sayfa', nav_post_job: 'İş Yayınla', nav_find_pros: 'Uzman Bul',
     nav_my_jobs: 'İşlerim', nav_messages: 'Mesajlar', nav_browse_jobs: 'İşlere Göz At',
     nav_my_quotes: 'Tekliflerim', nav_my_invoices: 'Faturalarım', nav_pro_calendar: 'Takvimim',
@@ -2944,6 +2952,7 @@ const t = {
     pm_share_link: 'Genel link', pm_share_copy: 'Linki kopyala', pm_share_rotate: 'Yeni token', pm_share_disabled: 'Paylaşım kapalı', pm_share_open_public: 'Sayfayı aç',
     pm_status_note_label: 'Müşteriye gösterilecek not', pm_status_note_help: 'En fazla 280 karakter.',
     pm_status_active: 'Aktif', pm_status_on_hold: 'Beklemede', pm_status_done: 'Bitti', pm_status_archived: 'Arşivlendi',
+    pm_status_lead: 'Talep', pm_status_quoted: 'Teklif verildi', pm_status_accepted: 'Kabul edildi', pm_status_scheduled: 'Planlandı', pm_status_in_progress: 'Devam ediyor', pm_status_completed: 'Tamamlandı', pm_status_invoiced: 'Faturalandı', pm_status_closed: 'Kapandı', pm_status_cancelled: 'İptal edildi',
     pm_progress: 'İlerleme', pm_tasks_total: 'Görevler', pm_pro: 'Ustanız',
     pm_public_title_suffix: ' · Proje durumu', pm_public_intro: 'Hizmet sağlayıcınızın paylaştığı canlı durum sayfası.', pm_public_empty: 'Henüz güncelleme yok.',
     pm_open_btn: 'Projeyi aç', pm_back: 'Projelere dön',
@@ -3160,6 +3169,8 @@ const t = {
   },
 
   es: {
+    error_boundary_title: 'No se pudo cargar esta vista.', error_boundary_body: 'Sus datos están guardados. Vuelva a cargar la página.', error_boundary_reload: 'Recargar',
+    nav_customers: 'Clientes', nav_quotes: 'Presupuestos', nav_capture_lead: 'Nueva solicitud', nav_recurring: 'Mantenimiento', nav_estimate: 'Cálculo', nav_schedule: 'Agenda',
     nav_home: 'Inicio', nav_post_job: 'Publicar Trabajo', nav_find_pros: 'Buscar Profesionales',
     nav_my_jobs: 'Mis Trabajos', nav_messages: 'Mensajes', nav_browse_jobs: 'Ver Trabajos',
     nav_my_quotes: 'Mis Presupuestos', nav_my_invoices: 'Mis Facturas', nav_pro_calendar: 'Mi Calendario',
@@ -3925,6 +3936,7 @@ const t = {
     pm_share_link: 'Enlace público', pm_share_copy: 'Copiar enlace', pm_share_rotate: 'Rotar token', pm_share_disabled: 'Compartir desactivado', pm_share_open_public: 'Abrir página',
     pm_status_note_label: 'Nota pública (visible para el cliente)', pm_status_note_help: 'Máximo 280 caracteres.',
     pm_status_active: 'Activo', pm_status_on_hold: 'En pausa', pm_status_done: 'Hecho', pm_status_archived: 'Archivado',
+    pm_status_lead: 'Solicitud', pm_status_quoted: 'Presupuestado', pm_status_accepted: 'Aceptado', pm_status_scheduled: 'Programado', pm_status_in_progress: 'En curso', pm_status_completed: 'Completado', pm_status_invoiced: 'Facturado', pm_status_closed: 'Cerrado', pm_status_cancelled: 'Cancelado',
     pm_progress: 'Progreso', pm_tasks_total: 'Tareas', pm_pro: 'Tu profesional',
     pm_public_title_suffix: ' · Estado del proyecto', pm_public_intro: 'Página de estado en vivo compartida por tu profesional.', pm_public_empty: 'Aún sin actualizaciones.',
     pm_open_btn: 'Abrir proyecto', pm_back: 'Volver a proyectos',

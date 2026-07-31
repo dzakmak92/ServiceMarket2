@@ -250,6 +250,16 @@ with TestClient(entry.app) as c:
     r = c.post(f"/api/jobs/{job_id}/materials", json={
         "name": "Dispersionsfarbe 15 l", "qty": 4, "unit": "Stk", "planned_cost": 62.5})
     check(ok(r, 201, 200), "materials are recorded")
+    mat_id = r.json().get("id") if r.status_code < 400 else None
+    if mat_id:
+        # One key at a time, the way the Materials tab edits inline. The PATCH
+        # reused the create model, whose `name` is required, so every one of
+        # these 422'd.
+        r = c.patch(f"/api/jobs/{job_id}/materials/{mat_id}",
+                    json={"actual_cost": 71.9})
+        check(ok(r), f"and can be corrected one field at a time -> {r.status_code}")
+        check(r.status_code < 400 and r.json().get("name") == "Dispersionsfarbe 15 l",
+              "without losing the name that was not sent")
 
     r = c.post(f"/api/jobs/{job_id}/diary", json={
         "text": "Erste Lage aufgetragen.", "hours": 7.5})
@@ -260,15 +270,23 @@ with TestClient(entry.app) as c:
     step("an extra is agreed on site and becomes a Nachtrag")
     # The doc calls unbilled verbal extras the biggest silent margin leak, so
     # this has to end up on the invoice with a real amount and its own kind.
+    # Sent the way the Billing tab sends it — as positions, not one figure.
+    # The model did not declare `items`, Pydantic dropped them silently, and
+    # every Nachtrag raised from that screen was worth 0 EUR.
     r = c.post(f"/api/jobs/{job_id}/change-orders", json={
         "title": "Zusätzliche Spachtelung Altbauwand",
         "description": "Untergrund schlechter als angenommen",
-        "net_amount": 480.0, "vat_rate": 20, "kind": "labor"})
-    check(ok(r, 201, 200), f"a Nachtrag is raised -> {r.status_code}")
+        "items": [{"description": "Spachteln und Schleifen", "qty": 12,
+                   "unit_net": 35.0},
+                  {"description": "Tiefengrund", "qty": 2, "unit_net": 30.0}],
+        "vat_rate": 20, "kind": "labor"})
+    check(ok(r, 201, 200), f"a Nachtrag is raised from line items -> {r.status_code}")
     co = r.json() if r.status_code < 400 else {}
     co_id = co.get("id")
     check(float(co.get("net_amount") or 0) == 480.0,
-          f"and carries its amount ({co.get('net_amount')}), not 0")
+          f"and is worth what the positions add up to ({co.get('net_amount')}), not 0")
+    check("Spachteln" in (co.get("description") or ""),
+          "with the positions in the text the customer approves")
     if co_id:
         r = c.post(f"/api/jobs/{job_id}/change-orders/{co_id}/send")
         check(ok(r), "it is sent to the customer for approval")

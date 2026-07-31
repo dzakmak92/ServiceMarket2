@@ -332,8 +332,68 @@ async def overview(pro_id: str, job_id: str) -> dict:
          where job_id = $1 and status <> 'draft'
         """, job_id)
 
+    # The job, its customer, the accepted quote and the invoices raised
+    # against it. All four were already on the screen and none of them were in
+    # this response — the Overview tab read `data.pl`, `data.job`,
+    # `data.customer`, `data.quote` and `data.invoices`, got undefined for
+    # every one, and threw on render. Since it is the default tab of the job
+    # detail page, every route into a job landed on a blank screen.
+    job = await pg.fetchrow(
+        "select id, job_number, title, description, status::text as status, "
+        "category, site_address, site_postal_code, site_city, site_lat, "
+        "site_lng, urgency, scheduled_start, scheduled_end, started_at, "
+        "completed_at, abnahme_at, contract_amount, share_token, created_at "
+        "from jobs where id = $1", job_id)
+    customer = None
+    cust_id = await pg.fetchval("select customer_id from jobs where id = $1", job_id)
+    if cust_id:
+        customer = await pg.fetchrow(
+            "select id, name, email, phone, address, postal_code, city, country "
+            "from customers where id = $1", cust_id)
+    quote = await pg.fetchrow(
+        "select id, quote_number, title, intro, net_total, gross_total, "
+        "status::text as status, decided_at, sent_at, valid_until "
+        "from quotes where job_id = $1 and status = 'accepted' "
+        "order by decided_at desc nulls last limit 1", job_id)
+    invoices = await pg.fetch(
+        "select id, invoice_number, type::text as type, status::text as status, "
+        "payment_state::text as payment_state, gross_total, outstanding, "
+        "issue_date, due_date from invoices "
+        "where job_id = $1 and status <> 'draft' order by issue_date, invoice_number",
+        job_id)
+
     total, done = int(tasks["total"] or 0), int(tasks["done"] or 0)
+    # Labour is valued at the business's own hourly rate. Stated on the
+    # response rather than assumed by the screen, so a pro who has not set one
+    # sees a zero labour cost they can explain instead of a silent default.
+    rate = float(await pg.fetchval(
+        "select hourly_rate from pro_profiles where id = $1", pro_id) or 0)
+    hours = round(int(time["s"] or 0) / 3600, 2)
+    revenue = float(inv["invoiced_net"] or 0) or float(quote["net_total"] if quote else 0)
+    labour_cost = round(hours * rate, 2)
+    profit = round(revenue - float(mat["actual"] or 0) - labour_cost, 2)
     return {
+        "job": dict(job) if job else {},
+        "customer": dict(customer) if customer else {},
+        "quote": dict(quote) if quote else {},
+        "invoices": [dict(i) for i in invoices],
+        # The single number the project view exists for: what this job is
+        # actually earning once the hours and the material are counted. It is
+        # a live figure, not a forecast — the hours come from the timer.
+        "pl": {
+            "revenue_eur": revenue,
+            "revenue_basis": "invoiced" if float(inv["invoiced_net"] or 0) else "quoted",
+            "materials_planned_eur": float(mat["planned"]),
+            "materials_actual_eur": float(mat["actual"]),
+            "labour_hours": hours,
+            "labour_rate_eur": rate,
+            "labour_cost_eur": labour_cost,
+            "profit_eur": profit,
+            "margin_pct": round(profit / revenue * 100, 1) if revenue else 0.0,
+        },
+        "progress_pct": round(done / total * 100) if total else 0,
+        "tasks_total": total,
+        "tasks_done": done,
         "tasks": {"total": total, "done": done,
                   "progress_pct": round(done / total * 100) if total else 0},
         "materials": {"planned": float(mat["planned"]), "actual": float(mat["actual"])},

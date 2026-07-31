@@ -47,6 +47,20 @@ class MaterialIn(BaseModel):
     photos: Optional[list[str]] = None
 
 
+class MaterialPatch(MaterialIn):
+    """Every field optional, because a PATCH sends one.
+
+    Reusing `MaterialIn` meant `name` was required and `qty`/`unit`/
+    `planned_cost` carried defaults, so the inline edits the Materials tab
+    makes one key at a time — a quantity, an actual cost, an attached photo —
+    all 422'd before they reached the database.
+    """
+    name: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    qty: Optional[float] = None
+    unit: Optional[str] = None
+    planned_cost: Optional[float] = None
+
+
 class DiaryIn(BaseModel):
     # Supplied by the offline queue so a replayed entry lands once. Without an
     # id chosen before the request leaves the device, a retry after a flaky
@@ -71,12 +85,41 @@ class DocumentIn(BaseModel):
     customer_visible: bool = False
 
 
+class ChangeOrderItemIn(BaseModel):
+    description: str = Field(min_length=1, max_length=300)
+    qty: float = 1
+    unit_net: float = 0
+
+
 class ChangeOrderIn(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     description: Optional[str] = None
-    net_amount: float = 0
+    net_amount: Optional[float] = None
     vat_rate: float = 20
     kind: str = Field(default="labor", pattern="^(labor|material|travel|other)$")
+    # The Billing tab builds a Nachtrag from positions, not from one figure.
+    # This model did not declare `items`, Pydantic drops unknown fields
+    # without complaint, and `net_amount` fell to its default — so every
+    # Nachtrag raised from that screen was worth EUR 0, the customer approved
+    # EUR 0 in the portal, and a EUR 0 line went onto the invoice. That is
+    # exactly the silent margin leak change orders exist to close.
+    items: list[ChangeOrderItemIn] = []
+
+    def amount(self) -> float:
+        """What the Nachtrag is worth: the positions if there are any,
+        otherwise the figure that was sent directly."""
+        if self.items:
+            return round(sum(i.qty * i.unit_net for i in self.items), 2)
+        return float(self.net_amount or 0)
+
+
+class ChangeOrderPatch(ChangeOrderIn):
+    """Same reason as MaterialPatch: a title is mandatory to create a
+    Nachtrag and meaningless to require when correcting its amount."""
+    title: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    vat_rate: Optional[float] = None
+    kind: Optional[str] = Field(default=None,
+                                pattern="^(labor|material|travel|other)$")
 
 
 class TimeLogIn(BaseModel):
@@ -162,7 +205,7 @@ async def add_material(job_id: str, body: MaterialIn, user: dict = Depends(get_c
 
 
 @router.patch("/{job_id}/materials/{material_id}")
-async def patch_material(job_id: str, material_id: str, body: MaterialIn,
+async def patch_material(job_id: str, material_id: str, body: MaterialPatch,
                          user: dict = Depends(get_current_user)):
     try:
         row = await repo.update_material(await require_pro_id(user), job_id, material_id,
@@ -305,18 +348,33 @@ async def change_orders(job_id: str, user: dict = Depends(get_current_user)):
 async def add_change_order(job_id: str, body: ChangeOrderIn,
                            user: dict = Depends(get_current_user)):
     try:
-        return await repo.create_change_order(await require_pro_id(user), job_id,
-                                              body.model_dump(exclude_none=True))
+        data = body.model_dump(exclude_none=True, exclude={"items"})
+        data["net_amount"] = body.amount()
+        # The positions go into the description so the customer approving it
+        # in the portal sees what they are approving, not just a total. There
+        # is no change_order_lines table and inventing one to hold four words
+        # per Nachtrag would be worse than this.
+        if body.items:
+            breakdown = "\n".join(
+                f"{i.qty:g} x {i.description} à {i.unit_net:.2f} EUR"
+                for i in body.items)
+            data["description"] = "\n".join(
+                filter(None, [body.description, breakdown]))
+        return await repo.create_change_order(
+            await require_pro_id(user), job_id, data)
     except LookupError as e:
         raise _nf(e)
 
 
 @router.patch("/{job_id}/change-orders/{co_id}")
-async def patch_change_order(job_id: str, co_id: str, body: ChangeOrderIn,
+async def patch_change_order(job_id: str, co_id: str, body: ChangeOrderPatch,
                              user: dict = Depends(get_current_user)):
     try:
-        row = await repo.update_change_order(await require_pro_id(user), job_id, co_id,
-                                             body.model_dump(exclude_none=True))
+        data = body.model_dump(exclude_none=True, exclude={"items"})
+        if body.items or body.net_amount is not None:
+            data["net_amount"] = body.amount()
+        row = await repo.update_change_order(
+            await require_pro_id(user), job_id, co_id, data)
     except LookupError as e:
         raise _nf(e)
     if not row:

@@ -11,6 +11,7 @@ import {
   Copy, RefreshCw, ExternalLink, Save, LayoutDashboard, CalendarDays, UserPlus, X, Eye, Receipt,
   ScanBarcode, Camera, Image as ImageIcon, FileDown,
 } from 'lucide-react';
+import ErrorBoundary from '../../components/ErrorBoundary';
 import OverviewTab from './pm/OverviewTab';
 import KanbanTab from './pm/KanbanTab';
 import GanttTab from './pm/GanttTab';
@@ -101,14 +102,20 @@ export default function PMProjectDetailPage() {
           className="mb-5"
         />
 
+        {/* Boundary per tab, not per page: a tab that throws leaves the
+            other six, the header and the navigation intact. Without one, a
+            single bad field reference unmounted the whole app and the pro
+            got a blank browser window. */}
         <SwipeableTabPanel tabKeys={TABS.map((t2) => t2.key)} activeKey={tab} onChange={setTab}>
-          {tab === 'overview' && <OverviewTab projectId={id} t={t} onJumpTab={setTab} />}
-          {tab === 'kanban' && <KanbanTab projectId={id} t={t} />}
-          {tab === 'gantt' && <GanttTab projectId={id} t={t} />}
-          {tab === 'materials' && <MaterialsTab projectId={id} t={t} />}
-          {tab === 'diary' && <DiaryTab projectId={id} t={t} />}
-          {tab === 'billing' && <BillingTab projectId={id} t={t} />}
-          {tab === 'share' && <ShareTab project={project} reload={load} t={t} />}
+          <ErrorBoundary t={t} key={tab}>
+            {tab === 'overview' && <OverviewTab projectId={id} t={t} onJumpTab={setTab} />}
+            {tab === 'kanban' && <KanbanTab projectId={id} t={t} />}
+            {tab === 'gantt' && <GanttTab projectId={id} t={t} />}
+            {tab === 'materials' && <MaterialsTab projectId={id} t={t} />}
+            {tab === 'diary' && <DiaryTab projectId={id} t={t} />}
+            {tab === 'billing' && <BillingTab projectId={id} t={t} />}
+            {tab === 'share' && <ShareTab project={project} reload={load} t={t} />}
+          </ErrorBoundary>
         </SwipeableTabPanel>
       </div>
 

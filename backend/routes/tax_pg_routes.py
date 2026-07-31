@@ -51,6 +51,20 @@ class ExpenseIn(BaseModel):
     ocr_confidence: Optional[float] = None
 
 
+class ExpensePatch(ExpenseIn):
+    """All optional, because a PATCH sends what changed.
+
+    Reusing `ExpenseIn` was worse here than merely rejecting a partial update:
+    its defaults are real values, `exclude_none` does not drop them, and
+    patching only `net_amount` silently rewrote `category` to "Sonstige",
+    `vat_rate` to 20 and `vat_deductible` to true — quietly corrupting the
+    EÜR category totals and the input-VAT sum on the USt-VA.
+    """
+    category: Optional[str] = None
+    vat_rate: Optional[float] = None
+    vat_deductible: Optional[bool] = None
+
+
 @router.get("/dashboard")
 async def dashboard(year: int = Query(default=None), user: dict = Depends(get_current_user)):
     pro_id = await require_pro_id(user)
@@ -113,7 +127,7 @@ async def create_expense(body: ExpenseIn, user: dict = Depends(get_current_user)
 
 
 @router.patch("/expenses/{expense_id}")
-async def update_expense(expense_id: str, body: ExpenseIn,
+async def update_expense(expense_id: str, body: ExpensePatch,
                          user: dict = Depends(get_current_user)):
     pro_id = await require_pro_id(user)
     row = await repo.update_expense(pro_id, expense_id, body.model_dump(exclude_none=True))

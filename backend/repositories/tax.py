@@ -294,6 +294,34 @@ async def update_expense(pro_id: str, expense_id: str, data: dict) -> Optional[d
             "select * from expenses where id = $1 and pro_id = $2", expense_id, pro_id)
     # Any manual edit means a human has looked at it.
     payload["needs_review"] = False
+
+    # Re-derive net/vat/gross whenever any of the three moved. Writing only
+    # the supplied column left the other two at their old figures — change a
+    # net from 100 to 200 and vat_amount stayed 20, which then fed the input
+    # VAT on the USt-VA and the by-category totals on the EÜR. The current row
+    # supplies whatever the caller did not send.
+    if {"net_amount", "gross_amount", "vat_rate"} & set(payload):
+        cur = await pg.fetchrow(
+            "select net_amount, gross_amount, vat_rate from expenses "
+            "where id = $1 and pro_id = $2", expense_id, pro_id)
+        if not cur:
+            return None
+        rate = Decimal(str(payload.get("vat_rate", cur["vat_rate"] or 0)))
+        # Net wins when both are sent; the gross is the derived figure on a
+        # receipt a pro is correcting from the paper in their hand.
+        if "net_amount" in payload:
+            net = Decimal(str(payload["net_amount"]))
+            gross = (net * (1 + rate / 100)).quantize(Decimal("0.01"))
+        elif "gross_amount" in payload:
+            gross = Decimal(str(payload["gross_amount"]))
+            net = (gross / (1 + rate / 100)).quantize(Decimal("0.01"))
+        else:
+            net = Decimal(str(cur["net_amount"] or 0))
+            gross = (net * (1 + rate / 100)).quantize(Decimal("0.01"))
+        payload["net_amount"] = net
+        payload["gross_amount"] = gross
+        payload["vat_amount"] = (gross - net).quantize(Decimal("0.01"))
+
     sql, args = pg.build_update("expenses", payload, "id = $1 and pro_id = $2",
                                 [expense_id, pro_id])
     return await pg.fetchrow(sql, *args)
