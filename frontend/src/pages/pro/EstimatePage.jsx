@@ -470,6 +470,23 @@ function Result({ result, calculating }) {
         </div>
       )}
 
+      {result.rates_applied > 0 && (
+        // Once the business's own prices are in play the two figures measure
+        // different things, and showing both is the comparison a pro most
+        // wants. Collapsing them would hide it behind a discrepancy.
+        <div className="text-xs border border-green-700/30 bg-green-700/5 rounded-lg px-3 py-2">
+          <TrendingUp size={12} className="inline mr-1 -mt-0.5 text-green-700" />
+          <span className="text-ink">
+            Mit Ihren eigenen Sätzen: <b>{fmtEur2(result.lines_net)}</b>
+          </span>
+          <span className="text-ink-muted">
+            {' '}· Richtwert {fmtEur(result.total_net[0])}–{fmtEur(result.total_net[1])}
+            {' '}· {result.rates_applied} von {result.lines.length} Positionen
+            aus Ihren angenommenen Angeboten
+          </span>
+        </div>
+      )}
+
       <details>
         <summary className="text-xs text-ink-muted cursor-pointer">
           {result.lines.length} Positionen · {fmtEur2(result.lines_net)}

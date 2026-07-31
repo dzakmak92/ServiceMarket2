@@ -15,16 +15,25 @@ and supersede the old one rather than mutating it.
 """
 from __future__ import annotations
 
+import logging
+
 from typing import Any, Optional
 
 from db import pg
 from repositories import customers as customers_repo
+from repositories import rates as rates_repo
 from services import tax_rules
+
+logger = logging.getLogger(__name__)
 
 LINE_FIELDS = {
     "position", "kind", "description", "detail", "qty", "unit", "unit_price",
     "waste_factor", "discount_pct", "tax_treatment", "vat_rate",
     "is_optional", "is_selected",
+    # The join back to pro_rates. The estimator has always produced one per
+    # position and this set silently dropped it, which cut the link at exactly
+    # the point it became worth something — the accepted quote.
+    "rate_key",
 }
 QUOTE_FIELDS = {
     "title", "intro", "assumptions", "valid_until", "discount_pct",
@@ -244,6 +253,18 @@ async def accept(quote_id: str, *, pro_id: Optional[str] = None) -> dict:
             "update jobs set status = 'accepted', contract_amount = $2 "
             "where id = $1 and status in ('lead','quoted')",
             q["job_id"], q["gross_total"])
+
+        # Acceptance is the moment a price stops being an opinion. Inside the
+        # transaction on purpose: a quote accepted without its rates learned
+        # is a silent half-commit, and the next accept returns early because
+        # the quote is already accepted, so the sample would be lost for good.
+        try:
+            await rates_repo.learn_from_quote(con, str(q["pro_id"]), quote_id)
+        except Exception:  # noqa: BLE001
+            # Never at the cost of the acceptance itself. A lost rate sample
+            # costs a slightly worse estimate next month; a failed acceptance
+            # costs the pro the job they just won on the doorstep.
+            logger.exception("rate learning failed for quote %s", quote_id)
 
     if accepted["customer_id"]:
         await customers_repo.refresh_rollups(str(accepted["customer_id"]))

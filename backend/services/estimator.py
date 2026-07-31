@@ -16,10 +16,17 @@ Four properties are deliberate.
 caller decides where in it to price. A single number would be a false
 precision the underlying coefficients cannot support.
 
-**The pro's own rate wins.** Hourly rates from the catalogue are a cold start
-for someone who has never quoted the work. Once `pro_rates` holds a real
-figure, that is used instead — which is the whole reason the catalogue is
-built on hours rather than prices.
+**The pro's own rate wins, and the two figures stay apart.** Hourly rates from
+the catalogue are a cold start for someone who has never quoted the work. Once
+`pro_rates` holds a real figure it prices the positions instead — which is the
+whole reason the catalogue is built on hours rather than prices.
+
+That makes `total_net` and `lines_net` disagree, and they should. `total_net`
+is what the model says the work costs; `lines_net` is what this business's own
+prices come to. Collapsing them would throw away the comparison a pro most
+wants: the catalogue says 334-807, your own rates put it at 612. `rates_applied`
+counts how many positions came from the business rather than the catalogue, so
+a caller can tell which case it is instead of guessing from a discrepancy.
 
 **Notes are attached, not merged.** Each triggered note comes back separately
 with its severity, so the UI can show a critical asbestos warning differently
@@ -373,6 +380,10 @@ def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT
         "disposal": [round(disposal[0], 2), round(disposal[1], 2)],
         "total_net": [round(total[0], 2), round(total[1], 2)],
         "lines_net": round(lines_net, 2),
+        # How many positions were priced by this business rather than by the
+        # catalogue. Zero means lines_net should sit inside total_net; above
+        # zero means the two are measuring different things on purpose.
+        "rates_applied": sum(1 for ln in lines if ln["rate_source"] == "pro"),
         "per_unit": ([round(total[0] / qty, 2), round(total[1] / qty, 2)]
                      if qty else None),
         "market_band": job["market_band_at"] if country == "AT" else job["market_band_de"],

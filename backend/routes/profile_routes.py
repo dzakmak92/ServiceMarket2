@@ -259,3 +259,61 @@ async def patch_account(body: AccountPatch, user: dict = Depends(get_current_use
     if not row:
         raise HTTPException(404, "Account not found")
     return _account(row)
+
+
+# ── Learned rates ──────────────────────────────────────────────────────
+class RateIn(BaseModel):
+    key: str = Field(min_length=1, max_length=120)
+    amount: float = Field(gt=0, le=100000)
+    label: Optional[str] = Field(default=None, max_length=120)
+    unit: Optional[str] = Field(default=None, max_length=20)
+
+
+@router.get("/pro/rates")
+async def list_rates(user: dict = Depends(get_current_user)):
+    """What this business charges, and the evidence for it.
+
+    The spread is shown beside the median because a rate built from prices
+    between 38 and 92 EUR means something different from one built from prices
+    between 61 and 64, and a single number cannot tell a pro which they have.
+    """
+    from repositories import rates as rates_repo
+    rows = await rates_repo.detail(await require_pro_id(user))
+    return {"rates": [dict(r) for r in rows], "total": len(rows)}
+
+
+@router.put("/pro/rates")
+async def set_rate(body: RateIn, user: dict = Depends(get_current_user)):
+    """Override a learned rate by hand.
+
+    Marked `is_manual`, and learning never touches it again. A figure somebody
+    typed on purpose is an instruction; letting the next two accepted quotes
+    outvote it would make this screen a suggestion box. Samples keep accruing
+    underneath, so the spread stays visible and the override can be reverted
+    by deleting it.
+    """
+    from repositories import rates as rates_repo
+    row = await rates_repo.set_manual(
+        await require_pro_id(user), body.key.strip(), body.amount,
+        label=body.label, unit=body.unit)
+    return dict(row)
+
+
+@router.delete("/pro/rates/{key:path}")
+async def clear_rate(key: str, user: dict = Depends(get_current_user)):
+    """Drop a manual override and fall back to what the quotes showed."""
+    from repositories import rates as rates_repo
+    pro_id = await require_pro_id(user)
+    async with pg.transaction() as con:
+        deleted = await con.fetchval(
+            "delete from pro_rates where pro_id = $1 and key = $2 returning 1",
+            pro_id, key)
+        if not deleted:
+            raise HTTPException(404, "Rate not found")
+        # Rebuild from the samples, if there are any. A pro who clears an
+        # override should get their measured rate back, not the catalogue.
+        await rates_repo._recompute(con, pro_id, key)
+    return {"deleted": True,
+            "relearned": await pg.fetchval(
+                "select amount from pro_rates where pro_id = $1 and key = $2",
+                pro_id, key)}
