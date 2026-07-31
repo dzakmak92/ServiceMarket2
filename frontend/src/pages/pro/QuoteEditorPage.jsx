@@ -240,21 +240,35 @@ export default function QuoteEditorPage() {
                   </button>
                 )}
               </div>
+              {/* Labelled, not placeholdered. On the create form these fields
+                  start empty so the placeholder reads as a label; here they
+                  arrive full, the placeholder never shows, and the row would
+                  be four unexplained numbers — 24, m2, 8.63, 0. */}
               <div className="grid grid-cols-4 gap-2">
-                <input className="input text-sm" type="number" step="any" title={t('qty')}
-                       placeholder={t('qty')} value={l.qty} disabled={!editable}
-                       onChange={(e) => setLine(i, 'qty', e.target.value)} />
-                <input className="input text-sm" title={t('unit')} placeholder={t('unit')}
-                       value={l.unit || ''} disabled={!editable}
-                       onChange={(e) => setLine(i, 'unit', e.target.value)} />
-                <input className="input text-sm" type="number" step="any" title={t('unit_price')}
-                       placeholder={t('unit_price')} value={l.unit_price} disabled={!editable}
-                       onChange={(e) => setLine(i, 'unit_price', e.target.value)} />
+                <label className="block">
+                  <span className="block text-[11px] text-ink-muted mb-0.5">{t('qty')}</span>
+                  <input className="input text-sm w-full" type="number" step="any"
+                         value={l.qty} disabled={!editable}
+                         onChange={(e) => setLine(i, 'qty', e.target.value)} />
+                </label>
+                <label className="block">
+                  <span className="block text-[11px] text-ink-muted mb-0.5">{t('unit')}</span>
+                  <input className="input text-sm w-full" value={l.unit || ''} disabled={!editable}
+                         onChange={(e) => setLine(i, 'unit', e.target.value)} />
+                </label>
+                <label className="block">
+                  <span className="block text-[11px] text-ink-muted mb-0.5">{t('unit_price')}</span>
+                  <input className="input text-sm w-full" type="number" step="any"
+                         value={l.unit_price} disabled={!editable}
+                         onChange={(e) => setLine(i, 'unit_price', e.target.value)} />
+                </label>
                 {/* Verschnitt: 0.10 = 10% extra material ordered. */}
-                <input className="input text-sm" type="number" step="0.01" min="0" max="1"
-                       title={t('waste_factor')} placeholder={t('waste_short')}
-                       value={l.waste_factor} disabled={!editable}
-                       onChange={(e) => setLine(i, 'waste_factor', e.target.value)} />
+                <label className="block">
+                  <span className="block text-[11px] text-ink-muted mb-0.5">{t('waste_short')}</span>
+                  <input className="input text-sm w-full" type="number" step="0.01" min="0" max="1"
+                         title={t('waste_factor')} value={l.waste_factor} disabled={!editable}
+                         onChange={(e) => setLine(i, 'waste_factor', e.target.value)} />
+                </label>
               </div>
               <label className="flex items-center gap-2 text-xs text-ink-muted">
                 <input type="checkbox" checked={!!l.is_optional} disabled={!editable}

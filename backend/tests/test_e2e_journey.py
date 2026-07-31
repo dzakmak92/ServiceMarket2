@@ -658,6 +658,45 @@ with TestClient(entry.app) as c:
                   f"and lifetime value is the one invoice that stands "
                   f"({ltv} vs {inv['gross_total']})")
 
+    step("the customer record can be corrected — nothing ever called these")
+    # GET, PATCH and DELETE on a customer have all existed and none had a
+    # caller. A customer could be created and then never touched: a typo in a
+    # UID went in permanently, and a UID is what decides §13b reverse charge.
+    r = c.get(f"/api/customers/{customer_id}")
+    check(ok(r), "the record reads back")
+    check(r.json().get("jobs_count", 0) >= 1 if r.status_code < 400 else False,
+          "with the rollups the detail screen heads the page with")
+
+    r = c.patch(f"/api/customers/{customer_id}", json={"vat_id": "ATU99999999"})
+    check(ok(r) and r.json().get("vat_id") == "ATU99999999",
+          "a correction lands")
+    check(r.json().get("name") == "Hausverwaltung Beispiel GmbH"
+          if r.status_code < 400 else False,
+          "and a PATCH that omits a field leaves it alone")
+
+    # Sending null must clear. With exclude_none there was no way to express
+    # that, so a phone number typed wrong could be changed but never removed.
+    r = c.patch(f"/api/customers/{customer_id}", json={"phone": None})
+    check(ok(r) and not r.json().get("phone"),
+          f"an explicit null clears the field ({r.json().get('phone')!r})")
+    check(r.json().get("email") == "office@beispiel-kunde.example.com"
+          if r.status_code < 400 else False,
+          "without clearing the fields that were not sent")
+
+    # Name and type are not clearable: a customer with no name is not a
+    # record, and type drives the VAT treatment on every document.
+    r = c.patch(f"/api/customers/{customer_id}", json={"name": None})
+    check(ok(r) and r.json().get("name") == "Hausverwaltung Beispiel GmbH",
+          "but the name cannot be nulled away")
+
+    # Their history, from the filters the detail screen uses.
+    r = c.get("/api/jobs", params={"customer_id": customer_id})
+    check(ok(r) and len(r.json().get("jobs") or []) >= 1,
+          f"their jobs list by customer ({len(r.json().get('jobs') or [])})")
+    r = c.get("/api/invoices", params={"customer_id": customer_id})
+    check(ok(r) and len(r.json().get("invoices") or []) >= 1,
+          f"and so do their invoices ({len(r.json().get('invoices') or [])})")
+
     step("the dunning list shows who to chase, and nothing else")
     r = c.get("/api/invoices/overdue")
     check(ok(r), f"the overdue list answers ({r.status_code})")

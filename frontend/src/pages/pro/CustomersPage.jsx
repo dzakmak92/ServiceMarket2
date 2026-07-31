@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import {
@@ -215,9 +216,15 @@ export default function CustomersPage() {
                   {c.type === 'business' ? <Building2 size={18} /> : <User size={18} />}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="font-headings font-bold text-ink truncate">
+                  {/* The name is the way into the record — the detail, edit
+                      and delete endpoints had no caller at all before it.
+                      Only the name, not the whole row: the row already
+                      contains mailto: and tel: links, and an anchor inside an
+                      anchor is invalid and behaves unpredictably on tap. */}
+                  <Link to={`/customers/${c.id}`} data-testid="customer-open"
+                        className="block font-headings font-bold text-ink truncate hover:text-teal">
                     {c.company_name || c.name}
-                  </div>
+                  </Link>
                   {c.company_name && c.name && (
                     <div className="text-sm text-ink-muted truncate">{c.name}</div>
                   )}

@@ -30,6 +30,7 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import OverduePage from "./pages/pro/OverduePage";
 import MyInvoicesPage from "./pages/pro/MyInvoicesPage";
 import CustomersPage from "./pages/pro/CustomersPage";
+import CustomerDetailPage from "./pages/pro/CustomerDetailPage";
 import QuotesPage from "./pages/pro/QuotesPage";
 import QuoteEditorPage from "./pages/pro/QuoteEditorPage";
 import LeadCapturePage from "./pages/pro/LeadCapturePage";
@@ -190,6 +191,14 @@ function AppShell() {
           element={
             <ProtectedRoute roles={["tradesperson"]}>
               <CustomersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/customers/:customerId"
+          element={
+            <ProtectedRoute roles={["tradesperson"]}>
+              <CustomerDetailPage />
             </ProtectedRoute>
           }
         />

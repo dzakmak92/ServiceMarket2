@@ -79,7 +79,11 @@ async def get_customer(customer_id: str, user: dict = Depends(get_current_user))
 async def update_customer(customer_id: str, body: CustomerPatch,
                           user: dict = Depends(get_current_user)):
     pro_id = await require_pro_id(user)
-    cust = await repo.update(pro_id, customer_id, body.model_dump(exclude_none=True))
+    # exclude_unset, not exclude_none: the two mean different things on a
+    # PATCH. Omitting a field must leave it alone; sending it as null must
+    # clear it. With exclude_none there was no way to say the second, so a
+    # phone number typed wrong could be corrected but never removed.
+    cust = await repo.update(pro_id, customer_id, body.model_dump(exclude_unset=True))
     if not cust:
         raise HTTPException(404, "Customer not found")
     return cust

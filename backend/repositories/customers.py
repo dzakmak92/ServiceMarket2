@@ -24,11 +24,27 @@ WRITABLE = {
 }
 
 
-def _clean(data: dict) -> dict:
-    out = {k: v for k, v in data.items() if k in WRITABLE and v is not None}
-    if "name" in out:
+# A customer with no name is not a record, and `type` decides VAT treatment.
+# Everything else may legitimately be blanked — a phone number that was typed
+# wrong, an address the customer moved out of, a UID that turned out not to
+# be theirs.
+NOT_NULLABLE = {"name", "type"}
+
+
+def _clean(data: dict, *, allow_null: bool = False) -> dict:
+    """Filter to writable columns.
+
+    `allow_null` lets an explicit null through so a field can be cleared. Off
+    by default because create must not insert nulls over column defaults, and
+    because a PATCH that merely omits a field must leave it alone — the route
+    distinguishes the two by dumping with exclude_unset rather than
+    exclude_none.
+    """
+    out = {k: v for k, v in data.items() if k in WRITABLE
+           and (v is not None or (allow_null and k not in NOT_NULLABLE))}
+    if out.get("name"):
         out["name"] = out["name"].strip()
-    if "email" in out and out["email"]:
+    if out.get("email"):
         out["email"] = out["email"].strip().lower()
     return out
 
@@ -50,7 +66,7 @@ async def get(pro_id: str, customer_id: str) -> Optional[dict]:
 
 
 async def update(pro_id: str, customer_id: str, data: dict) -> Optional[dict]:
-    payload = _clean(data)
+    payload = _clean(data, allow_null=True)
     if not payload:
         return await get(pro_id, customer_id)
     sql, args = pg.build_update(

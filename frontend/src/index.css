@@ -290,6 +290,20 @@
   }
   .admin-chip.active { @apply bg-teal text-paper border-teal; }
 
+  /* The pro-side equivalent. These two class names have been used by the
+     customer form since it was written and never existed in any stylesheet,
+     so the Privat/Firma toggle rendered as two bare words with nothing to
+     say which one was selected — a segmented control that looked like a
+     typo. Same shape as .admin-chip, sized for a thumb. */
+  .chip {
+    @apply px-4 py-1.5 rounded-full border border-sm-border bg-paper text-sm font-medium
+           text-ink-soft hover:bg-cream-soft transition-colors;
+  }
+  .chip-active {
+    @apply px-4 py-1.5 rounded-full border border-teal bg-teal text-paper text-sm font-medium
+           transition-colors;
+  }
+
   .admin-btn {
     @apply inline-flex items-center justify-center gap-1.5 font-medium rounded-full transition-colors
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/40;
