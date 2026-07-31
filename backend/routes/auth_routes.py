@@ -40,6 +40,13 @@ class LoginIn(BaseModel):
     password: str
 
 
+class ChangePasswordIn(BaseModel):
+    current_password: str
+    # Same floor as registration. A change-password form that accepts a weaker
+    # password than sign-up did is a downgrade path.
+    new_password: str = Field(min_length=8)
+
+
 class OnboardingIn(BaseModel):
     country: str = Field(default="AT", pattern="^[A-Z]{2}$")
     name: Optional[str] = None
@@ -103,39 +110,53 @@ async def register(data: RegisterIn, response: Response, request: Request):
     return await load_user(row["id"])
 
 
+async def _is_locked_out(identifier: str) -> bool:
+    """True while this ip+email is inside its lockout window.
+
+    Keyed on ip *and* email so one attacker cannot lock a legitimate user out
+    of their own account by hammering their address from somewhere else.
+    """
+    import json as _json
+    attempt = await pg.fetchrow(
+        "select value from platform_settings where key = $1",
+        f"login_attempt:{identifier}")
+    if not attempt:
+        return False
+    v = attempt["value"] if isinstance(attempt["value"], dict) else _json.loads(attempt["value"])
+    if int(v.get("count", 0)) < MAX_FAILED_LOGINS:
+        return False
+    return datetime.now(timezone.utc) - datetime.fromisoformat(v["last"]) < LOCKOUT
+
+
+async def _record_failure(identifier: str) -> None:
+    await pg.execute(
+        """
+        insert into platform_settings (key, value)
+        values ($1, jsonb_build_object('count', 1, 'last', $2::text))
+        on conflict (key) do update
+          set value = jsonb_build_object(
+                'count', coalesce((platform_settings.value->>'count')::int, 0) + 1,
+                'last', $2::text),
+              updated_at = now()
+        """,
+        f"login_attempt:{identifier}", datetime.now(timezone.utc).isoformat())
+
+
 @router.post("/login")
 async def login(data: LoginIn, response: Response, request: Request):
     email = data.email.lower().strip()
     ip = request.client.host if request.client else "unknown"
     identifier = f"{ip}:{email}"
 
-    # Brute-force throttle, keyed on ip+email so one attacker cannot lock out
-    # a legitimate user by hammering their address from elsewhere.
-    attempt = await pg.fetchrow(
-        "select value from platform_settings where key = $1", f"login_attempt:{identifier}")
-    if attempt:
-        v = attempt["value"] if isinstance(attempt["value"], dict) else __import__("json").loads(attempt["value"])
-        if int(v.get("count", 0)) >= MAX_FAILED_LOGINS:
-            last = datetime.fromisoformat(v["last"])
-            if datetime.now(timezone.utc) - last < LOCKOUT:
-                raise HTTPException(429, "Too many failed attempts. Try again in 15 minutes.")
+    if await _is_locked_out(identifier):
+        raise HTTPException(429, "Too many failed attempts. Try again in 15 minutes.")
 
     row = await pg.fetchrow(
         "select id::text as id, email, password_hash, banned from users "
         "where email = $1 and deleted_at is null", email)
 
     if not row or not verify_password(data.password, row["password_hash"] or ""):
-        await pg.execute(
-            """
-            insert into platform_settings (key, value)
-            values ($1, jsonb_build_object('count', 1, 'last', $2::text))
-            on conflict (key) do update
-              set value = jsonb_build_object(
-                    'count', coalesce((platform_settings.value->>'count')::int, 0) + 1,
-                    'last', $2::text),
-                  updated_at = now()
-            """,
-            f"login_attempt:{identifier}", datetime.now(timezone.utc).isoformat())
+        await _record_failure(identifier)
         raise HTTPException(401, "Invalid email or password")
 
     if row["banned"]:
@@ -151,6 +172,55 @@ async def login(data: LoginIn, response: Response, request: Request):
         user["plan_tier"] = await pg.fetchval(
             "select plan_tier from pro_profiles where user_id::text = $1", row["id"]) or "standard"
     return user
+
+
+@router.post("/change-password")
+async def change_password(data: ChangePasswordIn, response: Response,
+                          request: Request,
+                          user: dict = Depends(get_current_user)):
+    """Change your own password.
+
+    There was no way to do this, and no way to reset a forgotten one either:
+    no endpoint, no token, nothing in the UI. So a password could never be
+    rotated after a leak, and anyone who forgot theirs was permanently locked
+    out of their own business — its invoices, its tax year, its customers.
+
+    Requires the current password even though the session already proves who
+    you are: a session can be a borrowed laptop, and re-authenticating is what
+    stops a walk-up from taking the account. Throttled on the same ip+email
+    counter as login, because an endpoint that verifies a password is an
+    endpoint that can be used to guess one.
+    """
+    email = (user.get("email") or "").lower().strip()
+    ip = request.client.host if request.client else "unknown"
+    identifier = f"{ip}:{email}"
+
+    if await _is_locked_out(identifier):
+        raise HTTPException(429, "Too many failed attempts. Try again in 15 minutes.")
+
+    row = await pg.fetchrow(
+        "select id::text as id, password_hash from users "
+        "where id = $1::uuid and deleted_at is null", user["id"])
+    if not row or not verify_password(data.current_password, row["password_hash"] or ""):
+        await _record_failure(identifier)
+        raise HTTPException(401, "The current password is not correct.")
+
+    if data.new_password == data.current_password:
+        raise HTTPException(400, "The new password must differ from the current one.")
+
+    await pg.execute(
+        "update users set password_hash = $2, updated_at = now() where id = $1::uuid",
+        row["id"], hash_password(data.new_password))
+    await pg.execute("delete from platform_settings where key = $1",
+                     f"login_attempt:{identifier}")
+
+    # Re-issue the cookies. The old tokens stay valid until they expire — this
+    # deployment has no token denylist — so the honest thing is to say so
+    # rather than imply every other session was just killed.
+    set_auth_cookies(response, create_access_token(row["id"], email),
+                     create_refresh_token(row["id"]))
+    return {"changed": True,
+            "note": "Andere Geräte bleiben angemeldet, bis ihre Sitzung abläuft."}
 
 
 @router.post("/logout")

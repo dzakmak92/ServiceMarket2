@@ -117,6 +117,36 @@ with TestClient(entry.app) as c:
         "licence_file_id": "documents/placeholder-licence"})
     check(ok(r), f"onboarding creates the business -> {r.status_code}")
 
+    step("a password can be changed — the only way to rotate one")
+    # There was no change-password endpoint and no reset flow, so a password
+    # could never be rotated after a leak and forgetting one meant permanent
+    # lockout from the business's own invoices and tax year.
+    r = c.post("/api/auth/change-password",
+               json={"current_password": "wrong-one", "new_password": "NeuesPasswort!9"})
+    check(r.status_code == 401, f"the wrong current password is refused ({r.status_code})")
+    r = c.post("/api/auth/change-password",
+               json={"current_password": "Sichergenug!23", "new_password": "kurz"})
+    check(r.status_code == 422, f"a short new password is refused ({r.status_code})")
+    r = c.post("/api/auth/change-password",
+               json={"current_password": "Sichergenug!23",
+                     "new_password": "Sichergenug!23"})
+    check(r.status_code == 400, f"and reusing the same one is refused ({r.status_code})")
+    r = c.post("/api/auth/change-password",
+               json={"current_password": "Sichergenug!23",
+                     "new_password": "NeuesPasswort!9"})
+    check(ok(r), f"the change goes through ({r.status_code})")
+    check(c.get("/api/auth/me").status_code == 200,
+          "and the session survives it")
+    r = c.post("/api/auth/login", json={"email": EMAIL, "password": "Sichergenug!23"})
+    check(r.status_code == 401, "the old password no longer works")
+    r = c.post("/api/auth/login", json={"email": EMAIL, "password": "NeuesPasswort!9"})
+    check(ok(r), "the new one does")
+    # Put it back, so every later step in this journey still authenticates.
+    r = c.post("/api/auth/change-password",
+               json={"current_password": "NeuesPasswort!9",
+                     "new_password": "Sichergenug!23"})
+    check(ok(r), "and it can be changed back")
+
     step("the account and business profile are editable")
     r = c.patch("/api/profile", json={"name": "Ali Öztürk", "lang": "de",
                                       "notif_email_marketing": False})

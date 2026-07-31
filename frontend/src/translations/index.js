@@ -1,5 +1,12 @@
 const t = {
   en: {
+    pw_change: 'Change password',
+    pw_current: 'Current password',
+    pw_new: 'New password',
+    pw_repeat: 'Repeat the new password',
+    pw_too_short: 'At least 8 characters.',
+    pw_mismatch: 'The two entries do not match.',
+    pw_changed: 'Password changed.',
     overdue_title: 'Overdue invoices',
     overdue_subtitle: 'Who has not paid yet, and since when.',
     overdue_total: 'Total outstanding',
@@ -1390,6 +1397,13 @@ const t = {
   },
 
   de: {
+    pw_change: 'Passwort ändern',
+    pw_current: 'Aktuelles Passwort',
+    pw_new: 'Neues Passwort',
+    pw_repeat: 'Neues Passwort wiederholen',
+    pw_too_short: 'Mindestens 8 Zeichen.',
+    pw_mismatch: 'Die beiden Eingaben stimmen nicht überein.',
+    pw_changed: 'Passwort geändert.',
     overdue_title: 'Offene Forderungen',
     overdue_subtitle: 'Wer noch nicht gezahlt hat — und seit wann.',
     overdue_total: 'Summe offen',
@@ -2674,6 +2688,13 @@ const t = {
   },
 
   tr: {
+    pw_change: 'Şifre değiştir',
+    pw_current: 'Mevcut şifre',
+    pw_new: 'Yeni şifre',
+    pw_repeat: 'Yeni şifreyi tekrarlayın',
+    pw_too_short: 'En az 8 karakter.',
+    pw_mismatch: 'İki giriş eşleşmiyor.',
+    pw_changed: 'Şifre değiştirildi.',
     overdue_title: 'Vadesi geçen faturalar',
     overdue_subtitle: 'Kim henüz ödemedi ve ne zamandan beri.',
     overdue_total: 'Toplam açık',
@@ -3890,6 +3911,13 @@ const t = {
   },
 
   es: {
+    pw_change: 'Cambiar contraseña',
+    pw_current: 'Contraseña actual',
+    pw_new: 'Nueva contraseña',
+    pw_repeat: 'Repita la nueva contraseña',
+    pw_too_short: 'Al menos 8 caracteres.',
+    pw_mismatch: 'Las dos entradas no coinciden.',
+    pw_changed: 'Contraseña cambiada.',
     overdue_title: 'Facturas vencidas',
     overdue_subtitle: 'Quién no ha pagado todavía, y desde cuándo.',
     overdue_total: 'Total pendiente',

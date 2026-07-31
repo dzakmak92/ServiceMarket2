@@ -11,6 +11,7 @@ import { isPremiumTier, planLabel } from '../../utils/tier';
 import {
   User, Bell, Briefcase, Settings as SettingsIcon, Image as ImageIcon,
   Globe, Plus, Trash2, Loader2, AlertCircle, CheckCircle2, Star, Eye, ExternalLink, Shield,
+  KeyRound,
   MessageSquare, Pencil, MapPin, Receipt, Building2, Banknote, Sparkles, Check,
 } from 'lucide-react';
 
@@ -718,6 +719,9 @@ export default function ProSettingsPage() {
                     <input value={userForm.phone} onChange={(e) => setUserForm((f) => ({ ...f, phone: e.target.value }))} className="sm-input" placeholder="+43 ..." />
                   </div>
                   <button onClick={saveProfile} disabled={saving} className="btn-primary w-full">{t('btn_save_changes')}</button>
+
+                  <ChangePassword t={t} />
+
                   <div className="pt-4 border-t border-sm-border">
                     <button
                       className="btn-danger w-full"
@@ -1001,6 +1005,86 @@ function WhiteLabelSection({ t, proProfile, reload }) {
               className="flex-1 w-full"
               data-testid="template-preview-iframe"
             />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+/**
+ * Change your own password.
+ *
+ * There was no way to do this and no way to reset a forgotten one: no
+ * endpoint, no token, nothing on any screen. A password could never be
+ * rotated after a leak, and forgetting it meant permanent lockout from your
+ * own invoices, tax year and customers.
+ *
+ * Password reset still does not exist, because it needs an email rail to
+ * deliver the token and there is not one yet. This covers the case that can
+ * be covered today: you are logged in and want a different password.
+ */
+function ChangePassword({ t }) {
+  const [open, setOpen] = useState(false);
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [again, setAgain] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  const submit = async () => {
+    setMsg(null);
+    if (next.length < 8) return setMsg({ bad: true, text: t('pw_too_short') });
+    if (next !== again) return setMsg({ bad: true, text: t('pw_mismatch') });
+    setBusy(true);
+    try {
+      const { data } = await api.post('/api/auth/change-password', {
+        current_password: current, new_password: next,
+      });
+      setMsg({ bad: false, text: `${t('pw_changed')} ${data.note || ''}`.trim() });
+      setCurrent(''); setNext(''); setAgain('');
+    } catch (e) {
+      setMsg({ bad: true, text: e?.response?.data?.detail || t('generic_error') });
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <div className="pt-4 border-t border-sm-border" data-testid="change-password">
+      {!open ? (
+        <button className="btn-ghost w-full" onClick={() => setOpen(true)}
+                data-testid="change-password-open">
+          <KeyRound size={14} /> {t('pw_change')}
+        </button>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-ink">{t('pw_change')}</p>
+          {[['pw-current', t('pw_current'), current, setCurrent, 'current-password'],
+            ['pw-new', t('pw_new'), next, setNext, 'new-password'],
+            ['pw-again', t('pw_repeat'), again, setAgain, 'new-password']].map(
+            ([id, label, val, set, ac]) => (
+              <div key={id}>
+                <label htmlFor={id} className="block text-xs font-medium text-ink-soft mb-1">
+                  {label}
+                </label>
+                <input id={id} type="password" autoComplete={ac} className="sm-input w-full"
+                       value={val} onChange={(e) => set(e.target.value)}
+                       data-testid={id} />
+              </div>
+            ))}
+          {msg && (
+            <p className={`text-xs ${msg.bad ? 'text-red-warn' : 'text-green-pos'}`}
+               data-testid="change-password-msg">{msg.text}</p>
+          )}
+          <div className="flex gap-2">
+            <button className="btn-primary flex-1" disabled={busy || !current || !next}
+                    onClick={submit} data-testid="change-password-submit">
+              {busy ? <Loader2 size={14} className="animate-spin" /> : <KeyRound size={14} />}
+              {t('btn_save')}
+            </button>
+            <button className="btn-ghost" onClick={() => { setOpen(false); setMsg(null); }}>
+              {t('cancel')}
+            </button>
           </div>
         </div>
       )}
