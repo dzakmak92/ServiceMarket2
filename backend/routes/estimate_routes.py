@@ -1,23 +1,30 @@
 """Smart estimation endpoints.
 
-The catalogue (94 job types across 20 trades, DE and AT) becomes usable here:
+The catalogue (136 job types across 20 groups, DE and AT) becomes usable here:
 browse it, fetch a job's guided form, answer four or five questions, get hours,
-material, debris, disposal and a set of quote positions back.
+material, debris, disposal and a set of quote positions back — and, once the
+business has finished a few of them, an estimate corrected by its own measured
+speed rather than the trade average.
 
 Two things this deliberately is not.
 
 It is **not a price oracle.** Every estimate carries its market band, its
 confidence, and whether the job needs a site visit before anyone quotes it
-fixed. 34 of the 94 job types are marked `regie` precisely because a remote
+fixed. 52 of the 136 job types are marked `regie` precisely because a remote
 estimate on them is a guess; the endpoint returns a number for those too, but
 it says so, and the UI is expected to.
 
 It is **not a model call.** No LLM, no photos, no network. The same answers
 give the same estimate on every request, which is what makes it safe to put in
 front of a customer and what makes a wrong number diagnosable.
+
+The feedback endpoints — /save, /accuracy, /calibrate — are what stop the
+catalogue being a permanent cold start. A generic model of the trade is
+copyable in a week; a year of one business's own hours is not.
 """
 from __future__ import annotations
 
+import logging
 from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -25,9 +32,13 @@ from pydantic import BaseModel, Field
 
 from auth import get_current_user
 from db import pg
+from repositories import estimates as estimates_repo
 from repositories import quotes as quotes_repo
 from routes._pro import require_pro_id
+from services import calibration as calib
 from services import estimator
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/estimate", tags=["estimate"])
 
@@ -48,6 +59,14 @@ class EstimateIn(BaseModel):
     # When false the business's learned rates are ignored — useful for showing
     # a pro what the catalogue alone says versus what their own pricing does.
     use_own_rates: bool = True
+    # Same, for the speed correction learned from finished jobs.
+    use_calibration: bool = True
+
+
+class SaveEstimateIn(EstimateIn):
+    # Optional: the guided form is often filled in before the job exists, and
+    # an estimate with no job is still evidence about how this business prices.
+    job_id: Optional[str] = None
 
 
 class EstimateToQuoteIn(EstimateIn):
@@ -73,6 +92,33 @@ async def _country_for(pro_id: str) -> str:
 async def _rates_for(pro_id: str) -> dict[str, float]:
     rows = await pg.fetch("select key, amount from pro_rates where pro_id = $1", pro_id)
     return {r["key"]: float(r["amount"]) for r in rows}
+
+
+async def _calibration_for(pro_id: str, job_key: str, use: bool) -> Optional[dict]:
+    """The speed correction this business's own finished jobs have earned.
+
+    Absent until there are enough of them, which is deliberate: a factor built
+    from two jobs would move prices on the strength of an anecdote, and the
+    pro would have no way to tell it had happened.
+    """
+    if not use:
+        return None
+    job = estimator.get_job(job_key)
+    if not job:
+        return None
+    return calib.pick(await estimates_repo.calibrations(pro_id),
+                      job_key=job_key, trade=job["trade"])
+
+
+async def _estimate(pro_id: str, body: "EstimateIn", *, tier: Optional[str] = None) -> dict:
+    country = body.country or await _country_for(pro_id)
+    rates = await _rates_for(pro_id) if body.use_own_rates else {}
+    cal = await _calibration_for(pro_id, body.job_key, body.use_calibration)
+    result = estimator.estimate(body.job_key, body.answers, country=country,
+                                tier=tier or body.tier, rates=rates, calibration=cal)
+    if cal:
+        result["calibration_note"] = calib.explain(cal)
+    return result
 
 
 @router.get("/catalogue")
@@ -122,13 +168,15 @@ async def job_survey(job_key: str, user: dict = Depends(get_current_user)):
 
 @router.post("")
 async def compute(body: EstimateIn, user: dict = Depends(get_current_user)):
-    """Answers in, estimate out. Creates nothing."""
+    """Answers in, estimate out. Creates nothing.
+
+    Deliberately does not store the estimate: the screen recalculates on every
+    keystroke, and saving here would write a row per digit typed. Storing is an
+    explicit act — /save, or creating a quote.
+    """
     pro_id = await require_pro_id(user)
-    country = body.country or await _country_for(pro_id)
-    rates = await _rates_for(pro_id) if body.use_own_rates else {}
     try:
-        return estimator.estimate(body.job_key, body.answers, country=country,
-                                  tier=body.tier, rates=rates)
+        return await _estimate(pro_id, body)
     except LookupError as exc:
         raise HTTPException(404, str(exc)) from exc
 
@@ -137,16 +185,57 @@ async def compute(body: EstimateIn, user: dict = Depends(get_current_user)):
 async def compare_tiers(body: EstimateIn, user: dict = Depends(get_current_user)):
     """The same job at all three tiers, from one set of answers."""
     pro_id = await require_pro_id(user)
-    country = body.country or await _country_for(pro_id)
-    rates = await _rates_for(pro_id) if body.use_own_rates else {}
     try:
-        return {"tiers": {
-            tier: estimator.estimate(body.job_key, body.answers, country=country,
-                                     tier=tier, rates=rates)
-            for tier in ("basic", "standard", "premium")
-        }}
+        return {"tiers": {t: await _estimate(pro_id, body, tier=t)
+                          for t in ("basic", "standard", "premium")}}
     except LookupError as exc:
         raise HTTPException(404, str(exc)) from exc
+
+
+@router.post("/save", status_code=201)
+async def save_estimate(body: SaveEstimateIn, user: dict = Depends(get_current_user)):
+    """Keep an estimate without turning it into a quote.
+
+    Worth its own endpoint because a job that was calculated and not quoted is
+    real evidence. Learning only from work that was won would bias the model
+    toward the jobs that were cheap enough to win.
+    """
+    pro_id = await require_pro_id(user)
+    try:
+        result = await _estimate(pro_id, body)
+    except LookupError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    row = await estimates_repo.save(
+        pro_id, result, job_id=body.job_id,
+        calibration_applied=(result.get("calibration") or {}).get("hours_factor"))
+    return {"estimate_id": str(row["id"]), "estimate": result}
+
+
+@router.get("/accuracy")
+async def accuracy(user: dict = Depends(get_current_user)):
+    """Predicted against measured, per job, plus what an hour actually earned.
+
+    The last number is the one almost no small business computes for itself:
+    quoted labour divided by the hours the work really took. It is usually
+    well below the rate they believe they charge, and the gap is the argument
+    for the whole product.
+    """
+    pro_id = await require_pro_id(user)
+    data = await estimates_repo.accuracy(pro_id)
+    data["calibrations"] = list((await estimates_repo.calibrations(pro_id)).values())
+    data["min_samples"] = calib.MIN_SAMPLES
+    return data
+
+
+@router.post("/calibrate")
+async def calibrate(user: dict = Depends(get_current_user)):
+    """Rebuild every calibration for this business from its finished jobs.
+
+    Rebuilt from scratch rather than updated incrementally, so correcting one
+    bad timer entry actually fixes the number instead of leaving it baked in.
+    """
+    pro_id = await require_pro_id(user)
+    return await estimates_repo.recompute(pro_id)
 
 
 @router.post("/quote", status_code=201)
@@ -160,13 +249,9 @@ async def estimate_to_quote(body: EstimateToQuoteIn,
     one built by hand.
     """
     pro_id = await require_pro_id(user)
-    country = body.country or await _country_for(pro_id)
-    rates = await _rates_for(pro_id) if body.use_own_rates else {}
-
     tiers = ("basic", "standard", "premium") if body.all_tiers else (body.tier,)
     try:
-        results = {t: estimator.estimate(body.job_key, body.answers, country=country,
-                                         tier=t, rates=rates) for t in tiers}
+        results = {t: await _estimate(pro_id, body, tier=t) for t in tiers}
     except LookupError as exc:
         raise HTTPException(404, str(exc)) from exc
 
@@ -196,4 +281,21 @@ async def estimate_to_quote(body: EstimateToQuoteIn,
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
 
-    return {"quotes": created, "estimate": ref}
+    # Freeze what was predicted, against the tier that was actually quoted.
+    # Without this there is nothing to compare the measured hours against
+    # later: the catalogue moves, the pro's rates move, and "what did we say
+    # in March" stops being answerable. Storing it is the entire point of the
+    # loop, so a failure here must not lose the quote the pro just created —
+    # they can recalculate an estimate, they cannot recover a lost document.
+    quoted = results[body.tier] if body.tier in results else ref
+    estimate_id = None
+    try:
+        row = await estimates_repo.save(
+            pro_id, quoted, job_id=body.job_id, quote_id=str(created[0]["id"]),
+            calibration_applied=(quoted.get("calibration") or {}).get("hours_factor"))
+        estimate_id = str(row["id"])
+    except Exception as exc:  # noqa: BLE001 — the quote is the deliverable
+        logger.error("estimate snapshot not stored for quote %s: %s",
+                     created[0]["id"], exc)
+
+    return {"quotes": created, "estimate": ref, "estimate_id": estimate_id}

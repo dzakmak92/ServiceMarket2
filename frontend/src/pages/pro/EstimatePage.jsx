@@ -3,7 +3,7 @@ import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import {
   Loader2, Search, AlertTriangle, ArrowLeft, Calculator, FileText,
-  Trash2, Clock, Package, Info, MapPin,
+  Trash2, Clock, Package, Info, MapPin, TrendingUp, Bookmark,
 } from 'lucide-react';
 
 const fmtEur = (v) =>
@@ -52,7 +52,10 @@ export default function EstimatePage() {
   const [targetJob, setTargetJob] = useState('');
   const [allTiers, setAllTiers] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
+  const [accuracy, setAccuracy] = useState(null);
+  const [showAccuracy, setShowAccuracy] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -65,6 +68,11 @@ export default function EstimatePage() {
         if (!live) return;
         setMeta(m);
         setJobs(j.jobs || []);
+        // Not awaited with the rest: the picker must not wait on a panel that
+        // is empty until the business has finished a few jobs.
+        api.get('/api/estimate/accuracy')
+          .then(({ data }) => { if (live) setAccuracy(data); })
+          .catch(() => {});
       } catch (e) {
         if (live) setError(e?.response?.data?.detail || 'Katalog konnte nicht geladen werden');
       } finally {
@@ -131,6 +139,23 @@ export default function EstimatePage() {
 
   const set = (k, v) => setAnswers((a) => ({ ...a, [k]: v }));
 
+  const saveEstimate = async () => {
+    setSaving(true);
+    setError('');
+    try {
+      await api.post('/api/estimate/save', {
+        job_key: selected.job.key, answers, tier,
+        job_id: targetJob || null,
+      });
+      setNotice('Schätzung gemerkt. Sobald der Auftrag abgerechnet ist, '
+        + 'vergleicht die App die tatsächlichen Stunden damit.');
+    } catch (e) {
+      setError(e?.response?.data?.detail || 'Die Schätzung konnte nicht gespeichert werden');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const createQuote = async () => {
     if (!targetJob) return;
     setCreating(true);
@@ -142,6 +167,7 @@ export default function EstimatePage() {
       });
       const n = (data.quotes || []).length;
       setNotice(`${n} ${n === 1 ? 'Angebot' : 'Angebote'} erstellt — unter Angebote zu finden.`);
+      api.get('/api/estimate/accuracy').then(({ data: a }) => setAccuracy(a)).catch(() => {});
     } catch (e) {
       setError(e?.response?.data?.detail || 'Das Angebot konnte nicht erstellt werden');
     } finally {
@@ -189,8 +215,12 @@ export default function EstimatePage() {
         )}
 
         {!selected ? (
-          <JobPicker meta={meta} jobs={visible} query={query} setQuery={setQuery}
-                     group={group} setGroup={setGroup} onPick={openJob} />
+          <>
+            <AccuracyCard data={accuracy} open={showAccuracy}
+                          onToggle={() => setShowAccuracy((o) => !o)} />
+            <JobPicker meta={meta} jobs={visible} query={query} setQuery={setQuery}
+                       group={group} setGroup={setGroup} onPick={openJob} />
+          </>
         ) : (
           <>
             <SurveyForm survey={selected} answers={answers} set={set}
@@ -199,7 +229,8 @@ export default function EstimatePage() {
             {result && (
               <QuoteBox jobs={myJobs} targetJob={targetJob} setTargetJob={setTargetJob}
                         allTiers={allTiers} setAllTiers={setAllTiers}
-                        creating={creating} onCreate={createQuote} />
+                        creating={creating} onCreate={createQuote}
+                        saving={saving} onSave={saveEstimate} />
             )}
           </>
         )}
@@ -387,6 +418,18 @@ function Result({ result, calculating }) {
         </p>
       )}
 
+      {result.calibration_note && (
+        // The estimate is no longer the trade average. Saying so is not a
+        // flourish: a pro who sees a number move without explanation stops
+        // trusting the tool, and this is the number that came from their own
+        // finished jobs rather than from a price radar.
+        <p className="text-xs text-green-700 border border-green-700/30 bg-green-700/5
+                      rounded-lg px-3 py-2">
+          <TrendingUp size={12} className="inline mr-1 -mt-0.5" />
+          {result.calibration_note}
+        </p>
+      )}
+
       {!!result.answers_recorded?.length && (
         // Stated, not hidden. These answers attached notes and did not change
         // the total — the catalogue has one quantity axis plus condition,
@@ -452,7 +495,8 @@ function Stat({ icon: Icon, label, value, sub }) {
   );
 }
 
-function QuoteBox({ jobs, targetJob, setTargetJob, allTiers, setAllTiers, creating, onCreate }) {
+function QuoteBox({ jobs, targetJob, setTargetJob, allTiers, setAllTiers,
+                   creating, onCreate, saving, onSave }) {
   return (
     <div className="card-lg mb-4 space-y-3" data-testid="estimate-quote-box">
       <p className="text-sm font-medium text-ink flex items-center gap-2">
@@ -481,6 +525,78 @@ function QuoteBox({ jobs, targetJob, setTargetJob, allTiers, setAllTiers, creati
         <p className="text-xs text-ink-muted">
           Kein offener Auftrag vorhanden. Ein Angebot hängt immer an einem Auftrag.
         </p>
+      )}
+      {/* Separate from the quote on purpose. A job that was calculated and not
+          quoted is real evidence about how this business prices; learning only
+          from work that was won would bias the model toward the cheap jobs. */}
+      <button type="button" className="btn-secondary w-full flex items-center justify-center gap-2"
+              disabled={saving} onClick={onSave} data-testid="estimate-save">
+        {saving ? <Loader2 className="animate-spin" size={16} /> : <Bookmark size={16} />}
+        Nur merken, kein Angebot
+      </button>
+    </div>
+  );
+}
+
+function AccuracyCard({ data, open, onToggle }) {
+  if (!data || !data.jobs_measured) return null;
+  const o = data.overall;
+  const enough = o?.applies;
+  return (
+    <div className="card-lg mb-4" data-testid="estimate-accuracy">
+      <button type="button" onClick={onToggle} className="w-full text-left">
+        <p className="text-xs text-ink-muted flex items-center gap-1">
+          <TrendingUp size={12} />Aus Ihren abgerechneten Aufträgen
+        </p>
+        <div className="flex items-baseline justify-between gap-3 mt-1">
+          <p className="font-headings font-bold text-ink text-xl">
+            {data.realised_hourly_all != null
+              ? `${fmtEur2(data.realised_hourly_all)} / h tatsächlich`
+              : `${data.jobs_measured} Aufträge gemessen`}
+          </p>
+          <span className="text-xs text-ink-muted">
+            {data.jobs_measured} {data.jobs_measured === 1 ? 'Auftrag' : 'Aufträge'}
+          </span>
+        </div>
+        {/* The gap between the rate on the quote and the rate the hours
+            actually earned is the number almost nobody computes for
+            themselves, and it is usually the lower one. */}
+        {o && (
+          <p className="text-xs text-ink-muted mt-1">
+            {enough
+              ? `Sie brauchen im Schnitt das ${fmtNum(o.hours_factor, 2)}-fache der `
+                + 'Richtwerte. Neue Schätzungen sind entsprechend angepasst.'
+              : `Noch ${data.min_samples - (o.samples || 0)} abgerechnete `
+                + 'Aufträge, bis die Anpassung greift — bis dahin nur zur Information.'}
+          </p>
+        )}
+      </button>
+
+      {open && (
+        <div className="mt-3 space-y-1">
+          {data.jobs.map((j) => (
+            <div key={j.estimate_id}
+                 className={`flex items-baseline justify-between gap-2 text-xs py-1
+                             border-b border-sm-border/60 ${j.excluded ? 'opacity-50' : ''}`}>
+              <span className="text-ink truncate">{j.job_number || j.title}</span>
+              <span className="text-ink-muted whitespace-nowrap">
+                {fmtNum(j.predicted_hours)} → {fmtNum(j.actual_hours)} h
+                {j.excluded
+                  ? ' · ausgeschlossen'
+                  : ` · ×${fmtNum(j.ratio, 2)}`}
+              </span>
+            </div>
+          ))}
+          {data.jobs.some((j) => j.excluded) && (
+            // Shown rather than silently dropped, so a forgotten timer can be
+            // found and corrected instead of quietly skewing nothing.
+            <p className="text-[11px] text-ink-muted pt-1">
+              Ausgeschlossene Aufträge weichen zu stark ab, um etwas über Ihr
+              Arbeitstempo auszusagen — meist ein vergessener Timer oder ein
+              Auftrag, dessen Umfang sich geändert hat.
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

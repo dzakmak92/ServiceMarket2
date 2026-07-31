@@ -146,12 +146,16 @@ def resolve_qty(job: dict, answers: dict) -> float:
 
 def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT",
              tier: str = "standard", hourly: Optional[tuple[float, float]] = None,
-             rates: Optional[dict] = None) -> dict:
+             rates: Optional[dict] = None,
+             calibration: Optional[dict] = None) -> dict:
     """Estimate one job.
 
     `answers` are the guided-form values. `rates` maps a rate key (see
     `rate_key`) to the business's own EUR amount per unit and overrides the
-    catalogue default wherever it applies.
+    catalogue default wherever it applies. `calibration` is what this business's
+    own finished jobs have shown about its speed — see
+    `services.calibration` — and scales the hours, setup included, because a
+    business that is a fifth slower is a fifth slower at unloading the van too.
     """
     cat = catalogue()
     job = get_job(job_key)
@@ -293,6 +297,26 @@ def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT
                   waste_factor=waste, rate_key=mat_rk,
                   rate_source="pro" if own is not None else "catalogue")
 
+    # The business's own measured speed, applied last and to everything. It
+    # multiplies hours, never the rate: a business that runs long has a time
+    # problem, and inflating its hourly rate to compensate would hide that
+    # behind a number the customer compares against competitors.
+    cal = float((calibration or {}).get("hours_factor") or 1.0)
+    if cal != 1.0:
+        setup = (setup[0] * cal, setup[1] * cal)
+        work = [work[0] * cal, work[1] * cal]
+        for ln in lines:
+            if ln["kind"] not in ("labor", "travel"):
+                continue
+            # The setup line is billed in hours, so the correction belongs in
+            # its quantity. Scaling its rate instead would print an unchanged
+            # 2.85 h beside an inflated hourly figure — the one place in the
+            # quote where the customer can see the two and compare them.
+            if ln.get("rate_key", "").endswith(".stundensatz") and ln["unit"] == "h":
+                ln["qty"] = round(ln["qty"] * cal, 2)
+            else:
+                ln["unit_price"] = round(ln["unit_price"] * cal, 2)
+
     hours = (work[0] + setup[0], work[1] + setup[1])
     labour = (hours[0] * h_lo, hours[1] * h_hi)
     total = (labour[0] + material[0] + disposal[0],
@@ -326,6 +350,16 @@ def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT
         "qty_source": (qty_question(job) or {}).get("key") or (
             "answer" if answers.get("qty") else "typical_size"),
         **_answer_provenance(job, answers, emergency),
+        # Echoed so the stored estimate keeps the inputs that produced it.
+        # When a coefficient turns out wrong, the answer that should have
+        # caught it is almost always in here.
+        "answers_echo": dict(answers),
+        "catalogue_version": cat["version"],
+        "calibration": ({"hours_factor": cal,
+                         "scope": (calibration or {}).get("scope"),
+                         "samples": (calibration or {}).get("samples"),
+                         "realised_hourly": (calibration or {}).get("realised_hourly")}
+                        if cal != 1.0 else None),
         "country": country, "tier": tier,
         "condition": condition, "access": access,
         "emergency": emergency, "rate_basis": rate_basis,
