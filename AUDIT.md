@@ -196,28 +196,60 @@ endpoints, which are mounted and have no caller).
   except 408/429 is treated as permanent and the entry is deleted; a token
   that expired while the device was offline destroys the Bautagebuch entry
   the user was told had been saved.
-- **The receipts screen reads a key the API does not return** (`receipts` vs
-  `expenses`) and uploads `multipart/form-data` to an endpoint expecting
-  JSON, so the list is always empty and every upload 422s.
+- ~~**The receipts screen reads a key the API does not return**~~ — fixed.
+  Three mismatches, not two: `receipts` vs `expenses`, multipart against a
+  JSON endpoint, and `receipt_date`/`amount_brutto` against columns called
+  `expense_date`/`gross_amount`. No expense could be entered from the UI at
+  all, so the EÜR reported income against zero expenses and the USt-VA
+  claimed no input VAT. The tab is now an expense ledger over the CRUD that
+  was already there; the image goes through `/api/uploads` with
+  `kind=receipt`. The "auto-OCR" copy on the button and on the paywall was
+  removed — no such feature exists.
 - **`POST /api/recurring` with a checklist 500s** — a jsonb column written
   without `json.dumps`, unlike every other jsonb write in the codebase.
 
 ### Mounted, working, and with no screen
 
-Rate card (`/api/profile/pro/rates` — the input every estimate and quote
-depends on), `POST /api/estimate/compare` and `/calibrate`, the whole expense
-CRUD behind the EÜR, `GET /api/tax/liability` (the "what you actually owe"
-number the toolkit is sold on), tiered quotes, quote revision, the quote PDF,
-customer detail/edit/delete, `GET /api/invoices/overdue` (dunning), job
-documents, time-log listing and correction, pro-side Abnahme, and the consent
-history the backend maintains for the data subject to read.
+Still stranded: rate card (`/api/profile/pro/rates` — the input every estimate
+and quote depends on), `POST /api/estimate/compare` and `/calibrate`,
+`GET /api/tax/liability` (the "what you actually owe" number the toolkit is
+sold on), tiered quotes (`POST /api/quotes/tiered`), job documents, time-log
+listing and correction, pro-side Abnahme, and the consent history the backend
+maintains for the data subject to read.
+
+Reached since: the expense CRUD behind the EÜR, quote revision and the quote
+PDF, customer detail/edit/delete, and `GET /api/invoices/overdue` (dunning).
+
+### ~~The job status dropdown~~ — fixed
+
+It offered `active/on_hold/done/archived` — names from the old `pm_projects`
+table, none of them members of the `job_status` enum — and PATCHed them onto
+`/api/jobs/{id}`, where `JobPatch` declares no `status` field, so Pydantic
+dropped the value before the route saw it. Two independent breakages: no
+option offered was legal, and none would have arrived anyway. A job could
+never leave `accepted` from the UI, which starves the calibration loop —
+`estimates.measured()` counts only completed/invoiced/closed. The dropdown now
+calls `PATCH /api/jobs/{id}/status`, which already validated transitions, and
+is built from `allowed_transitions` on the job payload rather than a second
+copy of the state machine in JavaScript.
+
+Same class of defect, found while wiring the quote editor: `QuoteLineIn` never
+declared `rate_key`, so editing or revising a quote silently severed the link
+back to `pro_rates` and accepting it taught the business nothing. An
+undeclared field on a Pydantic model is not a validation error — it is a
+deletion.
 
 ### Accessibility and touch
 
 - No form input in the app has an associated label — zero `htmlFor` across
   89 `<label>` elements. Customers and lead capture use placeholders only,
   with the required marker `*` *inside* the placeholder, so it vanishes the
-  moment the user types.
+  moment the user types. (The two new editors — quote lines and customer
+  detail — wrap their inputs in `<label>`, which associates them without
+  needing an id. The rest of the app has not been converted.)
+- `.chip` and `.chip-active` existed in no stylesheet. The customer form has
+  used both class names since it was written, so the Privat/Firma segmented
+  control rendered as two bare words with no selected state. Now defined.
 - Seven destructive actions delete with no confirmation, including a
   construction-diary entry — a legally relevant record — behind a bare 12px
   icon. Delete controls are 12–14px with `hover:text-red-warn` as the only
