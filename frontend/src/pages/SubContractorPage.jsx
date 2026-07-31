@@ -37,15 +37,15 @@ export default function SubContractorPage() {
 
   const byColumn = useMemo(() => {
     const out = { todo: [], doing: [], done: [] };
-    for (const tk of (data?.tasks || [])) (out[tk.column] || out.todo).push(tk);
-    for (const k of Object.keys(out)) out[k].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    for (const tk of (data?.tasks || [])) (out[tk.column_key] || out.todo).push(tk);
+    for (const k of Object.keys(out)) out[k].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
     return out;
   }, [data]);
 
   // Move task forward/back through columns (no DnD on public sub view — touch-friendly tap-to-advance is plenty here)
   const moveTask = async (taskId, newCol) => {
     try {
-      await api.patch(`/api/pm/public/sub/${subToken}/tasks/${taskId}`, { column: newCol });
+      await api.patch(`/api/pm/public/sub/${subToken}/tasks/${taskId}`, { column_key: newCol });
       await load();
     } catch (e) { console.error(e); }
   };

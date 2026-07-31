@@ -27,7 +27,16 @@ KIND_BUCKET = {
 }
 
 
+# Two paths, one handler. /uploads is canonical and what this app now calls;
+# /uploads/file is what every client called before the Postgres port, and a
+# browser still holding the old bundle would otherwise upload into a 404.
+#
+# This is not the same thing as accepting two names for a field. A route alias
+# is explicit and cannot be half-right: both paths run the same code. A
+# silently-dropped field, as on the Kanban board, looks like it worked and did
+# nothing. Aliases are safe; ambiguous payloads are not.
 @router.post("", status_code=201)
+@router.post("/file", status_code=201)
 async def upload_file(
     file: UploadFile = File(...),
     kind: str = Form(default="document"),
@@ -62,6 +71,16 @@ async def upload_file(
 
     out = {"storage_ref": ref, "filename": file.filename,
            "content_type": content_type, "size_bytes": len(body)}
+
+    # A signed URL for the thumbnail the caller is about to render. Ephemeral
+    # by design and returned as a convenience only: `storage_ref` is what gets
+    # stored. A row holding a signed URL is a row that renders a broken image
+    # an hour later, which is exactly what happened when photos were kept as
+    # "/api/uploads/<id>" strings against a GridFS that no longer exists.
+    try:
+        out["url"] = await storage.signed_url(bucket, key)
+    except storage.StorageError:
+        out["url"] = None
 
     if job_id:
         doc_kind = {"job_photo": "photo", "receipt": "receipt",

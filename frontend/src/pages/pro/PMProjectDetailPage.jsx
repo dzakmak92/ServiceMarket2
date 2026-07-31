@@ -2,6 +2,8 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import api from '../../api/client';
+import StoredImage from '../../components/StoredImage';
+import { signedUrl } from '../../api/files';
 import { sendOrQueue, newId } from '../../offline/queue';
 import { useLang } from '../../contexts/LangContext';
 import {
@@ -226,14 +228,24 @@ function MaterialsTab({ projectId, t }) {
     try {
       const fd = new FormData();
       fd.append('file', file);
-      const { data } = await api.post('/api/uploads/file', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-      const photos = [...(mat.photos || []), data.url];
+      fd.append('kind', 'job_photo');
+      const { data } = await api.post('/api/uploads', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      // The ref, never the signed URL the API also returns. Storing the URL
+      // works until it expires; storing the ref works forever.
+      const photos = [...(mat.photos || []), data.storage_ref];
       await api.patch(`/api/jobs/${projectId}/materials/${mat.id}`, { photos });
       await load();
       toast.success(t('pm_mat_photo_added'));
     } catch (e) {
       toast.error(e?.response?.data?.detail || t('pm_mat_photo_failed'));
     } finally { setUploadingId(null); }
+  };
+
+  const openLightbox = async (ref) => {
+    const url = await signedUrl(ref);
+    if (url) setLightbox(url);
   };
 
   const removePhoto = async (mat, url) => {
@@ -302,10 +314,12 @@ function MaterialsTab({ projectId, t }) {
                     {m.barcode && <span className="ml-1 inline-flex items-center gap-0.5 text-[9px] text-ink-muted align-middle"><ScanBarcode size={9} /> {m.barcode}</span>}
                   </div>
                   <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                    {(m.photos || []).map((url) => (
-                      <button key={url} onClick={() => setLightbox(`${BACKEND}${url}`)} className="relative group" data-testid={`pm-material-photo-${m.id}`}>
-                        <img src={`${BACKEND}${url}`} alt="" className="w-9 h-9 rounded-md object-cover border border-sm-border" />
-                        <span onClick={(e) => { e.stopPropagation(); removePhoto(m, url); }} className="absolute -top-1.5 -right-1.5 bg-ink text-paper rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" data-testid={`pm-material-photo-del-${m.id}`}><X size={9} /></span>
+                    {(m.photos || []).map((ref) => (
+                      <button key={ref} onClick={() => openLightbox(ref)} className="relative group" data-testid={`pm-material-photo-${m.id}`}>
+                        <StoredImage storageRef={ref} alt=""
+                                     className="w-9 h-9 rounded-md object-cover border border-sm-border"
+                                     fallbackClassName="w-9 h-9 rounded-md border border-sm-border flex" />
+                        <span onClick={(e) => { e.stopPropagation(); removePhoto(m, ref); }} className="absolute -top-1.5 -right-1.5 bg-ink text-paper rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" data-testid={`pm-material-photo-del-${m.id}`}><X size={9} /></span>
                       </button>
                     ))}
                     <label className="w-9 h-9 rounded-md border border-dashed border-sm-border flex items-center justify-center cursor-pointer hover:border-teal hover:text-teal text-ink-muted" data-testid={`pm-material-addphoto-${m.id}`}>

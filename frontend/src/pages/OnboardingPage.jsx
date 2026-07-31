@@ -76,10 +76,10 @@ export default function OnboardingPage() {
     try {
       const fd = new FormData();
       fd.append('file', file);
-      const { data } = await api.post('/api/uploads/file', fd, {
+      const { data } = await api.post('/api/uploads', fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      set(`${kind}_file_id`, data.file_id);
+      set(`${kind}_file_id`, data.storage_ref);
       set(`${kind}_filename`, file.name);
     } catch {
       setError(t('onboarding_upload_failed'));

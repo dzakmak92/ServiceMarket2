@@ -78,6 +78,7 @@ def _build_app():
                                          router as pm_router,
                                          timer_router as pm_timer_router)
         from routes.pm_template_routes import (job_router as pm_sub_router,
+                                               public_router as pm_sub_portal,
                                                router as pm_tpl_router)
         from routes.quote_routes import (invoice_router as quote_invoice_router,
                                          public_router as portal_router,
@@ -92,7 +93,8 @@ def _build_app():
                   quote_invoice_router, invoice_router, tax_router,
                   pm_router, pm_timer_router, pm_tpl_router,
                   pm_sub_router, upload_router,
-                  portal_router, pm_portal_router, upload_portal_router):
+                  portal_router, pm_portal_router, pm_sub_portal,
+                  upload_portal_router):
             app.include_router(r, prefix="/api")
     except Exception as exc:  # noqa: BLE001 — must not propagate
         import_error = f"{type(exc).__name__}: {exc}"

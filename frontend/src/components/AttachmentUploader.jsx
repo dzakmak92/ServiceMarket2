@@ -1,5 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import api from '../api/client';
+import StoredImage from './StoredImage';
+import { signedUrl } from '../api/files';
 import { Plus, X, FileText, Image as ImageIcon, Loader2, AlertCircle, Paperclip } from 'lucide-react';
 
 const ALLOWED_ACCEPT = 'image/jpeg,image/png,image/webp,application/pdf';
@@ -40,10 +42,19 @@ export default function AttachmentUploader({ value = [], onChange, mode = 'form'
       try {
         const fd = new FormData();
         fd.append('file', file);
-        const { data } = await api.post('/api/uploads/file', fd, {
+        const { data } = await api.post('/api/uploads', fd, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
-        uploaded.push(data);
+        // Normalised to what this component and its consumers store. The
+        // signed `url` the API also returns is deliberately dropped: it
+        // expires within the hour, and a stored expiring URL is a thumbnail
+        // that works in testing and is broken by morning.
+        uploaded.push({
+          storage_ref: data.storage_ref,
+          name: data.filename,
+          size: data.size_bytes,
+          content_type: data.content_type,
+        });
       } catch (err) {
         setError(err.response?.data?.detail || `Upload of ${file.name} failed`);
       }
@@ -127,7 +138,7 @@ export default function AttachmentUploader({ value = [], onChange, mode = 'form'
         <ul className="mt-2 space-y-1" data-testid="attachment-list">
           {value.map((a, i) => (
             <li
-              key={a.file_id}
+              key={a.storage_ref || i}
               className="flex items-center gap-2 bg-cream-soft border border-sm-border rounded-[10px] text-sm px-3 py-2"
               data-testid={`attachment-chip-${i}`}
             >
@@ -172,17 +183,17 @@ export function AttachmentThumbStrip({ value = [], onChange }) {
     <div className="flex items-center gap-1.5 flex-shrink-0" data-testid="attachment-thumb-strip">
       {value.map((a, i) => {
         const isImg = (a.content_type || '').startsWith('image/');
-        const isFullUrl = (a.url || '').startsWith('http');
-        const href = isFullUrl ? a.url : `${backendUrl}${a.url}`;
         return (
           <div
-            key={a.file_id}
+            key={a.storage_ref || i}
             className="relative group w-10 h-10 rounded-[10px] overflow-hidden border border-sm-border flex-shrink-0"
             data-testid={`attachment-thumb-${i}`}
             title={a.name}
           >
             {isImg ? (
-              <img src={href} alt={a.name} className="w-full h-full object-cover" />
+              <StoredImage storageRef={a.storage_ref} alt={a.name}
+                           className="w-full h-full object-cover"
+                           fallbackClassName="w-full h-full bg-cream-soft flex" />
             ) : (
               <div className="w-full h-full bg-cream-soft flex items-center justify-center">
                 <FileText size={16} className="text-amber-deep" />
@@ -210,50 +221,64 @@ export function AttachmentThumbStrip({ value = [], onChange }) {
  */
 export function AttachmentDisplay({ attachments = [], size = 'sm' }) {
   if (!attachments || attachments.length === 0) return null;
-  const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
   return (
     <ul className="mt-2 space-y-1" data-testid="attachment-display">
-      {attachments.map((a) => {
-        const isImg = (a.content_type || '').startsWith('image/');
-        const isFullUrl = (a.url || '').startsWith('http');
-        const href = isFullUrl ? a.url : `${backendUrl}${a.url}`;
-        const sizeKB = Math.max(1, Math.round((a.size || 0) / 1024));
-        return (
-          <li key={a.file_id}>
-            {isImg ? (
-              <a
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block"
-                data-testid={`attachment-img-${a.file_id}`}
-              >
-                <img
-                  src={href}
-                  alt={a.name}
-                  className="max-h-48 rounded-[10px] border border-sm-border object-cover"
-                  loading="lazy"
-                />
-              </a>
-            ) : (
-              <a
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                download={a.name}
-                className={`inline-flex items-center gap-2 bg-cream-soft border border-sm-border rounded-[10px] hover:bg-cream-deep transition-colors ${
-                  size === 'sm' ? 'text-xs px-2 py-1' : 'text-sm px-3 py-2'
-                }`}
-                data-testid={`attachment-file-${a.file_id}`}
-              >
-                <FileText size={size === 'sm' ? 12 : 14} className="text-amber-deep" />
-                <span className="truncate max-w-[180px]">{a.name}</span>
-                <span className="text-ink-muted text-[10px]">{sizeKB} KB</span>
-              </a>
-            )}
-          </li>
-        );
-      })}
+      {attachments.map((a, i) => (
+        <AttachmentRow key={a.storage_ref || i} a={a} size={size} />
+      ))}
     </ul>
+  );
+}
+
+/**
+ * One attachment. Signs its own link on mount rather than at render time,
+ * because a signed URL expires and a list rendered once at page load would
+ * hand out dead links to anyone who left the tab open.
+ */
+function AttachmentRow({ a, size }) {
+  const [href, setHref] = useState(null);
+  useEffect(() => {
+    let live = true;
+    signedUrl(a.storage_ref).then((u) => { if (live) setHref(u); });
+    return () => { live = false; };
+  }, [a.storage_ref]);
+
+  const isImg = (a.content_type || '').startsWith('image/');
+  const sizeKB = Math.max(1, Math.round((a.size || 0) / 1024));
+
+  if (isImg) {
+    const img = (
+      <StoredImage storageRef={a.storage_ref} alt={a.name}
+                   className="max-h-48 rounded-[10px] border border-sm-border object-cover"
+                   fallbackClassName="h-12 w-12 rounded-[10px] border border-sm-border flex" />
+    );
+    return (
+      <li>
+        {href ? (
+          <a href={href} target="_blank" rel="noopener noreferrer" className="block"
+             data-testid="attachment-img">{img}</a>
+        ) : img}
+      </li>
+    );
+  }
+
+  return (
+    <li>
+      <a
+        href={href || undefined}
+        target="_blank"
+        rel="noopener noreferrer"
+        download={a.name}
+        aria-disabled={!href}
+        className={`inline-flex items-center gap-2 bg-cream-soft border border-sm-border rounded-[10px] hover:bg-cream-deep transition-colors ${
+          size === 'sm' ? 'text-xs px-2 py-1' : 'text-sm px-3 py-2'
+        } ${href ? '' : 'opacity-50 pointer-events-none'}`}
+        data-testid="attachment-file"
+      >
+        <FileText size={size === 'sm' ? 12 : 14} className="text-amber-deep" />
+        <span className="truncate max-w-[180px]">{a.name}</span>
+        <span className="text-ink-muted text-[10px]">{sizeKB} KB</span>
+      </a>
+    </li>
   );
 }

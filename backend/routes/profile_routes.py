@@ -28,6 +28,18 @@ router = APIRouter(prefix="/profile", tags=["profile"])
 # Columns a pro may set about their own business. Deliberately explicit: an
 # allow-list means a new column is invisible to the API until someone decides
 # it should be writable, rather than exposed the moment it is added.
+# The account, as opposed to the business. Same reasoning as EDITABLE below:
+# an allow-list, so a column added to `users` is invisible to this endpoint
+# until somebody decides it should be writable. `email`, `role` and `banned`
+# are absent on purpose — changing an email is an identity change and needs
+# verification, not a PATCH.
+ACCOUNT_EDITABLE = {
+    "name", "given_name", "family_name", "phone", "address", "postal_code",
+    "city", "country", "lang",
+    "notif_email", "notif_email_marketing", "notif_new_message",
+    "notif_job_status", "notif_payment_receipt",
+}
+
 EDITABLE = {
     "business_name", "contact_person", "tagline", "description",
     "hourly_rate", "years_experience", "service_categories", "service_areas",
@@ -182,3 +194,68 @@ async def delete_logo(user: dict = Depends(get_current_user)):
         except Exception:  # noqa: BLE001
             pass
     return {"deleted": True}
+
+
+# ── The account behind the business ────────────────────────────────────
+class AccountPatch(BaseModel):
+    name: Optional[str] = Field(default=None, max_length=200)
+    given_name: Optional[str] = None
+    family_name: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    postal_code: Optional[str] = None
+    city: Optional[str] = None
+    country: Optional[str] = Field(default=None, pattern="^[A-Z]{2}$")
+    lang: Optional[str] = Field(default=None, pattern="^(de|en|tr|es)$")
+    notif_email: Optional[bool] = None
+    notif_email_marketing: Optional[bool] = None
+    notif_new_message: Optional[bool] = None
+    notif_job_status: Optional[bool] = None
+    notif_payment_receipt: Optional[bool] = None
+
+
+ACCOUNT_OUT = ("id", "email", "name", "given_name", "family_name", "role",
+               "country", "lang", "phone", "address", "postal_code", "city",
+               "onboarding_complete", "is_email_verified",
+               "notif_email", "notif_email_marketing", "notif_new_message",
+               "notif_job_status", "notif_payment_receipt")
+
+
+def _account(row) -> dict:
+    out = {k: row[k] for k in ACCOUNT_OUT if k in row}
+    out["id"] = str(out["id"])
+    return out
+
+
+@router.get("", tags=["profile"])
+async def get_account(user: dict = Depends(get_current_user)):
+    row = await pg.fetchrow(
+        "select * from users where id = $1 and deleted_at is null", user["id"])
+    if not row:
+        raise HTTPException(404, "Account not found")
+    return _account(row)
+
+
+@router.patch("", tags=["profile"])
+async def patch_account(body: AccountPatch, user: dict = Depends(get_current_user)):
+    """Name, contact details and notification preferences.
+
+    Separate from /profile/pro because they are different things: this is the
+    person, that is the business. The settings screen has always sent both in
+    one save and there was nothing here to receive this half — every name,
+    phone number and notification toggle a pro changed was silently discarded.
+    """
+    data = {k: v for k, v in body.model_dump(exclude_none=True).items()
+            if k in ACCOUNT_EDITABLE}
+    if not data:
+        raise HTTPException(400, "Nothing to update")
+
+    cols = list(data)
+    sets = ", ".join(f"{c} = ${i + 2}" for i, c in enumerate(cols))
+    row = await pg.fetchrow(
+        f"update users set {sets}, updated_at = now() "
+        f"where id = $1 and deleted_at is null returning *",
+        user["id"], *data.values())
+    if not row:
+        raise HTTPException(404, "Account not found")
+    return _account(row)

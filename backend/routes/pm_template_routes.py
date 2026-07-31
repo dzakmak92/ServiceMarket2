@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/pm", tags=["project-templates"])
 job_router = APIRouter(prefix="/jobs", tags=["project-templates"])
+public_router = APIRouter(prefix="/pm/public", tags=["sub-contractor"])
 
 
 class TemplateTask(BaseModel):
@@ -317,3 +318,93 @@ async def export_job_file(job_id: str,
     return Response(
         content=pdf, media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="Jobakte-{safe}.pdf"'})
+
+
+# ── Sub-contractor portal ──────────────────────────────────────────────
+#
+# Token-scoped and account-free: a sub on site has a link, not a login. The
+# link was mintable above and the page it opens has been a 404 in production,
+# so the invite button produced a URL to nothing.
+#
+# What a sub may see is deliberately narrow — the board and nothing else. No
+# quote, no invoice, no P&L, no customer contact details. A sub-contractor
+# needs to know what to build; they have no business knowing the margin on it
+# or being able to ring the client directly.
+
+
+class SubTaskMove(BaseModel):
+    column_key: str = Field(pattern="^(todo|doing|done)$")
+
+
+class SubDiaryIn(BaseModel):
+    note: str = Field(min_length=1, max_length=1000)
+    hours: Optional[float] = Field(default=0, ge=0, le=24)
+    # Free text: there is no account behind this, so the name is a claim, not
+    # an identity. It is recorded verbatim and attributed as such.
+    author_name: Optional[str] = Field(default=None, max_length=60)
+
+
+async def _sub_job(sub_token: str) -> dict:
+    job = await pg.fetchrow(
+        "select id, title, category, site_city from jobs "
+        "where sub_token = $1 and deleted_at is null", sub_token)
+    if not job:
+        # One message for a revoked token and an invented one alike. Telling
+        # the difference would confirm which tokens once existed.
+        raise HTTPException(404, "Invitation revoked or invalid")
+    return job
+
+
+@public_router.get("/sub/{sub_token}")
+async def sub_view(sub_token: str):
+    job = await _sub_job(sub_token)
+    tasks = await pg.fetch(
+        "select id, title, description, column_key, sort_order, due_date "
+        "from job_tasks where job_id = $1 order by column_key, sort_order",
+        job["id"])
+    return {
+        "project_id": str(job["id"]),
+        "title": job["title"],
+        "job_category": job["category"],
+        "city": job["site_city"],
+        "tasks": [{**dict(t), "id": str(t["id"])} for t in tasks],
+    }
+
+
+@public_router.patch("/sub/{sub_token}/tasks/{task_id}")
+async def sub_move_task(sub_token: str, task_id: str, body: SubTaskMove):
+    """A sub may move a card. Not rename it, not delete it, not add one.
+
+    The narrow model is the enforcement: there is no field here that could
+    carry a title or a deletion, so no amount of crafted payload does more
+    than change a column.
+    """
+    job = await _sub_job(sub_token)
+    row = await pg.fetchrow(
+        "update job_tasks set column_key = $3, "
+        "done_at = case when $3 = 'done' then coalesce(done_at, now()) else null end, "
+        "updated_at = now() "
+        "where id = $1 and job_id = $2 returning *",
+        task_id, job["id"], body.column_key)
+    if not row:
+        raise HTTPException(404, "Task not found")
+    return {**dict(row), "id": str(row["id"]), "job_id": str(row["job_id"])}
+
+
+@public_router.post("/sub/{sub_token}/diary", status_code=201)
+async def sub_add_diary(sub_token: str, body: SubDiaryIn):
+    """A diary entry from someone with no account.
+
+    Attributed in the text and flagged in `author`, so a pro reading the
+    diary six months later can tell their own note from a sub's. An
+    unattributed entry in a document that may end up in a defect claim is
+    worse than no entry.
+    """
+    job = await _sub_job(sub_token)
+    name = (body.author_name or "Subunternehmer").strip()[:60] or "Subunternehmer"
+    row = await pg.fetchrow(
+        "insert into job_diary (job_id, text, hours, author) "
+        "values ($1, $2, $3, $4) returning *",
+        job["id"], f"[{name}] {body.note.strip()}",
+        float(body.hours or 0) or None, name)
+    return {**dict(row), "id": str(row["id"]), "job_id": str(row["job_id"])}
