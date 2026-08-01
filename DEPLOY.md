@@ -33,6 +33,7 @@ Settings → Environment Variables. Set for **Production** *and* **Preview**.
 | `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile secret | Onboarding fails closed without it |
 | `REACT_APP_TURNSTILE_SITE_KEY` | Turnstile **site** key | Public by design |
 | `REACT_APP_BACKEND_URL` | *(leave empty)* | The API is same-origin under `/api` |
+| `FRONTEND_URL` | `https://servicemarket.at` | The canonical origin. Feeds the CORS allowlist and, more importantly, the **password-reset link**. Unset, the link falls back to `request.base_url`, so a reset mail sends the user to whatever host the request happened to arrive on — including the `*.vercel.app` one |
 | `ENVIRONMENT` | `production` | Makes auth cookies `Secure` |
 | `PURGE_SECRET` | a long random string | `openssl rand -base64 32`. Authenticates the nightly erasure job. **Without it the job refuses and no account is ever deleted** — see below |
 | `CRON_SECRET` | the *same* string as `PURGE_SECRET` | Vercel sends this as `Authorization: Bearer` on every cron invocation; the endpoint accepts either header |
@@ -67,10 +68,56 @@ unauthenticated, because an endpoint that erases accounts must never be
 reachable by accident. Set both variables, then confirm after the first
 night that the run is in the Vercel cron log.
 
+## 2b · The custom domain
+
+The production domain is **`servicemarket.at`**. Add it under Settings →
+Domains, apex as primary with `www` redirecting to it, then create the DNS
+records Vercel displays at the registrar. Current expected state:
+
+| Host | Type | Value |
+|---|---|---|
+| `servicemarket.at` | `A` | `216.198.79.1` |
+| `www.servicemarket.at` | `CNAME` | `cname.vercel-dns.com` |
+
+Vercel serves new projects from `216.198.79.1`; older documentation says
+`76.76.21.21`. Use whatever the dashboard shows rather than either of these.
+
+Three things break silently when the domain changes, and none of them
+produces an error that names the domain:
+
+- **Turnstile is bound to a hostname allowlist.** The site key must list
+  `servicemarket.at`. If it does not, the widget fails on the new domain and
+  onboarding refuses *every* new account, because the backend fails closed
+  without a valid token. The existing sign-in path is unaffected, so this
+  looks like "registration is broken" rather than a domain problem.
+- **`FRONTEND_URL`** — see the table above. A reset link pointing at the old
+  host is a reset link pointing at a host Google Safe Browsing has flagged.
+- **`MAIL_FROM` needs the domain verified with the mail provider.** Owning
+  `servicemarket.at` is what makes `no-reply@servicemarket.at` deliverable:
+  add the SPF and DKIM records Resend issues, then set `RESEND_API_KEY`.
+  Until that is done the reset flow works and the mail never arrives.
+
+Nothing in the application code hardcodes a hostname. Auth cookies are set
+without a `domain=` so they are host-only and follow whatever serves them;
+CORS matters only for local development because production is same-origin;
+and customer-portal and quote share links are built from
+`window.location.origin`. The legal pages (Imprint, Terms, Privacy) already
+name `servicemarket.at` and `contact@servicemarket.at`.
+
+### On the Safe Browsing warning
+
+`*.vercel.app` preview URLs get flagged as phishing periodically. The
+classifier sees a bare email-and-password form on a random-looking subdomain
+of a host with a heavily-abused reputation, which is also what a phishing kit
+looks like. The flag attaches to the hostname, not to this application, so a
+custom domain starts clean — that, not an appeal, is the durable fix. Appeals
+go to `safebrowsing.google.com/safebrowsing/report_error/` and typically clear
+in 24–72 hours, but on a `vercel.app` host they tend to recur.
+
 ## 3 · Deploy and verify
 
 ```
-https://<your-app>.vercel.app/api/health
+https://servicemarket.at/api/health
 ```
 
 Expected:
