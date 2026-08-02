@@ -3,18 +3,26 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLang } from '../contexts/LangContext';
 import api from '../api/client';
-import { AlertTriangle, Building2, CalendarDays, Calculator, FileText,
-  Handshake, Home, LayoutDashboard, ListChecks, MoreHorizontal, Plus, Receipt, Settings as SettingsIcon, Users, Wrench, X } from 'lucide-react';
+import { STAGES } from '../utils/workflow';
+import { AlertTriangle, CalendarDays, Home, LayoutDashboard, ListChecks,
+  MoreHorizontal, Plus, Settings as SettingsIcon, Users, X } from 'lucide-react';
 
 /**
  * Mobile bottom nav — four anchors and a "More" sheet.
  *
- * It does not repeat the home screen's six stage tiles. Those are the job's
- * lifecycle and they are large, counted and colour-coded on Start; a second,
- * smaller copy of three of them down here was navigation competing with
- * itself. The bar carries what a tile cannot: the way back, the records, and
- * the single create action.
+ * Neither the bar nor the sheet repeats the home screen's stage tiles. Those
+ * are the job's lifecycle: large, counted and colour-coded on Start. A second
+ * smaller copy of them here is navigation competing with itself, and it gives
+ * every destination two routes.
+ *
+ * The exclusion is computed from STAGES rather than maintained by hand. That
+ * is the whole point — this list has drifted out of agreement with the tiles
+ * twice already, and a derived rule cannot drift. Add or remove a tile and
+ * the menu follows on its own.
  */
+const STAGE_ROUTES = new Set(STAGES.map((s) => s.to).filter(Boolean));
+const notAStage = (link) => !STAGE_ROUTES.has(link.to);
+
 export default function MobileNav() {
   const { user } = useAuth();
   const { t } = useLang();
@@ -46,39 +54,26 @@ export default function MobileNav() {
   if (!user) return null;
   const isActive = (path) => location.pathname === path;
 
-  // The bar deliberately does not repeat the home screen.
-  //
-  // Kalkulation, Angebot, Auftrag, Projekt, Wartung and Rechnung are the six
-  // tiles on Start. Carrying three of them down here gave the same
-  // destination two routes and had the bar doing the grid's job badly — five
-  // small targets duplicating six large ones.
-  //
-  // What is left is what a tile cannot be: the way back to the grid, the two
-  // records you look things up in, and the one thing you create from nothing.
-  // `Neu` is the only verb in the bar, which is why it is the only one that
-  // carries colour.
+  // What a tile cannot be: the way back to the grid, the two records you look
+  // things up in, and the one thing you create from nothing. `Neu` is the only
+  // verb here, which is why it is the only entry that carries colour.
   const primaryPro = [
     { to: '/', icon: Home, label: t('nav_home') },
     { to: '/customers', icon: Users, label: t('nav_customers') },
     { to: '/leads/new', icon: Plus, label: t('nav_new'), accent: true },
     { to: '/schedule', icon: CalendarDays, label: t('nav_schedule') },
   ];
-  // Everything the grid covers stays reachable from here too, for anyone deep
-  // in the app who does not want to go via Start.
+  // What is left once the tiles are taken out: the places the grid does not
+  // go. Overdue is not the invoice list — it is the subset that is late and
+  // needs chasing — so it earns its own entry.
   const morePro = [
-    { to: '/estimate', icon: Calculator, label: t('nav_estimate') },
-    { to: '/quotes', icon: FileText, label: t('nav_quotes') },
-    { to: '/projects', icon: Handshake, label: t('nav_jobs') },
-    ...(hasPm ? [{ to: '/projects?mode=project', icon: Building2, label: t('nav_projects') }] : []),
-    { to: '/recurring', icon: Wrench, label: t('nav_recurring') },
     ...(hasToolkit ? [{ to: '/overdue', icon: AlertTriangle, label: t('nav_overdue') }] : []),
     ...(hasTax ? [{ to: '/tax', icon: ListChecks, label: t('nav_tax') }] : []),
-    ...(hasToolkit ? [{ to: '/my-invoices', icon: Receipt, label: t('nav_my_invoices') }] : []),
     { to: '/dashboard', icon: LayoutDashboard, label: t('nav_dashboard') },
     { to: '/settings', icon: SettingsIcon, label: t('nav_settings') },
-  ];
+  ].filter(notAStage);
 
-  const primary = user.role === 'tradesperson' ? primaryPro : [];
+  const primary = user.role === 'tradesperson' ? primaryPro.filter(notAStage) : [];
   const more = user.role === 'tradesperson' ? morePro : [];
 
   return (
