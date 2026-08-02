@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import {
@@ -13,6 +13,11 @@ const fmtEur = (v) => new Intl.NumberFormat('de-AT', { style: 'currency', curren
 export default function PMProjectsPage() {
   const { t } = useLang();
   const navigate = useNavigate();
+  // `?mode=project` narrows this to jobs carrying the full PM toolkit. Without
+  // it the Projekt tile and the Auftrag tile on the home screen landed on the
+  // identical screen — two of six cards leading to the same place.
+  const [params] = useSearchParams();
+  const mode = params.get('mode');
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [needsToolkit, setNeedsToolkit] = useState(false);
@@ -30,14 +35,18 @@ export default function PMProjectsPage() {
     try {
       // `jobs`, not `projects`. GET /api/jobs returns {jobs, total}; reading
       // the wrong key made this list permanently empty regardless of filter.
-      const { data } = await api.get('/api/jobs', { params: { limit: 200 } });
+      // Filtered server-side: the endpoint has always accepted `mode` and
+      // nothing ever sent it.
+      const { data } = await api.get('/api/jobs', {
+        params: { limit: 200, ...(mode ? { mode } : {}) } });
       setProjects(data.jobs || []);
     } catch (e) {
       if (e?.response?.status === 402) setNeedsToolkit(true);
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [mode]);
 
   useEffect(() => {
     if (needsToolkit) return;
@@ -113,8 +122,12 @@ export default function PMProjectsPage() {
           <div className="flex items-center gap-3">
             <Briefcase size={26} className="text-teal" />
             <div>
-              <h1 className="text-3xl font-headings font-bold text-ink">{t('pm_title')}</h1>
-              <p className="text-ink-muted text-sm">{t('pm_subtitle')}</p>
+              <h1 className="text-3xl font-headings font-bold text-ink">
+                {mode === 'project' ? t('nav_projects') : t('nav_jobs')}
+              </h1>
+              <p className="text-ink-muted text-sm">
+                {mode === 'project' ? t('pm_only_projects') : t('pm_subtitle')}
+              </p>
             </div>
           </div>
           <Link to="/schedule" className="btn-ghost text-sm" data-testid="pm-open-schedule">

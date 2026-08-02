@@ -3,15 +3,17 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLang } from '../contexts/LangContext';
 import api from '../api/client';
-import { AlertTriangle, Building2, CalendarDays, Calculator, CreditCard, FileText,
-  Handshake, Home, Inbox, LayoutDashboard, ListChecks, MoreHorizontal, Receipt,
-  Settings as SettingsIcon, Users, Wrench, X } from 'lucide-react';
+import { AlertTriangle, Building2, CalendarDays, Calculator, FileText,
+  Handshake, Home, LayoutDashboard, ListChecks, MoreHorizontal, Plus, Receipt, Settings as SettingsIcon, Users, Wrench, X } from 'lucide-react';
 
 /**
- * Mobile bottom nav — always 4 anchors + 1 right-corner "More" button that
- * opens a slide-up sheet containing toolkit-level pages (My Quotes, My
- * Invoices, Billing, …). Keeps the footer slim no matter how many extras
- * we ship later.
+ * Mobile bottom nav — four anchors and a "More" sheet.
+ *
+ * It does not repeat the home screen's six stage tiles. Those are the job's
+ * lifecycle and they are large, counted and colour-coded on Start; a second,
+ * smaller copy of three of them down here was navigation competing with
+ * itself. The bar carries what a tile cannot: the way back, the records, and
+ * the single create action.
  */
 export default function MobileNav() {
   const { user } = useAuth();
@@ -44,32 +46,38 @@ export default function MobileNav() {
   if (!user) return null;
   const isActive = (path) => location.pathname === path;
 
-  // Four, plus More. The comment above has always said four; the list had
-  // grown to eight, which with the More button put nine targets in one row —
-  // roughly 36 px each on a 360 px phone, well under the 44 px minimum, for
-  // users who are often wearing gloves. The four kept are the stages a
-  // tradesperson moves between during a working day; everything else is a
-  // destination you go to deliberately, which is what the sheet is for.
+  // The bar deliberately does not repeat the home screen.
   //
-  // Icons match the home screen's tiles on purpose: the same concept should
-  // not be a Briefcase in one place and a Handshake in another.
+  // Kalkulation, Angebot, Auftrag, Projekt, Wartung and Garantie are the six
+  // tiles on Start. Carrying three of them down here gave the same
+  // destination two routes and had the bar doing the grid's job badly — five
+  // small targets duplicating six large ones.
+  //
+  // What is left is what a tile cannot be: the way back to the grid, the two
+  // records you look things up in, and the one thing you create from nothing.
+  // `Neu` is the only verb in the bar, which is why it is the only one that
+  // carries colour.
   const primaryPro = [
     { to: '/', icon: Home, label: t('nav_home') },
-    { to: '/projects', icon: Handshake, label: t('nav_jobs') },
-    { to: '/quotes', icon: FileText, label: t('nav_quotes') },
-    { to: '/recurring', icon: Wrench, label: t('nav_recurring') },
+    { to: '/customers', icon: Users, label: t('nav_customers') },
+    { to: '/leads/new', icon: Plus, label: t('nav_new'), accent: true },
+    ...(hasToolkit
+      ? [{ to: '/my-invoices', icon: Receipt, label: t('nav_invoices_short') }]
+      : [{ to: '/schedule', icon: CalendarDays, label: t('nav_schedule') }]),
   ];
+  // Everything the grid covers stays reachable from here too, for anyone deep
+  // in the app who does not want to go via Start.
   const morePro = [
     { to: '/estimate', icon: Calculator, label: t('nav_estimate') },
-    { to: '/leads/new', icon: Inbox, label: t('nav_capture_lead') },
-    { to: '/customers', icon: Users, label: t('nav_customers') },
-    { to: '/dashboard', icon: LayoutDashboard, label: t('nav_dashboard') },
-    ...(hasToolkit ? [{ to: '/my-invoices', icon: Receipt, label: t('nav_my_invoices') }] : []),
+    { to: '/quotes', icon: FileText, label: t('nav_quotes') },
+    { to: '/projects', icon: Handshake, label: t('nav_jobs') },
+    ...(hasPm ? [{ to: '/projects?mode=project', icon: Building2, label: t('nav_projects') }] : []),
+    { to: '/recurring', icon: Wrench, label: t('nav_recurring') },
     ...(hasToolkit ? [{ to: '/overdue', icon: AlertTriangle, label: t('nav_overdue') }] : []),
     ...(hasTax ? [{ to: '/tax', icon: ListChecks, label: t('nav_tax') }] : []),
-    ...(hasPm ? [{ to: '/projects?mode=project', icon: Building2, label: t('stage_projekt') }] : []),
-    { to: '/schedule', icon: CalendarDays, label: t('nav_schedule') },
-    { to: '/billing', icon: CreditCard, label: t('nav_billing') },
+    ...(hasToolkit ? [{ to: '/schedule', icon: CalendarDays, label: t('nav_schedule') }] : []),
+    ...(hasToolkit ? [{ to: '/my-invoices', icon: Receipt, label: t('nav_my_invoices') }] : []),
+    { to: '/dashboard', icon: LayoutDashboard, label: t('nav_dashboard') },
     { to: '/settings', icon: SettingsIcon, label: t('nav_settings') },
   ];
 
@@ -95,8 +103,16 @@ export default function MobileNav() {
                   focus-visible:ring-teal/30 ${active ? 'text-teal' : 'text-ink-muted'}`}
                 data-testid={`mobile-nav-${link.to.replace(/\//g, '') || 'home'}`}
               >
-                <Icon size={20} />
-                <span className="text-[10.5px] font-semibold">{link.label}</span>
+                {link.accent ? (
+                  <span className="w-9 h-9 -mt-1 rounded-full bg-amber text-on-amber
+                                   grid place-items-center shadow-sm">
+                    <Icon size={20} strokeWidth={2.4} />
+                  </span>
+                ) : (
+                  <Icon size={20} />
+                )}
+                <span className={`text-[10.5px] font-semibold
+                  ${link.accent ? 'text-ink' : ''}`}>{link.label}</span>
               </Link>
             );
           })}
