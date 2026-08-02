@@ -704,11 +704,13 @@ with TestClient(entry.app) as c:
     r = c.get("/api/jobs/counts")
     check(ok(r), f"the counts endpoint answers ({r.status_code})")
     k = r.json() if r.status_code < 400 else {}
-    for key in ("kalkulation", "angebot", "auftrag", "projekt", "wartung"):
+    for key in ("kalkulation", "angebot", "auftrag", "projekt", "wartung", "rechnung"):
         check(key in k, f"and carries {key}")
-    check("garantie" not in k,
-          "but not garantie — there is no warranty feature, and a 0 would "
-          "read as 'nothing under warranty' rather than 'not built'")
+    # The sixth tile was Garantie, which had no feature behind it. It is
+    # Rechnungen now, so every tile on the screen leads somewhere real.
+    check("garantie" not in k, "and no longer pretends to count warranties")
+    check(k.get("rechnung", 0) >= 1,
+          f"the invoice issued above is counted as outstanding ({k.get('rechnung')})")
     check(all(isinstance(v, int) for v in k.values()),
           "every figure is a number the tile can print")
     # The originals are still there; the dashboard reads them.

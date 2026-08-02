@@ -48,7 +48,7 @@ export default function MobileNav() {
 
   // The bar deliberately does not repeat the home screen.
   //
-  // Kalkulation, Angebot, Auftrag, Projekt, Wartung and Garantie are the six
+  // Kalkulation, Angebot, Auftrag, Projekt, Wartung and Rechnung are the six
   // tiles on Start. Carrying three of them down here gave the same
   // destination two routes and had the bar doing the grid's job badly — five
   // small targets duplicating six large ones.
@@ -61,9 +61,7 @@ export default function MobileNav() {
     { to: '/', icon: Home, label: t('nav_home') },
     { to: '/customers', icon: Users, label: t('nav_customers') },
     { to: '/leads/new', icon: Plus, label: t('nav_new'), accent: true },
-    ...(hasToolkit
-      ? [{ to: '/my-invoices', icon: Receipt, label: t('nav_invoices_short') }]
-      : [{ to: '/schedule', icon: CalendarDays, label: t('nav_schedule') }]),
+    { to: '/schedule', icon: CalendarDays, label: t('nav_schedule') },
   ];
   // Everything the grid covers stays reachable from here too, for anyone deep
   // in the app who does not want to go via Start.
@@ -75,7 +73,6 @@ export default function MobileNav() {
     { to: '/recurring', icon: Wrench, label: t('nav_recurring') },
     ...(hasToolkit ? [{ to: '/overdue', icon: AlertTriangle, label: t('nav_overdue') }] : []),
     ...(hasTax ? [{ to: '/tax', icon: ListChecks, label: t('nav_tax') }] : []),
-    ...(hasToolkit ? [{ to: '/schedule', icon: CalendarDays, label: t('nav_schedule') }] : []),
     ...(hasToolkit ? [{ to: '/my-invoices', icon: Receipt, label: t('nav_my_invoices') }] : []),
     { to: '/dashboard', icon: LayoutDashboard, label: t('nav_dashboard') },
     { to: '/settings', icon: SettingsIcon, label: t('nav_settings') },

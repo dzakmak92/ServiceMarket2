@@ -149,7 +149,7 @@ export default function ProHomePage() {
           {t('home_workflow')}
         </h2>
         {/* Column-first: Kalkulation/Angebot/Auftrag down the left, then
-            Projekt/Wartung/Garantie down the right. DOM order matches, so
+            Projekt/Wartung/Rechnung down the right. DOM order matches, so
             keyboard and screen-reader order follow the same path. */}
         <div className="grid grid-cols-2 grid-rows-3 grid-flow-col gap-2.5"
              data-testid="home-stages">

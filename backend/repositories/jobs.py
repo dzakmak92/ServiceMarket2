@@ -310,4 +310,14 @@ async def dashboard_counts(pro_id: str) -> dict:
     out["angebot"] = int(await pg.fetchval(
         "select count(*) from quotes where pro_id = $1 "
         "and status in ('sent','viewed','negotiating')", pro_id) or 0)
+
+    # Rechnung: money issued and not yet in the bank. Drafts are excluded —
+    # an unissued invoice is not owed to anyone — and so are paid and
+    # written-off ones. A storno carries a negative total and nets its
+    # original out, so counting documents here would double-count a
+    # correction; this counts what is still outstanding.
+    out["rechnung"] = int(await pg.fetchval(
+        "select count(*) from invoices where pro_id = $1 and status <> 'draft' "
+        "and payment_state in ('unpaid','partial','overdue') and outstanding > 0",
+        pro_id) or 0)
     return out

@@ -1,5 +1,5 @@
 import {
-  Calculator, FileText, Handshake, Building2, Wrench, Award,
+  Calculator, FileText, Handshake, Building2, Wrench, Receipt,
 } from 'lucide-react';
 
 /**
@@ -48,11 +48,12 @@ export const STAGES = [
     fill: 'bg-teal text-paper',
   },
   {
-    // No warranty feature exists. `to: null` renders the tile as unavailable
-    // rather than as a link into nothing, and the API deliberately omits a
-    // `garantie` count so it cannot be mistaken for "nothing under warranty".
-    key: 'garantie', to: null, icon: Award,
-    labelKey: 'stage_garantie', unitKey: 'stage_garantie_unit',
+    // Getting paid is the end of the chain, so it closes the right column.
+    // This slot held Garantie, which had no feature behind it — no route, no
+    // table, no endpoint — and rendered as a dead tile. Invoices are real,
+    // and the count is money issued and not yet in the bank.
+    key: 'rechnung', to: '/my-invoices', icon: Receipt,
+    labelKey: 'stage_rechnung', unitKey: 'stage_rechnung_unit',
     fill: 'bg-teal-tint text-ink',
   },
 ];
