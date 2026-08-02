@@ -11,8 +11,16 @@ module.exports = {
         'cream-deep': '#f9e9cf',
         paper: '#ffffff',
         ink: { DEFAULT: '#1a3a52', soft: '#4a5a6c', muted: '#7d8a9a', faint: '#b0b8c1' },
-        teal: { DEFAULT: '#2d6a7f', deep: '#1f4d5e' },
-        amber: { DEFAULT: '#f5a623', deep: '#e8941a' },
+        // `tint` is a third step mixed from the same hue, not a new colour.
+        // The home tiles run a light-to-dark ramp down each column and three
+        // values are the minimum that reads as a progression rather than as
+        // two colours and an accident.
+        teal: { DEFAULT: '#2d6a7f', deep: '#1f4d5e', tint: '#cfdee3' },
+        amber: { DEFAULT: '#f5a623', deep: '#e8941a', tint: '#fbe0b4' },
+        // Foreground for text sitting on an amber fill. The brand ink is a
+        // blue navy and goes muddy on orange; this is the same hue family as
+        // the amber itself, darkened. Named for its job, not its colour.
+        'on-amber': '#3a2a08',
         'green-pos': '#4a8b3f',
         'red-warn': '#c14655',
         'sm-border': '#f0e3c8',

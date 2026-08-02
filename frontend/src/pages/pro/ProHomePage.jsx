@@ -1,145 +1,228 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLang } from '../../contexts/LangContext';
 import api from '../../api/client';
-import { ArrowRight, CheckCircle, Briefcase, TrendingUp, Star } from 'lucide-react';
-import { isPremiumTier } from '../../utils/tier';
+import { Loader2, ArrowRight } from 'lucide-react';
+import { STAGES } from '../../utils/workflow';
 
+const fmtEur = (v) =>
+  new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
+const fmtDate = (v) => (v ? new Date(v).toLocaleDateString('de-AT') : '—');
+
+/**
+ * The home screen, rebuilt around the job's own lifecycle.
+ *
+ * What it replaced showed four marketplace statistics — open quotes, accepted
+ * quotes, jobs done, star rating — above a list of "recent jobs" that read
+ * `job.city` and `job.budget_max`. Those columns are called `site_city` and
+ * `contract_amount`, so the location and the amount were blank on every card.
+ * The rating tile came from a directory that no longer exists.
+ *
+ * Now: one hero that names the single most urgent thing, then the six stages
+ * of a job. The grid flows column-first, so the left column is winning the
+ * work and the right is delivering it; that split is what the two colour
+ * families encode.
+ */
 export default function ProHomePage() {
   const { user } = useAuth();
   const { t } = useLang();
-  const [proProfile, setProProfile] = useState(null);
-  const [recentJobs, setRecentJobs] = useState([]);
-  const [quotes, setQuotes] = useState([]);
 
-  useEffect(() => {
-    api.get('/api/profile/pro').then(r => setProProfile(r.data)).catch(() => {});
-    // Neither of these was ever fetched, so the four stat tiles read 0 and the
-    // job list was permanently empty regardless of how much work the business
-    // had. The marketplace feed they were written for is gone; the equivalent
-    // now is simply this business's own quotes and jobs.
-    api.get('/api/quotes', { params: { limit: 200 } })
-      .then(r => setQuotes(r.data?.quotes || [])).catch(() => {});
-    api.get('/api/jobs', { params: { limit: 6 } })
-      .then(r => setRecentJobs(r.data?.jobs || [])).catch(() => {});
+  const [profile, setProfile] = useState(null);
+  const [counts, setCounts] = useState(null);
+  const [overdue, setOverdue] = useState([]);
+  const [quotes, setQuotes] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    // Every tile figure comes from one endpoint. Counting them client-side
+    // would be five requests on a phone that is often on one bar of signal.
+    const [p, c, o, q] = await Promise.all([
+      api.get('/api/profile/pro').catch(() => null),
+      api.get('/api/jobs/counts').catch(() => null),
+      api.get('/api/invoices/overdue').catch(() => null),
+      api.get('/api/quotes', { params: { status: 'sent', limit: 50 } }).catch(() => null),
+    ]);
+    setProfile(p?.data || null);
+    setCounts(c?.data || {});
+    setOverdue(o?.data?.invoices || []);
+    setQuotes(q?.data?.quotes || []);
+    setLoading(false);
   }, []);
 
-  const isPro = isPremiumTier(proProfile?.plan_tier);
-  // `pending` is not a member of quote_status — the enum is
-  // draft|sent|viewed|accepted|rejected|expired — so this tile read 0
-  // even once the quotes were being fetched.
-  const pendingQuotes = quotes.filter(
-    q => ['sent', 'viewed'].includes(q.status)).length;
-  const acceptedQuotes = quotes.filter(q => q.status === 'accepted').length;
+  useEffect(() => { load(); }, [load]);
+
+  /**
+   * What the hero says.
+   *
+   * Money that is late outranks a quote that is waiting, because one is owed
+   * and the other is only hoped for. If neither exists the hero must not sit
+   * there as a large empty box — it becomes a plain prompt to capture the
+   * next lead, which is the useful thing to do on a quiet morning.
+   */
+  const focus = useMemo(() => {
+    const worst = [...overdue].sort(
+      (a, b) => (b.days_overdue || 0) - (a.days_overdue || 0))[0];
+    if (worst) {
+      return {
+        kind: 'overdue',
+        title: t('home_focus_overdue').replace('{days}', worst.days_overdue ?? 0),
+        sub: [worst.customer_name, worst.invoice_number,
+              fmtEur(worst.outstanding ?? worst.gross_total)].filter(Boolean).join(' · '),
+        cta: t('home_focus_overdue_cta'),
+        to: '/overdue',
+      };
+    }
+    if (quotes.length) {
+      const oldest = [...quotes].sort(
+        (a, b) => new Date(a.sent_at || 0) - new Date(b.sent_at || 0))[0];
+      const days = oldest?.sent_at
+        ? Math.floor((Date.now() - new Date(oldest.sent_at)) / 86400000) : null;
+      return {
+        kind: 'quotes',
+        title: t('home_focus_quotes')
+          .replace('{n}', quotes.length)
+          .replace('{days}', days ?? 0),
+        sub: [oldest?.customer_name, oldest?.title,
+              oldest?.gross_total ? fmtEur(oldest.gross_total) : null]
+          .filter(Boolean).join(' · '),
+        cta: t('home_focus_quotes_cta'),
+        to: `/quotes/${oldest?.id || ''}`,
+      };
+    }
+    return {
+      kind: 'idle',
+      title: t('home_focus_idle'),
+      sub: t('home_focus_idle_sub'),
+      cta: t('home_focus_idle_cta'),
+      to: '/leads/new',
+    };
+  }, [overdue, quotes, t]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-cream flex items-center justify-center">
+        <Loader2 size={26} className="text-teal animate-spin" />
+      </div>
+    );
+  }
+
+  const worst = [...overdue].sort(
+    (a, b) => (b.days_overdue || 0) - (a.days_overdue || 0))[0];
 
   return (
-    <div className="min-h-screen bg-cream pb-24 md:pb-8">
-      {/* Hero */}
-      <section className="bg-gradient-to-br from-teal-deep to-teal pt-12 pb-12 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="absolute rounded-full border border-paper/30"
-              style={{ width:`${(i+1)*300}px`, height:`${(i+1)*300}px`, top:'-20%', right:'-10%' }} />
-          ))}
-        </div>
-        <div className="page-container relative">
-          <div className="max-w-2xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-14 h-14 bg-paper/20 rounded-[18px] flex items-center justify-center">
-                <span className="text-paper font-headings font-bold text-2xl">
-                  {user?.name?.[0]?.toUpperCase()}
+    <div className="min-h-screen bg-cream pb-28 md:pb-10">
+      <div className="max-w-3xl mx-auto px-4 pt-4">
+        <header className="py-3">
+          <div>
+            <p className="text-xs text-ink-muted">{t('pro_welcome_back')}</p>
+            <h1 className="font-headings font-bold text-ink text-xl truncate">
+              {profile?.business_name || user?.name}
+            </h1>
+          </div>
+        </header>
+
+        {/* ── Als Nächstes ───────────────────────────────────────── */}
+        <Link
+          to={focus.to}
+          className="block bg-teal text-paper rounded-[18px] p-5 mt-1
+                     focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+          data-testid="home-focus"
+        >
+          <p className="text-[10.5px] uppercase tracking-[.13em] font-bold text-paper/70">
+            {t('home_focus_kicker')}
+          </p>
+          <p className="font-headings font-bold text-xl leading-tight mt-1.5">
+            {focus.title}
+          </p>
+          {focus.sub && <p className="text-sm text-paper/80 mt-1">{focus.sub}</p>}
+          <span className="mt-3 flex items-center justify-center gap-1.5 bg-amber text-on-amber
+                           rounded-xl py-3 font-headings font-bold text-sm">
+            {focus.cta} <ArrowRight size={15} />
+          </span>
+        </Link>
+
+        {/* ── Auftragslauf ───────────────────────────────────────── */}
+        <h2 className="text-[10.5px] uppercase tracking-[.12em] font-bold text-ink-muted
+                       mt-6 mb-2.5">
+          {t('home_workflow')}
+        </h2>
+        {/* Column-first: Kalkulation/Angebot/Auftrag down the left, then
+            Projekt/Wartung/Garantie down the right. DOM order matches, so
+            keyboard and screen-reader order follow the same path. */}
+        <div className="grid grid-cols-2 grid-rows-3 grid-flow-col gap-2.5"
+             data-testid="home-stages">
+          {STAGES.map((s) => {
+            const Icon = s.icon;
+            const n = counts?.[s.key];
+            const body = (
+              <>
+                <Icon
+                  size={50} strokeWidth={1.7} aria-hidden="true"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 opacity-[.22]
+                             pointer-events-none"
+                />
+                <span className="relative font-headings font-bold text-[14.5px]
+                                 leading-tight tracking-[-.022em]">
+                  {t(s.labelKey)}
                 </span>
-              </div>
-              <div>
-                <p className="text-paper/70 text-sm">{t('pro_welcome_back')}</p>
-                <h1 className="text-paper font-headings font-bold text-2xl">
-                  {proProfile?.business_name || user?.name}
-                </h1>
-              </div>
-              {isPro && <span className="pro-badge ml-2 text-sm px-3 py-1">PRO</span>}
-            </div>
-            <p className="text-paper/80 text-lg">{t('pro_hero_subtitle')}</p>
-
-            <div className="flex gap-4 mt-6 flex-wrap">
-              {/* /browse-jobs was the marketplace, removed by the migration.
-                  It is not a route any more, so the catch-all bounced the
-                  most prominent button on the pro home screen back to the
-                  home screen. Work now starts with a lead of your own. */}
-              <Link to="/leads/new" className="btn-amber">
-                {t('nav_capture_lead')} <ArrowRight size={16} />
+                <span className="relative text-[11px] opacity-80 leading-snug">
+                  {s.to
+                    ? `${n ?? 0} ${t(s.unitKey)}`
+                    : t('stage_soon')}
+                </span>
+              </>
+            );
+            const shell = `${s.fill} relative overflow-hidden rounded-2xl px-3.5 py-3
+                           min-h-[94px] flex flex-col justify-center gap-0.5`;
+            // A stage with nowhere to go is not a link. Rendering it as one
+            // would put a focusable, tappable control on the screen that does
+            // nothing when pressed.
+            return s.to ? (
+              <Link key={s.key} to={s.to} data-testid={`stage-${s.key}`}
+                    className={`${shell} focus-visible:outline-none focus-visible:ring-4
+                                focus-visible:ring-teal/40`}>
+                {body}
               </Link>
-              {!isPro && (
-                <Link to="/billing" className="hero-secondary-btn">
-                  {t('pro_plan_upgrade')} ✦
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <div className="page-container py-8">
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
-          {[
-            { label: t('pro_stat_open_quotes'), value: pendingQuotes, color: 'text-amber-deep', bg: 'bg-amber/10' },
-            { label: t('pro_stat_accepted'), value: acceptedQuotes, color: 'text-green-pos', bg: 'bg-green-pos/10' },
-            { label: t('pro_stat_jobs_done'), value: proProfile?.completed_jobs_count || 0, color: 'text-teal', bg: 'bg-teal/10' },
-            { label: t('pro_stat_rating'), value: proProfile?.rating_avg ? proProfile.rating_avg.toFixed(1) : '—', color: 'text-amber-deep', bg: 'bg-amber/10' },
-          ].map(s => (
-            <div key={s.label} className="card-lg text-center shadow-md">
-              <div className={`text-2xl font-headings font-bold ${s.color}`}>{s.value}</div>
-              <div className="text-xs text-ink-muted mt-1">{s.label}</div>
-            </div>
-          ))}
+            ) : (
+              <div key={s.key} data-testid={`stage-${s.key}`}
+                   className={shell} aria-disabled="true">
+                {body}
+              </div>
+            );
+          })}
         </div>
 
-        {/* Upgrade banner if not pro */}
-        {!isPro && (
-          <div className="bg-amber/10 border border-amber/30 rounded-[18px] p-6 mb-8 flex items-center justify-between gap-4 flex-wrap">
-            <div>
-              <h3 className="font-headings font-bold text-ink text-lg">{t('pro_upgrade_banner_title')}</h3>
-              <p className="text-ink-muted text-sm mt-1">{t('pro_upsell_features')}</p>
-            </div>
-            <Link to="/billing" className="btn-amber flex-shrink-0" data-testid="upgrade-pro-banner">
-              {t('pro_plan_upgrade')} <ArrowRight size={16} />
+        {/* ── Überfällig ─────────────────────────────────────────── */}
+        {worst && (
+          <>
+            <h2 className="text-[10.5px] uppercase tracking-[.12em] font-bold text-ink-muted
+                           mt-6 mb-2.5">
+              {t('home_overdue')}
+            </h2>
+            <Link to="/overdue" data-testid="home-overdue"
+                  className="flex items-center justify-between gap-3 bg-paper rounded-2xl p-3.5
+                             focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal/40">
+              <span className="min-w-0">
+                <span className="block font-bold text-[13.5px] text-ink truncate">
+                  {worst.invoice_number || t('myinv_status_draft')}
+                </span>
+                <span className="block text-[11.5px] text-ink-muted tabular-nums truncate">
+                  {[worst.customer_name, `${t('due')} ${fmtDate(worst.due_date)}`]
+                    .filter(Boolean).join(' · ')}
+                </span>
+                <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full
+                                 bg-red-warn/10 text-red-warn">
+                  {worst.days_overdue} {t('days')}
+                </span>
+              </span>
+              <span className="font-headings font-bold text-base tabular-nums text-ink shrink-0">
+                {fmtEur(worst.outstanding ?? worst.gross_total)}
+              </span>
             </Link>
-          </div>
+          </>
         )}
-
-        {/* Recent open jobs */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-headings font-bold text-ink">{t('nav_projects')}</h2>
-            <Link to="/projects" className="text-teal text-sm font-medium hover:underline">{t('btn_view_all')}</Link>
-          </div>
-          {recentJobs.length === 0 ? (
-            <div className="card-lg text-center py-10">
-              <Briefcase size={32} className="text-ink-muted mx-auto mb-3" />
-              <p className="text-ink-muted">{t('no_jobs_near')}</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {recentJobs.map(job => (
-                <Link key={job.id} to={`/projects/${job.id}`} className="card-md hover:shadow-lg block">
-                  <div className="flex justify-between items-start gap-3">
-                    <div className="flex-1 min-w-0">
-                      <span className="text-xs px-2 py-0.5 bg-cream-deep text-ink-soft rounded-full capitalize">
-                        {job.category?.replace('_', ' ')}
-                      </span>
-                      <h3 className="font-semibold text-ink mt-2 text-sm line-clamp-2">{job.title}</h3>
-                      <p className="text-xs text-ink-muted mt-1">{job.city}</p>
-                    </div>
-                    {job.budget_max && (
-                      <p className="text-sm font-bold text-ink flex-shrink-0">€{job.budget_max}</p>
-                    )}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

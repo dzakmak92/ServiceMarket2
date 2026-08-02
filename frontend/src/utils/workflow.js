@@ -1,0 +1,58 @@
+import {
+  Calculator, FileText, Handshake, Building2, Wrench, Award,
+} from 'lucide-react';
+
+/**
+ * The six stages of a job, as the home screen presents them.
+ *
+ * Defined once because three things have to agree about them: the tile grid,
+ * the counts the API returns, and the bottom navigation. When those drifted
+ * apart before, the result was a dropdown offering statuses that were not
+ * members of the enum.
+ *
+ * The grid is laid out column-first — `grid-auto-flow: column` over three
+ * rows — so the left column is winning the work and the right is delivering
+ * it. That split is why the two columns carry different colour families.
+ * Order here is the DOM order, which under column flow is also the reading
+ * order: down the left, then down the right.
+ *
+ * Colour runs light to dark down the left and dark to light down the right,
+ * so the weight sits diagonally rather than banding into rows.
+ */
+export const STAGES = [
+  // ── links: den Auftrag gewinnen ──────────────────────────────────
+  {
+    key: 'kalkulation', to: '/estimate', icon: Calculator,
+    labelKey: 'stage_kalkulation', unitKey: 'stage_kalkulation_unit',
+    fill: 'bg-amber-tint text-on-amber',
+  },
+  {
+    key: 'angebot', to: '/quotes', icon: FileText,
+    labelKey: 'stage_angebot', unitKey: 'stage_angebot_unit',
+    fill: 'bg-amber text-on-amber',
+  },
+  {
+    key: 'auftrag', to: '/projects', icon: Handshake,
+    labelKey: 'stage_auftrag', unitKey: 'stage_auftrag_unit',
+    fill: 'bg-amber-deep text-on-amber',
+  },
+  // ── rechts: den Auftrag liefern ──────────────────────────────────
+  {
+    key: 'projekt', to: '/projects?mode=project', icon: Building2,
+    labelKey: 'stage_projekt', unitKey: 'stage_projekt_unit',
+    fill: 'bg-teal-deep text-paper',
+  },
+  {
+    key: 'wartung', to: '/recurring', icon: Wrench,
+    labelKey: 'stage_wartung', unitKey: 'stage_wartung_unit',
+    fill: 'bg-teal text-paper',
+  },
+  {
+    // No warranty feature exists. `to: null` renders the tile as unavailable
+    // rather than as a link into nothing, and the API deliberately omits a
+    // `garantie` count so it cannot be mistaken for "nothing under warranty".
+    key: 'garantie', to: null, icon: Award,
+    labelKey: 'stage_garantie', unitKey: 'stage_garantie_unit',
+    fill: 'bg-teal-tint text-ink',
+  },
+];

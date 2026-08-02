@@ -697,6 +697,24 @@ with TestClient(entry.app) as c:
     check(ok(r) and len(r.json().get("invoices") or []) >= 1,
           f"and so do their invoices ({len(r.json().get('invoices') or [])})")
 
+    step("the home screen gets every tile figure in one request")
+    # Six tiles counted client-side would be five or six requests on a phone
+    # on one bar of signal, so they are counted in the one endpoint the home
+    # screen already calls. It had no caller at all before this.
+    r = c.get("/api/jobs/counts")
+    check(ok(r), f"the counts endpoint answers ({r.status_code})")
+    k = r.json() if r.status_code < 400 else {}
+    for key in ("kalkulation", "angebot", "auftrag", "projekt", "wartung"):
+        check(key in k, f"and carries {key}")
+    check("garantie" not in k,
+          "but not garantie — there is no warranty feature, and a 0 would "
+          "read as 'nothing under warranty' rather than 'not built'")
+    check(all(isinstance(v, int) for v in k.values()),
+          "every figure is a number the tile can print")
+    # The originals are still there; the dashboard reads them.
+    for key in ("leads", "quoted", "booked", "active", "awaiting_invoice", "emergencies"):
+        check(key in k, f"and the dashboard's {key} still exists")
+
     step("the dunning list shows who to chase, and nothing else")
     r = c.get("/api/invoices/overdue")
     check(ok(r), f"the overdue list answers ({r.status_code})")

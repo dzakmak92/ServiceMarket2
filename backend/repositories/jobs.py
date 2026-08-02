@@ -258,6 +258,18 @@ async def detail(pro_id: str, job_id: str) -> Optional[dict]:
 
 
 async def dashboard_counts(pro_id: str) -> dict:
+    """Every figure the home screen puts on a tile, in one round trip.
+
+    The six tiles are Kalkulation, Angebot, Auftrag, Projekt, Wartung and
+    Garantie. Counting them from the client would be five or six requests on
+    a phone that is often on one bar of signal at the side of a road, so they
+    are counted here instead. The original six keys are kept because the
+    dashboard reads them.
+
+    `garantie` is absent on purpose rather than returned as 0: there is no
+    warranty feature, and a zero would read as "nothing under warranty"
+    rather than "not built". The screen shows the tile as unavailable.
+    """
     row = await pg.fetchrow(
         """
         select
@@ -267,9 +279,35 @@ async def dashboard_counts(pro_id: str) -> dict:
           count(*) filter (where status = 'in_progress') as active,
           count(*) filter (where status = 'completed')   as awaiting_invoice,
           count(*) filter (where urgency = 'emergency'
-                             and status not in ('closed','cancelled')) as emergencies
+                             and status not in ('closed','cancelled')) as emergencies,
+
+          -- Kalkulation: work that has arrived and has no price on it yet.
+          count(*) filter (where status = 'lead')        as kalkulation,
+          -- Auftrag: won and not yet finished. `completed` is excluded — that
+          -- job's next step is an invoice, not the job list.
+          count(*) filter (where status in ('accepted','scheduled','in_progress'))
+                                                         as auftrag,
+          -- Projekt: only the ones carrying the full PM toolkit.
+          count(*) filter (where mode = 'project'
+                             and status not in ('closed','cancelled'))
+                                                         as projekt,
+          -- Wartung: visits still to come, not contracts. A pro wants to know
+          -- how many appointments are ahead of them, not how many pieces of
+          -- paper they have signed.
+          count(*) filter (where mode = 'recurring'
+                             and visit_date >= current_date
+                             and status not in ('closed','cancelled'))
+                                                         as wartung
           from jobs where pro_id = $1 and deleted_at is null
         """,
         pro_id,
     )
-    return {k: int(v or 0) for k, v in row.items()}
+    out = {k: int(v or 0) for k, v in row.items()}
+
+    # Angebot lives in its own table. Only the ones the customer still has to
+    # answer count — a draft is the pro's own homework and an accepted quote
+    # has already become a job.
+    out["angebot"] = int(await pg.fetchval(
+        "select count(*) from quotes where pro_id = $1 "
+        "and status in ('sent','viewed','negotiating')", pro_id) or 0)
+    return out
