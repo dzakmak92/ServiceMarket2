@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLang } from '../contexts/LangContext';
 import api from '../api/client';
 import { STAGES } from '../utils/workflow';
-import { AlertTriangle, CalendarDays, Home, LayoutDashboard, ListChecks,
+import { CalendarDays, Home, LayoutDashboard, ListChecks,
   MoreHorizontal, Plus, Settings as SettingsIcon, Users, X } from 'lucide-react';
 
 /**
@@ -59,17 +59,17 @@ export default function MobileNav() {
   // verb here, which is why it is the only entry that carries colour.
   const primaryPro = [
     { to: '/', icon: Home, label: t('nav_home') },
-    { to: '/customers', icon: Users, label: t('nav_customers') },
+    { to: '/dashboard', icon: LayoutDashboard, label: t('nav_dashboard') },
     { to: '/leads/new', icon: Plus, label: t('nav_new'), accent: true },
     { to: '/schedule', icon: CalendarDays, label: t('nav_schedule') },
   ];
-  // What is left once the tiles are taken out: the places the grid does not
-  // go. Overdue is not the invoice list — it is the subset that is late and
-  // needs chasing — so it earns its own entry.
+  // What is left once the tiles are taken out. Overdue is gone from here: the
+  // home screen already surfaces the worst unpaid invoice in its focus card
+  // and again in the Überfällig row, so a third route to the same money was
+  // the menu repeating the front page.
   const morePro = [
-    ...(hasToolkit ? [{ to: '/overdue', icon: AlertTriangle, label: t('nav_overdue') }] : []),
+    { to: '/customers', icon: Users, label: t('nav_customers') },
     ...(hasTax ? [{ to: '/tax', icon: ListChecks, label: t('nav_tax') }] : []),
-    { to: '/dashboard', icon: LayoutDashboard, label: t('nav_dashboard') },
     { to: '/settings', icon: SettingsIcon, label: t('nav_settings') },
   ].filter(notAStage);
 

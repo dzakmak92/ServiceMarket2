@@ -299,14 +299,30 @@ with TestClient(entry.app) as c:
           f"in the order the product chose, not alphabetical ({keys})")
     check(all(x.get("label") and x.get("count") for x in m.get("trades") or []),
           "each with a label and a count, so a tile can be built from it")
-    check(m.get("job_count") == 100,
-          f"and job_count describes what is offered, not the file ({m.get('job_count')})")
+    # Deliberately not a fixed number. The catalogue grows; an assertion on its
+    # size fails on every addition and teaches whoever hits it to raise the
+    # number rather than ask what changed. What has to hold is the relation:
+    # job_count is the sum of the offered trades, not the file's row count.
+    offered = sum(x.get("count") or 0 for x in m.get("trades") or [])
+    check(m.get("job_count") == offered,
+          f"and job_count is the offered trades summed, not the file "
+          f"({m.get('job_count')} vs {offered})")
 
     r = c.get("/api/estimate/jobs")
     listed = r.json().get("jobs", []) if r.status_code < 400 else []
-    check(len(listed) == 100, f"the picker lists 100 of 136 ({len(listed)})")
+    check(len(listed) == offered,
+          f"the picker lists exactly those ({len(listed)} of {offered})")
     check({j["trade"] for j in listed} <= set(keys),
           "and nothing from a hidden trade leaks into it")
+    # Alphabetical within each trade, with Ä/Ö/Ü folded — otherwise "Möbel
+    # montieren" sorts below "TV-Wandhalterung" and the list reads as unsorted.
+    fold = str.maketrans({"ä": "a", "ö": "o", "ü": "u", "ß": "s"})
+    per_trade = {}
+    for j in listed:
+        per_trade.setdefault(j["trade"], []).append(j["label_de"])
+    unsorted = [k for k, v in per_trade.items()
+                if v != sorted(v, key=lambda s: s.lower().translate(fold))]
+    check(not unsorted, f"each trade sorted A→Z with umlauts folded ({unsorted})")
 
     # Hidden, not deleted. An estimate or quote already citing one of these has
     # to keep working and keep reprinting at the same price.

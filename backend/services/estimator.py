@@ -79,6 +79,11 @@ def catalogue() -> dict:
         return json.load(fh)
 
 
+# German collation for sorting: without this, Ä/Ö/Ü sort after Z and
+# "Möbel montieren" lands below "TV-Wandhalterung".
+_FOLD = str.maketrans({"ä": "a", "ö": "o", "ü": "u", "ß": "s",
+                       "Ä": "A", "Ö": "O", "Ü": "U"})
+
 # The trades the picker offers, and the order it offers them in.
 #
 # The catalogue holds 21 trades and 136 job types. Fourteen of those trades are
@@ -117,7 +122,11 @@ def jobs(*, trade: Optional[str] = None, group: Optional[str] = None,
         out = [j for j in out if j["trade"] == trade]
     if group:
         out = [j for j in out if j["group"] == group]
-    return out
+    # Alphabetical by the label the pro reads, with umlauts folded so Ä sorts
+    # with A rather than after Z. The file is stored in this order too, but
+    # sorting here as well means a hand-edit to the JSON cannot quietly
+    # reorder somebody's list.
+    return sorted(out, key=lambda j: j["label_de"].translate(_FOLD).lower())
 
 
 def get_job(job_key: str) -> Optional[dict]:
