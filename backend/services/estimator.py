@@ -79,8 +79,40 @@ def catalogue() -> dict:
         return json.load(fh)
 
 
-def jobs(*, trade: Optional[str] = None, group: Optional[str] = None) -> list[dict]:
+# The trades the picker offers, and the order it offers them in.
+#
+# The catalogue holds 21 trades and 136 job types. Fourteen of those trades are
+# hidden rather than removed: their jobs stay in the file, keep their prices,
+# and `get_job` still resolves them, so an estimate or quote that already cites
+# one goes on working and reprints correctly. Only the picker is narrowed.
+#
+# Widening this list is the whole change needed to offer a trade again.
+OFFERED_TRADES = (
+    "maler", "fliesen", "elektrik", "sanitaer", "garten", "reinigung", "montage",
+)
+
+# What to call them. The catalogue keys are terse and two of them read badly on
+# their own: `elektrik` is the trade but `Elektriker` is the person, and
+# `montage` covers four different groups, which is why it is named for the
+# range rather than the word.
+TRADE_LABELS = {
+    "maler": "Maler", "fliesen": "Fliesen", "elektrik": "Elektrik",
+    "sanitaer": "Sanitär", "garten": "Garten", "reinigung": "Reinigung",
+    "montage": "Montage / Allround",
+}
+
+
+def jobs(*, trade: Optional[str] = None, group: Optional[str] = None,
+         include_hidden: bool = False) -> list[dict]:
+    """Job types, narrowed to the trades on offer unless asked otherwise.
+
+    `include_hidden` exists for the tools that must see everything — export,
+    calibration, anything auditing the catalogue — so hiding a trade from the
+    picker never quietly shrinks a report.
+    """
     out = catalogue()["jobs"]
+    if not include_hidden:
+        out = [j for j in out if j["trade"] in OFFERED_TRADES]
     if trade:
         out = [j for j in out if j["trade"] == trade]
     if group:
@@ -575,22 +607,41 @@ def _shared_choice(key: str, label: str, source: dict, labels: dict,
 
 
 def meta() -> dict:
-    """The catalogue's shape, for building pickers without shipping all of it."""
+    """The catalogue's shape, for building pickers without shipping all of it.
+
+    Counts describe what is on offer, not what is in the file. A picker that
+    announced "136 Auftragstypen" and then listed 100 would be lying about its
+    own contents.
+
+    `trades` carries a label and a count per trade because the picker leads
+    with the trade now — a bare list of keys was enough for a filter chip and
+    is not enough for a tile.
+    """
     cat = catalogue()
+    offered = jobs()
+
     groups: dict[str, dict[str, Any]] = {}
-    for j in cat["jobs"]:
+    for j in offered:
         g = groups.setdefault(j["group"], {"group": j["group"], "trades": set(), "count": 0})
         g["trades"].add(j["trade"])
         g["count"] += 1
+
+    counts: dict[str, int] = {}
+    for j in offered:
+        counts[j["trade"]] = counts.get(j["trade"], 0) + 1
+
     return {
         "version": cat["version"],
         "countries": cat["countries"],
-        "job_count": len(cat["jobs"]),
+        "job_count": len(offered),
         "note_count": len(cat["notes"]),
         "groups": sorted(({"group": g["group"], "trades": sorted(g["trades"]),
                            "count": g["count"]} for g in groups.values()),
                          key=lambda g: g["group"]),
-        "trades": sorted({j["trade"] for j in cat["jobs"]}),
+        # In OFFERED_TRADES order, not alphabetical: the order is a product
+        # decision about which trades lead, and sorting would discard it.
+        "trades": [{"key": k, "label": TRADE_LABELS.get(k, k), "count": counts.get(k, 0)}
+                   for k in OFFERED_TRADES if counts.get(k)],
         "conditions": list(cat["modifiers"]["condition_uplift"]),
         "access": list(cat["modifiers"]["access_uplift"]),
     }

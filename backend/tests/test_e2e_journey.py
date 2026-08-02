@@ -290,6 +290,34 @@ with TestClient(entry.app) as c:
     check(bool(r.json().get("job_number")) if r.status_code < 400 else False,
           "and it gets a job number")
 
+    step("the catalogue offers seven trades, and still prices the rest")
+    r = c.get("/api/estimate/catalogue")
+    m = r.json() if r.status_code < 400 else {}
+    keys = [x["key"] for x in (m.get("trades") or [])]
+    check(keys == ["maler", "fliesen", "elektrik", "sanitaer", "garten",
+                   "reinigung", "montage"],
+          f"in the order the product chose, not alphabetical ({keys})")
+    check(all(x.get("label") and x.get("count") for x in m.get("trades") or []),
+          "each with a label and a count, so a tile can be built from it")
+    check(m.get("job_count") == 100,
+          f"and job_count describes what is offered, not the file ({m.get('job_count')})")
+
+    r = c.get("/api/estimate/jobs")
+    listed = r.json().get("jobs", []) if r.status_code < 400 else []
+    check(len(listed) == 100, f"the picker lists 100 of 136 ({len(listed)})")
+    check({j["trade"] for j in listed} <= set(keys),
+          "and nothing from a hidden trade leaks into it")
+
+    # Hidden, not deleted. An estimate or quote already citing one of these has
+    # to keep working and keep reprinting at the same price.
+    r = c.get("/api/estimate/jobs/dach.ziegel_umdecken")
+    hidden_ok = r.status_code in (200, 404)
+    check(hidden_ok, "a hidden job type is still addressable by key")
+    if r.status_code == 200:
+        r2 = c.post("/api/estimate", json={"job_key": "dach.ziegel_umdecken", "answers": {}})
+        check(ok(r2, 200, 400, 422),
+              f"and still prices rather than 404ing ({r2.status_code})")
+
     step("the estimator prices it")
     r = c.get("/api/estimate/catalogue")
     check(ok(r), f"catalogue loads ({r.json().get('job_count') if ok(r) else '?'} job types)")

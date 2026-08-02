@@ -232,8 +232,28 @@ except LookupError:
 
 print("\n── meta describes the catalogue without shipping it ──")
 meta = E.meta()
-check(meta["job_count"] == len(JOBS), "meta counts the jobs")
-check(len(meta["groups"]) >= 20, f"{len(meta['groups'])} directory groups")
+# meta describes what the picker offers, not what the file holds. A picker
+# announcing "136 Auftragstypen" and then listing 100 would misdescribe itself.
+check(meta["job_count"] == len(E.jobs()), "meta counts the jobs it offers")
+check(meta["job_count"] < len(JOBS),
+      f"which is fewer than the catalogue holds ({meta['job_count']} of {len(JOBS)})")
+check(len(E.jobs(include_hidden=True)) == len(JOBS),
+      "and include_hidden still reaches every one, for exports and audits")
+check([t["key"] for t in meta["trades"]] == list(E.OFFERED_TRADES),
+      "trades come back in the offered order, not alphabetical")
+check(all(t.get("label") and isinstance(t.get("count"), int) and t["count"] > 0
+          for t in meta["trades"]), "each carrying a label and a real count")
+check(sum(t["count"] for t in meta["trades"]) == meta["job_count"],
+      "and the per-trade counts add up to the total")
+offered_groups = {j["group"] for j in E.jobs()}
+check({g["group"] for g in meta["groups"]} == offered_groups,
+      f"{len(meta['groups'])} groups, all of them reachable from a tile")
+# Hidden means hidden from the picker, not gone. Anything already citing one
+# of these job types has to keep pricing.
+hidden = [j for j in JOBS if j["trade"] not in E.OFFERED_TRADES]
+check(hidden, f"{len(hidden)} job types are hidden")
+check(all(E.get_job(j["key"]) for j in hidden),
+      "and every one of them still resolves by key")
 check(set(meta["conditions"]) == set(cat["modifiers"]["condition_uplift"]),
       "meta lists the condition vocabulary the estimator accepts")
 
