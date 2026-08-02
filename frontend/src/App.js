@@ -226,6 +226,18 @@ function AppShell() {
             </ProtectedRoute>
           }
         />
+        {/* One component, two states, distinguished by the URL: /estimate is
+            the trade cards and /estimate/maler is that trade's templates. A
+            real route rather than component state, so back works, the page can
+            be shared, and a reload does not drop the pro at the start. */}
+        <Route
+          path="/estimate/:trade"
+          element={
+            <ProtectedRoute roles={["tradesperson"]}>
+              <EstimatePage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/quotes"
           element={

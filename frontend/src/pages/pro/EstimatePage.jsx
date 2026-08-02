@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import {
-  Loader2, Search, AlertTriangle, ArrowLeft, Calculator, FileText,
+  Loader2, AlertTriangle, ArrowLeft, Calculator, FileText,
   Trash2, Clock, Package, Info, MapPin, TrendingUp, Bookmark,
   RefreshCw, Coins, Pencil, RotateCcw, Check, Layers,
   Paintbrush, Grid3x3, Zap, Droplet, Sprout, SprayCan, Wrench, Hammer,
@@ -52,11 +52,12 @@ export default function EstimatePage() {
   const [params] = useSearchParams();
   const [meta, setMeta] = useState(null);
   const [jobs, setJobs] = useState([]);
-  const [query, setQuery] = useState('');
-  // The picker leads with the trade now. Empty means "no trade chosen yet",
-  // which is the first screen — a tradesperson does one trade, and asking
-  // once beats scrolling 100 jobs of which 80 belong to somebody else.
-  const [trade, setTrade] = useState('');
+  // The trade lives in the URL, not in component state. `/estimate` is the
+  // seven cards; `/estimate/maler` is that trade's templates. That makes each
+  // card a real link — the back button works, the page can be shared, and a
+  // reload does not throw the pro back to the start.
+  const navigate = useNavigate();
+  const { trade = '' } = useParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -111,19 +112,9 @@ export default function EstimatePage() {
     return () => { live = false; };
   }, []);
 
-  const visible = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    // Searching deliberately ignores the chosen trade. Someone typing
-    // "Steckdose" wants the job, not a reminder that they are filtered to
-    // Maler — and a search that returns nothing because of a filter the user
-    // set three taps ago reads as a broken search.
-    if (needle) {
-      return jobs.filter((j) => j.label_de.toLowerCase().includes(needle)
-        || j.key.toLowerCase().includes(needle)
-        || j.group.toLowerCase().includes(needle));
-    }
-    return trade ? jobs.filter((j) => j.trade === trade) : [];
-  }, [jobs, query, trade]);
+  const visible = useMemo(
+    () => (trade ? jobs.filter((j) => j.trade === trade) : []),
+    [jobs, trade]);
 
   const openJob = async (key) => {
     setError('');
@@ -272,7 +263,7 @@ export default function EstimatePage() {
               type="button"
               onClick={() => {
                 if (selected) { setSelected(null); setResult(null); setNotice(''); }
-                else { setTrade(''); setQuery(''); }
+                else navigate('/estimate');
               }}
               className="p-2 -ml-2 text-ink-muted hover:text-ink min-w-[44px] min-h-[44px]
                          flex items-center justify-center"
@@ -291,7 +282,7 @@ export default function EstimatePage() {
                 ? selected.job.group
                 : trade
                   ? `${(meta?.trades || []).find((x) => x.key === trade)?.label || trade}`
-                    + ` · ${visible.length} ${t('est_jobs')}`
+                    + ` · ${visible.length} ${t('est_templates')}`
                   : t('est_pick_trade')}
             </p>
           </div>
@@ -316,14 +307,21 @@ export default function EstimatePage() {
 
         {!selected ? (
           <>
-            <AccuracyCard data={accuracy} open={showAccuracy}
-                          onToggle={() => setShowAccuracy((o) => !o)}
-                          onRecalibrate={recalibrate} calibrating={calibrating} />
-            <RateCard rates={rates} open={showRates}
-                      onToggle={() => setShowRates((o) => !o)}
-                      onSave={saveRate} onReset={resetRate} />
-            <JobPicker meta={meta} jobs={visible} query={query} setQuery={setQuery}
-                       trade={trade} setTrade={setTrade} onPick={openJob} t={t} />
+            <JobPicker meta={meta} jobs={visible} trade={trade}
+                       onPickTrade={(k) => navigate(`/estimate/${k}`)}
+                       onPick={openJob} t={t} />
+            {/* Accuracy and the rate card are expert tools, not the task. They
+                sat above the picker, so the first thing on the screen was
+                never the thing the pro came to do. Below it now — still
+                reachable, and both endpoints still have a caller. */}
+            <div className="mt-6 space-y-2">
+              <AccuracyCard data={accuracy} open={showAccuracy}
+                            onToggle={() => setShowAccuracy((o) => !o)}
+                            onRecalibrate={recalibrate} calibrating={calibrating} />
+              <RateCard rates={rates} open={showRates}
+                        onToggle={() => setShowRates((o) => !o)}
+                        onSave={saveRate} onReset={resetRate} />
+            </div>
           </>
         ) : (
           <>
@@ -349,92 +347,77 @@ export default function EstimatePage() {
   );
 }
 
-function JobPicker({ meta, jobs, query, setQuery, trade, setTrade, onPick, t }) {
-  const searching = !!query.trim();
+function JobPicker({ meta, jobs, trade, onPickTrade, onPick, t }) {
   const trades = meta?.trades || [];
 
-  return (
-    <>
-      <div className="relative mb-3">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
-        <input className="input w-full pl-9" value={query} placeholder={t('est_search')}
-               onChange={(e) => setQuery(e.target.value)} data-testid="estimate-search" />
-      </div>
-
-      {/* Step one: which trade. Skipped entirely while searching, because a
-          search is the user saying they already know what they want. */}
-      {!trade && !searching && (
-        <div className="grid grid-cols-2 gap-2.5" data-testid="estimate-trades">
-          {trades.map((tr, i) => {
-            const Icon = TRADE_ICON[tr.key] || Hammer;
-            // The last tile spans both columns when the count is odd, so the
-            // grid never ends on a lone half-width card.
-            const wide = trades.length % 2 === 1 && i === trades.length - 1;
-            return (
-              <button
-                key={tr.key} type="button" onClick={() => setTrade(tr.key)}
-                data-testid={`estimate-trade-${tr.key}`}
-                className={`${wide ? 'col-span-2' : ''} relative overflow-hidden text-left
-                            bg-paper border border-sm-border rounded-2xl px-3.5 py-3
-                            min-h-[80px] flex flex-col justify-center gap-0.5
-                            hover:border-teal/40 transition-colors
-                            focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal/30`}
-              >
-                <Icon size={40} strokeWidth={1.6} aria-hidden="true"
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 opacity-[.18]
-                                 text-teal pointer-events-none" />
-                <span className="relative font-headings font-bold text-[14.5px] tracking-[-.02em]">
-                  {tr.label}
-                </span>
-                <span className="relative text-[11px] text-ink-muted">
-                  {tr.count} {t('est_jobs')}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Step two: the jobs of that trade — or whatever the search found. */}
-      {(trade || searching) && (
-        <div className="space-y-2" data-testid="estimate-job-list">
-          {searching && (
-            <p className="text-xs text-ink-muted pb-1">
-              {jobs.length} {t('est_search_hits')}
-            </p>
-          )}
-          {jobs.map((j) => (
-            <button key={j.key} type="button" onClick={() => onPick(j.key)}
-                    data-testid={`estimate-job-${j.key}`}
-                    className="card w-full text-left hover:border-ink/20 transition
-                               focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal/30">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-medium text-ink">{j.label_de}</p>
-                  <p className="text-xs text-ink-muted mt-0.5">
-                    {t('est_typical')} {j.typical_size[0]}–{j.typical_size[1]} {j.unit}
-                  </p>
-                </div>
-                {/* Only the one badge that changes what the pro should do.
-                    The confidence label was on every row and told a first-time
-                    user nothing they could act on. */}
-                {j.quote_mode === 'regie' && (
-                  <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full
-                                   bg-amber/15 text-amber-deep whitespace-nowrap">
-                    {t('est_site_visit')}
-                  </span>
-                )}
-              </div>
+  // ── /estimate — the seven trades ──────────────────────────────────
+  if (!trade) {
+    return (
+      <div className="grid grid-cols-2 gap-2.5" data-testid="estimate-trades">
+        {trades.map((tr, i) => {
+          const Icon = TRADE_ICON[tr.key] || Hammer;
+          // The last card spans both columns when the count is odd, so the
+          // grid never ends on a lone half-width card.
+          const wide = trades.length % 2 === 1 && i === trades.length - 1;
+          return (
+            <button
+              key={tr.key} type="button" onClick={() => onPickTrade(tr.key)}
+              data-testid={`estimate-trade-${tr.key}`}
+              className={`${wide ? 'col-span-2 min-h-[88px]' : 'min-h-[104px]'}
+                          relative overflow-hidden text-left bg-paper border border-sm-border
+                          rounded-[18px] px-3.5 py-3.5 flex flex-col justify-end gap-0.5
+                          hover:border-teal/40 transition-colors
+                          focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal/30`}
+            >
+              <Icon size={64} strokeWidth={1.5} aria-hidden="true"
+                    className="absolute -right-1.5 -top-1 opacity-[.16] text-teal
+                               pointer-events-none" />
+              <span className="relative font-headings font-bold text-[15.5px] tracking-[-.022em]">
+                {tr.label}
+              </span>
+              <span className="relative text-[11.5px] text-ink-muted">
+                {tr.count} {t('est_templates')}
+              </span>
             </button>
-          ))}
-          {jobs.length === 0 && (
-            <p className="text-sm text-ink-muted text-center py-8" data-testid="estimate-empty">
-              {t('est_no_hits')}
-            </p>
-          )}
-        </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // ── /estimate/:trade — that trade's templates ─────────────────────
+  return (
+    <div className="space-y-2" data-testid="estimate-job-list">
+      {jobs.map((j) => (
+        <button key={j.key} type="button" onClick={() => onPick(j.key)}
+                data-testid={`estimate-job-${j.key}`}
+                className="card w-full text-left hover:border-ink/20 transition
+                           focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal/30">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-medium text-ink">{j.label_de}</p>
+              <p className="text-xs text-ink-muted mt-0.5">
+                {t('est_typical')} {j.typical_size[0]}–{j.typical_size[1]} {j.unit}
+              </p>
+            </div>
+            {/* The one badge that changes what the pro does next. The
+                confidence label was on every row and told a first-time user
+                nothing they could act on. */}
+            {j.quote_mode === 'regie' && (
+              <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full
+                               bg-amber/15 text-amber-deep whitespace-nowrap">
+                {t('est_site_visit')}
+              </span>
+            )}
+          </div>
+        </button>
+      ))}
+      {jobs.length === 0 && (
+        <p className="text-sm text-ink-muted text-center py-8" data-testid="estimate-empty">
+          {t('est_no_templates')}
+        </p>
       )}
-    </>
+    </div>
   );
 }
 function Chip({ active, onClick, children }) {
