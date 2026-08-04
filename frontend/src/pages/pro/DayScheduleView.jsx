@@ -4,8 +4,8 @@ import { toast } from 'sonner';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import {
-  QUARTER, MIN, TRAVEL_GAP, bookableRuns, hhmm, durationLabel, previewResize,
-  resizeAndSettle, snapQuarter, toMs,
+  QUARTER, MIN, TRAVEL_GAP, bookableRuns, hhmm, durationLabel, previewInsert,
+  previewResize, resizeAndSettle, snapQuarter, toMs,
 } from '../../utils/schedule';
 import { TEMPLATES, sendViaPhone, smsSegments, telHref } from '../../utils/sms';
 import {
@@ -23,6 +23,10 @@ const DAY_FROM = 8;
    evenings a painter actually works are all past six, and a rail that stops
    at 18 cannot show them at all — the appointment simply has nowhere to sit. */
 const DAY_TO = 20;
+
+/* The hour the rail stops at, for the copy that has to name it. Derived, so
+   widening the day cannot leave a message quoting the old one. */
+const DAY_END_LABEL = `${String(DAY_TO).padStart(2, '0')}:00`;
 
 const startOfDay = (d, hour) => { const x = new Date(d); x.setHours(hour, 0, 0, 0); return x; };
 const sameDay = (a, b) => new Date(a).toDateString() === new Date(b).toDateString();
@@ -381,7 +385,7 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
      than as a lead. The transition table has no lead → scheduled edge, so a
      job created as a lead here could not be corrected without two more hops
      through statuses that never happened. */
-  const createAppointment = async ({ title, customerId, start, end }) => {
+  const createAppointment = async ({ title, customerId, start, end, moved = [] }) => {
     try {
       await api.post('/api/jobs', {
         title,
@@ -390,13 +394,36 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
         scheduled_start: new Date(start).toISOString(),
         scheduled_end: new Date(end).toISOString(),
       });
+      /* An appointment longer than the hole pushes what follows it, and every
+         one of those pushes has to be written down. Doing it after the job
+         exists, and in one go, means a failure here leaves the day visibly
+         wrong rather than quietly overlapping. */
+      if (moved.length) {
+        await Promise.all(moved.map((m) => api.patch(`/api/jobs/${m.id}/schedule`, {
+          scheduled_start: new Date(m.to.start).toISOString(),
+          scheduled_end: new Date(m.to.end).toISOString(),
+        })));
+      }
       setBooking(null);
-      load();
+      await load();
       toast.success(t('day_appt_created'));
+      /* Only the first one gets an SMS offered: it is the appointment whose
+         customer is standing somewhere waiting. The rest are named in the
+         sheet, and the pro can message them from their cards. */
+      const first = moved[0] && appts.find((a) => a.id === moved[0].id);
+      if (first && telHref(first.customer_phone)) {
+        setSms({
+          appt: first,
+          template: 'delay',
+          newStart: new Date(moved[0].to.start),
+          delayMinutes: Math.round((toMs(moved[0].to.start) - toMs(moved[0].from.start)) / MIN),
+        });
+      }
     } catch (err) {
       toast.error(err?.response?.data?.detail
         ? String(err.response.data.detail)
         : t('day_save_failed'));
+      load();
     }
   };
 
@@ -545,6 +572,8 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
       {booking && (
         <NewAppointmentSheet
           run={booking.run}
+          appts={appts}
+          dayEnd={dayEnd}
           onCreate={createAppointment}
           onClose={() => setBooking(null)}
           t={t}
@@ -629,7 +658,7 @@ function ConflictSheet({ pending, appts, onCancel, onConfirm, t }) {
         {pending.blocked.length > 0 && (
           <p className="text-[11.5px] text-red-warn mb-3 flex items-center gap-1.5">
             <AlertTriangle size={13} />
-            {t('day_past_end')}
+            {t('day_past_end', { time: DAY_END_LABEL })}
           </p>
         )}
 
@@ -691,17 +720,20 @@ function ConflictSheet({ pending, appts, onCancel, onConfirm, t }) {
    chips below, and it can be dragged, so the length can be set either by
    naming it or by showing it.
 
-   The band draws the *slot*, not the day. Its left edge is the earliest the
-   appointment can start and its right edge the latest it can end, both of
-   which already have the drive taken out of them by `bookableRuns` — so a
-   full band is a full day's-worth of bookable time and never an overlap. */
-const MIN_MINUTES = 30;   /* MIN_SLOT, in the unit this sheet counts in */
+   The band runs past the free window, up to MAX_MINUTES or the end of the
+   day. It has to: a job that needs longer than the hole is a real thing, and
+   a control that simply cannot express it leaves the pro to book a lie and
+   fix it later. What the band does instead is show the price — everything
+   past the window is red, and the lane underneath names the appointments
+   that would move and where they would land. */
+const MIN_MINUTES = 30;        /* MIN_SLOT, in the unit this sheet counts in */
+const MAX_MINUTES = 8 * 60;    /* a working day; longer is a second appointment */
 
-function SlotBand({ run, minutes, maxMinutes, onChange, t }) {
+function SlotBand({ run, minutes, maxMinutes, windowMinutes, moved, blocked, onChange, t }) {
   const trackRef = useRef(null);
   const quarters = Math.round(maxMinutes / 15);
   /* A tick every 15 min stops being a line and becomes texture once the ticks
-     are a few pixels apart. The track is about 350 px inside the sheet, so
+     are a few pixels apart. The track is about 324 px inside the sheet, so
      past 24 quarters (6 h) only the hour ticks are drawn. */
   const everyQuarter = quarters <= 24;
 
@@ -741,14 +773,17 @@ function SlotBand({ run, minutes, maxMinutes, onChange, t }) {
     onChange(clamp(minutes + d));
   };
 
-  const end = new Date(toMs(run.start) + minutes * MIN);
-  const frac = minutes / maxMinutes;
-  const rest = maxMinutes - minutes;
+  const t0 = toMs(run.start);
+  const end = new Date(t0 + minutes * MIN);
+  const pc = (m) => `${(m / maxMinutes) * 100}%`;
+  const over = Math.max(0, minutes - windowMinutes);
+  const rest = Math.max(0, windowMinutes - minutes);
+  const bandEnd = new Date(t0 + maxMinutes * MIN);
 
   /* Axis labels sit on the hour ticks, at the fraction of the track where
      that hour really falls. A single label centred in the row would name a
      time (17:38 in a 15:15–20:00 slot) and then point at the wrong place —
-     worse than no label. Long slots thin the labels out rather than
+     worse than no label. Long bands thin the labels out rather than
      overlapping them — the tightest these steps allow on a 324 px track is
      six labels about 65 px apart, which a 10 px time clears easily. */
   const hours = maxMinutes / 60;
@@ -757,7 +792,7 @@ function SlotBand({ run, minutes, maxMinutes, onChange, t }) {
   for (let i = 4 * hourStep; i < quarters; i += 4 * hourStep) {
     const f = i / quarters;
     if (f > 0.88) break;                    // too close to the end label
-    axis.push({ f, at: new Date(toMs(run.start) + i * 15 * MIN) });
+    axis.push({ f, at: new Date(t0 + i * 15 * MIN) });
   }
 
   const ticks = [];
@@ -768,7 +803,7 @@ function SlotBand({ run, minutes, maxMinutes, onChange, t }) {
       <span
         key={i}
         className={`absolute top-0 bottom-0 w-px ${hour ? 'bg-teal/30' : 'bg-teal/[0.16]'}`}
-        style={{ left: `${(i / quarters) * 100}%` }}
+        style={{ left: pc(i * 15) }}
       />,
     );
   }
@@ -776,8 +811,14 @@ function SlotBand({ run, minutes, maxMinutes, onChange, t }) {
   return (
     <div className="rounded-[14px] border border-sm-border bg-cream-soft p-3 mb-4"
          data-testid="day-new-band">
-      <p className="font-extrabold text-[12.5px] text-ink mb-1.5" data-testid="day-new-readout">
-        {hhmm(run.start)} – {hhmm(end)} · {durationLabel(minutes * MIN)}
+      <p className="font-extrabold text-[12.5px] text-ink mb-1.5 flex items-baseline gap-1.5
+                    flex-wrap" data-testid="day-new-readout">
+        <span>{hhmm(run.start)} – {hhmm(end)} · {durationLabel(minutes * MIN)}</span>
+        {over > 0 && (
+          <span className="font-extrabold text-[11px] text-red-warn">
+            · {durationLabel(over * MIN)} {t('day_over_window')}
+          </span>
+        )}
       </p>
 
       <div
@@ -796,18 +837,68 @@ function SlotBand({ run, minutes, maxMinutes, onChange, t }) {
                    border-[1.5px] border-dashed border-teal/30 bg-teal/[0.07]"
         data-testid="day-new-track"
       >
+        {/* Past the window the time is not free — it belongs to the drive out
+            and then to the next job. Red from the window's end, not from the
+            next job's start: 13:15–13:30 is that drive, and drawing it as
+            free would hide the first quarter of the harm. */}
+        {windowMinutes < maxMinutes && (
+          <span className="absolute top-0 bottom-0 right-0 bg-red-warn/[0.09]
+                           border-l-[1.5px] border-dashed border-red-warn/45"
+                style={{ left: pc(windowMinutes) }}
+                data-testid="day-new-zone" />
+        )}
         {ticks}
         <div
-          className="absolute left-0 top-0 bottom-0 rounded-[9px] bg-teal flex items-center
+          className="absolute left-0 top-0 bottom-0 rounded-l-[9px] bg-teal flex items-center
                      pl-2.5 text-paper font-extrabold text-[11.5px]"
-          style={{ width: `${frac * 100}%` }}
+          style={{ width: pc(Math.min(minutes, windowMinutes)),
+                   borderRadius: over > 0 ? '9px 0 0 9px' : 9 }}
           data-testid="day-new-fill"
         >
-          {frac >= 0.22 && durationLabel(minutes * MIN)}
-          <span className="absolute right-[5px] top-1/2 -translate-y-1/2 w-[5px] h-[22px]
-                           rounded-[3px] bg-paper/55" />
+          {Math.min(minutes, windowMinutes) / maxMinutes >= 0.22
+            && durationLabel(Math.min(minutes, windowMinutes) * MIN)}
+          {over === 0 && (
+            <span className="absolute right-[5px] top-1/2 -translate-y-1/2 w-[5px] h-[22px]
+                             rounded-[3px] bg-paper/55" />
+          )}
         </div>
+        {over > 0 && (
+          <div
+            className="absolute top-0 bottom-0 rounded-r-[9px] bg-red-warn flex items-center
+                       justify-center text-paper font-extrabold text-[10px]"
+            style={{ left: pc(windowMinutes), width: pc(over) }}
+            data-testid="day-new-over"
+          >
+            {over / maxMinutes >= 0.07 && `+${durationLabel(over * MIN)}`}
+            <span className="absolute right-[5px] top-1/2 -translate-y-1/2 w-[5px] h-[22px]
+                             rounded-[3px] bg-paper/55" />
+          </div>
+        )}
       </div>
+
+      {/* One lane per appointment that has to move: dashed where it was,
+          amber where it lands. Every one of them, not just the first — the
+          push carries on through whatever it reaches, and naming only the
+          nearest job is a half-truth the pro discovers on site. */}
+      {moved.map((m) => {
+        const fromL = (toMs(m.from.start) - t0) / MIN;
+        const toL = (toMs(m.to.start) - t0) / MIN;
+        const w = (toMs(m.to.end) - toMs(m.to.start)) / MIN;
+        return (
+          <div key={m.id} className="relative h-[22px] mt-1" data-testid={`day-new-moved-${m.id}`}>
+            <span className="absolute top-[3px] bottom-[3px] rounded-[5px]
+                             border-[1.5px] border-dashed border-ink-faint"
+                  style={{ left: pc(fromL),
+                           width: pc((toMs(m.from.end) - toMs(m.from.start)) / MIN) }} />
+            <span className="absolute top-0 bottom-0 rounded-[6px] bg-amber flex items-center
+                             px-1.5 font-extrabold text-[9.5px] text-on-amber
+                             overflow-hidden whitespace-nowrap"
+                  style={{ left: pc(toL), width: pc(w) }}>
+              {hhmm(m.to.start)}
+            </span>
+          </div>
+        );
+      })}
 
       <div className="relative h-[13px] mt-1.5 font-bold text-[10px] text-ink-muted"
            data-testid="day-new-axis">
@@ -818,39 +909,80 @@ function SlotBand({ run, minutes, maxMinutes, onChange, t }) {
             {hhmm(at)}
           </span>
         ))}
-        <span className="absolute right-0 top-0">{hhmm(run.end)}</span>
+        <span className="absolute right-0 top-0">{hhmm(bandEnd)}</span>
       </div>
 
-      {/* The drive is only claimed on a side that actually has a neighbour —
-          the first slot of the day has nothing to drive from. */}
-      <div className="flex items-center justify-between gap-2 mt-1.5">
-        <span className="flex items-center gap-1 font-bold text-[9.5px] text-ink-faint">
-          {run.insetBefore && <><Car size={11} /> {t('day_drive_before')}</>}
-        </span>
-        {rest > 0 && (
-          <span className="font-bold text-[10px] text-ink-muted whitespace-nowrap"
-                data-testid="day-new-rest">
-            {durationLabel(rest * MIN)} {t('day_stays_free')}
+      {moved.length === 0 ? (
+        /* The drive is only claimed on a side that actually has a neighbour —
+           the first slot of the day has nothing to drive from. */
+        <div className="flex items-center justify-between gap-2 mt-1.5">
+          <span className="flex items-center gap-1 font-bold text-[9.5px] text-ink-faint">
+            {run.insetBefore && <><Car size={11} /> {t('day_drive_before')}</>}
           </span>
-        )}
-        <span className="flex items-center gap-1 font-bold text-[9.5px] text-ink-faint">
-          {run.insetAfter && <>{t('day_drive_after')} <Car size={11} /></>}
-        </span>
-      </div>
+          {rest > 0 && (
+            <span className="font-bold text-[10px] text-ink-muted whitespace-nowrap"
+                  data-testid="day-new-rest">
+              {durationLabel(rest * MIN)} {t('day_stays_free')}
+            </span>
+          )}
+          <span className="flex items-center gap-1 font-bold text-[9.5px] text-ink-faint">
+            {run.insetAfter && <>{t('day_drive_after')} <Car size={11} /></>}
+          </span>
+        </div>
+      ) : (
+        <>
+          <div className="flex items-start gap-1.5 mt-2 font-bold text-[10.5px]
+                          text-red-warn leading-snug" data-testid="day-new-warning">
+            <AlertTriangle size={12} className="flex-none mt-px" />
+            <span>
+              {moved.length === 1
+                ? t('day_pushes_one', {
+                    from: hhmm(run.end),
+                    title: moved[0].title || t('day_new_appt'),
+                    start: hhmm(moved[0].to.start),
+                    end: hhmm(moved[0].to.end),
+                  })
+                : t('day_pushes_many', { from: hhmm(run.end), n: moved.length })}
+            </span>
+          </div>
+          <p className="text-[10px] text-ink-muted mt-1 leading-relaxed">
+            {t('day_pushes_note')}
+          </p>
+          {blocked.length > 0 && (
+            <p className="text-[10px] text-red-warn font-bold mt-1"
+               data-testid="day-new-blocked">
+              {t('day_past_end', { time: DAY_END_LABEL })}
+            </p>
+          )}
+        </>
+      )}
     </div>
   );
 }
 
 /* ────────────────────────────────────────── booking an empty slot */
-function NewAppointmentSheet({ run, onCreate, onClose, t }) {
-  const span = toMs(run.end) - toMs(run.start);
+/**
+ * Duration chips, coarsening as they lengthen.
+ *
+ * Quarter-hour steps all the way to eight hours would be thirty-one chips and
+ * nobody scrolls that far. The band still drags in quarter-hours, so the
+ * precision is not lost — only the chip for it.
+ */
+function durationSteps(maxMinutes) {
+  const out = [];
+  for (let m = MIN_MINUTES; m <= maxMinutes; m += m < 120 ? 15 : m < 240 ? 30 : 60) out.push(m);
+  return out;
+}
+
+function NewAppointmentSheet({ run, appts, dayEnd, onCreate, onClose, t }) {
+  const windowMinutes = Math.round((toMs(run.end) - toMs(run.start)) / MIN);
   const [title, setTitle] = useState('');
   const [customerId, setCustomerId] = useState('');
   const [customers, setCustomers] = useState([]);
-  /* Default to an hour, or the whole slot when it is shorter. Never longer:
-     the slot's end already has the next job's drive taken out of it, so
-     offering more would be offering the journey. */
-  const [minutes, setMinutes] = useState(Math.min(60, Math.round(span / MIN)));
+  /* Default to an hour, or the whole window when it is shorter. Longer is
+     reachable, but never the default: the common booking should not start
+     out already pushing somebody. */
+  const [minutes, setMinutes] = useState(Math.min(60, windowMinutes));
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -859,9 +991,27 @@ function NewAppointmentSheet({ run, onCreate, onClose, t }) {
       .catch(() => setCustomers([]));
   }, []);
 
-  const maxMinutes = Math.round(span / MIN);
-  const steps = [];
-  for (let m = MIN_MINUTES; m <= maxMinutes; m += 15) steps.push(m);
+  /* How far the band reaches: eight hours, or the end of the day if that
+     comes first. Not the window — the window is where booking is free. */
+  const maxMinutes = Math.max(
+    windowMinutes,
+    Math.min(MAX_MINUTES, Math.round((toMs(dayEnd) - toMs(run.start)) / MIN)));
+  const steps = durationSteps(maxMinutes);
+
+  const end = new Date(toMs(run.start) + minutes * MIN);
+
+  /* What this booking would cost, recomputed on every change of length: the
+     appointments it pushes and any it pushes past the end of the day. */
+  const { moved, blocked } = useMemo(
+    () => previewInsert(appts, { start: run.start, end }, { dayEnd }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [appts, run.start, minutes, dayEnd]);
+
+  /* The lanes and the warning need the job's name, which the settle does not
+     carry — it works in ids and times. */
+  const movedNamed = moved.map((m) => ({
+    ...m, title: appts.find((a) => a.id === m.id)?.title,
+  }));
 
   const submit = (e) => {
     e.preventDefault();
@@ -871,7 +1021,8 @@ function NewAppointmentSheet({ run, onCreate, onClose, t }) {
       title: title.trim(),
       customerId,
       start: run.start,
-      end: new Date(toMs(run.start) + minutes * MIN),
+      end,
+      moved: movedNamed,
     }).finally?.(() => setSaving(false));
   };
 
@@ -892,6 +1043,7 @@ function NewAppointmentSheet({ run, onCreate, onClose, t }) {
             saying the same thing in words is gone rather than doubled. */}
         <div className="mt-3">
           <SlotBand run={run} minutes={minutes} maxMinutes={maxMinutes}
+                    windowMinutes={windowMinutes} moved={movedNamed} blocked={blocked}
                     onChange={setMinutes} t={t} />
         </div>
 
@@ -943,15 +1095,21 @@ function NewAppointmentSheet({ run, onCreate, onClose, t }) {
           ))}
         </div>
 
+        {/* Booking on top of somebody stays possible — it just stops looking
+            like the ordinary case, and says what else it is about to do. */}
         <button
           type="submit"
           disabled={title.trim().length < 3 || saving}
           className={`w-full min-h-[48px] rounded-[12px] font-extrabold text-[13px]
-            ${title.trim().length < 3 || saving
-              ? 'bg-cream-deep text-ink-faint' : 'bg-teal text-paper'}`}
+                      flex items-center justify-center gap-2
+            ${title.trim().length < 3 || saving ? 'bg-cream-deep text-ink-faint'
+              : movedNamed.length ? 'bg-red-warn text-paper' : 'bg-teal text-paper'}`}
           data-testid="day-new-submit"
         >
-          {t('day_create_appt')}
+          {movedNamed.length > 0 && <Car size={15} />}
+          {movedNamed.length === 0 ? t('day_create_appt')
+            : movedNamed.length === 1 ? t('day_create_and_push')
+            : t('day_create_and_push_n', { n: movedNamed.length })}
         </button>
       </form>
     </div>

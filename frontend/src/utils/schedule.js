@@ -103,6 +103,29 @@ export function previewResize(appointments, targetId, newEndMs, opts = {}) {
   return { newEnd: new Date(end), clashes, moved, blocked };
 }
 
+/** The id the draft appointment carries while it is only being previewed. */
+export const DRAFT_ID = '__draft__';
+
+/**
+ * What booking `draft` into the day would cost.
+ *
+ * A new appointment longer than the hole it is going into pushes the same way
+ * a resized one does, so this is the resize walk with the draft dropped into
+ * the list first — one rule for both, rather than a second implementation of
+ * the cascade that can disagree with the first.
+ *
+ * Returns `{ moved, blocked }`: every existing appointment that has to shift,
+ * with where it came from and where it lands, and any that no longer fit
+ * before `dayEnd`. An empty `moved` means the draft fits as it is.
+ */
+export function previewInsert(appointments, draft, opts = {}) {
+  const start = toMs(draft.start);
+  const end = toMs(draft.end);
+  const list = [...appointments.map((a) => ({ ...a })), { id: DRAFT_ID, start, end }];
+  const { moved, blocked } = resizeAndSettle(list, DRAFT_ID, end, opts);
+  return { moved, blocked };
+}
+
 /** The raw holes between appointments — not what you can book, see below. */
 export function freeRuns(appointments, dayStart, dayEnd) {
   const list = appointments

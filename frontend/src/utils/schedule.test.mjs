@@ -6,7 +6,7 @@
  */
 import {
   QUARTER, MIN, TRAVEL_GAP, snapQuarter, overlaps, travelShortfall,
-  resizeAndSettle, previewResize, freeRuns, bookableRuns, MIN_SLOT, durationLabel,
+  resizeAndSettle, previewResize, previewInsert, freeRuns, bookableRuns, MIN_SLOT, durationLabel,
 } from './schedule.js';
 
 let pass = 0, fail = 0;
@@ -162,6 +162,55 @@ step('a run too short after the inset is not offered');
 {
   const r = bookableRuns(day(), at(8), at(20), { minSlot: 15 * MIN });
   ok(r.length >= 3, 'the floor is a parameter, not a hard-coded 30');
+}
+
+step('booking a draft that outgrows its hole');
+{
+  // the 11:00–13:30 hole is bookable 11:15–13:15; a 3 h draft runs to 14:15.
+  // b is pushed to 14:30–16:00, which now ends exactly as c begins — so the
+  // push carries on into c. Naming only the first affected job would be a
+  // half-truth the pro finds out about at 16:00.
+  const p = previewInsert(day(), { start: at(11, 15), end: at(14, 15) });
+  ok(p.moved.map((m) => m.id).join(',') === 'b,c', 'every job the push reaches is reported');
+  ok(hm(p.moved[0].to.start) === '14:30', 'b lands 15 min after the draft ends');
+  ok(hm(p.moved[0].to.end) === '16:00', 'keeping its 1 h 30 duration');
+  ok(hm(p.moved[0].from.start) === '13:30', 'and reports where it was');
+  ok(hm(p.moved[1].to.start) === '16:15', 'c is pushed on by the drive out of b');
+}
+{
+  // the same draft, but with room after the job it hits: the cascade stops
+  const roomy = [{ id: 'a', start: at(8), end: at(11) },
+                 { id: 'b', start: at(13, 30), end: at(15) },
+                 { id: 'c', start: at(18), end: at(19) }];
+  const p = previewInsert(roomy, { start: at(11, 15), end: at(14, 15) });
+  ok(p.moved.length === 1 && p.moved[0].id === 'b',
+     'a gap that absorbs the push means only one appointment is affected');
+}
+{
+  const p = previewInsert(day(), { start: at(11, 15), end: at(13, 15) });
+  ok(p.moved.length === 0, 'a draft that stops at the window end moves nothing');
+  const q = previewInsert(day(), { start: at(11, 15), end: at(13, 30) });
+  ok(q.moved.length === 1, 'a quarter more eats the drive, so it does');
+}
+{
+  // long enough to reach past b and into c as well
+  const p = previewInsert(day(), { start: at(11, 15), end: at(15, 30) });
+  ok(p.moved.map((m) => m.id).join(',') === 'b,c', 'a longer draft moves every job it reaches');
+  ok(hm(p.moved[0].to.start) === '15:45' && hm(p.moved[1].to.start) === '17:30',
+     'each pushed only as far as the one in front of it needs');
+}
+{
+  const p = previewInsert(day(), { start: at(11, 15), end: at(17, 0) }, { dayEnd: at(18) });
+  ok(p.blocked.length > 0, 'what no longer fits before the day ends is reported');
+}
+{
+  const p = previewInsert([], { start: at(8), end: at(16) });
+  ok(p.moved.length === 0 && p.blocked.length === 0, 'an empty day costs nothing');
+}
+{
+  const src = day();
+  previewInsert(src, { start: at(11, 15), end: at(15, 30) });
+  ok(+src[1].start === at(13, 30), 'the day it was asked about is untouched');
 }
 
 step('labels');
