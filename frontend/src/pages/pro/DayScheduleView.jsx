@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import {
-  QUARTER, MIN, TRAVEL_GAP, hhmm, durationLabel, freeRuns, previewResize,
+  QUARTER, MIN, TRAVEL_GAP, bookableRuns, hhmm, durationLabel, previewResize,
   resizeAndSettle, snapQuarter, toMs,
 } from '../../utils/schedule';
 import { TEMPLATES, sendViaPhone, smsSegments, telHref } from '../../utils/sms';
@@ -391,7 +391,10 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
   useEffect(() => { apptsRef.current = appts; }, [appts]);
   useEffect(() => { commitRef.current = commit; });
 
-  const runs = useMemo(() => freeRuns(appts, dayStart, dayEnd), [appts, dayStart, dayEnd]);
+  /* Not the empty time — the bookable time. The drive out of the job before
+     and into the job after both come out of the hole, and a run that no longer
+     holds half an hour once they have is not offered at all. */
+  const runs = useMemo(() => bookableRuns(appts, dayStart, dayEnd), [appts, dayStart, dayEnd]);
   const topOf = (v) => (toMs(v) - toMs(dayStart)) * PX_PER_MS;
 
   if (loading) {
@@ -410,40 +413,33 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
           {/* free quarters — the empty time is a target, not background */}
           {!drag && runs.map((r) => {
             const span = toMs(r.end) - toMs(r.start);
-            /* A gap no longer than the travel gap is the drive, not free time.
-               Offering to book into it would be offering to book the journey.
-               Skipped by the rule, not by whether the pixels happened to fit. */
-            if (span <= TRAVEL_GAP) return null;
-            /* The extend handle straddles the card's bottom edge — 22 px of it
-               hangs below — and that edge is where a free run starts. Clear it
-               at the top only; the bottom of a run meets the next card's own
-               top edge, which nothing overhangs. */
-            const clearTop = 24;
-            const height = span * PX_PER_MS - clearTop - 2;
-            if (height < 8) return null;
+            const height = span * PX_PER_MS - 2;
+            /* No clearance arithmetic any more. The run already begins 15 min
+               after the job above ends, and the extend handle's circle reaches
+               only 11 px below its card — the drive is wider than the handle,
+               so the two cannot meet. */
             return (
               <button
                 key={+r.start}
                 type="button"
-                className="absolute left-0 right-0 rounded-[10px] flex items-center justify-center gap-1.5
-                           border-[1.5px] border-dashed border-cream-deep overflow-hidden"
-                style={{ top: topOf(r.start) + clearTop, height, zIndex: 1 }}
+                className="absolute left-0 right-0 rounded-[10px] flex flex-col items-center
+                           justify-center gap-1 border-[1.5px] border-dashed
+                           border-teal/40 bg-teal/[0.09] overflow-hidden"
+                style={{ top: topOf(r.start), height, zIndex: 1 }}
                 data-testid={`day-free-${hhmm(r.start)}`}
-                aria-label={`${t('day_new_appt')} ${hhmm(r.start)}`}
+                aria-label={`${t('day_new_appt')} ${hhmm(r.start)} – ${hhmm(r.end)}`}
               >
-                {/* Below about half an hour the label is taller than the slot
-                    it labels. A plus on its own still says what it does. */}
-                {height >= 26 ? (
-                  <>
-                    <span className="font-extrabold text-[10.5px] text-teal">
-                      + {t('day_new_appt')}
-                    </span>
-                    <span className="font-semibold text-[10px] text-ink-faint">
-                      {durationLabel(span)} {t('day_free')}
-                    </span>
-                  </>
-                ) : (
-                  <span className="font-extrabold text-[11px] text-teal leading-none">+</span>
+                <span className="rounded-full bg-paper border-[1.5px] border-teal text-teal
+                                 grid place-items-center leading-none"
+                      style={{ width: height >= 62 ? 30 : 22, height: height >= 62 ? 30 : 22 }}>
+                  <Plus size={height >= 62 ? 17 : 13} strokeWidth={2.4} />
+                </span>
+                {/* The span is what the empty time is actually worth. It goes
+                    only when there is no room for it, never truncated. */}
+                {height >= 62 && (
+                  <span className="font-bold text-[10px] text-ink-muted">
+                    {hhmm(r.start)}–{hhmm(r.end)} · {durationLabel(span)}
+                  </span>
                 )}
               </button>
             );

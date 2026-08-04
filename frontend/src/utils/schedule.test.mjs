@@ -6,7 +6,7 @@
  */
 import {
   QUARTER, MIN, TRAVEL_GAP, snapQuarter, overlaps, travelShortfall,
-  resizeAndSettle, previewResize, freeRuns, durationLabel,
+  resizeAndSettle, previewResize, freeRuns, bookableRuns, MIN_SLOT, durationLabel,
 } from './schedule.js';
 
 let pass = 0, fail = 0;
@@ -115,6 +115,53 @@ step('free runs');
   ok(runs.length === 3, '11–13:30, 15–16, 17–18');
   ok(hm(+runs[0].start) === '11:00' && hm(+runs[0].end) === '13:30', 'first run correct');
   ok(hm(+runs[2].end) === '18:00', 'last run reaches the end of the day');
+}
+
+step('bookable runs carry the drive on the sides that have one');
+{
+  const r = bookableRuns(day(), at(8), at(20));
+  // 11:00–13:30 sits between two jobs, so 15 min comes off each end
+  ok(hm(+r[0].start) === '11:15' && hm(+r[0].end) === '13:15',
+     `first run 11:15–13:15, not 11:00–13:30 (${hm(+r[0].start)}–${hm(+r[0].end)})`);
+  ok(r[0].insetBefore && r[0].insetAfter, 'and it says both ends were pulled in');
+  // 17:00 to the end of the day: nothing comes after, so that edge stays
+  const last = r[r.length - 1];
+  ok(hm(+last.start) === '17:15' && hm(+last.end) === '20:00',
+     `last run keeps the day's end (${hm(+last.start)}–${hm(+last.end)})`);
+  ok(last.insetBefore && !last.insetAfter, 'inset before only');
+}
+{
+  // A day whose first job starts later: the run before it has nothing to
+  // drive from, so 08:00 is bookable from the first minute.
+  const later = [{ id: 'x', start: at(10), end: at(12) }];
+  const r = bookableRuns(later, at(8), at(20));
+  ok(hm(+r[0].start) === '08:00', 'the first slot of the day starts at 08:00 exactly');
+  ok(!r[0].insetBefore && r[0].insetAfter, 'nothing before it, something after');
+  ok(hm(+r[0].end) === '09:45', 'and gives up 15 min to the drive into the 10:00 job');
+}
+{
+  const empty = bookableRuns([], at(8), at(20));
+  ok(empty.length === 1 && hm(+empty[0].start) === '08:00' && hm(+empty[0].end) === '20:00',
+     'an empty day is bookable end to end');
+}
+
+step('a run too short after the inset is not offered');
+{
+  // 15:00–16:00 between two jobs is one hour, which is 30 min after the drives
+  const r = bookableRuns(day(), at(8), at(20));
+  const mid = r.find((x) => hm(+x.start) === '15:15');
+  ok(mid && hm(+mid.end) === '15:45', 'a 1 h hole yields exactly 30 min — just offerable');
+}
+{
+  const tight = [{ id: 'a', start: at(8), end: at(11) },
+                 { id: 'b', start: at(11, 45), end: at(13) }];
+  const r = bookableRuns(tight, at(8), at(20));
+  ok(!r.some((x) => +x.start >= at(11) && +x.end <= at(11, 45)),
+     'a 45 min hole is 15 min after the drives and is dropped, not drawn short');
+}
+{
+  const r = bookableRuns(day(), at(8), at(20), { minSlot: 15 * MIN });
+  ok(r.length >= 3, 'the floor is a parameter, not a hard-coded 30');
 }
 
 step('labels');

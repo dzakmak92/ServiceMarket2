@@ -103,7 +103,7 @@ export function previewResize(appointments, targetId, newEndMs, opts = {}) {
   return { newEnd: new Date(end), clashes, moved, blocked };
 }
 
-/** Free runs between appointments, for the tappable quarters. */
+/** The raw holes between appointments — not what you can book, see below. */
 export function freeRuns(appointments, dayStart, dayEnd) {
   const list = appointments
     .map((a) => ({ start: toMs(a.start), end: toMs(a.end) }))
@@ -116,6 +116,45 @@ export function freeRuns(appointments, dayStart, dayEnd) {
   }
   if (cursor < toMs(dayEnd)) runs.push({ start: new Date(cursor), end: new Date(dayEnd) });
   return runs;
+}
+
+/** The shortest appointment worth offering a slot for. */
+export const MIN_SLOT = 30 * MIN;
+
+/**
+ * What can actually be booked, which is not the same as what is empty.
+ *
+ * A hole between two jobs is not bookable end to end: the drive out of the
+ * one before and the drive into the one after both come out of it. So each
+ * run is pulled in by the travel gap on any side that has a neighbour —
+ * and only on those sides. The first slot of the day has nothing to drive
+ * from and the last has nothing to drive to, so those edges stay put.
+ *
+ * A run that no longer holds MIN_SLOT after the inset is dropped. That is
+ * why the arithmetic lives here rather than in the layout: an hour between
+ * two jobs is half an hour of work, and a slot drawn as an hour would be
+ * offering time that does not exist.
+ *
+ * Each run comes back with `insetBefore` / `insetAfter` so the caller can
+ * say why it starts where it does.
+ */
+export function bookableRuns(appointments, dayStart, dayEnd, opts = {}) {
+  const gap = opts.travelGap == null ? TRAVEL_GAP : opts.travelGap;
+  const min = opts.minSlot == null ? MIN_SLOT : opts.minSlot;
+  const d0 = toMs(dayStart);
+  const d1 = toMs(dayEnd);
+
+  return freeRuns(appointments, d0, d1).map((run) => {
+    const rawStart = toMs(run.start);
+    const rawEnd = toMs(run.end);
+    // A run touching the edge of the day has no neighbour on that side.
+    const insetBefore = rawStart > d0;
+    const insetAfter = rawEnd < d1;
+    const start = snapQuarter(rawStart + (insetBefore ? gap : 0), 'ceil');
+    const end = snapQuarter(rawEnd - (insetAfter ? gap : 0), 'floor');
+    return { start: new Date(start), end: new Date(end), insetBefore, insetAfter,
+             raw: { start: run.start, end: run.end } };
+  }).filter((r) => toMs(r.end) - toMs(r.start) >= min);
 }
 
 export const hhmm = (v) =>
