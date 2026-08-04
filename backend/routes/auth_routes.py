@@ -93,6 +93,11 @@ class OnboardingIn(BaseModel):
     company_name: str = Field(min_length=2)
     licence_file_id: str = Field(min_length=1)
     insurance_file_id: Optional[str] = None
+    # Where the business actually is. Optional because a pro can decline the
+    # browser's location prompt and still finish signing up — the address they
+    # typed is enough to resolve a town from later.
+    service_center_lat: Optional[float] = Field(default=None, ge=-90, le=90)
+    service_center_lng: Optional[float] = Field(default=None, ge=-180, le=180)
     turnstile_token: Optional[str] = None
 
 
@@ -457,23 +462,41 @@ async def onboarding(data: OnboardingIn, request: Request,
             data.phone.strip(), data.address.strip(),
             data.postal_code.strip(), data.city.strip())
 
+        # The business address goes onto the profile as well as the user.
+        # It was only ever written to `users`, so every pro finished onboarding
+        # with an empty business_city — and anything reading the profile for a
+        # location (the forecast, the service radius) found nothing, despite
+        # the pro having typed the address two steps earlier.
         await con.execute(
             """
             insert into pro_profiles (user_id, business_name, contact_person,
                                       licence_file_id, licence_status,
                                       insurance_file_id, insurance_status,
-                                      invoice_country, business_country)
-            values ($1::uuid, $2, $3, $4, 'pending', $5, $6, $7, $7)
+                                      invoice_country, business_country,
+                                      business_address, business_postal_code,
+                                      business_city,
+                                      service_center_lat, service_center_lng)
+            values ($1::uuid, $2, $3, $4, 'pending', $5, $6, $7, $7,
+                    $8, $9, $10, $11, $12)
             on conflict (user_id) do update
               set business_name = excluded.business_name,
                   contact_person = excluded.contact_person,
                   licence_file_id = excluded.licence_file_id,
                   licence_status = 'pending',
                   insurance_file_id = excluded.insurance_file_id,
-                  insurance_status = excluded.insurance_status
+                  insurance_status = excluded.insurance_status,
+                  business_address = excluded.business_address,
+                  business_postal_code = excluded.business_postal_code,
+                  business_city = excluded.business_city,
+                  service_center_lat = coalesce(excluded.service_center_lat,
+                                                pro_profiles.service_center_lat),
+                  service_center_lng = coalesce(excluded.service_center_lng,
+                                                pro_profiles.service_center_lng)
             """,
             user["id"], data.company_name.strip(), data.contact_person.strip(),
             data.licence_file_id, data.insurance_file_id,
-            "pending" if data.insurance_file_id else "missing", data.country)
+            "pending" if data.insurance_file_id else "missing", data.country,
+            data.address.strip(), data.postal_code.strip(), data.city.strip(),
+            data.service_center_lat, data.service_center_lng)
 
     return await load_user(user["id"])

@@ -174,8 +174,34 @@ with TestClient(entry.app) as c:
         "phone": "+43 660 1234567", "address": "Werkgasse 4",
         "postal_code": "1100", "city": "Wien",
         "contact_person": "Ali Öztürk", "company_name": "Malerbetrieb Öztürk e.U.",
-        "licence_file_id": "documents/placeholder-licence"})
+        "licence_file_id": "documents/placeholder-licence",
+        "service_center_lat": 48.2082, "service_center_lng": 16.3738})
     check(ok(r), f"onboarding creates the business -> {r.status_code}")
+
+    step("onboarding leaves the business somewhere on the map")
+    # The address was written to `users` only, so every pro finished onboarding
+    # with an empty business_city — and the forecast, which reads the profile,
+    # had nothing to go on for anybody. It is on the profile now, along with
+    # the coordinates the location step collects.
+    # /api/profile is the *user*; the business lives at /api/profile/pro.
+    prof = c.get("/api/profile/pro")
+    pro = prof.json() if ok(prof) else {}
+    check(pro.get("business_city") == "Wien",
+          f"the business city is on the profile ({pro.get('business_city')!r})")
+    check(pro.get("business_postal_code") == "1100", "and the postal code")
+    check(pro.get("business_address") == "Werkgasse 4", "and the street")
+    check(abs((pro.get("service_center_lat") or 0) - 48.2082) < 0.001,
+          f"the location step's coordinates were kept ({pro.get('service_center_lat')})")
+
+    step("so the forecast has a place to ask about")
+    # Not the forecast itself — that needs the open-meteo host, which the build
+    # sandbox cannot reach. What is checked is that the endpoint gets past
+    # "no location on file", which is the part onboarding is responsible for.
+    r = c.get("/api/weather?days=3")
+    check(r.status_code != 404,
+          f"/api/weather is not 'no location on file' any more ({r.status_code})")
+    check(r.status_code in (200, 503),
+          f"it either answers or degrades — never a 500 ({r.status_code})")
 
     step("a password can be changed — the only way to rotate one")
     # There was no change-password endpoint and no reset flow, so a password

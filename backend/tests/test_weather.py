@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from services.weather import condition, shape  # noqa: E402
+from services.weather import _num, condition, pick_place, shape  # noqa: E402
 
 passed = failed = 0
 
@@ -79,6 +79,50 @@ ok(shape({"current": {"temperature_2m": "warm"}}, 7)["current"]["temp"] is None,
    "a string where a number belongs is dropped, not rendered")
 ok(shape({"daily": {"time": ["a", "b", "c"], "weather_code": [0]}}, 7)["days"][2]["code"] is None,
    "short parallel arrays do not run off the end")
+
+step("both of Open-Meteo's live spellings are read")
+# The older generation answers with `current_weather`, `weathercode` and
+# `windspeed`; the newer one with `current`, `weather_code`, `wind_speed_10m`.
+# Which one replies cannot be checked from the build sandbox, so both are read.
+OLD = {
+    "timezone": "Europe/Vienna",
+    "current_weather": {"temperature": 21.0, "weathercode": 61, "windspeed": 8.0},
+    "daily": {
+        "time": ["2026-08-04", "2026-08-05"],
+        "weathercode": [61, 0],
+        "temperature_2m_max": [19.0, 27.0],
+        "temperature_2m_min": [12.0, 15.0],
+    },
+}
+o = shape(OLD, 7)
+ok(o["current"]["temp"] == 21.0, "`current_weather.temperature` is read as the temperature")
+ok(o["current"]["condition"] == "rain", "`weathercode` without the underscore still maps")
+ok(o["current"]["wind"] == 8.0, "and `windspeed` is the wind")
+ok(o["days"][0]["condition"] == "rain" and o["days"][1]["condition"] == "clear",
+   "the daily codes too")
+ok(shape(FULL, 7)["current"]["temp"] == 24.3,
+   "and the new spelling still works — reading both is not choosing one")
+
+step("picking a place out of a geocoding result")
+HITS = {"results": [
+    {"name": "Vienna", "latitude": 38.90, "longitude": -77.26, "country_code": "US"},
+    {"name": "Wien", "latitude": 48.21, "longitude": 16.37, "country_code": "AT"},
+]}
+ok(pick_place(HITS, "AT")["lat"] == 48.21,
+   "the country wins over the order — a search for Wien must not land in Virginia")
+ok(pick_place(HITS, "at")["lat"] == 48.21, "the country code is not case-sensitive")
+ok(pick_place(HITS, None)["country_code"] == "US",
+   "with no country asked for, the first result stands")
+ok(pick_place(HITS, "DE")["country_code"] == "US",
+   "and a country with no match falls back rather than returning nothing")
+ok(pick_place({"results": []}, "AT") is None, "no results is None, not an exception")
+ok(pick_place({}, "AT") is None, "and so is a body with no results key")
+ok(pick_place({"results": [{"name": "X", "country_code": "AT"}]}, "AT") is None,
+   "a hit with no coordinates is no hit")
+
+step("numbers only")
+ok(_num(True) is None, "a bool is not a temperature, even though Python says it is an int")
+ok(_num(0) == 0, "but zero is")
 
 print(f"\n{'%d FAILURE(S)' % failed if failed else 'ALL PASS'}  ({passed} checks)")
 print("  note: services.weather.fetch() — the actual Open-Meteo request — is not")

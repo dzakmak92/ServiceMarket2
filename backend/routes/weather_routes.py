@@ -34,18 +34,21 @@ _TTL = 30 * 60
 @router.get("")
 async def forecast(days: int = Query(default=7, ge=1, le=14),
                    user: dict = Depends(get_current_user)):
-    """The forecast for this pro's service centre.
+    """The forecast where this pro works.
 
-    404 when there is no location on file rather than guessing a city: a
-    forecast for the wrong place is worse than none, because nothing on the
-    card says which place it is for.
+    A pinned service centre if there is one, otherwise the business town,
+    resolved once and written back. 404 only when there is neither — a
+    forecast for a guessed place is worse than none, because nothing on the
+    card would say which place it is for.
     """
     pro_id = await require_pro_id(user)
     row = await pg.fetchrow(
         """
         select service_center_lat   as lat,
                service_center_lng   as lng,
-               business_city        as city
+               business_city        as city,
+               business_postal_code as postal_code,
+               business_country     as country
           from pro_profiles
          where id = $1
         """,
@@ -53,13 +56,42 @@ async def forecast(days: int = Query(default=7, ge=1, le=14),
     )
 
     lat, lng = (row or {}).get("lat"), (row or {}).get("lng")
+    place = (row or {}).get("city")
+
+    if (lat is None or lng is None) and row:
+        # Most pros never open the service-radius map, so requiring a pinned
+        # centre would mean the forecast never appears for almost anyone. The
+        # business address is already on file and a town is the right precision
+        # for weather, so resolve that instead — once, and write it back, so
+        # this costs one request per business rather than one per calendar load.
+        try:
+            hit = await wx.geocode(row.get("city"), row.get("postal_code"),
+                                   row.get("country"))
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("geocode failed: %s: %s", type(exc).__name__, exc)
+            hit = None
+        if hit:
+            lat, lng = hit["lat"], hit["lng"]
+            place = place or hit.get("name")
+            await pg.execute(
+                """
+                update pro_profiles
+                   set service_center_lat = coalesce(service_center_lat, $2),
+                       service_center_lng = coalesce(service_center_lng, $3),
+                       updated_at = now()
+                 where id = $1
+                """,
+                pro_id, lat, lng,
+            )
+
     if lat is None or lng is None:
-        raise HTTPException(404, "No service centre on file — set one in your profile")
+        raise HTTPException(
+            404, "No location on file — add your business city or set a service centre")
 
     key = (round(float(lat), 2), round(float(lng), 2), days)
-    hit = _CACHE.get(key)
-    if hit and time.time() - hit[0] < _TTL:
-        return {**hit[1], "place": (row or {}).get("city"), "cached": True}
+    cached = _CACHE.get(key)
+    if cached and time.time() - cached[0] < _TTL:
+        return {**cached[1], "place": place, "cached": True}
 
     try:
         data = await wx.fetch(float(lat), float(lng), days)
@@ -70,4 +102,4 @@ async def forecast(days: int = Query(default=7, ge=1, le=14),
         raise HTTPException(503, "Forecast unavailable")
 
     _CACHE[key] = (time.time(), data)
-    return {**data, "place": (row or {}).get("city"), "cached": False}
+    return {**data, "place": place, "cached": False}

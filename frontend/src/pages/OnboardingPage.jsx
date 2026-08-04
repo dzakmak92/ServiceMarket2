@@ -6,7 +6,7 @@ import api from '../api/client';
 import Turnstile from 'react-turnstile';
 import {
   Hammer, ChevronRight, ChevronLeft, CheckCircle2,
-  Upload, FileText, Loader2, AlertCircle,
+  Upload, FileText, Loader2, AlertCircle, MapPin,
 } from 'lucide-react';
 
 const TURNSTILE_SITE_KEY = process.env.REACT_APP_TURNSTILE_SITE_KEY;
@@ -23,7 +23,7 @@ export default function OnboardingPage() {
   const { t } = useLang();
   const navigate = useNavigate();
 
-  const [step, setStep] = useState(0); // 0=country, 1=details, 2=docs, 3=claim, 4=security
+  const [step, setStep] = useState(0); // 0=country, 1=details, 2=docs, 3=location, 4=security
   const [role] = useState('tradesperson');
   const [country, setCountry] = useState('AT');
   const [submitting, setSubmitting] = useState(false);
@@ -38,6 +38,11 @@ export default function OnboardingPage() {
     licence_filename: '', insurance_filename: '',
   });
   const [uploading, setUploading] = useState({ licence: false, insurance: false });
+  /* Where the business is. `coords` is set only if the pro accepts the
+     browser prompt; the typed address is the fallback and is always sent. */
+  const [coords, setCoords] = useState(null);
+  const [locating, setLocating] = useState(false);
+  const [locError, setLocError] = useState('');
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -87,6 +92,24 @@ export default function OnboardingPage() {
     }
   };
 
+  /* Straight from the browser, so no address ever leaves the device to be
+     looked up. Precision beyond a town is not needed for a forecast, but
+     this is also the pin the service radius uses, so exact is better. */
+  const useMyLocation = () => {
+    if (!navigator.geolocation) { setLocError(t('onboarding_loc_unsupported')); return; }
+    setLocating(true);
+    setLocError('');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCoords({ lat: +pos.coords.latitude.toFixed(5),
+                    lng: +pos.coords.longitude.toFixed(5) });
+        setLocating(false);
+      },
+      () => { setLocError(t('onboarding_loc_denied')); setLocating(false); },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 },
+    );
+  };
+
   // ──────────────────────────────────────────────
   // Submit (final step)
   // ──────────────────────────────────────────────
@@ -110,6 +133,8 @@ export default function OnboardingPage() {
         company_name: role === 'tradesperson' ? form.company_name.trim() : undefined,
         licence_file_id: role === 'tradesperson' ? form.licence_file_id || undefined : undefined,
         insurance_file_id: role === 'tradesperson' ? form.insurance_file_id || undefined : undefined,
+        service_center_lat: coords?.lat,
+        service_center_lng: coords?.lng,
         turnstile_token: turnstileToken,
       });
       await refreshUser();
@@ -129,8 +154,9 @@ export default function OnboardingPage() {
   // in the business directory. That is a marketplace feature, `/api/directory`
   // is not mounted, and the step showed an empty map and an empty search to
   // every single person signing up.
-  const totalSteps = 4;
-  const securityStep = 3;
+  const totalSteps = 5;
+  const locationStep = 3;
+  const securityStep = 4;
   const stepIndex = step;
 
   return (
@@ -149,7 +175,7 @@ export default function OnboardingPage() {
               data-testid="onboarding-progress-bar"
             />
           </div>
-          <p className="text-xs text-ink-muted mt-2">
+          <p className="text-xs text-ink-muted mt-2" data-testid="onboarding-step-label">
             {t('onboarding_step_label').replace('{i}', stepIndex + 1).replace('{n}', totalSteps)}
           </p>
         </div>
@@ -303,7 +329,68 @@ export default function OnboardingPage() {
             </>
           )}
 
-          {/* STEP 4 — Security check & finish */}
+          {/* STEP 4 — Where the business is */}
+          {step === locationStep && (
+            <>
+              <h2 className="font-headings font-bold text-ink text-lg">
+                {t('onboarding_loc_title')}
+              </h2>
+              <p className="text-ink-muted text-sm">{t('onboarding_loc_subtitle')}</p>
+
+              {/* What they already typed. Shown, not asked for again — this
+                  step is about confirming the place, not re-entering it. */}
+              <div className="rounded-[12px] border border-sm-border bg-cream-soft p-3"
+                   data-testid="onboarding-loc-address">
+                <p className="font-bold text-[11px] text-ink-soft mb-1">
+                  {t('onboarding_loc_from_address')}
+                </p>
+                <p className="text-sm text-ink">
+                  {[form.address, [form.postal_code, form.city].filter(Boolean).join(' ')]
+                    .filter(Boolean).join(', ') || '—'}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={useMyLocation}
+                disabled={locating}
+                className={`w-full min-h-[48px] rounded-[12px] font-bold text-sm flex items-center
+                            justify-center gap-2 ${coords
+                              ? 'bg-teal/10 border-[1.5px] border-teal text-teal-deep'
+                              : 'bg-paper border border-sm-border text-ink'}`}
+                data-testid="onboarding-loc-btn"
+              >
+                <MapPin size={16} />
+                {locating ? t('onboarding_loc_locating')
+                  : coords ? t('onboarding_loc_set') : t('onboarding_loc_use')}
+              </button>
+
+              {coords && (
+                <p className="text-[12px] text-ink-muted text-center" data-testid="onboarding-loc-coords">
+                  {coords.lat.toFixed(3)}, {coords.lng.toFixed(3)}
+                  {' · '}
+                  <button type="button" className="text-teal font-bold underline"
+                          onClick={() => { setCoords(null); setLocError(''); }}
+                          data-testid="onboarding-loc-clear">
+                    {t('onboarding_loc_clear')}
+                  </button>
+                </p>
+              )}
+              {locError && (
+                <p className="text-[12px] text-red-warn text-center" data-testid="onboarding-loc-error">
+                  {locError}
+                </p>
+              )}
+
+              {/* This step never blocks. A denied browser prompt is common and
+                  the typed address is enough to place the business in a town. */}
+              <p className="text-[11.5px] text-ink-muted leading-relaxed">
+                {t('onboarding_loc_optional_note')}
+              </p>
+            </>
+          )}
+
+          {/* STEP 5 — Security check & finish */}
           {step === securityStep && (
             <>
               <h2 className="font-headings font-bold text-ink text-lg">{t('onboarding_security_title')}</h2>
