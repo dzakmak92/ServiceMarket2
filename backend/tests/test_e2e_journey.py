@@ -333,6 +333,26 @@ with TestClient(entry.app) as c:
         check(moved and moved["scheduled_start"][11:16] == "09:15",
               "and it comes back changed")
 
+    # Booking an empty slot creates the job already scheduled. `status` was
+    # undeclared on JobIn, so it was accepted, silently dropped and the job
+    # came back a lead — with no lead → scheduled edge to correct it by.
+    r = c.post("/api/jobs", json={
+        "title": "Silikonfugen erneuern",
+        "status": "scheduled",
+        "scheduled_start": f"{today}T11:15:00",
+        "scheduled_end": f"{today}T12:45:00"})
+    check(ok(r, 201), f"a slot can be booked into ({r.status_code})")
+    if r.status_code < 400:
+        check(r.json().get("status") == "scheduled",
+              f"and arrives scheduled, not as a lead ({r.json().get('status')})")
+        r2 = c.get("/api/jobs/appointments")
+        booked = [a for a in r2.json()["appointments"]
+                  if a["title"] == "Silikonfugen erneuern"]
+        check(len(booked) == 1 and booked[0]["scheduled_start"][11:16] == "11:15",
+              "and the day view shows it at the time it was booked for")
+    r = c.post("/api/jobs", json={"title": "Ungültig", "status": "nonsense"})
+    check(r.status_code == 422, f"an unknown status is refused ({r.status_code})")
+
     step("the catalogue offers seven trades, and still prices the rest")
     r = c.get("/api/estimate/catalogue")
     m = r.json() if r.status_code < 400 else {}

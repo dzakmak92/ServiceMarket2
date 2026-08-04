@@ -38,6 +38,13 @@ class JobIn(BaseModel):
     source: str = Field(default="manual", pattern=SOURCES)
     source_ref: Optional[str] = None
     urgency: str = Field(default="normal", pattern="^(emergency|urgent|normal|scheduled)$")
+    # Declared, because Pydantic drops what it has not been told about. The
+    # repository has always accepted `status` on create; without this field the
+    # value arrived, was silently discarded, and every job booked straight into
+    # the calendar came back as a lead — with no error to say why.
+    status: Optional[str] = Field(
+        default=None,
+        pattern="^(lead|quoted|accepted|scheduled|in_progress|completed|invoiced|closed|cancelled)$")
     scheduled_start: Optional[datetime] = None
     scheduled_end: Optional[datetime] = None
     contract_amount: Optional[float] = None

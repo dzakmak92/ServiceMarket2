@@ -241,6 +241,7 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
   const [pending, setPending] = useState(null); // the confirmation sheet
   const [sms, setSms] = useState(null);         // the message sheet
   const [done, setDone] = useState(null);       // the "make an invoice?" prompt
+  const [booking, setBooking] = useState(null); // the new-appointment sheet
   const [hasInvoiceToolkit, setHasInvoiceToolkit] = useState(null);
   const dragRef = useRef(null);
   /* The window listeners are bound once per gesture and would otherwise see
@@ -376,6 +377,29 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
     });
   };
 
+  /* Booked straight into the calendar, so it is created `scheduled` rather
+     than as a lead. The transition table has no lead → scheduled edge, so a
+     job created as a lead here could not be corrected without two more hops
+     through statuses that never happened. */
+  const createAppointment = async ({ title, customerId, start, end }) => {
+    try {
+      await api.post('/api/jobs', {
+        title,
+        customer_id: customerId || undefined,
+        status: 'scheduled',
+        scheduled_start: new Date(start).toISOString(),
+        scheduled_end: new Date(end).toISOString(),
+      });
+      setBooking(null);
+      load();
+      toast.success(t('day_appt_created'));
+    } catch (err) {
+      toast.error(err?.response?.data?.detail
+        ? String(err.response.data.detail)
+        : t('day_save_failed'));
+    }
+  };
+
   const smsBody = useMemo(() => {
     if (!sms) return '';
     return TEMPLATES[sms.template].build({
@@ -426,6 +450,7 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
                            justify-center gap-1 border-[1.5px] border-dashed
                            border-teal/40 bg-teal/[0.09] overflow-hidden"
                 style={{ top: topOf(r.start), height, zIndex: 1 }}
+                onClick={() => setBooking({ run: r })}
                 data-testid={`day-free-${hhmm(r.start)}`}
                 aria-label={`${t('day_new_appt')} ${hhmm(r.start)} – ${hhmm(r.end)}`}
               >
@@ -514,6 +539,14 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
           appts={appts}
           onCancel={() => setPending(null)}
           onConfirm={confirmMove}
+          t={t}
+        />
+      )}
+      {booking && (
+        <NewAppointmentSheet
+          run={booking.run}
+          onCreate={createAppointment}
+          onClose={() => setBooking(null)}
           t={t}
         />
       )}
@@ -648,6 +681,124 @@ function ConflictSheet({ pending, appts, onCancel, onConfirm, t }) {
           {t('cancel')}
         </button>
       </div>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────── booking an empty slot */
+function NewAppointmentSheet({ run, onCreate, onClose, t }) {
+  const span = toMs(run.end) - toMs(run.start);
+  const [title, setTitle] = useState('');
+  const [customerId, setCustomerId] = useState('');
+  const [customers, setCustomers] = useState([]);
+  /* Default to an hour, or the whole slot when it is shorter. Never longer:
+     the slot's end already has the next job's drive taken out of it, so
+     offering more would be offering the journey. */
+  const [minutes, setMinutes] = useState(Math.min(60, Math.round(span / MIN)));
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    api.get('/api/customers', { params: { limit: 200 } })
+      .then((r) => setCustomers(r.data?.customers || []))
+      .catch(() => setCustomers([]));
+  }, []);
+
+  const maxMinutes = Math.round(span / MIN);
+  const steps = [];
+  for (let m = 30; m <= maxMinutes; m += 15) steps.push(m);
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (title.trim().length < 3 || saving) return;
+    setSaving(true);
+    onCreate({
+      title: title.trim(),
+      customerId,
+      start: run.start,
+      end: new Date(toMs(run.start) + minutes * MIN),
+    }).finally?.(() => setSaving(false));
+  };
+
+  return (
+    <div className="fixed inset-0 z-[210] bg-black/40 flex items-end" onClick={onClose}
+         data-testid="day-new-sheet">
+      <form className="w-full bg-paper rounded-t-[20px] p-5 shadow-2xl"
+            onClick={(e) => e.stopPropagation()} onSubmit={submit}>
+        <div className="flex items-center gap-2 mb-1">
+          <p className="font-headings font-bold text-[15px] text-ink flex-1">
+            {t('day_new_appt_title')}
+          </p>
+          <button type="button" onClick={onClose} className="p-1 text-ink-muted" aria-label="close">
+            <X size={18} />
+          </button>
+        </div>
+        <p className="text-[12px] text-ink-muted mb-4">
+          {hhmm(run.start)} – {hhmm(run.end)} · {durationLabel(span)} {t('day_free')}
+        </p>
+
+        <label className="block font-bold text-[11px] text-ink-soft mb-1.5">
+          {t('day_what')}
+        </label>
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder={t('day_what_ph')}
+          className="w-full min-h-[46px] px-3 rounded-[12px] border border-sm-border bg-cream-soft
+                     text-[13px] text-ink mb-4"
+          data-testid="day-new-title"
+          autoFocus
+        />
+
+        <label className="block font-bold text-[11px] text-ink-soft mb-1.5">
+          {t('day_customer')}
+        </label>
+        <select
+          value={customerId}
+          onChange={(e) => setCustomerId(e.target.value)}
+          className="w-full min-h-[46px] px-3 rounded-[12px] border border-sm-border bg-cream-soft
+                     text-[13px] text-ink mb-4"
+          data-testid="day-new-customer"
+        >
+          <option value="">{t('day_no_customer')}</option>
+          {customers.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
+
+        <label className="block font-bold text-[11px] text-ink-soft mb-1.5">
+          {t('day_duration')}
+        </label>
+        <div className="flex gap-1.5 overflow-x-auto pb-1 mb-4" data-testid="day-new-durations">
+          {steps.map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMinutes(m)}
+              className={`min-h-[44px] px-3.5 rounded-[11px] font-bold text-[12px] whitespace-nowrap
+                ${minutes === m ? 'bg-teal text-paper'
+                                : 'bg-cream-soft border border-sm-border text-ink-soft'}`}
+              data-testid={`day-new-dur-${m}`}
+            >
+              {durationLabel(m * MIN)}
+            </button>
+          ))}
+        </div>
+
+        <p className="text-[12px] text-ink-soft mb-3">
+          {hhmm(run.start)} – {hhmm(toMs(run.start) + minutes * MIN)}
+        </p>
+
+        <button
+          type="submit"
+          disabled={title.trim().length < 3 || saving}
+          className={`w-full min-h-[48px] rounded-[12px] font-extrabold text-[13px]
+            ${title.trim().length < 3 || saving
+              ? 'bg-cream-deep text-ink-faint' : 'bg-teal text-paper'}`}
+          data-testid="day-new-submit"
+        >
+          {t('day_create_appt')}
+        </button>
+      </form>
     </div>
   );
 }
