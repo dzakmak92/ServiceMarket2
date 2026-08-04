@@ -290,6 +290,49 @@ with TestClient(entry.app) as c:
     check(bool(r.json().get("job_number")) if r.status_code < 400 else False,
           "and it gets a job number")
 
+    step("the day view has appointments to draw, and refuses bad times")
+    r = c.get("/api/jobs/appointments")
+    appts = r.json().get("appointments", []) if ok(r) else []
+    check(ok(r), f"the appointments feed answers ({r.status_code})")
+    r = c.get("/api/jobs/appointments?day=nonsense")
+    check(r.status_code == 400, f"a malformed day is a 400, not a driver crash ({r.status_code})")
+
+    # A fresh account has nothing scheduled, so give it something rather than
+    # skipping the validation — a branch that never runs is not coverage.
+    today = date.today().isoformat()
+    if job_id:
+        r = c.patch(f"/api/jobs/{job_id}/schedule",
+                    json={"scheduled_start": f"{today}T08:00:00",
+                          "scheduled_end": f"{today}T11:00:00"})
+        check(ok(r), f"an appointment can be put in the calendar ({r.status_code})")
+        r = c.get("/api/jobs/appointments")
+        appts = r.json().get("appointments", []) if ok(r) else []
+        check(any(a["id"] == job_id for a in appts),
+              "and the day view can then see it")
+        check(all("customer_phone" in a for a in appts),
+              "every row carries the phone the SMS would go to")
+
+    if appts:
+        jid = appts[0]["id"]
+        base = appts[0]["scheduled_start"][:10]
+        r = c.patch(f"/api/jobs/{jid}/schedule",
+                    json={"scheduled_start": f"{base}T09:07:00",
+                          "scheduled_end": f"{base}T10:07:00"})
+        check(r.status_code == 400,
+              f"07 past the hour is refused — the grid cannot draw it ({r.status_code})")
+        r = c.patch(f"/api/jobs/{jid}/schedule",
+                    json={"scheduled_start": f"{base}T11:00:00",
+                          "scheduled_end": f"{base}T09:00:00"})
+        check(r.status_code == 400, f"an end before its start is refused ({r.status_code})")
+        r = c.patch(f"/api/jobs/{jid}/schedule",
+                    json={"scheduled_start": f"{base}T09:15:00",
+                          "scheduled_end": f"{base}T10:45:00"})
+        check(ok(r), f"a quarter-aligned move is accepted ({r.status_code})")
+        r = c.get("/api/jobs/appointments")
+        moved = next((a for a in r.json()["appointments"] if a["id"] == jid), None)
+        check(moved and moved["scheduled_start"][11:16] == "09:15",
+              "and it comes back changed")
+
     step("the catalogue offers seven trades, and still prices the rest")
     r = c.get("/api/estimate/catalogue")
     m = r.json() if r.status_code < 400 else {}

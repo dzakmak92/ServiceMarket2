@@ -6,7 +6,7 @@ lead they already received elsewhere.
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date as date_cls, datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -135,6 +135,95 @@ async def schedule(days: int = Query(default=60, ge=1, le=365),
         pro_id, str(days),
     )
     return {"tasks": rows}
+
+
+@router.get("/appointments")
+async def appointments(day: Optional[str] = Query(default=None),
+                       days: int = Query(default=1, ge=1, le=31),
+                       user: dict = Depends(get_current_user)):
+    """The pro's own appointments — jobs with a scheduled_start.
+
+    Separate from /schedule on purpose. That one returns PM sub-task due
+    dates, which only exist if the pro uses the project toolkit and fills
+    them in. This returns the thing every trade has: a time they said they
+    would be at an address. The day view is built on this.
+
+    Declared before /{job_id} so the dynamic route does not read
+    "appointments" as an id.
+    """
+    pro_id = await require_pro_id(user)
+    # asyncpg types the parameter from the query, so `$2::date` makes it a date
+    # parameter and a string is rejected outright. Parse it here — a bad `day`
+    # should be a 400, not a 500 from the driver.
+    try:
+        from_day = date_cls.fromisoformat(day) if day else datetime.now(timezone.utc).date()
+    except ValueError:
+        raise HTTPException(400, "day must be YYYY-MM-DD")
+    rows = await pg.fetch(
+        """
+        select j.id::text            as id,
+               j.job_number,
+               j.title,
+               j.status,
+               j.urgency,
+               j.scheduled_start,
+               j.scheduled_end,
+               j.site_address,
+               j.site_postal_code,
+               j.site_city,
+               c.id::text            as customer_id,
+               c.name                as customer_name,
+               c.phone               as customer_phone,
+               c.address             as customer_address,
+               c.postal_code         as customer_postal_code,
+               c.city                as customer_city
+          from jobs j
+          left join customers c on c.id = j.customer_id
+         where j.pro_id = $1
+           and j.deleted_at is null
+           and j.status not in ('closed', 'cancelled')
+           and j.scheduled_start is not null
+           and j.scheduled_start >= $2
+           and j.scheduled_start <  $2 + ($3 || ' days')::interval
+         order by j.scheduled_start
+        """,
+        pro_id, from_day, str(days),
+    )
+    return {"appointments": rows}
+
+
+class SchedulePatch(BaseModel):
+    """Both ends, always. A partial move is how an appointment ends up with a
+    start after its end — the caller sends what the appointment now is."""
+    scheduled_start: datetime
+    scheduled_end: datetime
+
+
+def _quarter_aligned(t: datetime) -> bool:
+    return t.minute % 15 == 0 and t.second == 0 and t.microsecond == 0
+
+
+@router.patch("/{job_id}/schedule")
+async def set_schedule(job_id: str, body: SchedulePatch,
+                       user: dict = Depends(get_current_user)):
+    """Move or resize one appointment.
+
+    Quarter-hour alignment is enforced here and not only in the UI. The day
+    view snaps to quarters, but an endpoint that accepts 16:07 because the
+    caller asked nicely leaves rows the grid cannot draw.
+    """
+    pro_id = await require_pro_id(user)
+    if body.scheduled_end <= body.scheduled_start:
+        raise HTTPException(400, "scheduled_end must be after scheduled_start")
+    if not (_quarter_aligned(body.scheduled_start) and _quarter_aligned(body.scheduled_end)):
+        raise HTTPException(400, "times must fall on a quarter hour")
+    job = await repo.update(pro_id, job_id, {
+        "scheduled_start": body.scheduled_start,
+        "scheduled_end": body.scheduled_end,
+    })
+    if not job:
+        raise HTTPException(404, "Job not found")
+    return job
 
 
 @router.post("", status_code=201)
