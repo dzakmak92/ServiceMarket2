@@ -6,7 +6,7 @@ import api from '../api/client';
 import Turnstile from 'react-turnstile';
 import {
   Hammer, ChevronRight, ChevronLeft, CheckCircle2,
-  Upload, FileText, Loader2, AlertCircle, MapPin,
+  Upload, FileText, Loader2, AlertCircle, MapPin, CloudSun,
 } from 'lucide-react';
 
 const TURNSTILE_SITE_KEY = process.env.REACT_APP_TURNSTILE_SITE_KEY;
@@ -293,6 +293,23 @@ export default function OnboardingPage() {
                     data-testid="onboarding-city"
                   />
                 </div>
+              </div>
+
+              {/* These two fields are the only ones on this step that leave
+                  it, so they are the only ones worth explaining. An address
+                  is a legal requirement on an Austrian or German invoice —
+                  a pro who types a shorthand here finds out months later on
+                  a rejected invoice, not now. */}
+              <div className="rounded-[12px] bg-cream-soft border border-sm-border p-3 space-y-2"
+                   data-testid="onboarding-why">
+                <p className="flex items-start gap-2 text-[12px] text-ink-soft leading-relaxed">
+                  <FileText size={14} className="text-teal flex-none mt-px" />
+                  <span>{t('onboarding_why_address')}</span>
+                </p>
+                <p className="flex items-start gap-2 text-[12px] text-ink-soft leading-relaxed">
+                  <CloudSun size={14} className="text-sky flex-none mt-px" />
+                  <span>{t('onboarding_why_city')}</span>
+                </p>
               </div>
             </>
           )}
