@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
@@ -9,8 +9,8 @@ import {
 } from '../../utils/schedule';
 import { TEMPLATES, sendViaPhone, smsSegments, telHref } from '../../utils/sms';
 import {
-  AlertTriangle, ChevronDown, ChevronUp, Copy, FileText, MapPin, Phone,
-  Navigation, Plus, User, X,
+  AlertTriangle, Check, CheckCircle2, ChevronDown, ChevronUp, Copy, FileText,
+  Lock, MapPin, Phone, Navigation, Play, Plus, Receipt, User, X,
 } from 'lucide-react';
 
 /* 80 px per hour is not a taste call: a one-hour appointment has to hold its
@@ -19,7 +19,10 @@ import {
 const PPH = 80;
 const PX_PER_MS = PPH / (60 * MIN);
 const DAY_FROM = 8;
-const DAY_TO = 18;
+/* 20:00, not 18:00. Emergency call-outs, a Saturday finish and the summer
+   evenings a painter actually works are all past six, and a rail that stops
+   at 18 cannot show them at all — the appointment simply has nowhere to sit. */
+const DAY_TO = 20;
 
 const startOfDay = (d, hour) => { const x = new Date(d); x.setHours(hour, 0, 0, 0); return x; };
 const sameDay = (a, b) => new Date(a).toDateString() === new Date(b).toDateString();
@@ -59,10 +62,22 @@ function Grid({ liveFrom, liveTo }) {
   return <>{rows}</>;
 }
 
+/* What this job's next step is, taken from the same transition table the
+   API enforces. A slot that is empty or disabled on most statuses teaches the
+   pro to ignore it; this one always carries the move that is actually open. */
+function primaryAction(status) {
+  if (status === 'scheduled' || status === 'accepted') return 'start';
+  if (status === 'in_progress') return 'complete';
+  if (status === 'completed') return 'invoice';
+  return null;
+}
+
 /* ────────────────────────────────────────────── one appointment block */
-function Block({ appt, top, height, running, progress, dragging, conflict, onGrab, t }) {
+function Block({ appt, top, height, running, progress, dragging, conflict,
+                 onGrab, onPrimary, t }) {
   const room = { body: height >= 96, actions: height >= 150 && !dragging };
   const phone = telHref(appt.customer_phone);
+  const action = primaryAction(appt.status);
   return (
     <div
       className="absolute left-0 right-0"
@@ -78,17 +93,31 @@ function Block({ appt, top, height, running, progress, dragging, conflict, onGra
           boxShadow: dragging ? '0 6px 18px rgba(0,0,0,.16)' : '0 1px 4px rgba(0,0,0,.07)',
         }}
       >
-        <div className={`flex items-center gap-2 px-3 py-[7px] flex-none
+        <div className={`flex items-center gap-2 px-3 flex-none
+          ${action && !room.actions ? 'py-1' : 'py-[7px]'}
           ${running ? 'bg-teal text-paper' : 'bg-teal-deep text-paper'}`}>
           <p className="font-extrabold text-[13px]">{hhmm(appt.start)}–{hhmm(appt.end)}</p>
           <p className="font-bold text-[10.5px] opacity-75">
             · {durationLabel(toMs(appt.end) - toMs(appt.start))}
           </p>
-          {running && (
+          {action && !room.actions ? (
+            <button
+              type="button"
+              onClick={() => onPrimary(appt, action)}
+              className={`ml-auto rounded-full px-3 min-h-[36px] flex items-center gap-1.5
+                text-[11px] font-extrabold
+                ${action === 'invoice' ? 'bg-amber text-on-amber' : 'bg-paper text-teal-deep'}`}
+              data-testid={`day-primary-${appt.id}`}
+            >
+              {action === 'start' && <><Play size={11} /> {t('day_start')}</>}
+              {action === 'complete' && <><Check size={12} /> {t('day_complete')}</>}
+              {action === 'invoice' && <><Receipt size={12} /> {t('day_invoice')}</>}
+            </button>
+          ) : running ? (
             <span className="ml-auto bg-black/20 rounded-full px-2 py-[2px] text-[9px] font-extrabold">
               {t('day_running')}
             </span>
-          )}
+          ) : null}
         </div>
 
         <div className="px-3 pt-2 pb-[7px] flex-1 min-h-0 overflow-hidden">
@@ -136,27 +165,41 @@ function Block({ appt, top, height, running, progress, dragging, conflict, onGra
                 [appt.site_address || appt.customer_address, appt.site_city || appt.customer_city]
                   .filter(Boolean).join(', '))}`}
               target="_blank" rel="noreferrer"
-              className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5
-                         font-bold text-[11px] text-teal"
+              className="flex-1 min-h-[44px] flex items-center justify-center gap-1
+                         font-bold text-[10.5px] text-teal"
             >
               <Navigation size={13} /> {t('day_route')}
             </a>
             <a
               href={phone ? `tel:${phone}` : undefined}
               aria-disabled={!phone}
-              className={`flex-1 min-h-[44px] flex items-center justify-center gap-1.5
-                font-bold text-[11px] border-l border-sm-border
+              className={`flex-1 min-h-[44px] flex items-center justify-center gap-1
+                font-bold text-[10.5px] border-l border-sm-border
                 ${phone ? 'text-teal' : 'text-ink-faint pointer-events-none'}`}
             >
               <Phone size={13} /> {t('day_call')}
             </a>
             <Link
               to={`/projects/${appt.id}`}
-              className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5
-                         font-bold text-[11px] text-teal border-l border-sm-border"
+              className="flex-1 min-h-[44px] flex items-center justify-center gap-1
+                         font-bold text-[10.5px] text-teal border-l border-sm-border"
             >
               <FileText size={13} /> {t('day_note')}
             </Link>
+            {action && (
+              <button
+                type="button"
+                onClick={() => onPrimary(appt, action)}
+                className={`flex-1 min-h-[44px] flex items-center justify-center gap-1
+                  font-extrabold text-[10.5px] border-l border-sm-border
+                  ${action === 'invoice' ? 'bg-amber text-on-amber' : 'bg-teal text-paper'}`}
+                data-testid={`day-primary-${appt.id}`}
+              >
+                {action === 'start' && <><Play size={12} /> {t('day_start')}</>}
+                {action === 'complete' && <><Check size={13} /> {t('day_complete')}</>}
+                {action === 'invoice' && <><Receipt size={13} /> {t('day_invoice')}</>}
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -191,11 +234,14 @@ function Block({ appt, top, height, running, progress, dragging, conflict, onGra
 /* ══════════════════════════════════════════════════════════ the view */
 export default function DayScheduleView({ date, onDateChange, proName }) {
   const { t } = useLang();
+  const navigate = useNavigate();
   const [appts, setAppts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [drag, setDrag] = useState(null);      // { id, endMs }
   const [pending, setPending] = useState(null); // the confirmation sheet
   const [sms, setSms] = useState(null);         // the message sheet
+  const [done, setDone] = useState(null);       // the "make an invoice?" prompt
+  const [hasInvoiceToolkit, setHasInvoiceToolkit] = useState(null);
   const dragRef = useRef(null);
   /* The window listeners are bound once per gesture and would otherwise see
      the appointments and commit function from the render that bound them. */
@@ -217,9 +263,38 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
   }, [date]);
   useEffect(load, [load]);
 
+  /* Asked once, not per card. Whether the pro owns the invoice toolkit decides
+     what the prompt after completing a job can offer, and a card cannot know
+     it on its own. `null` means not answered yet — distinct from `false`, so
+     the prompt never flashes an upsell at someone who has already paid. */
+  useEffect(() => {
+    api.get('/api/profile/pro')
+      .then((r) => setHasInvoiceToolkit(!!r.data?.has_invoice_toolkit))
+      .catch(() => setHasInvoiceToolkit(false));
+  }, []);
+
+  /* Start, complete, invoice — the transitions the API allows, in the order a
+     job goes through them. Completing opens the invoice prompt; it does not
+     create anything, because an invoice is a legal document and issuing one
+     as a side effect of tapping "Fertig" is how a wrong figure gets sent. */
+  const onPrimary = async (appt, action) => {
+    if (action === 'invoice') { navigate(`/jobs/${appt.id}/invoice`); return; }
+    const next = action === 'start' ? 'in_progress' : 'completed';
+    try {
+      await api.patch(`/api/jobs/${appt.id}/status`, { status: next });
+      setAppts((prev) => prev.map((a) => (a.id === appt.id ? { ...a, status: next } : a)));
+      if (next === 'completed') setDone(appt);
+    } catch (err) {
+      toast.error(err?.response?.status === 409
+        ? t('day_status_refused')
+        : t('day_save_failed'));
+    }
+  };
+
   const now = Date.now();
   const showNow = sameDay(date, new Date());
-  const running = appts.find((a) => toMs(a.start) <= now && now < toMs(a.end));
+  const running = appts.find((a) => a.status === 'in_progress'
+    && toMs(a.start) <= now && now < toMs(a.end));
 
   /* ── drag ─────────────────────────────────────────────────────────
      Pointer events, so one code path covers finger, stylus and mouse. The
@@ -412,6 +487,7 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
                 dragging={isDragging}
                 conflict={isDragging && clash}
                 onGrab={onGrab}
+                onPrimary={onPrimary}
                 t={t}
               />
             );
@@ -442,6 +518,16 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
           appts={appts}
           onCancel={() => setPending(null)}
           onConfirm={confirmMove}
+          t={t}
+        />
+      )}
+      {done && (
+        <CompletedSheet
+          appt={done}
+          hasToolkit={hasInvoiceToolkit}
+          onInvoice={() => { const id = done.id; setDone(null); navigate(`/jobs/${id}/invoice`); }}
+          onUnlock={() => { setDone(null); navigate('/billing'); }}
+          onClose={() => setDone(null)}
           t={t}
         />
       )}
@@ -564,6 +650,70 @@ function ConflictSheet({ pending, appts, onCancel, onConfirm, t }) {
         <button type="button" onClick={onCancel}
                 className="w-full text-center font-semibold text-[11px] text-ink-muted mt-3 py-2">
           {t('cancel')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────── after completing: make an invoice? */
+function CompletedSheet({ appt, hasToolkit, onInvoice, onUnlock, onClose, t }) {
+  return (
+    <div className="fixed inset-0 z-[210] bg-black/40 flex items-end" onClick={onClose}
+         data-testid="day-completed-sheet">
+      <div className="w-full bg-paper rounded-t-[20px] p-5 shadow-2xl"
+           onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start gap-3 mb-4">
+          <CheckCircle2 size={22} className="text-green-pos flex-none mt-0.5" />
+          <div className="flex-1">
+            <p className="font-headings font-bold text-[15px] text-ink">
+              {t('day_completed_title')}
+            </p>
+            <p className="text-[12px] text-ink-soft mt-1 leading-relaxed">
+              {appt.title}{appt.customer_name ? ` · ${appt.customer_name}` : ''}
+            </p>
+          </div>
+        </div>
+
+        {hasToolkit === false ? (
+          <>
+            <div className="flex items-start gap-2.5 bg-cream-soft rounded-[12px] p-3 mb-3">
+              <Lock size={16} className="text-ink-muted flex-none mt-0.5" />
+              <p className="text-[11.5px] text-ink-soft leading-relaxed">
+                {t('day_invoice_locked')}
+              </p>
+            </div>
+            <button
+              type="button" onClick={onUnlock}
+              className="w-full min-h-[46px] rounded-[12px] bg-teal text-paper
+                         font-extrabold text-[12.5px]"
+              data-testid="day-unlock-toolkit"
+            >
+              {t('day_unlock_invoicing')}
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="text-[12px] text-ink-soft mb-3 leading-relaxed">
+              {t('day_invoice_prompt')}
+            </p>
+            <button
+              type="button" onClick={onInvoice}
+              disabled={hasToolkit === null}
+              className={`w-full min-h-[46px] rounded-[12px] font-extrabold text-[12.5px]
+                flex items-center justify-center gap-2
+                ${hasToolkit === null ? 'bg-cream-deep text-ink-faint' : 'bg-teal text-paper'}`}
+              data-testid="day-make-invoice"
+            >
+              <Receipt size={16} /> {t('day_make_invoice')}
+            </button>
+          </>
+        )}
+        <button type="button" onClick={onClose}
+                className="w-full text-center font-semibold text-[11.5px] text-ink-muted mt-3 py-2.5
+                           min-h-[44px]"
+                data-testid="day-invoice-later">
+          {t('day_later')}
         </button>
       </div>
     </div>
