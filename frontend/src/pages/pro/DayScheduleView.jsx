@@ -9,7 +9,7 @@ import {
 } from '../../utils/schedule';
 import { TEMPLATES, sendViaPhone, smsSegments, telHref } from '../../utils/sms';
 import {
-  AlertTriangle, Check, CheckCircle2, ChevronDown, ChevronUp, Copy, FileText,
+  AlertTriangle, Car, Check, CheckCircle2, ChevronDown, ChevronUp, Copy, FileText,
   Lock, MapPin, Phone, Navigation, Play, Plus, Receipt, User, X,
 } from 'lucide-react';
 
@@ -685,6 +685,162 @@ function ConflictSheet({ pending, appts, onCancel, onConfirm, t }) {
   );
 }
 
+/* ──────────────────────────────────────────── the slot as a timeline
+   The free window drawn end to end, with a quarter-hour tick for every step
+   the duration can take. The teal fill is the appointment: it grows with the
+   chips below, and it can be dragged, so the length can be set either by
+   naming it or by showing it.
+
+   The band draws the *slot*, not the day. Its left edge is the earliest the
+   appointment can start and its right edge the latest it can end, both of
+   which already have the drive taken out of them by `bookableRuns` — so a
+   full band is a full day's-worth of bookable time and never an overlap. */
+const MIN_MINUTES = 30;   /* MIN_SLOT, in the unit this sheet counts in */
+
+function SlotBand({ run, minutes, maxMinutes, onChange, t }) {
+  const trackRef = useRef(null);
+  const quarters = Math.round(maxMinutes / 15);
+  /* A tick every 15 min stops being a line and becomes texture once the ticks
+     are a few pixels apart. The track is about 350 px inside the sheet, so
+     past 24 quarters (6 h) only the hour ticks are drawn. */
+  const everyQuarter = quarters <= 24;
+
+  const clamp = (m) => Math.min(maxMinutes, Math.max(MIN_MINUTES, m));
+
+  const setFromX = (clientX) => {
+    const el = trackRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    if (!r.width) return;
+    const frac = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
+    onChange(clamp(Math.round((frac * maxMinutes) / 15) * 15));
+  };
+
+  /* Window listeners rather than setPointerCapture: capture would route the
+     moves to whichever element took it, and the finger leaves the track long
+     before the drag is over. */
+  const onPointerDown = (e) => {
+    e.preventDefault();
+    setFromX(e.clientX);
+    const move = (ev) => setFromX(ev.clientX);
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+  };
+
+  const onKeyDown = (e) => {
+    const d = e.key === 'ArrowRight' || e.key === 'ArrowUp' ? 15
+      : e.key === 'ArrowLeft' || e.key === 'ArrowDown' ? -15 : 0;
+    if (!d) return;
+    e.preventDefault();
+    onChange(clamp(minutes + d));
+  };
+
+  const end = new Date(toMs(run.start) + minutes * MIN);
+  const frac = minutes / maxMinutes;
+  const rest = maxMinutes - minutes;
+
+  /* Axis labels sit on the hour ticks, at the fraction of the track where
+     that hour really falls. A single label centred in the row would name a
+     time (17:38 in a 15:15–20:00 slot) and then point at the wrong place —
+     worse than no label. Long slots thin the labels out rather than
+     overlapping them — the tightest these steps allow on a 324 px track is
+     six labels about 65 px apart, which a 10 px time clears easily. */
+  const hours = maxMinutes / 60;
+  const hourStep = hours <= 5 ? 1 : hours <= 10 ? 2 : 3;
+  const axis = [];
+  for (let i = 4 * hourStep; i < quarters; i += 4 * hourStep) {
+    const f = i / quarters;
+    if (f > 0.88) break;                    // too close to the end label
+    axis.push({ f, at: new Date(toMs(run.start) + i * 15 * MIN) });
+  }
+
+  const ticks = [];
+  for (let i = 1; i < quarters; i += 1) {
+    const hour = i % 4 === 0;
+    if (!everyQuarter && !hour) continue;
+    ticks.push(
+      <span
+        key={i}
+        className={`absolute top-0 bottom-0 w-px ${hour ? 'bg-teal/30' : 'bg-teal/[0.16]'}`}
+        style={{ left: `${(i / quarters) * 100}%` }}
+      />,
+    );
+  }
+
+  return (
+    <div className="rounded-[14px] border border-sm-border bg-cream-soft p-3 mb-4"
+         data-testid="day-new-band">
+      <p className="font-extrabold text-[12.5px] text-ink mb-1.5" data-testid="day-new-readout">
+        {hhmm(run.start)} – {hhmm(end)} · {durationLabel(minutes * MIN)}
+      </p>
+
+      <div
+        ref={trackRef}
+        role="slider"
+        tabIndex={0}
+        aria-label={t('day_duration')}
+        aria-valuemin={MIN_MINUTES}
+        aria-valuemax={maxMinutes}
+        aria-valuenow={minutes}
+        aria-valuetext={`${hhmm(run.start)} – ${hhmm(end)}`}
+        onPointerDown={onPointerDown}
+        onKeyDown={onKeyDown}
+        style={{ touchAction: 'none' }}
+        className="relative h-[46px] rounded-[10px] overflow-hidden cursor-pointer
+                   border-[1.5px] border-dashed border-teal/30 bg-teal/[0.07]"
+        data-testid="day-new-track"
+      >
+        {ticks}
+        <div
+          className="absolute left-0 top-0 bottom-0 rounded-[9px] bg-teal flex items-center
+                     pl-2.5 text-paper font-extrabold text-[11.5px]"
+          style={{ width: `${frac * 100}%` }}
+          data-testid="day-new-fill"
+        >
+          {frac >= 0.22 && durationLabel(minutes * MIN)}
+          <span className="absolute right-[5px] top-1/2 -translate-y-1/2 w-[5px] h-[22px]
+                           rounded-[3px] bg-paper/55" />
+        </div>
+      </div>
+
+      <div className="relative h-[13px] mt-1.5 font-bold text-[10px] text-ink-muted"
+           data-testid="day-new-axis">
+        <span className="absolute left-0 top-0">{hhmm(run.start)}</span>
+        {axis.map(({ f, at }) => (
+          <span key={f} className="absolute top-0 -translate-x-1/2"
+                style={{ left: `${f * 100}%` }}>
+            {hhmm(at)}
+          </span>
+        ))}
+        <span className="absolute right-0 top-0">{hhmm(run.end)}</span>
+      </div>
+
+      {/* The drive is only claimed on a side that actually has a neighbour —
+          the first slot of the day has nothing to drive from. */}
+      <div className="flex items-center justify-between gap-2 mt-1.5">
+        <span className="flex items-center gap-1 font-bold text-[9.5px] text-ink-faint">
+          {run.insetBefore && <><Car size={11} /> {t('day_drive_before')}</>}
+        </span>
+        {rest > 0 && (
+          <span className="font-bold text-[10px] text-ink-muted whitespace-nowrap"
+                data-testid="day-new-rest">
+            {durationLabel(rest * MIN)} {t('day_stays_free')}
+          </span>
+        )}
+        <span className="flex items-center gap-1 font-bold text-[9.5px] text-ink-faint">
+          {run.insetAfter && <>{t('day_drive_after')} <Car size={11} /></>}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 /* ────────────────────────────────────────── booking an empty slot */
 function NewAppointmentSheet({ run, onCreate, onClose, t }) {
   const span = toMs(run.end) - toMs(run.start);
@@ -705,7 +861,7 @@ function NewAppointmentSheet({ run, onCreate, onClose, t }) {
 
   const maxMinutes = Math.round(span / MIN);
   const steps = [];
-  for (let m = 30; m <= maxMinutes; m += 15) steps.push(m);
+  for (let m = MIN_MINUTES; m <= maxMinutes; m += 15) steps.push(m);
 
   const submit = (e) => {
     e.preventDefault();
@@ -732,9 +888,12 @@ function NewAppointmentSheet({ run, onCreate, onClose, t }) {
             <X size={18} />
           </button>
         </div>
-        <p className="text-[12px] text-ink-muted mb-4">
-          {hhmm(run.start)} – {hhmm(run.end)} · {durationLabel(span)} {t('day_free')}
-        </p>
+        {/* The band's own axis names the free window, so the old sub-line
+            saying the same thing in words is gone rather than doubled. */}
+        <div className="mt-3">
+          <SlotBand run={run} minutes={minutes} maxMinutes={maxMinutes}
+                    onChange={setMinutes} t={t} />
+        </div>
 
         <label className="block font-bold text-[11px] text-ink-soft mb-1.5">
           {t('day_what')}
@@ -783,10 +942,6 @@ function NewAppointmentSheet({ run, onCreate, onClose, t }) {
             </button>
           ))}
         </div>
-
-        <p className="text-[12px] text-ink-soft mb-3">
-          {hhmm(run.start)} – {hhmm(toMs(run.start) + minutes * MIN)}
-        </p>
 
         <button
           type="submit"
