@@ -89,13 +89,14 @@ def _build_app():
                                           router as tax_router)
         from routes.upload_routes import (portal_router as upload_portal_router,
                                           router as upload_router)
+        from routes.weather_routes import router as weather_router
 
         for r in (auth_router, customer_router, job_router, quote_router,
                   profile_router, recurring_router, template_router,
                   estimate_router, privacy_router, privacy_me_router,
                   quote_invoice_router, invoice_router, tax_router,
                   pm_router, pm_timer_router, pm_tpl_router,
-                  pm_sub_router, upload_router,
+                  pm_sub_router, upload_router, weather_router,
                   portal_router, pm_portal_router, pm_sub_portal,
                   tax_public_router,
                   upload_portal_router):

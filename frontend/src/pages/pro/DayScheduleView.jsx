@@ -8,6 +8,8 @@ import {
   previewResize, resizeAndSettle, snapQuarter, toMs,
 } from '../../utils/schedule';
 import { TEMPLATES, sendViaPhone, smsSegments, telHref } from '../../utils/sms';
+import WeatherCard from '../../components/pro/WeatherCard';
+import useWeather from '../../hooks/useWeather';
 import {
   AlertTriangle, Car, Check, CheckCircle2, ChevronDown, ChevronUp, Copy, FileText,
   Lock, MapPin, Phone, Navigation, Play, Plus, Receipt, User, X,
@@ -247,6 +249,8 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
   const [done, setDone] = useState(null);       // the "make an invoice?" prompt
   const [booking, setBooking] = useState(null); // the new-appointment sheet
   const [hasInvoiceToolkit, setHasInvoiceToolkit] = useState(null);
+  const weather = useWeather(7);
+  const isToday = sameDay(date, new Date());
   const dragRef = useRef(null);
   /* The window listeners are bound once per gesture and would otherwise see
      the appointments and commit function from the render that bound them. */
@@ -387,13 +391,24 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
      through statuses that never happened. */
   const createAppointment = async ({ title, customerId, start, end, moved = [] }) => {
     try {
-      await api.post('/api/jobs', {
+      const res = await api.post('/api/jobs', {
         title,
         customer_id: customerId || undefined,
         status: 'scheduled',
         scheduled_start: new Date(start).toISOString(),
         scheduled_end: new Date(end).toISOString(),
       });
+      /* A 201 is not proof the appointment exists. An API that does not know
+         about `scheduled_start` accepts the call, drops the field and returns
+         a perfectly good job — and the day view then shows nothing, which
+         reads to the pro as "the button does nothing". Say so instead. */
+      const made = res?.data || {};
+      if (!made.scheduled_start) {
+        toast.error(t('day_created_unscheduled'));
+        setBooking(null);
+        await load();
+        return;
+      }
       /* An appointment longer than the hole pushes what follows it, and every
          one of those pushes has to be written down. Doing it after the job
          exists, and in one go, means a failure here leaves the day visibly
@@ -455,6 +470,10 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
 
   return (
     <>
+      {/* Only on today. Standing in front of Thursday's rail, a forecast for
+          right now would be describing a different day than the one on
+          screen — which is worse than showing nothing. */}
+      {isToday && <WeatherCard weather={weather} t={t} />}
       <div className="card-lg p-0 pt-3 pr-3 pb-7 relative" data-testid="day-rail">
         <div
           className="relative"
@@ -729,23 +748,43 @@ function ConflictSheet({ pending, appts, onCancel, onConfirm, t }) {
 const MIN_MINUTES = 30;        /* MIN_SLOT, in the unit this sheet counts in */
 const MAX_MINUTES = 8 * 60;    /* a working day; longer is a second appointment */
 
-function SlotBand({ run, minutes, maxMinutes, windowMinutes, moved, blocked, onChange, t }) {
+function SlotBand({ run, startMin, minutes, maxMinutes, windowMinutes,
+                   moved, blocked, onChange, t }) {
   const trackRef = useRef(null);
+  const grabbed = useRef(null);          // which edge this gesture is moving
   const quarters = Math.round(maxMinutes / 15);
   /* A tick every 15 min stops being a line and becomes texture once the ticks
      are a few pixels apart. The track is about 324 px inside the sheet, so
      past 24 quarters (6 h) only the hour ticks are drawn. */
   const everyQuarter = quarters <= 24;
 
-  const clamp = (m) => Math.min(maxMinutes, Math.max(MIN_MINUTES, m));
+  const snap = (m) => Math.round(m / 15) * 15;
 
-  const setFromX = (clientX) => {
+  /** Where on the track a minute offset sits, and the reverse. */
+  const minutesAtX = (clientX) => {
     const el = trackRef.current;
-    if (!el) return;
+    if (!el) return null;
     const r = el.getBoundingClientRect();
-    if (!r.width) return;
-    const frac = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
-    onChange(clamp(Math.round((frac * maxMinutes) / 15) * 15));
+    if (!r.width) return null;
+    const f = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
+    return snap(f * maxMinutes);
+  };
+
+  /* Both edges move. The appointment does not have to begin the instant the
+     window opens — a 2 h window can hold a 12:00 job as easily as an 11:15
+     one, and pinning the start to the window's edge was quietly deciding
+     that for the pro. */
+  const moveEdge = (edge, at) => {
+    if (at == null) return;
+    if (edge === 'start') {
+      const latest = startMin + minutes - MIN_MINUTES;   // never shorter than the floor
+      const next = Math.min(latest, Math.max(0, at));
+      onChange({ startMin: next, minutes: startMin + minutes - next });
+    } else {
+      const earliest = startMin + MIN_MINUTES;
+      const next = Math.min(maxMinutes, Math.max(earliest, at));
+      onChange({ startMin, minutes: next - startMin });
+    }
   };
 
   /* Window listeners rather than setPointerCapture: capture would route the
@@ -753,9 +792,24 @@ function SlotBand({ run, minutes, maxMinutes, windowMinutes, moved, blocked, onC
      before the drag is over. */
   const onPointerDown = (e) => {
     e.preventDefault();
-    setFromX(e.clientX);
-    const move = (ev) => setFromX(ev.clientX);
+    const el = trackRef.current;
+    const r = el.getBoundingClientRect();
+    const px = (m) => (m / maxMinutes) * r.width;
+    const x = e.clientX - r.left;
+    /* Positional, not nearest-wins. A 30 min block on an eight-hour band is
+       twenty pixels across, so "whichever edge is closer" put the two grips a
+       coin-flip apart in exactly the case where precision matters most. Where
+       the finger lands relative to the block is unambiguous at every size:
+       before it moves the start, after it moves the end, inside it takes the
+       half you touched. */
+    const a = px(startMin);
+    const b = px(startMin + minutes);
+    grabbed.current = x < a ? 'start' : x > b ? 'end' : (x - a < b - x ? 'start' : 'end');
+    moveEdge(grabbed.current, minutesAtX(e.clientX));
+
+    const move = (ev) => moveEdge(grabbed.current, minutesAtX(ev.clientX));
     const up = () => {
+      grabbed.current = null;
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
       window.removeEventListener('pointercancel', up);
@@ -765,19 +819,31 @@ function SlotBand({ run, minutes, maxMinutes, windowMinutes, moved, blocked, onC
     window.addEventListener('pointercancel', up);
   };
 
+  /* Arrows change the length; with shift they move the whole appointment,
+     which is the keyboard equivalent of dragging the left edge. */
   const onKeyDown = (e) => {
     const d = e.key === 'ArrowRight' || e.key === 'ArrowUp' ? 15
       : e.key === 'ArrowLeft' || e.key === 'ArrowDown' ? -15 : 0;
     if (!d) return;
     e.preventDefault();
-    onChange(clamp(minutes + d));
+    if (e.shiftKey) {
+      const next = Math.min(maxMinutes - minutes, Math.max(0, startMin + d));
+      onChange({ startMin: next, minutes });
+    } else {
+      const next = Math.min(maxMinutes - startMin, Math.max(MIN_MINUTES, minutes + d));
+      onChange({ startMin, minutes: next });
+    }
   };
 
   const t0 = toMs(run.start);
-  const end = new Date(t0 + minutes * MIN);
+  const start = new Date(t0 + startMin * MIN);
+  const end = new Date(t0 + (startMin + minutes) * MIN);
   const pc = (m) => `${(m / maxMinutes) * 100}%`;
-  const over = Math.max(0, minutes - windowMinutes);
-  const rest = Math.max(0, windowMinutes - minutes);
+  /* Over is measured against the window's end, not the duration: an
+     appointment that starts later runs past it sooner. */
+  const endMin = startMin + minutes;
+  const over = Math.max(0, endMin - windowMinutes);
+  const rest = Math.max(0, windowMinutes - endMin);
   const bandEnd = new Date(t0 + maxMinutes * MIN);
 
   /* Axis labels sit on the hour ticks, at the fraction of the track where
@@ -813,7 +879,7 @@ function SlotBand({ run, minutes, maxMinutes, windowMinutes, moved, blocked, onC
          data-testid="day-new-band">
       <p className="font-extrabold text-[12.5px] text-ink mb-1.5 flex items-baseline gap-1.5
                     flex-wrap" data-testid="day-new-readout">
-        <span>{hhmm(run.start)} – {hhmm(end)} · {durationLabel(minutes * MIN)}</span>
+        <span>{hhmm(start)} – {hhmm(end)} · {durationLabel(minutes * MIN)}</span>
         {over > 0 && (
           <span className="font-extrabold text-[11px] text-red-warn">
             · {durationLabel(over * MIN)} {t('day_over_window')}
@@ -829,7 +895,7 @@ function SlotBand({ run, minutes, maxMinutes, windowMinutes, moved, blocked, onC
         aria-valuemin={MIN_MINUTES}
         aria-valuemax={maxMinutes}
         aria-valuenow={minutes}
-        aria-valuetext={`${hhmm(run.start)} – ${hhmm(end)}`}
+        aria-valuetext={`${hhmm(start)} – ${hhmm(end)}`}
         onPointerDown={onPointerDown}
         onKeyDown={onKeyDown}
         style={{ touchAction: 'none' }}
@@ -849,29 +915,33 @@ function SlotBand({ run, minutes, maxMinutes, windowMinutes, moved, blocked, onC
         )}
         {ticks}
         <div
-          className="absolute left-0 top-0 bottom-0 rounded-l-[9px] bg-teal flex items-center
-                     pl-2.5 text-paper font-extrabold text-[11.5px]"
-          style={{ width: pc(Math.min(minutes, windowMinutes)),
+          className="absolute top-0 bottom-0 bg-teal flex items-center pl-2.5
+                     text-paper font-extrabold text-[11.5px]"
+          style={{ left: pc(startMin),
+                   width: pc(Math.max(0, Math.min(endMin, windowMinutes) - startMin)),
                    borderRadius: over > 0 ? '9px 0 0 9px' : 9 }}
           data-testid="day-new-fill"
         >
-          {Math.min(minutes, windowMinutes) / maxMinutes >= 0.22
-            && durationLabel(Math.min(minutes, windowMinutes) * MIN)}
+          {(Math.min(endMin, windowMinutes) - startMin) / maxMinutes >= 0.22
+            && durationLabel(minutes * MIN)}
+          {/* A grip on each edge, because each edge moves. */}
+          <span className="absolute left-[5px] top-1/2 -translate-y-1/2 w-[5px] h-[22px]
+                           rounded-[3px] bg-paper/55" data-testid="day-new-grip-start" />
           {over === 0 && (
             <span className="absolute right-[5px] top-1/2 -translate-y-1/2 w-[5px] h-[22px]
-                             rounded-[3px] bg-paper/55" />
+                             rounded-[3px] bg-paper/55" data-testid="day-new-grip-end" />
           )}
         </div>
         {over > 0 && (
           <div
             className="absolute top-0 bottom-0 rounded-r-[9px] bg-red-warn flex items-center
                        justify-center text-paper font-extrabold text-[10px]"
-            style={{ left: pc(windowMinutes), width: pc(over) }}
+            style={{ left: pc(Math.max(startMin, windowMinutes)), width: pc(over) }}
             data-testid="day-new-over"
           >
             {over / maxMinutes >= 0.07 && `+${durationLabel(over * MIN)}`}
             <span className="absolute right-[5px] top-1/2 -translate-y-1/2 w-[5px] h-[22px]
-                             rounded-[3px] bg-paper/55" />
+                             rounded-[3px] bg-paper/55" data-testid="day-new-grip-end" />
           </div>
         )}
       </div>
@@ -983,6 +1053,9 @@ function NewAppointmentSheet({ run, appts, dayEnd, onCreate, onClose, t }) {
      reachable, but never the default: the common booking should not start
      out already pushing somebody. */
   const [minutes, setMinutes] = useState(Math.min(60, windowMinutes));
+  /* Minutes after the window opens that the appointment begins. Zero is the
+     common case and stays the default; the band's left grip changes it. */
+  const [startMin, setStartMin] = useState(0);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -996,16 +1069,17 @@ function NewAppointmentSheet({ run, appts, dayEnd, onCreate, onClose, t }) {
   const maxMinutes = Math.max(
     windowMinutes,
     Math.min(MAX_MINUTES, Math.round((toMs(dayEnd) - toMs(run.start)) / MIN)));
-  const steps = durationSteps(maxMinutes);
+  const steps = durationSteps(maxMinutes - startMin);
 
-  const end = new Date(toMs(run.start) + minutes * MIN);
+  const start = new Date(toMs(run.start) + startMin * MIN);
+  const end = new Date(toMs(run.start) + (startMin + minutes) * MIN);
 
-  /* What this booking would cost, recomputed on every change of length: the
-     appointments it pushes and any it pushes past the end of the day. */
+  /* What this booking would cost, recomputed on every change of either edge:
+     the appointments it pushes and any it pushes past the end of the day. */
   const { moved, blocked } = useMemo(
-    () => previewInsert(appts, { start: run.start, end }, { dayEnd }),
+    () => previewInsert(appts, { start, end }, { dayEnd }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [appts, run.start, minutes, dayEnd]);
+    [appts, run.start, startMin, minutes, dayEnd]);
 
   /* The lanes and the warning need the job's name, which the settle does not
      carry — it works in ids and times. */
@@ -1020,7 +1094,7 @@ function NewAppointmentSheet({ run, appts, dayEnd, onCreate, onClose, t }) {
     onCreate({
       title: title.trim(),
       customerId,
-      start: run.start,
+      start,
       end,
       moved: movedNamed,
     }).finally?.(() => setSaving(false));
@@ -1042,9 +1116,11 @@ function NewAppointmentSheet({ run, appts, dayEnd, onCreate, onClose, t }) {
         {/* The band's own axis names the free window, so the old sub-line
             saying the same thing in words is gone rather than doubled. */}
         <div className="mt-3">
-          <SlotBand run={run} minutes={minutes} maxMinutes={maxMinutes}
+          <SlotBand run={run} startMin={startMin} minutes={minutes} maxMinutes={maxMinutes}
                     windowMinutes={windowMinutes} moved={movedNamed} blocked={blocked}
-                    onChange={setMinutes} t={t} />
+                    onChange={({ startMin: sm, minutes: m }) => {
+                      setStartMin(sm); setMinutes(m);
+                    }} t={t} />
         </div>
 
         <label className="block font-bold text-[11px] text-ink-soft mb-1.5">
@@ -1084,7 +1160,10 @@ function NewAppointmentSheet({ run, appts, dayEnd, onCreate, onClose, t }) {
             <button
               key={m}
               type="button"
-              onClick={() => setMinutes(m)}
+              onClick={() => {
+                setMinutes(m);
+                if (startMin + m > maxMinutes) setStartMin(maxMinutes - m);
+              }}
               className={`min-h-[44px] px-3.5 rounded-[11px] font-bold text-[12px] whitespace-nowrap
                 ${minutes === m ? 'bg-teal text-paper'
                                 : 'bg-cream-soft border border-sm-border text-ink-soft'}`}
