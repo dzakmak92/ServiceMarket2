@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import api, { formatError } from '../../../api/client';
+import api, { formatError, apiBase } from '../../../api/client';
 import BusinessHeatMap, { MAP_COLORS } from '../../../components/BusinessHeatMap';
 import {
   Loader2, Flame, Upload, BadgeCheck, Hand, Building2, Check, X,
@@ -158,7 +158,7 @@ export default function AdminHeatmap({ flash }) {
       form.append('file', file);
       // Native fetch for the multipart upload — lets the browser set the
       // multipart boundary itself and avoids axios timeouts on large files.
-      const base = process.env.REACT_APP_BACKEND_URL || '';
+      const base = apiBase || '';
       const res = await fetch(`${base}/api/directory/admin/import`, {
         method: 'POST',
         body: form,

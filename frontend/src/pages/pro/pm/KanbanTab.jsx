@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import api from '../../../api/client';
+import useEscapeKey from '../../../hooks/useEscapeKey';
 import { Plus, Trash2, Loader2, FileTextIcon, Sparkles, BookCopy, ChevronLeft, ChevronRight, Save, Boxes, Receipt } from 'lucide-react';
 
 const COLUMNS = [
@@ -200,6 +201,8 @@ function TaskCard({ task, colIdx, moving, onMove, onDelete, t }) {
 // Templates modal — apply tasks + materials + milestone payments
 // ────────────────────────────────────────
 function TemplatesModal({ projectId, onClose, onApplied, t }) {
+  useEscapeKey(true, onClose);
+
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(null);
@@ -292,6 +295,8 @@ function TemplatesModal({ projectId, onClose, onApplied, t }) {
 // Save current project as a reusable template
 // ────────────────────────────────────────
 function SaveTemplateModal({ projectId, onClose, t }) {
+  useEscapeKey(true, onClose);
+
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [saving, setSaving] = useState(false);

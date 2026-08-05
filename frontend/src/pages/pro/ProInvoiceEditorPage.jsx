@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import api from '../../api/client';
+import api, { formatError } from '../../api/client';
+import NumberField from '../../components/NumberField';
 import { useLang } from '../../contexts/LangContext';
 import {
   Receipt, Plus, Trash2, Loader2, AlertCircle, ChevronLeft, CheckCircle2,
@@ -151,11 +152,29 @@ export default function ProInvoiceEditorPage() {
     setBusy('draft'); setError('');
     try {
       const { data } = await api.post(`/api/jobs/${jobId}/draft-invoice`);
-      // Only replace the positions when the pro actually changed them —
-      // otherwise the server's inherited lines, which carry tax_treatment and
-      // source_quote_line_id, would be thrown away and rebuilt without them.
-      const edited = lines.some((l) => !l.inherited)
-        || lines.length !== (data.lines || []).length;
+      /* Only replace the positions when the pro actually changed them —
+         otherwise the server's inherited lines, which carry tax_treatment and
+         source_quote_line_id, would be thrown away and rebuilt without them.
+         Now that the payload carries those fields, replacing is safe; the
+         check is kept because not issuing a PUT at all is still better.
+
+         This used to test only `!l.inherited` and the line count. An
+         inherited line keeps `inherited: true` however much you edit it, and
+         editing does not change the count — so changing a unit price from
+         1000 to 500 left `edited` false, the PUT was skipped, and the invoice
+         billed the original figure. The screen said € 500,00 and the customer
+         was charged € 1.000,00, silently. Compare the values instead. */
+      const before = new Map((data.lines || []).map((l) => [String(l.position), l]));
+      const same = (a, b) => b
+        && String(a.description || '').trim() === String(b.description || '').trim()
+        && Number(a.qty) === Number(b.qty)
+        && Number(a.unit_price) === Number(b.unit_price)
+        && (a.unit || 'pcs') === (b.unit || 'pcs')
+        && a.kind === b.kind
+        && Number(a.discount_pct || 0) === Number(b.discount_pct || 0);
+      const mine = payload();
+      const edited = mine.length !== (data.lines || []).length
+        || mine.some((l) => !same(l, before.get(String(l.position))));
       let inv = data;
       if (edited) {
         const { data: replaced } =
@@ -164,7 +183,7 @@ export default function ProInvoiceEditorPage() {
       }
       setInvoice(inv);
     } catch (e) {
-      setError(e?.response?.data?.detail || t('proinv_draft_failed'));
+      setError(formatError(e) || t('proinv_draft_failed'));
     } finally { setBusy(''); }
   };
 
@@ -264,9 +283,9 @@ export default function ProInvoiceEditorPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <label className="text-[11px] text-ink-muted">
                       {t('qty')}
-                      <input type="number" min="0" step="0.01" className="input w-full mt-0.5"
-                             value={l.qty}
-                             onChange={(e) => setLine(i, 'qty', e.target.value)} />
+                      <NumberField min={0} className="input w-full mt-0.5"
+                                   value={l.qty}
+                                   onChange={(v) => setLine(i, 'qty', v ?? '')} />
                     </label>
                     <label className="text-[11px] text-ink-muted">
                       {t('unit')}
@@ -275,9 +294,19 @@ export default function ProInvoiceEditorPage() {
                     </label>
                     <label className="text-[11px] text-ink-muted">
                       {t('unit_price')}
-                      <input type="number" min="0" step="0.01" className="input w-full mt-0.5"
-                             value={l.unit_price}
-                             onChange={(e) => setLine(i, 'unit_price', e.target.value)} />
+                      <NumberField min={0} className="input w-full mt-0.5"
+                                   value={l.unit_price}
+                                   onChange={(v) => setLine(i, 'unit_price', v ?? '')} />
+                    </label>
+                    {/* Inherited lines can carry a discount from the accepted
+                        quote. Without a field it was invisible and the totals
+                        looked like an arithmetic mistake. */}
+                    <label className="text-[11px] text-ink-muted">
+                      {t('line_discount_short')}
+                      <NumberField min={0} max={100} className="input w-full mt-0.5"
+                                   value={l.discount_pct}
+                                   data-testid={`proinv-line-discount-${i}`}
+                                   onChange={(v) => setLine(i, 'discount_pct', v ?? '')} />
                     </label>
                     {/* `kind` drives the §35a labour/material split on the
                         printed invoice. It defaulted to labour everywhere,

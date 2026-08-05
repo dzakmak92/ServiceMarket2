@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import api from '../api/client';
+import api, { apiBase } from '../api/client';
 import { useLang } from '../contexts/LangContext';
 import {
   Loader2, AlertCircle, FileSpreadsheet, FileText, ShieldCheck, Briefcase, TrendingUp, ArrowDownToLine,
@@ -42,7 +42,6 @@ export default function AccountantSharePage() {
     </div>
   );
 
-  const apiBase = process.env.REACT_APP_BACKEND_URL;
   return (
     <div className="min-h-screen bg-cream pb-24 md:pb-12" data-testid="accountant-page">
       <header className="bg-paper border-b border-sm-border py-3">
@@ -59,11 +58,18 @@ export default function AccountantSharePage() {
         <div className="flex items-end justify-between flex-wrap gap-3">
           <div>
             <p className="text-xs uppercase font-bold text-ink-muted tracking-wider">{t('accountant_subject')}</p>
-            <h1 className="text-2xl font-headings font-bold text-ink">{data.pro.business_name || data.pro.name}</h1>
+            {/* `business`, not `pro` — and `vat_id`, not `uid`. The endpoint
+                has never returned a `pro` key, so this page threw
+                "Cannot read properties of undefined (reading 'business_name')"
+                on load: the Steuerberater link a pro generates and sends was
+                a crash page for the recipient, every time. */}
+            <h1 className="text-2xl font-headings font-bold text-ink">
+              {data.business?.business_name || t('accountant_title')}
+            </h1>
             <p className="text-sm text-ink-muted">
-              {data.pro.uid && <>UID: {data.pro.uid} · </>}
-              {data.pro.city || ''}
-              {data.pro.is_kleinunternehmer && <span className="ml-2 inline-block bg-amber/15 text-amber-deep text-[10px] uppercase px-1.5 py-0.5 rounded-full">Kleinunternehmer</span>}
+              {data.business?.vat_id && <>UID: {data.business.vat_id} · </>}
+              {data.business?.business_city || ''}
+              {data.business?.is_kleinunternehmer && <span className="ml-2 inline-block bg-amber/15 text-amber-text text-[10px] uppercase px-1.5 py-0.5 rounded-full">Kleinunternehmer</span>}
             </p>
           </div>
           <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="sm-select text-sm" data-testid="accountant-year">
@@ -75,16 +81,17 @@ export default function AccountantSharePage() {
         <div className="grid grid-cols-3 gap-3">
           <div className="card-lg p-4">
             <p className="text-[10px] uppercase font-bold text-ink-muted tracking-wider">{t('accountant_revenue')}</p>
-            <p className="text-2xl font-headings font-bold text-ink">{fmtEur(data.revenue.brutto)}</p>
-            <p className="text-[11px] text-ink-muted">{t('accountant_paid')}: {fmtEur(data.revenue.paid_brutto)}</p>
+            <p className="text-2xl font-headings font-bold text-ink">{fmtEur(data.eur?.income_gross)}</p>
+            <p className="text-[11px] text-ink-muted">
+              {t('accountant_net')}: {fmtEur(data.eur?.income_net)}</p>
           </div>
           <div className="card-lg p-4">
             <p className="text-[10px] uppercase font-bold text-ink-muted tracking-wider">{t('accountant_expenses')}</p>
-            <p className="text-2xl font-headings font-bold text-ink">{fmtEur(data.expenses.brutto)}</p>
+            <p className="text-2xl font-headings font-bold text-ink">{fmtEur(data.eur?.expenses_net)}</p>
           </div>
-          <div className={`card-lg p-4 ${data.profit >= 0 ? 'bg-green-pos/5 border-green-pos/30' : 'bg-red-warn/5 border-red-warn/30'}`}>
+          <div className={`card-lg p-4 ${Number(data.eur?.profit || 0) >= 0 ? 'bg-green-pos/5 border-green-pos/30' : 'bg-red-warn/5 border-red-warn/30'}`}>
             <p className="text-[10px] uppercase font-bold text-ink-muted tracking-wider flex items-center gap-1"><TrendingUp size={10} /> {t('accountant_profit')}</p>
-            <p className={`text-2xl font-headings font-bold ${data.profit >= 0 ? 'text-green-pos' : 'text-red-warn'}`}>{fmtEur(data.profit)}</p>
+            <p className={`text-2xl font-headings font-bold ${Number(data.eur?.profit || 0) >= 0 ? 'text-green-pos' : 'text-red-warn'}`}>{fmtEur(data.eur?.profit)}</p>
           </div>
         </div>
 
@@ -102,18 +109,17 @@ export default function AccountantSharePage() {
               </tr>
             </thead>
             <tbody>
-              {Object.entries(data.quarters).map(([q, r]) => {
-                const totalCount = Object.values(r.buckets).reduce((s, b) => s + (b.count || 0), 0);
-                return (
-                  <tr key={q} className="border-t border-sm-border">
-                    <td className="p-2 font-mono font-bold text-ink" data-label={t('accountant_quarter')}>{q}</td>
-                    <td className="p-2 text-right" data-label={t('accountant_net')}>{fmtEur(r.net)}</td>
-                    <td className="p-2 text-right" data-label={t('accountant_vat')}>{fmtEur(r.vat)}</td>
-                    <td className="p-2 text-right font-semibold" data-label={t('accountant_brutto')}>{fmtEur(r.brutto)}</td>
-                    <td className="p-2 text-right text-ink-muted" data-label={t('accountant_invoices')}>{totalCount}</td>
-                  </tr>
-                );
-              })}
+              {Object.entries(data.ust_va || {}).map(([q, r]) => (
+                <tr key={q} className="border-t border-sm-border">
+                  <td className="p-2 font-mono font-bold text-ink" data-label={t('accountant_quarter')}>{q}</td>
+                  <td className="p-2 text-right" data-label={t('accountant_net')}>{fmtEur(r.output_net)}</td>
+                  <td className="p-2 text-right" data-label={t('accountant_vat')}>{fmtEur(r.output_vat)}</td>
+                  <td className="p-2 text-right font-semibold" data-label={t('accountant_brutto')}>
+                    {fmtEur(Number(r.output_net || 0) + Number(r.output_vat || 0))}</td>
+                  <td className="p-2 text-right text-ink-muted" data-label={t('accountant_invoices')}>
+                    {(r.by_rate || []).length}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -122,9 +128,14 @@ export default function AccountantSharePage() {
         <div className="card-lg" data-testid="accountant-downloads">
           <p className="text-xs uppercase font-bold text-ink-muted tracking-wider mb-3 flex items-center gap-1"><ArrowDownToLine size={12} /> {t('accountant_downloads')}</p>
           <div className="flex items-center gap-2 flex-wrap">
-            <a href={`${apiBase}${data.downloads.revenue_csv}`} className="btn-ghost text-xs" data-testid="accountant-dl-revenue"><FileSpreadsheet size={12} /> {t('acc_revenue_csv')}</a>
-            <a href={`${apiBase}${data.downloads.expenses_csv}`} className="btn-ghost text-xs" data-testid="accountant-dl-expenses"><FileSpreadsheet size={12} /> {t('acc_expenses_csv')}</a>
-            <a href={`${apiBase}${data.downloads.year_pdf}`} className="btn-ghost text-xs" data-testid="accountant-dl-pdf"><FileText size={12} /> {t('acc_yearend_pdf')}</a>
+            {/* `downloads` is a list of {label, href}, not an object of named
+                keys — all three hrefs were "undefined". */}
+            {(data.downloads || []).map((d) => (
+              <a key={d.href} href={`${apiBase}${d.href}`} className="btn-ghost text-xs"
+                 data-testid={`accountant-dl-${d.href.split('/').pop().split('.')[0]}`}>
+                <FileSpreadsheet size={12} /> {d.label}
+              </a>
+            ))}
           </div>
         </div>
 

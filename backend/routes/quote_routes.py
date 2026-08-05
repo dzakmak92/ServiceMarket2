@@ -25,9 +25,14 @@ class QuoteLineIn(BaseModel):
     kind: str = Field(default="labor", pattern="^(labor|material|travel|other)$")
     description: str = Field(min_length=1, max_length=300)
     detail: Optional[str] = None
-    qty: float = 1
+    # Bounded. Both were unconstrained floats, so a quantity of -5 produced a
+    # quote totalling -468.00 which the list rendered and the Send button was
+    # happy to mail to a customer. The upper bound is the numeric(12,2)
+    # column: 999999999 x 100 overflowed it and surfaced as a bare 500 with
+    # an English message inside a German UI.
+    qty: float = Field(default=1, ge=0, le=1_000_000)
     unit: str = "pcs"
-    unit_price: float = 0
+    unit_price: float = Field(default=0, ge=0, le=10_000_000)
     # Verschnitt. Pattern-aware for tiling — diagonal and herringbone waste
     # far more than straight, and a flat guess loses money on tile one.
     waste_factor: float = Field(default=0, ge=0, le=1)

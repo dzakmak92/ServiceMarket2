@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../api/client';
+import NumberField from '../../components/NumberField';
 import { useLang } from '../../contexts/LangContext';
 import {
   Loader2, Plus, X, Send, Check, Ban, FileText, AlertCircle, Trash2, Copy,
@@ -288,17 +289,24 @@ export default function QuotesPage() {
                     )}
                   </div>
                   <div className="grid grid-cols-4 gap-2">
-                    <input className="input text-sm" type="number" step="any" placeholder={t('qty') || 'Menge'}
-                           value={l.qty} onChange={(e) => setLine(i, 'qty', e.target.value)} />
+                    {/* NumberField, not type=number: Chromium refuses the comma
+                        and hands back the digits either side, so "2,5" arrived
+                        as 25 — ten times the quantity, saved without a word. */}
+                    <NumberField className="input text-sm" placeholder={t('qty') || 'Menge'}
+                                 min={0}
+                                 value={l.qty} onChange={(v) => setLine(i, 'qty', v ?? '')} />
                     <input className="input text-sm" placeholder={t('unit') || 'Einheit'}
                            value={l.unit} onChange={(e) => setLine(i, 'unit', e.target.value)} />
-                    <input className="input text-sm" type="number" step="any" placeholder={t('unit_price') || '€/Einheit'}
-                           value={l.unit_price} onChange={(e) => setLine(i, 'unit_price', e.target.value)} />
+                    <NumberField className="input text-sm" placeholder={t('unit_price') || '€/Einheit'}
+                                 min={0}
+                                 value={l.unit_price}
+                                 onChange={(v) => setLine(i, 'unit_price', v ?? '')} />
                     {/* Verschnitt: 0.10 = 10% extra material ordered. */}
-                    <input className="input text-sm" type="number" step="0.01" min="0" max="1"
-                           title={t('waste_factor') || 'Verschnitt (0.10 = 10%)'}
-                           placeholder={t('waste_short') || 'Verschnitt'}
-                           value={l.waste_factor} onChange={(e) => setLine(i, 'waste_factor', e.target.value)} />
+                    <NumberField className="input text-sm" min={0} max={1}
+                                 title={t('waste_factor') || 'Verschnitt (0.10 = 10%)'}
+                                 placeholder={t('waste_short') || 'Verschnitt'}
+                                 value={l.waste_factor}
+                                 onChange={(v) => setLine(i, 'waste_factor', v ?? '')} />
                   </div>
                 </div>
               ))}

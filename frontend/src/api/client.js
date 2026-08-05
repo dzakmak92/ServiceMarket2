@@ -8,6 +8,14 @@ const API_BASE = RAW_BASE !== undefined && RAW_BASE !== null
   ? RAW_BASE
   : (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8001');
 
+/* Exported, because several pages build download and preview URLs by hand
+   and were reading `process.env.REACT_APP_BACKEND_URL` directly. There is no
+   .env in this repo, so that is `undefined`, and every one of those hrefs
+   came out as the literal string "undefined/api/..." — about ten dead
+   controls, including the invoice preview, which rendered a blank pane. The
+   resolution above is the one that has to be used. */
+export const apiBase = API_BASE;
+
 const api = axios.create({
   baseURL: API_BASE,
   withCredentials: true,

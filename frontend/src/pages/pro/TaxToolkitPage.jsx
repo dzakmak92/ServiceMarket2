@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import api, { formatError } from '../../api/client';
+import api, { formatError, apiBase } from '../../api/client';
+import NumberField from '../../components/NumberField';
 import { useLang } from '../../contexts/LangContext';
 import {
   TrendingUp, Banknote, Hourglass, Calculator, FileSpreadsheet, FileDown,
@@ -131,7 +132,7 @@ function DashboardTab({ year, t }) {
       </div>
       <div className="flex justify-end">
         <a
-          href={`${process.env.REACT_APP_BACKEND_URL}/api/tax/exports/datev-full.csv?year=${year}`}
+          href={`${apiBase}/api/tax/exports/datev-full.csv?year=${year}`}
           target="_blank" rel="noopener noreferrer"
           className="btn-ghost inline-flex items-center gap-1 text-xs"
           data-testid="tax-dashboard-datev-btn"
@@ -227,7 +228,7 @@ function UstvaTab({ year, t }) {
             </div>
           </div>
           <a
-            href={`${process.env.REACT_APP_BACKEND_URL}/api/tax/exports/revenue.csv?year=${year}&quarter=${quarter}`}
+            href={`${apiBase}/api/tax/exports/revenue.csv?year=${year}&quarter=${quarter}`}
             target="_blank" rel="noopener noreferrer"
             className="btn-ghost text-xs inline-flex"
             data-testid="tax-ustva-export-csv"
@@ -290,13 +291,13 @@ function EurTab({ year, t }) {
       </div>
       <div className="flex gap-2 flex-wrap">
         <a
-          href={`${process.env.REACT_APP_BACKEND_URL}/api/tax/exports/revenue.csv?year=${year}`}
+          href={`${apiBase}/api/tax/exports/revenue.csv?year=${year}`}
           target="_blank" rel="noopener noreferrer"
           className="btn-ghost text-xs inline-flex"
           data-testid="tax-eur-export-revenue"
         ><FileDown size={12} /> {t('tax_export_revenue_csv')}</a>
         <a
-          href={`${process.env.REACT_APP_BACKEND_URL}/api/tax/exports/expenses.csv?year=${year}`}
+          href={`${apiBase}/api/tax/exports/expenses.csv?year=${year}`}
           target="_blank" rel="noopener noreferrer"
           className="btn-ghost text-xs inline-flex"
           data-testid="tax-eur-export-expenses"
@@ -642,10 +643,10 @@ function ReceiptsTab({ year, t }) {
           <div className="grid grid-cols-3 gap-3">
             <label className="block">
               <span className="text-xs text-ink-muted">{t('tax_expense_gross')} *</span>
-              <input type="number" step="0.01" min="0" required className="input w-full"
-                     value={form.gross_amount}
-                     onChange={(e) => set('gross_amount', e.target.value)}
-                     data-testid="tax-expense-gross" />
+              <NumberField min={0} required className="input w-full"
+                           value={form.gross_amount}
+                           onChange={(v) => set('gross_amount', v ?? '')}
+                           data-testid="tax-expense-gross" />
             </label>
             <label className="block">
               <span className="text-xs text-ink-muted">{t('vat')} %</span>
@@ -771,7 +772,7 @@ function ReportsTab({ year, t }) {
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const [datevQuarter, setDatevQuarter] = useState('');
-  const BASE = process.env.REACT_APP_BACKEND_URL;
+  const BASE = apiBase;
 
   useEffect(() => {
     api.get('/api/tax/accountant-share').then((r) => setAccountantToken(r.data.accountant_token)).catch(() => {});

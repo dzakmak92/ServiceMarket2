@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../../../api/client';
+import api, { apiBase } from '../../../api/client';
 import { useLang } from '../../../contexts/LangContext';
 import {
   Eye, CheckCircle2, XCircle, Loader2, ExternalLink, FileText,
@@ -24,7 +24,7 @@ const DocBlock = ({ label, status, url, onApprove, onReject, busy, t, allowMissi
     </div>
     {url ? (
       <a
-        href={`${process.env.REACT_APP_BACKEND_URL}${url}`}
+        href={`${apiBase}${url}`}
         target="_blank"
         rel="noopener noreferrer"
         className="inline-flex items-center gap-1.5 text-xs text-teal underline hover:text-teal-deep"

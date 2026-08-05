@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import useEscapeKey from '../hooks/useEscapeKey';
 import { useAuth } from '../contexts/AuthContext';
 import { useLang } from '../contexts/LangContext';
 import api from '../api/client';
@@ -50,6 +51,8 @@ export default function MobileNav() {
 
   // Close the More sheet whenever the route changes.
   useEffect(() => { setMoreOpen(false); }, [location.pathname]);
+  /* Escape closes the sheet — it only closed on a backdrop tap. */
+  useEscapeKey(moreOpen, () => setMoreOpen(false));
 
   if (!user) return null;
   const isActive = (path) => location.pathname === path;
@@ -136,7 +139,7 @@ export default function MobileNav() {
           >
             <div className="flex items-center justify-between mb-3">
               <p className="font-headings font-bold text-ink">{t('nav_more')}</p>
-              <button onClick={() => setMoreOpen(false)} className="p-1 text-ink-muted" aria-label="close">
+              <button onClick={() => setMoreOpen(false)} className="p-1 text-ink-muted" aria-label={t('ui_close')}>
                 <X size={18} />
               </button>
             </div>

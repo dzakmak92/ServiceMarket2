@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useLang } from '../../contexts/LangContext';
 import { useAuth } from '../../contexts/AuthContext';
-import api from '../../api/client';
+import api, { apiBase } from '../../api/client';
 import ServiceRadiusPicker from '../../components/ServiceRadiusPicker';
 import PrivacySettings from '../../components/PrivacySettings';
 import ScrollSnapTabStrip, { SwipeableTabPanel } from '../../components/ScrollSnapTabStrip';
@@ -825,7 +825,7 @@ function PortfolioTab({ proProfile, onChange, t }) {
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         {photos.map((p, i) => {
           const isFull = (p.url || '').startsWith('http') || (p.url || '').startsWith('data:');
-          const src = isFull ? p.url : `${process.env.REACT_APP_BACKEND_URL}${p.url}`;
+          const src = isFull ? p.url : `${apiBase}${p.url}`;
           return (
             <div key={p.file_id || i} className="relative group rounded-[14px] overflow-hidden border border-sm-border aspect-square bg-cream-soft">
               <img
@@ -1015,7 +1015,7 @@ function WhiteLabelSection({ t, proProfile, reload }) {
               <button onClick={() => setPreviewKey(null)} className="btn-ghost text-xs">✕</button>
             </div>
             <iframe
-              src={`${process.env.REACT_APP_BACKEND_URL}/api/invoices/templates/${previewKey}/preview`}
+              src={`${apiBase}/api/invoices/templates/${previewKey}/preview`}
               title="preview"
               className="flex-1 w-full"
               data-testid="template-preview-iframe"

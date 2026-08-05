@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLang } from '../contexts/LangContext';
-import api from '../api/client';
+import api, { apiBase } from '../api/client';
 import StoredImage from './StoredImage';
 import { signedUrl } from '../api/files';
 import { Plus, X, FileText, Image as ImageIcon, Loader2, AlertCircle, Paperclip } from 'lucide-react';
@@ -175,7 +175,7 @@ export default function AttachmentUploader({ value = [], onChange, mode = 'form'
  */
 export function AttachmentThumbStrip({ value = [], onChange }) {
   if (!value || value.length === 0) return null;
-  const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
+  const backendUrl = apiBase || '';
   const removeAt = (idx) => {
     const next = [...value];
     next.splice(idx, 1);

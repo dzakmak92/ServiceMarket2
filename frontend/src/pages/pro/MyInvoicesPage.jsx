@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import api, { formatError } from '../../api/client';
+import api, { formatError, apiBase } from '../../api/client';
+import useEscapeKey from '../../hooks/useEscapeKey';
 import { toast } from 'sonner';
 import { useLang } from '../../contexts/LangContext';
 import ScrollSnapTabStrip, { SwipeableTabPanel } from '../../components/ScrollSnapTabStrip';
@@ -122,7 +123,7 @@ export default function MyInvoicesPage() {
 
   // ── Actions ──────────────────────────────────────────────
   const pdfUrl = (inv) =>
-    `${process.env.REACT_APP_BACKEND_URL}/api/invoices/${inv.id}/pdf`;
+    `${apiBase}/api/invoices/${inv.id}/pdf`;
 
   const openPreview = (inv) => {
     // On mobile browsers, iframes can't render PDFs — open in a new tab instead
@@ -402,6 +403,9 @@ export default function MyInvoicesPage() {
 
 
 function ExternalInvoiceModal({ onClose, onCreated, t }) {
+  /* Escape closes it — nothing on this page did before. */
+  useEscapeKey(true, onClose);
+
   const [customer, setCustomer] = useState({ name: '', address: '', postal_code: '', city: '', country: 'AT', email: '' });
   const [items, setItems] = useState([{ description: '', qty: 1, unit_net: 0 }]);
   const [dueDays, setDueDays] = useState(14);
@@ -721,6 +725,9 @@ function InvoiceCard({ inv, busy, t, onPreview, onDownload, onShare, onMarkPaid,
 
 
 function PreviewModal({ preview, onClose, onDownload, onShare, t }) {
+  /* Escape closes it — nothing on this page did before. */
+  useEscapeKey(true, onClose);
+
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-2 md:p-4" onClick={onClose} data-testid="myinv-preview-modal">
       <div className="bg-paper rounded-[14px] shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
@@ -745,6 +752,9 @@ function PreviewModal({ preview, onClose, onDownload, onShare, t }) {
 
 
 function ShareModal({ invoice, onClose, onDownload, t }) {
+  /* Escape closes it — nothing on this page did before. */
+  useEscapeKey(true, onClose);
+
   const [sending, setSending] = useState(false);
 
   const shareWhatsapp = async () => {
@@ -808,6 +818,9 @@ function ShareModal({ invoice, onClose, onDownload, t }) {
 // Payments modal — list/add/delete payments per invoice
 // ──────────────────────────────────────────────
 function PaymentsModal({ invoice, onClose, reload, t }) {
+  /* Escape closes it — nothing on this page did before. */
+  useEscapeKey(true, onClose);
+
   const [busy, setBusy] = useState(false);
   const [payments, setPayments] = useState(invoice.payments || []);
   const [paidTotal, setPaidTotal] = useState(Number(invoice.paid_total || 0));
@@ -1005,6 +1018,9 @@ function PaymentsModal({ invoice, onClose, reload, t }) {
 // Storno confirmation modal — Austrian compliance
 // ──────────────────────────────────────────────
 function StornoModal({ invoice, onClose, reload, t }) {
+  /* Escape closes it — nothing on this page did before. */
+  useEscapeKey(true, onClose);
+
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(null);  // storno invoice number when complete

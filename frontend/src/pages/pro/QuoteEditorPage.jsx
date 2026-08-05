@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import api from '../../api/client';
+import NumberField from '../../components/NumberField';
 import { useLang } from '../../contexts/LangContext';
 import {
   ArrowLeft, Loader2, Plus, Trash2, Save, FileDown, Send, Check, Ban,
@@ -254,9 +255,9 @@ export default function QuoteEditorPage() {
               <div className="grid grid-cols-4 gap-2">
                 <label className="block">
                   <span className="block text-[11px] text-ink-muted mb-0.5">{t('qty')}</span>
-                  <input className="input text-sm w-full" type="number" step="any"
-                         value={l.qty} disabled={!editable}
-                         onChange={(e) => setLine(i, 'qty', e.target.value)} />
+                  <NumberField className="input text-sm w-full" min={0}
+                               value={l.qty} disabled={!editable}
+                               onChange={(v) => setLine(i, 'qty', v ?? '')} />
                 </label>
                 <label className="block">
                   <span className="block text-[11px] text-ink-muted mb-0.5">{t('unit')}</span>
@@ -265,16 +266,31 @@ export default function QuoteEditorPage() {
                 </label>
                 <label className="block">
                   <span className="block text-[11px] text-ink-muted mb-0.5">{t('unit_price')}</span>
-                  <input className="input text-sm w-full" type="number" step="any"
-                         value={l.unit_price} disabled={!editable}
-                         onChange={(e) => setLine(i, 'unit_price', e.target.value)} />
+                  <NumberField className="input text-sm w-full" min={0}
+                               value={l.unit_price} disabled={!editable}
+                               onChange={(v) => setLine(i, 'unit_price', v ?? '')} />
                 </label>
                 {/* Verschnitt: 0.10 = 10% extra material ordered. */}
                 <label className="block">
                   <span className="block text-[11px] text-ink-muted mb-0.5">{t('waste_short')}</span>
-                  <input className="input text-sm w-full" type="number" step="0.01" min="0" max="1"
-                         title={t('waste_factor')} value={l.waste_factor} disabled={!editable}
-                         onChange={(e) => setLine(i, 'waste_factor', e.target.value)} />
+                  <NumberField className="input text-sm w-full" min={0} max={1}
+                               title={t('waste_factor')} value={l.waste_factor} disabled={!editable}
+                               onChange={(v) => setLine(i, 'waste_factor', v ?? '')} />
+                </label>
+                {/* The line discount had no control anywhere in the app. It
+                    was in the blank line, in the preview arithmetic and in
+                    the save payload — so a quote could carry one, the total
+                    would reflect it, and the pro could neither see why the
+                    figures did not multiply out nor remove it. */}
+                <label className="block">
+                  <span className="block text-[11px] text-ink-muted mb-0.5">
+                    {t('line_discount_short')}
+                  </span>
+                  <NumberField className="input text-sm w-full" min={0} max={100}
+                               title={t('line_discount')} value={l.discount_pct}
+                               disabled={!editable}
+                               data-testid={`quote-line-discount-${i}`}
+                               onChange={(v) => setLine(i, 'discount_pct', v ?? '')} />
                 </label>
               </div>
               <label className="flex items-center gap-2 text-xs text-ink-muted">

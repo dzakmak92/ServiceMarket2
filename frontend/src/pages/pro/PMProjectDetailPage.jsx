@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import api from '../../api/client';
+import api, { apiBase } from '../../api/client';
 import StoredImage from '../../components/StoredImage';
 import { signedUrl } from '../../api/files';
 import { sendOrQueue, newId } from '../../offline/queue';
@@ -22,7 +22,7 @@ import ExportJobFileModal from '../../components/ExportJobFileModal';
 import ScrollSnapTabStrip, { SwipeableTabPanel } from '../../components/ScrollSnapTabStrip';
 
 const fmtEur = (v) => new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
-const BACKEND = process.env.REACT_APP_BACKEND_URL || '';
+const BACKEND = apiBase || '';
 
 const TABS = [
   { key: 'overview', icon: LayoutDashboard, labelKey: 'pm_tab_overview' },

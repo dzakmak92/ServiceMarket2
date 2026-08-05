@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useLang } from '../../contexts/LangContext';
 import { useAuth } from '../../contexts/AuthContext';
-import api, { formatError } from '../../api/client';
+import api, { formatError, apiBase } from '../../api/client';
 import {
   CheckCircle, Loader2, AlertCircle, Star, Receipt, XCircle,
   Calendar, ExternalLink, TrendingUp, Gift, ChevronDown,
@@ -131,7 +131,7 @@ export default function BillingPage() {
     }
   }, [location, sessionChecked, t, refreshUser, fetchData]);
 
-  const origin = process.env.REACT_APP_BACKEND_URL || window.location.origin;
+  const origin = apiBase || window.location.origin;
 
   /* ── action handlers ───────────────────────────────────── */
   const handleUpgrade = async () => {
