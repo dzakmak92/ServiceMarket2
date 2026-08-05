@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useLang } from '../../contexts/LangContext';
 import { useAuth } from '../../contexts/AuthContext';
-import api from '../../api/client';
+import api, { formatError } from '../../api/client';
 import {
   CheckCircle, Loader2, AlertCircle, Star, Receipt, XCircle,
   Calendar, ExternalLink, TrendingUp, Gift, ChevronDown,
@@ -97,7 +97,9 @@ export default function BillingPage() {
     try {
       const [p, txns, pr, ss] = await Promise.all([
         api.get('/api/profile/pro'),
-        api.get('/api/billing/transactions'),
+        // Caught like its two neighbours. Without this the whole Promise.all
+        // rejected on a 404 and threw an uncaught AxiosError on every visit.
+        api.get('/api/billing/transactions').catch(() => ({ data: null })),
         api.get('/api/billing/pricing').catch(() => ({ data: null })),
         api.get('/api/billing/subscription-status').catch(() => ({ data: null })),
       ]);
@@ -140,7 +142,7 @@ export default function BillingPage() {
         { origin_url: origin }
       );
       if (data.url) window.location.href = data.url;
-    } catch (e) { setError(e.response?.data?.detail || 'Checkout failed. Try again.'); }
+    } catch (e) { setError(formatError(e)); }
     finally { setCheckoutLoading(false); }
   };
 
@@ -149,7 +151,7 @@ export default function BillingPage() {
     try {
       const { data } = await api.post(`/api/billing/checkout/toolkit?kind=${kind}`, { origin_url: origin });
       if (data.url) window.location.href = data.url;
-    } catch (e) { setError(e.response?.data?.detail || 'Checkout failed. Try again.'); }
+    } catch (e) { setError(formatError(e)); }
     finally { setToolkitLoading(l => ({ ...l, [kind]: false })); }
   };
 
@@ -160,7 +162,7 @@ export default function BillingPage() {
       const { data } = await api.post(`/api/billing/cancel-toolkit?kind=${kind}`);
       setInfo(data.message || t('toolkit_cancelled_ok'));
       await refreshUser(); await fetchData();
-    } catch (e) { setError(e.response?.data?.detail || 'Cancel failed.'); }
+    } catch (e) { setError(formatError(e)); }
     finally { setCancelTkLoading(l => ({ ...l, [kind]: false })); }
   };
 
@@ -169,7 +171,7 @@ export default function BillingPage() {
     try {
       const { data } = await api.post('/api/billing/checkout/bundle', { origin_url: origin });
       if (data.url) window.location.href = data.url;
-    } catch (e) { setError(e.response?.data?.detail || 'Checkout failed. Try again.'); }
+    } catch (e) { setError(formatError(e)); }
     finally { setBundleLoading(false); }
   };
 
@@ -180,7 +182,7 @@ export default function BillingPage() {
       const { data } = await api.post('/api/billing/cancel-subscription');
       setInfo(data.message || t('billing_cancelled_ok'));
       await refreshUser(); await fetchData();
-    } catch (e) { setError(e.response?.data?.detail || 'Cancel failed.'); }
+    } catch (e) { setError(formatError(e)); }
     finally { setCancelLoading(false); }
   };
 
@@ -219,7 +221,7 @@ export default function BillingPage() {
     try {
       const { data } = await api.post('/api/billing/checkout/explorer', { origin_url: origin });
       if (data.url) window.location.href = data.url;
-    } catch (e) { setError(e.response?.data?.detail || 'Checkout failed. Try again.'); }
+    } catch (e) { setError(formatError(e)); }
     finally { setExplorerLoading(false); }
   };
 
@@ -473,7 +475,12 @@ export default function BillingPage() {
           </Accordion>
         )}
 
-        {/* ─── Developer / test controls (simulate the Explorer lifecycle) ─── */}
+        {/* Developer / test controls — never in production. A panel headed
+            "🧪 TEST CONTROLS" with a "Reset to Explorer offer" button was
+            rendering on the real billing page for every paying customer.
+            CRA inlines NODE_ENV at build time, so this compiles out entirely
+            rather than shipping behind a runtime check. */}
+        {process.env.NODE_ENV !== 'production' && (
         <ExplorerDevControls
           mode={billingModeVal}
           loading={devLoading}
@@ -481,6 +488,7 @@ export default function BillingPage() {
           onExpire={handleSimulateExpiry}
           t={t}
         />
+        )}
       </div>
     </div>
   );

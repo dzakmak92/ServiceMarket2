@@ -77,6 +77,8 @@ export default function ProSettingsPage() {
     notif_job_status: true, notif_payment_receipt: true,
   });
   const [saving, setSaving] = useState(false);
+  /* Whether the pro touched the language select on this visit — see save(). */
+  const [langTouched, setLangTouched] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -164,7 +166,15 @@ export default function ProSettingsPage() {
         service_center_lng: proForm.service_center_lng,
         service_radius_km: proForm.service_radius_km ? parseInt(proForm.service_radius_km) : 0,
       });
-      if (userForm.lang !== lang) changeLang(userForm.lang);
+      /* Only when the pro actually touched the language field.
+         `userForm.lang` is seeded from `users.lang` in the database, which
+         can differ from the language the app is currently rendering in —
+         the header switcher writes localStorage and never the server. So
+         saving a phone number or an hourly rate silently flipped the whole
+         interface to whatever the DB happened to hold, and the two stores
+         stayed permanently out of step. `langTouched` is set by the select's
+         own onChange and by nothing else. */
+      if (langTouched && userForm.lang !== lang) changeLang(userForm.lang);
       await refreshUser();
       const { data } = await api.get('/api/profile/pro');
       setProProfile(data);
@@ -345,7 +355,12 @@ export default function ProSettingsPage() {
                     {/* App language */}
                     <div>
                       <label className="text-sm font-medium text-ink mb-1.5 flex items-center gap-1.5"><Globe size={14} />{t('change_language')}</label>
-                      <select value={userForm.lang} onChange={(e) => setUserForm((f) => ({ ...f, lang: e.target.value }))} className="sm-select">
+                      <select value={userForm.lang}
+                              onChange={(e) => {
+                                setLangTouched(true);
+                                setUserForm((f) => ({ ...f, lang: e.target.value }));
+                              }}
+                              className="sm-select" data-testid="pro-lang-select">
                         {APP_LANG_OPTIONS.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}
                       </select>
                     </div>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLang } from '../contexts/LangContext';
-import api from '../api/client';
+import api, { formatError } from '../api/client';
 import { COUNTRIES, isKnownCity, searchCities } from '../data/cities';
 import {
   ChevronRight, ChevronLeft, CheckCircle2, Upload, FileText, Loader2,
@@ -62,8 +62,17 @@ export default function OnboardingPage() {
   const whereValid = () => !!country && !!form.city.trim();
   const businessValid = () => ['company_name', 'address', 'postal_code', 'city',
     'contact_person'].every((k) => form[k].trim());
+  /* Documents do NOT gate entry.
+     Finish used to require a licence file, with no skip and no alternative
+     path — and ProtectedRoute sends every other route back here. So a pro
+     whose upload failed for any reason at all (storage misconfigured, a file
+     type we reject, no signal on a building site) was locked out of the
+     entire product permanently, on a step whose own copy promises "you can
+     start working straight away". The badges are what the documents buy, and
+     the profile is reviewed afterwards either way. They can be added in
+     settings whenever the pro has them to hand. */
   const docsValid = () => !!form.licence_file_id;
-  const allValid = () => whereValid() && businessValid() && docsValid();
+  const allValid = () => whereValid() && businessValid();
 
   const stepValid = (i) => (i === 1 ? whereValid() : i === 2 ? businessValid() : true);
 
@@ -87,8 +96,11 @@ export default function OnboardingPage() {
       });
       set(`${kind}_file_id`, data.storage_ref);
       set(`${kind}_filename`, file.name);
-    } catch {
-      setError(t('onboarding_upload_failed'));
+    } catch (e) {
+      /* Say what can be done about it. This is not a dead end any more:
+         the document can wait, and finishing without it is allowed. */
+      setError(`${formatError(e) || t('onboarding_upload_failed')} `
+        + t('onboarding_upload_later'));
     } finally {
       setUploading((u) => ({ ...u, [kind]: false }));
     }

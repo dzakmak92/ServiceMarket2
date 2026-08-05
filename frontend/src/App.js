@@ -36,7 +36,6 @@ import QuoteEditorPage from "./pages/pro/QuoteEditorPage";
 import LeadCapturePage from "./pages/pro/LeadCapturePage";
 import RecurringPage from "./pages/pro/RecurringPage";
 import EstimatePage from "./pages/pro/EstimatePage";
-import ProCalendarPage from "./pages/pro/ProCalendarPage";
 import ProInvoiceEditorPage from "./pages/pro/ProInvoiceEditorPage";
 import TaxToolkitPage from "./pages/pro/TaxToolkitPage";
 import PMProjectsPage from "./pages/pro/PMProjectsPage";
@@ -270,14 +269,15 @@ function AppShell() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/pro-calendar"
-          element={
-            <ProtectedRoute roles={["tradesperson"]}>
-              <ProCalendarPage />
-            </ProtectedRoute>
-          }
-        />
+        {/* /pro-calendar is gone. It was superseded by /schedule and had been
+            dead for some time: its loader did Promise.all over /api/bookings,
+            a router that does not exist, so the whole thing rejected into an
+            empty catch and the page never learned its own pro id. All 84
+            availability cells were inert — clicking one produced no request
+            and no change — and a failed load rendered as the cheerful line
+            "Your schedule is beautifully clear". Redirected rather than
+            dropped, so an old bookmark still lands somewhere useful. */}
+        <Route path="/pro-calendar" element={<Navigate to="/schedule" replace />} />
         <Route
           path="/jobs/:jobId/invoice"
           element={

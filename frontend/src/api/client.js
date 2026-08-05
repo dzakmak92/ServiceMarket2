@@ -51,10 +51,23 @@ api.interceptors.response.use(
 );
 
 // Format API error detail (handles string or array)
+/* A server's default reason phrase is not a message for a person. FastAPI
+   answers a missing route with `detail: "Not Found"`, and several screens
+   printed that verbatim — a pro clicking "Claim your badge" was shown the
+   words "Not Found" and nothing else. */
+const GENERIC = new Set([
+  'Not Found', 'Internal Server Error', 'Method Not Allowed', 'Bad Request',
+  'Unprocessable Entity', 'Forbidden', 'Unauthorized', 'Service Unavailable',
+]);
+
 export function formatError(e) {
   const detail = e?.response?.data?.detail;
   if (!detail) return e?.message || 'Something went wrong. Please try again.';
-  if (typeof detail === 'string') return detail;
+  if (typeof detail === 'string') {
+    return GENERIC.has(detail.trim())
+      ? 'This is not available right now. Please try again later.'
+      : detail;
+  }
   if (Array.isArray(detail)) return detail.map(d => d?.msg || String(d)).filter(Boolean).join(' ');
   return String(detail);
 }
