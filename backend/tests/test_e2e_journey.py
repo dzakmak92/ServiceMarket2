@@ -31,6 +31,7 @@ Postgres, and a test that cannot run is not a test that failed.
 """
 from __future__ import annotations
 
+import itertools
 import logging
 import os
 import sys
@@ -708,6 +709,27 @@ with TestClient(entry.app) as c:
     check(not inv.get("invoice_number"),
           "and no number yet — a draft must not consume one")
     check(inv.get("status") == "draft", f"status is draft ({inv.get('status')})")
+
+    # …and having no issue_date, it used to sort behind every issued invoice.
+    # With twenty rows to a page a pro's unfinished work fell off the end of
+    # the list, and the more they invoiced the deeper it was buried — the one
+    # row on that screen that still needs something done to it.
+    r = c.get("/api/invoices", params={"sort_by": "invoice_date", "order": "desc",
+                                       "page": 1, "per_page": 20})
+    listed = r.json().get("invoices", []) if ok(r) else []
+    check(any(x.get("id") == invoice_id for x in listed),
+          "and it is on the first page of the date-sorted list, not behind the issued ones")
+    if listed:
+        lead = list(itertools.takewhile(lambda x: x.get("status") == "draft", listed))
+        check(any(x.get("id") == invoice_id for x in lead),
+              f"drafts lead the list ({len(lead)} of {len(listed)} rows)")
+    # An explicit sort is the pro's instruction and must not be overridden.
+    r = c.get("/api/invoices", params={"sort_by": "amount", "order": "desc",
+                                       "page": 1, "per_page": 20})
+    by_amount = r.json().get("invoices", []) if ok(r) else []
+    check(not by_amount or by_amount[0].get("status") != "draft"
+          or len(by_amount) == 1,
+          "but sorting by amount still sorts by amount")
 
     if invoice_id:
         step("issuing freezes it, and after that it can only be stornoed")

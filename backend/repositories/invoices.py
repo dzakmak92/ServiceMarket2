@@ -415,13 +415,30 @@ async def list_for_pro(pro_id: str, *, status: Optional[str] = None,
 
     col = SORTABLE.get(sort_by, SORTABLE["date"])
     direction = "asc" if str(order).lower() == "asc" else "desc"
+
+    # Drafts first, on the date sort.
+    #
+    # A draft has no issue_date — it gets one when it is issued — so
+    # `order by issue_date desc nulls last` put every unfinished invoice
+    # behind every finished one. With twenty rows to a page that meant a
+    # pro's drafts fell off the end of the list, and the more they invoiced
+    # the deeper their unbilled work was buried. Exactly backwards: an
+    # unfinished invoice is the one row on this screen that still needs
+    # something done to it.
+    #
+    # Only for the date sort. Ordering a null date is arbitrary anyway, so
+    # there is nothing to override. Someone who deliberately sorts by amount
+    # or by customer gets what they asked for, drafts in their proper place.
+    draft_first = ""
+    if col == "i.issue_date":
+        draft_first = "(i.status = 'draft') desc, "
     args.extend([limit, offset])
     rows = await pg.fetch(
         f"""
         select i.*, c.name as customer_name, j.job_number, j.title as job_title
           from invoices i {joins}
          where {clause}
-         order by {col} {direction} nulls last, i.created_at desc
+         order by {draft_first}{col} {direction} nulls last, i.created_at desc
          limit ${len(args)-1} offset ${len(args)}
         """, *args)
     return {"invoices": rows, "total": total}
