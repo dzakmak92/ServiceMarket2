@@ -78,7 +78,7 @@ export default function WeatherCard({ weather, status = 'ok', t, compact = false
 
   return (
     <div
-      className={`rounded-[14px] border border-sky/25 bg-sky/[0.08] flex items-center gap-3
+      className={`rounded-[14px] border border-sky-tint bg-sky-pale flex items-center gap-3
                   ${compact ? 'px-3 py-2 mb-2.5' : 'px-3.5 py-3 mb-3'}`}
       data-testid="wx-card"
     >

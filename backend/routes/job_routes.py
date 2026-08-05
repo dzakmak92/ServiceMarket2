@@ -146,7 +146,10 @@ async def schedule(days: int = Query(default=60, ge=1, le=365),
 
 @router.get("/appointments")
 async def appointments(day: Optional[str] = Query(default=None),
-                       days: int = Query(default=1, ge=1, le=31),
+                       # 45, not 31: a month grid is six whole weeks — 42 days —
+                       # because a calendar that grows a row in one month and
+                       # loses it the next makes everything under it jump.
+                       days: int = Query(default=1, ge=1, le=45),
                        user: dict = Depends(get_current_user)):
     """The pro's own appointments — jobs with a scheduled_start.
 

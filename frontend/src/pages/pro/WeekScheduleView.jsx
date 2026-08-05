@@ -34,7 +34,7 @@ const frac = (v) => {
   return Math.min(1, Math.max(0, (h - DAY_FROM) / SPAN));
 };
 
-export default function WeekScheduleView({ weekStart, onOpenDay, t }) {
+export default function WeekScheduleView({ weekStart, onOpenDay, t, lang = 'de-AT' }) {
   const [appts, setAppts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(() => startOfDay(new Date()));
@@ -155,7 +155,7 @@ export default function WeekScheduleView({ weekStart, onOpenDay, t }) {
                     weekday label was landing halfway down the column. */}
                 <span className={`absolute left-0 right-0 top-0 text-center font-bold text-[9px]
                   h-[38px] ${isToday ? 'text-teal' : 'text-ink-muted'}`}>
-                  {d.toLocaleDateString('de-AT', { weekday: 'short' })}
+                  {d.toLocaleDateString(lang, { weekday: 'short' })}
                   <b className={`block font-extrabold text-[11px] ${isToday ? 'text-teal' : 'text-ink'}`}>
                     {d.getDate()}
                   </b>
@@ -210,7 +210,7 @@ export default function WeekScheduleView({ weekStart, onOpenDay, t }) {
           bathroom it is. Anything the blocks cannot carry goes here. */}
       <div className="flex items-baseline gap-2 mt-3.5 mb-1.5">
         <p className="font-headings font-bold text-[12.5px] text-ink" data-testid="week-sel-title">
-          {selected.toLocaleDateString('de-AT', { weekday: 'long', day: 'numeric', month: 'short' })}
+          {selected.toLocaleDateString(lang, { weekday: 'long', day: 'numeric', month: 'short' })}
         </p>
         {selectedAppts.length > 0 && (
           <span className="font-bold text-[10.5px] text-ink-muted">

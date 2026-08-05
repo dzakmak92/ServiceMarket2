@@ -16,6 +16,17 @@ module.exports = {
         // values are the minimum that reads as a progression rather than as
         // two colours and an accident.
         teal: { DEFAULT: '#2d6a7f', deep: '#1f4d5e', tint: '#cfdee3' },
+        // Weather, and only weather. A cool family of its own so the forecast
+        // can never be misread as an appointment. Tailwind ships a `sky`
+        // scale; this replaces it, which is safe because nothing in the app
+        // uses sky-50…sky-950 — and it is the blue the mockups were drawn in.
+        // Without this the weather card's classes matched no colour at all
+        // and it rendered flat white with a grey border.
+        // `pale` is the mockup's rgba(91,143,176,.08) resolved to an opaque
+        // colour. It has to be opaque: the mockup drew that wash over white,
+        // but the calendar page is warm cream, and 8% of a cool blue over
+        // #fdf3e3 cancels to grey — the card stopped reading as blue at all.
+        sky: { DEFAULT: '#5b8fb0', deep: '#3d6c8a', tint: '#dde9f0', pale: '#eef4f9' },
         amber: { DEFAULT: '#f5a623', deep: '#e8941a', tint: '#fbe0b4' },
         // Foreground for text sitting on an amber fill. The brand ink is a
         // blue navy and goes muddy on orange; this is the same hue family as

@@ -194,6 +194,19 @@ export const dayKey = (v) => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
+/** The BCP-47 locale to format dates in, from the interface language.
+ *
+ *  The calendar used to write every weekday and month name in de-AT no
+ *  matter which of the four languages the pro had chosen, so an English
+ *  calendar said "Booked" in the legend and "Mittwoch" in the heading two
+ *  lines apart. English maps to en-GB rather than en-US: this is a European
+ *  product and 5. August is not August 5.
+ */
+export const dateLocale = (lang) =>
+  ({ de: 'de-AT', en: 'en-GB', tr: 'tr-TR', es: 'es-ES' }[lang] || 'de-AT');
+
+/* Times stay in 24-hour form in every language — a tradesperson's day is
+   written 07:30, and en-US would render it 7:30 AM. */
 export const hhmm = (v) =>
   new Date(toMs(v)).toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' });
 
