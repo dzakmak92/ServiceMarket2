@@ -2825,6 +2825,7 @@ const t = {
     job_complete_review_placeholder: 'Erzählen Sie anderen von Ihrer Erfahrung...',
     post_review: 'Bewertung posten', posting: 'Wird gepostet...',
     page_settings: 'Einstellungen',
+    hm_groups: 'Gruppen', hm_contact: 'Kontakt', hm_contact_title: 'Betrieb kontaktieren', hm_no_contact: 'Für diesen Betrieb sind noch keine öffentlichen Kontaktdaten hinterlegt.', review_no_reviews_settings: 'Sie haben noch keine Bewertungen. Abgeschlossene Aufträge, die Ihre Kunden bewertet haben, erscheinen hier.', review_reply_label: 'Ihre Antwort', review_reply_placeholder: 'Danke {name}! Antworten Sie sachlich — Ihre Antwort ist öffentlich sichtbar.', review_reply_btn_post: 'Antwort veröffentlichen', review_reply_btn_save: 'Änderungen speichern', review_reply_btn_edit: 'Antwort bearbeiten', review_reply_btn_delete: 'Löschen', review_reply_response_label: 'Antwort des Betriebs', review_reply_edited: 'bearbeitet', admin_feedback: 'Feedback', admin_support: 'Support',
   },
 
   tr: {
@@ -4118,6 +4119,7 @@ const t = {
     job_complete_review_placeholder: 'Deneyiminizi başkalarına anlatın...',
     post_review: 'Yorum Gönder', posting: 'Gönderiliyor...',
     page_settings: 'Ayarlar',
+    nav_my_projects: 'Projelerim', ho_projects_title: 'Projelerim', ho_projects_subtitle: 'Ustanızın yürüttüğü işlerin ilerlemesini takip edin, ek işleri onaylayın ve ara ödemeleri yapın.', ho_projects_empty: 'Henüz yönetilen proje yok. Bir usta sizin için proje başlattığında burada görünür.', ho_proj_action_needed: 'İşlem gerekiyor', ho_proj_co_to_review: 'incelenecek ek iş', ho_proj_pay_due: 'ödeme bekliyor', ho_view_project: 'Projeyi gör', ho_message_pro: 'Ustanıza mesaj gönderin', ho_back_to_projects: 'Projelerime dön',
   },
 
   es: {
@@ -5419,6 +5421,7 @@ const t = {
     job_complete_review_placeholder: 'Cuenta tu experiencia a otros...',
     post_review: 'Publicar Reseña', posting: 'Publicando...',
     page_settings: 'Ajustes',
+    auth_turnstile_required: 'Completa la verificación de seguridad de arriba para continuar.',
   },
 };
 
