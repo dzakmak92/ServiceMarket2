@@ -97,7 +97,7 @@ export default function JobSheet({ appt, onClose, onPrimary, t }) {
            onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start gap-2 mb-3">
           <div className="flex-1 min-w-0">
-            <p className="font-extrabold text-[13px] text-teal" data-testid="job-sheet-when">
+            <p className="font-extrabold text-[0.8125rem] text-teal" data-testid="job-sheet-when">
               {hhmm(appt.start)}
               {!openEnded && <> – {hhmm(appt.end)}</>}
               {spansDays && (
@@ -110,7 +110,7 @@ export default function JobSheet({ appt, onClose, onPrimary, t }) {
                 {openEnded ? ` · ${t('job_open_ended')}` : ` · ${durationLabel(mins * MIN)}`}
               </span>
             </p>
-            <p className="font-headings font-bold text-[16px] text-ink mt-0.5 leading-tight"
+            <p className="font-headings font-bold text-[1rem] text-ink mt-0.5 leading-tight"
                data-testid="job-sheet-title">
               {appt.title}
             </p>
@@ -126,30 +126,30 @@ export default function JobSheet({ appt, onClose, onPrimary, t }) {
 
         <div className="flex items-center gap-1.5 mb-4">
           {appt.status && (
-            <span className="rounded-full bg-cream-deep px-2.5 py-1 font-bold text-[10.5px] text-ink-soft"
+            <span className="rounded-full bg-cream-deep px-2.5 py-1 font-bold text-[0.65625rem] text-ink-soft"
                   data-testid="job-sheet-status">
               {t(STATUS_KEY[appt.status] || 'job_st_scheduled')}
             </span>
           )}
           {urgent && (
-            <span className="rounded-full bg-red-warn/15 px-2.5 py-1 font-bold text-[10.5px] text-red-warn">
+            <span className="rounded-full bg-red-warn/15 px-2.5 py-1 font-bold text-[0.65625rem] text-red-warn">
               {t('job_emergency')}
             </span>
           )}
           {appt.job_number && (
-            <span className="ml-auto font-bold text-[10.5px] text-ink-faint">#{appt.job_number}</span>
+            <span className="ml-auto font-bold text-[0.65625rem] text-ink-faint">#{appt.job_number}</span>
           )}
         </div>
 
         {(appt.customer_name || address) && (
           <div className="rounded-[12px] border border-sm-border bg-cream-soft p-3 mb-4 space-y-2">
             {appt.customer_name && (
-              <p className="flex items-center gap-2 font-bold text-[12.5px] text-ink">
+              <p className="flex items-center gap-2 font-bold text-[0.78125rem] text-ink">
                 <User size={14} className="text-ink-muted flex-none" /> {appt.customer_name}
               </p>
             )}
             {address && (
-              <p className="flex items-start gap-2 text-[12.5px] text-ink-soft">
+              <p className="flex items-start gap-2 text-[0.78125rem] text-ink-soft">
                 <MapPin size={14} className="text-ink-muted flex-none mt-px" /> {address}
               </p>
             )}
@@ -163,7 +163,7 @@ export default function JobSheet({ appt, onClose, onPrimary, t }) {
             href={route || undefined}
             target="_blank" rel="noreferrer"
             className={`flex-1 min-h-[46px] rounded-[12px] border border-sm-border bg-paper
-                        flex items-center justify-center gap-1.5 font-bold text-[12px] text-teal
+                        flex items-center justify-center gap-1.5 font-bold text-[0.75rem] text-teal
                         ${route ? '' : 'opacity-40 pointer-events-none'}`}
             aria-disabled={!route}
             data-testid="job-sheet-route"
@@ -173,7 +173,7 @@ export default function JobSheet({ appt, onClose, onPrimary, t }) {
           <a
             href={phone ? `tel:${phone}` : undefined}
             className={`flex-1 min-h-[46px] rounded-[12px] border border-sm-border bg-paper
-                        flex items-center justify-center gap-1.5 font-bold text-[12px] text-teal
+                        flex items-center justify-center gap-1.5 font-bold text-[0.75rem] text-teal
                         ${phone ? '' : 'opacity-40 pointer-events-none'}`}
             data-testid="job-sheet-call"
           >
@@ -185,7 +185,7 @@ export default function JobSheet({ appt, onClose, onPrimary, t }) {
           <button
             type="button"
             onClick={() => onPrimary?.(appt, action)}
-            className={`w-full min-h-[48px] rounded-[12px] font-extrabold text-[13px]
+            className={`w-full min-h-[48px] rounded-[12px] font-extrabold text-[0.8125rem]
                         flex items-center justify-center gap-2 mb-2.5
               ${action === 'invoice' ? 'bg-amber text-on-amber' : 'bg-teal text-paper'}`}
             data-testid="job-sheet-primary"
@@ -200,7 +200,7 @@ export default function JobSheet({ appt, onClose, onPrimary, t }) {
         <Link
           to={`/projects/${appt.id}`}
           className="w-full min-h-[44px] rounded-[12px] border border-sm-border bg-paper
-                     flex items-center justify-center gap-1.5 font-bold text-[12px] text-ink-soft"
+                     flex items-center justify-center gap-1.5 font-bold text-[0.75rem] text-ink-soft"
           data-testid="job-sheet-open-project"
         >
           <ExternalLink size={13} /> {t('job_open_project')}

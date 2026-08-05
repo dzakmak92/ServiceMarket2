@@ -152,13 +152,19 @@ export default function MonthScheduleView({
           ways to change the day inside one screen can disagree. */}
       <WeatherCard weather={weather} status={wxStatus} t={t} lang={lang} outlook />
 
-      <div className="flex gap-1.5 mb-3">
+      {/* Wraps rather than squeezing: three tiles across 390 px is fine at
+          normal text and impossible at 200%, where each one needs more than
+          a third of the screen. min-w is in rem so the threshold grows with
+          the text that causes it. */}
+      <div className="flex flex-wrap gap-1.5 mb-3">
         {[[t('week_appointments'), apptCount, ''],
           [t('week_booked'), durationLabel(totalMinutes * MIN), 'text-teal'],
           [t('week_free_days'), freeDays, 'text-amber-text']].map(([label, value, tone]) => (
-          <div key={label} className="flex-1 rounded-[11px] border border-sm-border bg-paper px-2.5 py-2">
-            <p className="font-bold text-[9px] uppercase tracking-wide text-ink-muted">{label}</p>
-            <p className={`font-extrabold text-[15px] mt-px ${tone || 'text-ink'}`}>{value}</p>
+          <div key={label}
+               className="flex-1 min-w-[7rem] rounded-[11px] border border-sm-border
+                          bg-paper px-2.5 py-2">
+            <p className="font-bold text-[0.5625rem] uppercase tracking-wide text-ink-muted">{label}</p>
+            <p className={`font-extrabold text-[0.9375rem] mt-px ${tone || 'text-ink'}`}>{value}</p>
           </div>
         ))}
       </div>
@@ -166,7 +172,7 @@ export default function MonthScheduleView({
       <div className="rounded-[12px] border border-sm-border bg-paper p-2" data-testid="month-grid">
         <div className="grid grid-cols-7 gap-[3px] mb-1">
           {dowNames.map((d) => (
-            <span key={d} className="text-center font-bold text-[9px] text-ink-faint">{d}</span>
+            <span key={d} className="text-center font-bold text-[0.5625rem] text-ink-faint">{d}</span>
           ))}
         </div>
 
@@ -209,7 +215,7 @@ export default function MonthScheduleView({
                   : t('month_cell_free'))
                   .replace('{date}', d.toLocaleDateString(lang,
                     { weekday: 'long', day: 'numeric', month: 'long' }))}
-                className={`relative rounded-[7px] h-[52px] flex flex-col items-center pt-[3px]
+                className={`relative rounded-[7px] min-h-[52px] flex flex-col items-center pt-[3px]
                   ${out ? 'bg-transparent' : isToday ? 'bg-teal/[0.12]' : 'bg-cream-soft'}
                   ${isToday ? 'ring-[1.5px] ring-teal' : ''}
                   ${isSel && !isToday ? 'ring-[1.5px] ring-teal-deep' : ''}`}
@@ -219,13 +225,17 @@ export default function MonthScheduleView({
                 data-pm={out ? '' : pm}
                 aria-pressed={isSel}
               >
-                <span className={`font-extrabold text-[11px]
+                <span className={`font-extrabold text-[0.6875rem]
                   ${out ? 'text-ink-faint opacity-70' : 'text-ink'}`}>
                   {d.getDate()}
                 </span>
 
                 {!out && (
-                  <span className="absolute left-[4px] right-[4px] bottom-[5px]
+                  /* In flow, not absolute: at 200% text the date number grows
+                     and an absolutely-placed pair of bars would end up
+                     underneath it. `mt-auto` keeps them at the bottom of the
+                     cell whatever the number does. */
+                  <span className="w-full px-[4px] pb-[5px] mt-auto
                                    flex flex-col gap-[3px]">
                     {/* Morning over afternoon, each full at four hours. Two
                         bars rather than one total, because "is Thursday
@@ -255,7 +265,7 @@ export default function MonthScheduleView({
         {/* Two bars mean nothing without saying which is which, or where
             they end — a half-full bar is two hours only if you know the top
             is four. */}
-        <div className="flex items-center gap-2.5 mt-2 font-bold text-[9px] text-ink-muted flex-wrap"
+        <div className="flex items-center gap-2.5 mt-2 font-bold text-[0.5625rem] text-ink-muted flex-wrap"
              data-testid="month-legend">
           <span className="flex items-center gap-1">
             <i className="w-2.5 h-2.5 rounded-[3px] bg-teal inline-block" /> {t('month_morning')}
@@ -271,16 +281,16 @@ export default function MonthScheduleView({
       </div>
 
       <div className="flex items-baseline gap-2 mt-3.5 mb-1.5">
-        <p className="font-headings font-bold text-[12.5px] text-ink" data-testid="month-sel-title">
+        <p className="font-headings font-bold text-[0.78125rem] text-ink" data-testid="month-sel-title">
           {selected.toLocaleDateString(lang, { weekday: 'long', day: 'numeric', month: 'short' })}
         </p>
         {selectedAppts.length > 0 && (
-          <span className="font-bold text-[10.5px] text-ink-muted">
+          <span className="font-bold text-[0.65625rem] text-ink-muted">
             · {durationLabel(minutesOn(selected) * MIN)}
           </span>
         )}
         <button type="button" onClick={() => onOpenDay?.(selected)}
-                className="ml-auto font-bold text-[11px] text-teal min-h-[44px] px-2
+                className="ml-auto font-bold text-[0.6875rem] text-teal min-h-[44px] px-2
                         flex items-center"
                 data-testid="month-open-day">
           {t('week_open_day')}
@@ -289,7 +299,7 @@ export default function MonthScheduleView({
 
       {selectedAppts.length === 0 ? (
         <div className="rounded-[11px] border-[1.5px] border-dashed border-sm-border
-                        bg-cream-soft py-3 text-center font-bold text-[11px] text-ink-muted"
+                        bg-cream-soft py-3 text-center font-bold text-[0.6875rem] text-ink-muted"
              data-testid="month-sel-empty">
           {t('week_day_free')}
         </div>
@@ -304,14 +314,14 @@ export default function MonthScheduleView({
           data-testid={`month-sel-${a.id}`}
         >
           <span className="w-[44px] flex-none">
-            <b className="block font-extrabold text-[11.5px] text-teal">{hhmm(a.start)}</b>
-            <i className="block not-italic font-bold text-[9px] text-ink-faint mt-px">
+            <b className="block font-extrabold text-[0.71875rem] text-teal">{hhmm(a.start)}</b>
+            <i className="block not-italic font-bold text-[0.5625rem] text-ink-faint mt-px">
               {durationLabel(toMs(a.end) - toMs(a.start))}
             </i>
           </span>
           <span className="flex-1 min-w-0">
-            <b className="block font-extrabold text-[12px] text-ink truncate">{a.title}</b>
-            <span className="flex items-center gap-1 font-bold text-[10px] text-ink-muted mt-0.5">
+            <b className="block font-extrabold text-[0.75rem] text-ink truncate">{a.title}</b>
+            <span className="flex items-center gap-1 font-bold text-[0.625rem] text-ink-muted mt-0.5">
               {a.customer_name && <><User size={10} /> {a.customer_name}</>}
               {(a.site_city || a.customer_city) && (
                 <><MapPin size={10} className="ml-1" /> {a.site_city || a.customer_city}</>

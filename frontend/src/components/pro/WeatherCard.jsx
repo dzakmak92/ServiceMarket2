@@ -81,7 +81,7 @@ function HourStrip({ hours, t }) {
           const HIcon = ICON[p.condition] || Cloud;
           return (
             <div key={p.hour} className="flex-1 min-w-0 text-center">
-              <p className="font-bold text-[9px] text-ink-muted">
+              <p className="font-bold text-[0.5625rem] text-ink-muted">
                 {String(p.hour).padStart(2, '0')}
               </p>
               <HIcon size={15} className="mx-auto mt-0.5 text-sky-deep" strokeWidth={1.9} />
@@ -115,7 +115,7 @@ function HourStrip({ hours, t }) {
       <div className="flex gap-0.5">
         {pts.map((p) => (
           <div key={p.hour} className="flex-1 min-w-0 text-center">
-            <p className="font-extrabold text-[10px] text-ink-soft">
+            <p className="font-extrabold text-[0.625rem] text-ink-soft">
               {round(p.temp) != null ? `${round(p.temp)}°` : '–'}
             </p>
           </div>
@@ -171,11 +171,11 @@ export default function WeatherCard({
            data-testid="wx-empty" data-status={status}>
         {canFix ? <MapPin size={16} className="text-ink-muted flex-none" />
                 : <CloudOff size={16} className="text-ink-muted flex-none" />}
-        <p className="flex-1 font-bold text-[11.5px] text-ink-muted leading-snug">
+        <p className="flex-1 font-bold text-[0.71875rem] text-ink-muted leading-snug">
           {canFix ? t('wx_no_location') : t('wx_unavailable')}
         </p>
         {canFix && (
-          <Link to="/settings" className="font-extrabold text-[11.5px] text-teal whitespace-nowrap
+          <Link to="/settings" className="font-extrabold text-[0.71875rem] text-teal whitespace-nowrap
                                           underline min-h-[32px] flex items-center"
                 data-testid="wx-set-location">
             {t('wx_set_location')}
@@ -221,16 +221,16 @@ export default function WeatherCard({
         <div className="flex-1 min-w-0">
           <p className="flex items-baseline gap-1.5">
             {temp != null && (
-              <span className={`font-extrabold text-ink ${compact ? 'text-[17px]' : 'text-[21px]'}`}
+              <span className={`font-extrabold text-ink ${compact ? 'text-[1.0625rem]' : 'text-[1.3125rem]'}`}
                     data-testid="wx-temp">
                 {temp}°
               </span>
             )}
-            <span className="font-bold text-[11.5px] text-ink-soft truncate">
+            <span className="font-bold text-[0.71875rem] text-ink-soft truncate">
               {t(KEY[cond] || 'wx_cloudy')}
             </span>
           </p>
-          <p className="font-bold text-[10.5px] text-ink-muted mt-0.5 truncate">
+          <p className="font-bold text-[0.65625rem] text-ink-muted mt-0.5 truncate">
             {/* The chosen day is named whenever it is not today, so the card
                 can never be read as "now" while showing Thursday. */}
             {!isToday && day && (
@@ -247,13 +247,13 @@ export default function WeatherCard({
         {/* Rain and wind, because those are the two that stop work. */}
         <div className="flex flex-col gap-1 flex-none items-end">
           {rain != null && (
-            <span className="flex items-center gap-1 font-bold text-[10.5px] text-sky-deep"
+            <span className="flex items-center gap-1 font-bold text-[0.65625rem] text-sky-deep"
                   data-testid="wx-rain">
               <Droplets size={12} /> {rain}%
             </span>
           )}
           {wind != null && (
-            <span className="flex items-center gap-1 font-bold text-[10.5px] text-ink-muted">
+            <span className="flex items-center gap-1 font-bold text-[0.65625rem] text-ink-muted">
               <Wind size={12} /> {wind} km/h
             </span>
           )}
@@ -285,12 +285,12 @@ export default function WeatherCard({
                 data-date={d.date || ''}
                 aria-pressed={on}
               >
-                <span className={`font-bold text-[9px] truncate max-w-full px-0.5
+                <span className={`font-bold text-[0.5625rem] truncate max-w-full px-0.5
                                   ${on ? 'text-sky-deep' : 'text-ink-muted'}`}>
                   {label(d, i)}
                 </span>
                 <DIcon size={14} className={on ? 'text-sky-deep' : 'text-sky'} strokeWidth={1.9} />
-                <span className={`font-extrabold text-[9.5px] ${on ? 'text-ink' : 'text-ink-soft'}`}>
+                <span className={`font-extrabold text-[0.59375rem] ${on ? 'text-ink' : 'text-ink-soft'}`}>
                   {round(d.high) != null ? `${round(d.high)}°` : '–'}
                 </span>
               </button>

@@ -23,8 +23,8 @@ export default function LoadFailed({ onRetry, t }) {
          role="alert" data-testid="sched-load-failed">
       <AlertTriangle size={17} className="text-red-warn flex-none mt-px" />
       <div className="flex-1 min-w-0">
-        <p className="font-bold text-[12px] text-ink leading-snug">{t('sched_load_failed')}</p>
-        <p className="font-bold text-[10.5px] text-ink-muted mt-0.5 leading-snug">
+        <p className="font-bold text-[0.75rem] text-ink leading-snug">{t('sched_load_failed')}</p>
+        <p className="font-bold text-[0.65625rem] text-ink-muted mt-0.5 leading-snug">
           {t('sched_load_failed_hint')}
         </p>
       </div>
@@ -32,7 +32,7 @@ export default function LoadFailed({ onRetry, t }) {
         type="button"
         onClick={onRetry}
         className="flex-none min-h-[44px] px-3 rounded-[10px] bg-paper border border-sm-border
-                   flex items-center gap-1.5 font-extrabold text-[11.5px] text-teal"
+                   flex items-center gap-1.5 font-extrabold text-[0.71875rem] text-teal"
         data-testid="sched-retry"
       >
         <RotateCw size={13} /> {t('ui_retry')}

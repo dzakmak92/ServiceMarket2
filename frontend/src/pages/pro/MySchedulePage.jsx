@@ -133,7 +133,7 @@ export default function MySchedulePage() {
               key={k}
               type="button"
               onClick={() => setView(k)}
-              className={`flex-1 min-h-[44px] rounded-[9px] font-bold text-[12px] transition-colors
+              className={`flex-1 min-h-[44px] rounded-[9px] font-bold text-[0.75rem] transition-colors
                 ${view === k ? 'bg-paper text-teal shadow-sm' : 'text-ink-muted'}`}
               data-testid={`schedule-switch-${k}`}
               aria-pressed={view === k}

@@ -113,8 +113,8 @@ function Block({ appt, top, height, running, progress, dragging, conflict,
         <div className={`flex items-center gap-2 px-3 flex-none
           ${action && !room.actions ? 'py-1' : 'py-[7px]'}
           ${running ? 'bg-teal text-paper' : 'bg-teal-deep text-paper'}`}>
-          <p className="font-extrabold text-[13px]">{hhmm(appt.start)}–{hhmm(appt.end)}</p>
-          <p className="font-bold text-[10.5px] opacity-75">
+          <p className="font-extrabold text-[0.8125rem]">{hhmm(appt.start)}–{hhmm(appt.end)}</p>
+          <p className="font-bold text-[0.65625rem] opacity-75">
             · {durationLabel(toMs(appt.end) - toMs(appt.start))}
           </p>
           {action && !room.actions ? (
@@ -122,7 +122,7 @@ function Block({ appt, top, height, running, progress, dragging, conflict,
               type="button"
               onClick={() => onPrimary(appt, action)}
               className={`ml-auto rounded-full px-3 min-h-[36px] flex items-center gap-1.5
-                text-[11px] font-extrabold
+                text-[0.6875rem] font-extrabold
                 ${action === 'invoice' ? 'bg-amber text-on-amber' : 'bg-paper text-teal-deep'}`}
               data-testid={`day-primary-${appt.id}`}
             >
@@ -131,7 +131,7 @@ function Block({ appt, top, height, running, progress, dragging, conflict,
               {action === 'invoice' && <><Receipt size={12} /> {t('day_invoice')}</>}
             </button>
           ) : running ? (
-            <span className="ml-auto bg-black/20 rounded-full px-2 py-[2px] text-[9px] font-extrabold">
+            <span className="ml-auto bg-black/20 rounded-full px-2 py-[2px] text-[0.5625rem] font-extrabold">
               {t('day_running')}
             </span>
           ) : null}
@@ -141,19 +141,19 @@ function Block({ appt, top, height, running, progress, dragging, conflict,
           {/* The job, not the project dashboard. A two-hour visit does not
               want a tab strip for Kanban and Gantt in front of the address. */}
           <button type="button" onClick={() => onOpen(appt)}
-                  className="text-left font-extrabold text-[13.5px] text-ink leading-tight"
+                  className="text-left font-extrabold text-[0.84375rem] text-ink leading-tight"
                   data-testid={`day-open-${appt.id}`}>
             {appt.title}
           </button>
           {room.body && (
             <>
               {appt.customer_name && (
-                <p className="font-semibold text-[11.5px] text-ink-soft mt-1 flex items-center gap-1.5">
+                <p className="font-semibold text-[0.71875rem] text-ink-soft mt-1 flex items-center gap-1.5">
                   <User size={12} className="text-ink-muted" /> {appt.customer_name}
                 </p>
               )}
               {(appt.site_address || appt.customer_address) && (
-                <p className="text-[11.5px] text-ink-muted mt-0.5 flex items-center gap-1.5">
+                <p className="text-[0.71875rem] text-ink-muted mt-0.5 flex items-center gap-1.5">
                   <MapPin size={12} />
                   {appt.site_address || appt.customer_address}
                   {appt.site_city || appt.customer_city ? `, ${appt.site_city || appt.customer_city}` : ''}
@@ -164,10 +164,10 @@ function Block({ appt, top, height, running, progress, dragging, conflict,
           {running && room.actions && progress != null && (
             <div className="mt-2">
               <div className="flex justify-between items-baseline mb-1">
-                <span className="font-bold text-[10.5px] text-ink-soft">
+                <span className="font-bold text-[0.65625rem] text-ink-soft">
                   {t('day_since')} {durationLabel(progress.elapsed)}
                 </span>
-                <span className="font-extrabold text-[11px] text-red-warn">
+                <span className="font-extrabold text-[0.6875rem] text-red-warn">
                   {t('day_left')} {durationLabel(progress.remaining)}
                 </span>
               </div>
@@ -186,7 +186,7 @@ function Block({ appt, top, height, running, progress, dragging, conflict,
               target="_blank" rel="noreferrer"
               aria-disabled={!routeHref(appt)}
               className={`flex-1 min-h-[44px] flex items-center justify-center gap-1
-                         font-bold text-[10.5px] text-teal
+                         font-bold text-[0.65625rem] text-teal
                          ${routeHref(appt) ? '' : 'opacity-40 pointer-events-none'}`}
               data-testid="day-route"
             >
@@ -196,7 +196,7 @@ function Block({ appt, top, height, running, progress, dragging, conflict,
               href={phone ? `tel:${phone}` : undefined}
               aria-disabled={!phone}
               className={`flex-1 min-h-[44px] flex items-center justify-center gap-1
-                font-bold text-[10.5px] border-l border-sm-border
+                font-bold text-[0.65625rem] border-l border-sm-border
                 ${phone ? 'text-teal' : 'text-ink-faint pointer-events-none'}`}
             >
               <Phone size={13} /> {t('day_call')}
@@ -205,7 +205,7 @@ function Block({ appt, top, height, running, progress, dragging, conflict,
               type="button"
               onClick={() => onOpen(appt)}
               className="flex-1 min-h-[44px] flex items-center justify-center gap-1
-                         font-bold text-[10.5px] text-teal border-l border-sm-border"
+                         font-bold text-[0.65625rem] text-teal border-l border-sm-border"
             >
               <FileText size={13} /> {t('day_note')}
             </button>
@@ -214,7 +214,7 @@ function Block({ appt, top, height, running, progress, dragging, conflict,
                 type="button"
                 onClick={() => onPrimary(appt, action)}
                 className={`flex-1 min-h-[44px] flex items-center justify-center gap-1
-                  font-extrabold text-[10.5px] border-l border-sm-border
+                  font-extrabold text-[0.65625rem] border-l border-sm-border
                   ${action === 'invoice' ? 'bg-amber text-on-amber' : 'bg-teal text-paper'}`}
                 data-testid={`day-primary-${appt.id}`}
               >
@@ -603,7 +603,7 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
                 {/* The span is what the empty time is actually worth. It goes
                     only when there is no room for it, never truncated. */}
                 {height >= 62 && (
-                  <span className="font-bold text-[10px] text-ink-muted">
+                  <span className="font-bold text-[0.625rem] text-ink-muted">
                     {hhmm(r.start)}–{hhmm(r.end)} · {durationLabel(span)}
                   </span>
                 )}
@@ -619,7 +619,7 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
           {showNow && now >= toMs(dayStart) && now <= toMs(dayEnd) && (
             <>
               <span className="absolute bg-red-warn text-paper rounded-full px-1.5 py-[2px]
-                               font-extrabold text-[9px]"
+                               font-extrabold text-[0.5625rem]"
                     style={{ left: -40, top: topOf(now), transform: 'translateY(-50%)', zIndex: 6 }}
                     data-testid="day-now">
                 {hhmm(now)}
@@ -664,11 +664,11 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
             <div className="absolute left-0 flex items-center gap-1.5"
                  style={{ top: topOf(drag.endMs) + 7, zIndex: 12 }}
                  data-testid="day-readout">
-              <span className="bg-ink text-paper rounded-lg px-2.5 py-1 font-extrabold text-[12px]"
+              <span className="bg-ink text-paper rounded-lg px-2.5 py-1 font-extrabold text-[0.75rem]"
                     style={{ boxShadow: '0 3px 10px rgba(0,0,0,.35)' }}>
                 {t('day_until')} {hhmm(drag.endMs)}
               </span>
-              <span className="bg-teal text-paper rounded-full px-2 py-[3px] font-extrabold text-[10px]">
+              <span className="bg-teal text-paper rounded-full px-2 py-[3px] font-extrabold text-[0.625rem]">
                 {drag.endMs >= toMs(appts.find((a) => a.id === drag.id).end) ? '+' : '−'}
                 {Math.abs(Math.round((drag.endMs - toMs(appts.find((a) => a.id === drag.id).end)) / MIN))} min
               </span>
@@ -746,10 +746,10 @@ function ConflictSheet({ pending, appts, onCancel, onConfirm, t }) {
         <div className="flex items-start gap-2.5 mb-3">
           <AlertTriangle size={20} className="text-red-warn flex-none mt-0.5" />
           <div className="flex-1">
-            <p className="font-headings font-bold text-[15px] text-ink">
+            <p className="font-headings font-bold text-[0.9375rem] text-ink">
               {t('day_conflict_title')}
             </p>
-            <p className="text-[12px] text-ink-soft mt-1 leading-relaxed">
+            <p className="text-[0.75rem] text-ink-soft mt-1 leading-relaxed">
               {pending.moved.length === 1
                 ? t('day_conflict_one')
                     .replace('{title}', affected?.title || '—')
@@ -765,20 +765,20 @@ function ConflictSheet({ pending, appts, onCancel, onConfirm, t }) {
             const a = appts.find((x) => x.id === m.id);
             return (
               <div key={m.id} className="mb-1.5 last:mb-0">
-                <p className="font-bold text-[11.5px] text-ink">{a?.title}</p>
+                <p className="font-bold text-[0.71875rem] text-ink">{a?.title}</p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="font-bold text-[11px] text-ink-muted w-14">
+                  <span className="font-bold text-[0.6875rem] text-ink-muted w-14">
                     {t('day_before')}
                   </span>
-                  <span className="font-bold text-[12px] text-ink line-through decoration-ink-faint">
+                  <span className="font-bold text-[0.75rem] text-ink line-through decoration-ink-faint">
                     {hhmm(m.from.start)} – {hhmm(m.from.end)}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="font-bold text-[11px] text-ink-muted w-14">
+                  <span className="font-bold text-[0.6875rem] text-ink-muted w-14">
                     {t('day_after')}
                   </span>
-                  <span className="font-extrabold text-[12px] text-teal">
+                  <span className="font-extrabold text-[0.75rem] text-teal">
                     {hhmm(m.to.start)} – {hhmm(m.to.end)}
                   </span>
                 </div>
@@ -788,7 +788,7 @@ function ConflictSheet({ pending, appts, onCancel, onConfirm, t }) {
         </div>
 
         {pending.blocked.length > 0 && (
-          <p className="text-[11.5px] text-red-warn mb-3 flex items-center gap-1.5">
+          <p className="text-[0.71875rem] text-red-warn mb-3 flex items-center gap-1.5">
             <AlertTriangle size={13} />
             {t('day_past_end', { time: DAY_END_LABEL })}
           </p>
@@ -806,13 +806,13 @@ function ConflictSheet({ pending, appts, onCancel, onConfirm, t }) {
             ${withSms && hasPhone ? 'bg-teal text-paper' : 'border border-sm-border bg-paper'}`}>
             {withSms && hasPhone ? '✓' : ''}
           </span>
-          <span className="font-bold text-[11.5px] text-ink flex-1">
+          <span className="font-bold text-[0.71875rem] text-ink flex-1">
             {hasPhone
               ? `${affected?.customer_name || t('day_customer')} ${t('day_notify')}`
               : t('day_no_phone')}
           </span>
           {hasPhone && (
-            <span className="text-[10px] text-ink-muted">{affected.customer_phone}</span>
+            <span className="text-[0.625rem] text-ink-muted">{affected.customer_phone}</span>
           )}
         </button>
 
@@ -820,7 +820,7 @@ function ConflictSheet({ pending, appts, onCancel, onConfirm, t }) {
           <button
             type="button"
             onClick={() => onConfirm(withSms && hasPhone)}
-            className="flex-1 min-h-[46px] rounded-[12px] bg-teal text-paper font-extrabold text-[12.5px]"
+            className="flex-1 min-h-[46px] rounded-[12px] bg-teal text-paper font-extrabold text-[0.78125rem]"
             data-testid="day-confirm-move"
           >
             {withSms && hasPhone
@@ -831,14 +831,14 @@ function ConflictSheet({ pending, appts, onCancel, onConfirm, t }) {
             type="button"
             onClick={() => onConfirm(false)}
             className="min-h-[46px] px-4 rounded-[12px] border border-sm-border bg-paper
-                       text-ink-soft font-bold text-[12px] whitespace-nowrap"
+                       text-ink-soft font-bold text-[0.75rem] whitespace-nowrap"
             data-testid="day-allow-overlap"
           >
             {t('day_allow_overlap')}
           </button>
         </div>
         <button type="button" onClick={onCancel}
-                className="w-full text-center font-semibold text-[11px] text-ink-muted mt-3 py-2">
+                className="w-full text-center font-semibold text-[0.6875rem] text-ink-muted mt-3 py-2">
           {t('cancel')}
         </button>
       </div>
@@ -994,11 +994,11 @@ function SlotBand({ run, startMin, minutes, maxMinutes, windowMinutes,
   return (
     <div className="rounded-[14px] border border-sm-border bg-cream-soft p-3 mb-4"
          data-testid="day-new-band">
-      <p className="font-extrabold text-[12.5px] text-ink mb-1.5 flex items-baseline gap-1.5
+      <p className="font-extrabold text-[0.78125rem] text-ink mb-1.5 flex items-baseline gap-1.5
                     flex-wrap" data-testid="day-new-readout">
         <span>{hhmm(start)} – {hhmm(end)} · {durationLabel(minutes * MIN)}</span>
         {over > 0 && (
-          <span className="font-extrabold text-[11px] text-red-warn">
+          <span className="font-extrabold text-[0.6875rem] text-red-warn">
             · {durationLabel(over * MIN)} {t('day_over_window')}
           </span>
         )}
@@ -1033,7 +1033,7 @@ function SlotBand({ run, startMin, minutes, maxMinutes, windowMinutes,
         {ticks}
         <div
           className="absolute top-0 bottom-0 bg-teal flex items-center pl-2.5
-                     text-paper font-extrabold text-[11.5px]"
+                     text-paper font-extrabold text-[0.71875rem]"
           style={{ left: pc(startMin),
                    width: pc(Math.max(0, Math.min(endMin, windowMinutes) - startMin)),
                    borderRadius: over > 0 ? '9px 0 0 9px' : 9 }}
@@ -1052,7 +1052,7 @@ function SlotBand({ run, startMin, minutes, maxMinutes, windowMinutes,
         {over > 0 && (
           <div
             className="absolute top-0 bottom-0 rounded-r-[9px] bg-red-warn flex items-center
-                       justify-center text-paper font-extrabold text-[10px]"
+                       justify-center text-paper font-extrabold text-[0.625rem]"
             style={{ left: pc(Math.max(startMin, windowMinutes)), width: pc(over) }}
             data-testid="day-new-over"
           >
@@ -1078,7 +1078,7 @@ function SlotBand({ run, startMin, minutes, maxMinutes, windowMinutes,
                   style={{ left: pc(fromL),
                            width: pc((toMs(m.from.end) - toMs(m.from.start)) / MIN) }} />
             <span className="absolute top-0 bottom-0 rounded-[6px] bg-amber flex items-center
-                             px-1.5 font-extrabold text-[9.5px] text-on-amber
+                             px-1.5 font-extrabold text-[0.59375rem] text-on-amber
                              overflow-hidden whitespace-nowrap"
                   style={{ left: pc(toL), width: pc(w) }}>
               {hhmm(m.to.start)}
@@ -1087,7 +1087,7 @@ function SlotBand({ run, startMin, minutes, maxMinutes, windowMinutes,
         );
       })}
 
-      <div className="relative h-[13px] mt-1.5 font-bold text-[10px] text-ink-muted"
+      <div className="relative h-[13px] mt-1.5 font-bold text-[0.625rem] text-ink-muted"
            data-testid="day-new-axis">
         <span className="absolute left-0 top-0">{hhmm(run.start)}</span>
         {axis.map(({ f, at }) => (
@@ -1103,22 +1103,22 @@ function SlotBand({ run, startMin, minutes, maxMinutes, windowMinutes,
         /* The drive is only claimed on a side that actually has a neighbour —
            the first slot of the day has nothing to drive from. */
         <div className="flex items-center justify-between gap-2 mt-1.5">
-          <span className="flex items-center gap-1 font-bold text-[9.5px] text-ink-faint">
+          <span className="flex items-center gap-1 font-bold text-[0.59375rem] text-ink-faint">
             {run.insetBefore && <><Car size={11} /> {t('day_drive_before')}</>}
           </span>
           {rest > 0 && (
-            <span className="font-bold text-[10px] text-ink-muted whitespace-nowrap"
+            <span className="font-bold text-[0.625rem] text-ink-muted whitespace-nowrap"
                   data-testid="day-new-rest">
               {durationLabel(rest * MIN)} {t('day_stays_free')}
             </span>
           )}
-          <span className="flex items-center gap-1 font-bold text-[9.5px] text-ink-faint">
+          <span className="flex items-center gap-1 font-bold text-[0.59375rem] text-ink-faint">
             {run.insetAfter && <>{t('day_drive_after')} <Car size={11} /></>}
           </span>
         </div>
       ) : (
         <>
-          <div className="flex items-start gap-1.5 mt-2 font-bold text-[10.5px]
+          <div className="flex items-start gap-1.5 mt-2 font-bold text-[0.65625rem]
                           text-red-warn leading-snug" data-testid="day-new-warning">
             <AlertTriangle size={12} className="flex-none mt-px" />
             <span>
@@ -1132,11 +1132,11 @@ function SlotBand({ run, startMin, minutes, maxMinutes, windowMinutes,
                 : t('day_pushes_many', { from: hhmm(run.end), n: moved.length })}
             </span>
           </div>
-          <p className="text-[10px] text-ink-muted mt-1 leading-relaxed">
+          <p className="text-[0.625rem] text-ink-muted mt-1 leading-relaxed">
             {t('day_pushes_note')}
           </p>
           {blocked.length > 0 && (
-            <p className="text-[10px] text-red-warn font-bold mt-1"
+            <p className="text-[0.625rem] text-red-warn font-bold mt-1"
                data-testid="day-new-blocked">
               {t('day_past_end', { time: DAY_END_LABEL })}
             </p>
@@ -1233,7 +1233,7 @@ function NewAppointmentSheet({ run, appts, dayEnd, onCreate, onClose, t }) {
       <form className="w-full bg-paper rounded-t-[20px] p-5 shadow-2xl"
             ref={panel} onClick={(e) => e.stopPropagation()} onSubmit={submit}>
         <div className="flex items-center gap-2 mb-1">
-          <p className="font-headings font-bold text-[15px] text-ink flex-1">
+          <p className="font-headings font-bold text-[0.9375rem] text-ink flex-1">
             {t('day_new_appt_title')}
           </p>
           <button type="button" onClick={onClose} aria-label={t('ui_close')}
@@ -1253,7 +1253,7 @@ function NewAppointmentSheet({ run, appts, dayEnd, onCreate, onClose, t }) {
                     }} t={t} />
         </div>
 
-        <label className="block font-bold text-[11px] text-ink-soft mb-1.5">
+        <label className="block font-bold text-[0.6875rem] text-ink-soft mb-1.5">
           {t('day_what')}
         </label>
         <input
@@ -1261,19 +1261,19 @@ function NewAppointmentSheet({ run, appts, dayEnd, onCreate, onClose, t }) {
           onChange={(e) => setTitle(e.target.value)}
           placeholder={t('day_what_ph')}
           className="w-full min-h-[46px] px-3 rounded-[12px] border border-sm-border bg-cream-soft
-                     text-[13px] text-ink mb-4"
+                     text-[0.8125rem] text-ink mb-4"
           data-testid="day-new-title"
           autoFocus
         />
 
-        <label className="block font-bold text-[11px] text-ink-soft mb-1.5">
+        <label className="block font-bold text-[0.6875rem] text-ink-soft mb-1.5">
           {t('day_customer')}
         </label>
         <select
           value={customerId}
           onChange={(e) => setCustomerId(e.target.value)}
           className="w-full min-h-[46px] px-3 rounded-[12px] border border-sm-border bg-cream-soft
-                     text-[13px] text-ink mb-4"
+                     text-[0.8125rem] text-ink mb-4"
           data-testid="day-new-customer"
         >
           <option value="">{t('day_no_customer')}</option>
@@ -1282,7 +1282,7 @@ function NewAppointmentSheet({ run, appts, dayEnd, onCreate, onClose, t }) {
           ))}
         </select>
 
-        <label className="block font-bold text-[11px] text-ink-soft mb-1.5">
+        <label className="block font-bold text-[0.6875rem] text-ink-soft mb-1.5">
           {t('day_duration')}
         </label>
         <div className="flex gap-1.5 overflow-x-auto pb-1 mb-4" data-testid="day-new-durations">
@@ -1294,7 +1294,7 @@ function NewAppointmentSheet({ run, appts, dayEnd, onCreate, onClose, t }) {
                 setMinutes(m);
                 if (startMin + m > maxMinutes) setStartMin(maxMinutes - m);
               }}
-              className={`min-h-[44px] px-3.5 rounded-[11px] font-bold text-[12px] whitespace-nowrap
+              className={`min-h-[44px] px-3.5 rounded-[11px] font-bold text-[0.75rem] whitespace-nowrap
                 ${minutes === m ? 'bg-teal text-paper'
                                 : 'bg-cream-soft border border-sm-border text-ink-soft'}`}
               data-testid={`day-new-dur-${m}`}
@@ -1309,7 +1309,7 @@ function NewAppointmentSheet({ run, appts, dayEnd, onCreate, onClose, t }) {
         <button
           type="submit"
           disabled={title.trim().length < 3 || saving}
-          className={`w-full min-h-[48px] rounded-[12px] font-extrabold text-[13px]
+          className={`w-full min-h-[48px] rounded-[12px] font-extrabold text-[0.8125rem]
                       flex items-center justify-center gap-2
             ${title.trim().length < 3 || saving ? 'bg-cream-deep text-ink-faint'
               : movedNamed.length ? 'bg-red-warn text-paper' : 'bg-teal text-paper'}`}
@@ -1340,10 +1340,10 @@ function CompletedSheet({ appt, hasToolkit, onInvoice, onUnlock, onClose, t }) {
         <div className="flex items-start gap-3 mb-4">
           <CheckCircle2 size={22} className="text-green-pos flex-none mt-0.5" />
           <div className="flex-1">
-            <p className="font-headings font-bold text-[15px] text-ink">
+            <p className="font-headings font-bold text-[0.9375rem] text-ink">
               {t('day_completed_title')}
             </p>
-            <p className="text-[12px] text-ink-soft mt-1 leading-relaxed">
+            <p className="text-[0.75rem] text-ink-soft mt-1 leading-relaxed">
               {appt.title}{appt.customer_name ? ` · ${appt.customer_name}` : ''}
             </p>
           </div>
@@ -1353,14 +1353,14 @@ function CompletedSheet({ appt, hasToolkit, onInvoice, onUnlock, onClose, t }) {
           <>
             <div className="flex items-start gap-2.5 bg-cream-soft rounded-[12px] p-3 mb-3">
               <Lock size={16} className="text-ink-muted flex-none mt-0.5" />
-              <p className="text-[11.5px] text-ink-soft leading-relaxed">
+              <p className="text-[0.71875rem] text-ink-soft leading-relaxed">
                 {t('day_invoice_locked')}
               </p>
             </div>
             <button
               type="button" onClick={onUnlock}
               className="w-full min-h-[46px] rounded-[12px] bg-teal text-paper
-                         font-extrabold text-[12.5px]"
+                         font-extrabold text-[0.78125rem]"
               data-testid="day-unlock-toolkit"
             >
               {t('day_unlock_invoicing')}
@@ -1368,13 +1368,13 @@ function CompletedSheet({ appt, hasToolkit, onInvoice, onUnlock, onClose, t }) {
           </>
         ) : (
           <>
-            <p className="text-[12px] text-ink-soft mb-3 leading-relaxed">
+            <p className="text-[0.75rem] text-ink-soft mb-3 leading-relaxed">
               {t('day_invoice_prompt')}
             </p>
             <button
               type="button" onClick={onInvoice}
               disabled={hasToolkit === null}
-              className={`w-full min-h-[46px] rounded-[12px] font-extrabold text-[12.5px]
+              className={`w-full min-h-[46px] rounded-[12px] font-extrabold text-[0.78125rem]
                 flex items-center justify-center gap-2
                 ${hasToolkit === null ? 'bg-cream-deep text-ink-faint' : 'bg-teal text-paper'}`}
               data-testid="day-make-invoice"
@@ -1384,7 +1384,7 @@ function CompletedSheet({ appt, hasToolkit, onInvoice, onUnlock, onClose, t }) {
           </>
         )}
         <button type="button" onClick={onClose}
-                className="w-full text-center font-semibold text-[11.5px] text-ink-muted mt-3 py-2.5
+                className="w-full text-center font-semibold text-[0.71875rem] text-ink-muted mt-3 py-2.5
                            min-h-[44px]"
                 data-testid="day-invoice-later">
           {t('day_later')}
@@ -1419,10 +1419,10 @@ function SmsSheet({ sms, body, onTemplate, onClose, t }) {
       <div className="w-full bg-paper rounded-t-[20px] p-5 shadow-2xl"
            ref={panel} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-2 mb-3">
-          <p className="font-headings font-bold text-[15px] text-ink flex-1">
+          <p className="font-headings font-bold text-[0.9375rem] text-ink flex-1">
             {t('day_sms_to').replace('{name}', sms.appt.customer_name || '—')}
           </p>
-          <span className="text-[11px] text-ink-muted">{phone}</span>
+          <span className="text-[0.6875rem] text-ink-muted">{phone}</span>
           <button type="button" onClick={onClose} aria-label={t('ui_close')}
                   className="w-11 h-11 -mr-2 flex items-center justify-center text-ink-muted flex-none">
             <X size={19} />
@@ -1435,7 +1435,7 @@ function SmsSheet({ sms, body, onTemplate, onClose, t }) {
               key={tpl.key}
               type="button"
               onClick={() => onTemplate(tpl.key)}
-              className={`flex-1 min-h-[44px] rounded-[10px] font-bold text-[11px]
+              className={`flex-1 min-h-[44px] rounded-[10px] font-bold text-[0.6875rem]
                 ${sms.template === tpl.key
                   ? 'bg-teal text-paper'
                   : 'bg-cream-soft border border-sm-border text-ink-muted'}`}
@@ -1447,14 +1447,14 @@ function SmsSheet({ sms, body, onTemplate, onClose, t }) {
         </div>
 
         <div className="border-[1.5px] border-sm-border rounded-[12px] p-3 bg-cream-soft">
-          <p className="text-[12px] text-ink leading-relaxed whitespace-pre-line"
+          <p className="text-[0.75rem] text-ink leading-relaxed whitespace-pre-line"
              data-testid="day-sms-body">{body}</p>
         </div>
         <div className="flex justify-between items-center mt-2 mb-3 px-0.5">
-          <span className="font-bold text-[10.5px] text-ink-muted">
+          <span className="font-bold text-[0.65625rem] text-ink-muted">
             {t('day_sms_from_phone')}
           </span>
-          <span className="text-[10px] text-ink-faint">
+          <span className="text-[0.625rem] text-ink-faint">
             {seg.units} {t('day_chars')} · {seg.segments} SMS
           </span>
         </div>
@@ -1464,7 +1464,7 @@ function SmsSheet({ sms, body, onTemplate, onClose, t }) {
             type="button"
             onClick={hand}
             className="flex-1 min-h-[46px] rounded-[12px] bg-teal text-paper font-extrabold
-                       text-[12.5px] flex items-center justify-center gap-2"
+                       text-[0.78125rem] flex items-center justify-center gap-2"
             data-testid="day-sms-send"
           >
             <Copy size={15} /> {t('day_copy_open')}
@@ -1473,12 +1473,12 @@ function SmsSheet({ sms, body, onTemplate, onClose, t }) {
             type="button"
             onClick={onClose}
             className="min-h-[46px] px-4 rounded-[12px] border border-sm-border bg-paper
-                       text-ink-soft font-bold text-[12px] whitespace-nowrap"
+                       text-ink-soft font-bold text-[0.75rem] whitespace-nowrap"
           >
             {t('day_skip_sms')}
           </button>
         </div>
-        <p className="text-[10px] text-ink-faint text-center mt-2.5 leading-relaxed">
+        <p className="text-[0.625rem] text-ink-faint text-center mt-2.5 leading-relaxed">
           {copied
             ? t('day_sms_paste')
             : t('day_sms_note')}

@@ -120,12 +120,16 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full backdrop-blur-xl bg-cream/90 border-b border-sm-border transition-all duration-300">
       <div className="page-container">
         <div className="flex h-16 items-center justify-between gap-2">
-          {/* Logo + brand — visible on BOTH mobile and desktop */}
-          <Link to="/" className="flex items-center gap-2 flex-shrink-0" data-testid="logo">
-            <div className="w-8 h-8 bg-teal rounded-[14px] flex items-center justify-center">
+          {/* Logo + brand — visible on BOTH mobile and desktop.
+              Allowed to shrink: with `flex-shrink-0` and a nowrap wordmark it
+              held its full width at 200% text and pushed the bell and avatar
+              129 px off the right of the screen, which made every page in the
+              app scroll sideways. The mark never shrinks; the word does. */}
+          <Link to="/" className="flex items-center gap-2 min-w-0" data-testid="logo">
+            <div className="w-8 h-8 flex-none bg-teal rounded-[14px] flex items-center justify-center">
               <Hammer size={16} className="text-paper" strokeWidth={1.5} />
             </div>
-            <span className="font-headings font-bold text-base sm:text-lg text-ink whitespace-nowrap">
+            <span className="font-headings font-bold text-base sm:text-lg text-ink truncate">
               Service<span className="text-teal">Market</span>
             </span>
           </Link>
@@ -174,17 +178,23 @@ export default function Header() {
             )}
           </nav>
 
-          {/* Right side: bell + avatar only */}
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Right side: bell + avatar only.
+              These are icons and they do not shrink — squeezing this block
+              only made its contents spill out of it. What gives instead is
+              the wordmark on the left, which is text and can truncate. Before
+              either change, this row pushed 129 px past the viewport at 200%
+              text and every screen in the app scrolled sideways. */}
+          <div className="flex items-center gap-1.5 flex-none">
             {user && (
               <>
                 {/* Notification bell */}
-                <div className="relative" ref={notifRef}>
+                <div className="relative flex-none" ref={notifRef}>
                   <button
                     onClick={() => { setNotifOpen(!notifOpen); if (!notifOpen) refresh(); }}
-                    className="relative p-2 rounded-full hover:bg-cream-deep transition-colors"
+                    className="relative w-11 h-11 flex-none flex items-center justify-center
+                               rounded-full hover:bg-cream-deep transition-colors"
                     data-testid="notification-bell"
-                    aria-label="notifications"
+                    aria-label={t('nav_notifications')}
                   >
                     <Bell size={20} className="text-ink-soft" />
                     {unreadCount > 0 && (
@@ -300,17 +310,17 @@ export default function Header() {
                 </div>
 
                 {/* User menu (avatar) — language now lives inside this dropdown */}
-                <div className="relative" ref={userMenuRef}>
+                <div className="relative flex-none" ref={userMenuRef}>
                   <button
                     onClick={() => { setUserMenuOpen(!userMenuOpen); setLangSubOpen(false); }}
-                    className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full border border-sm-border bg-paper hover:bg-cream-soft transition-colors"
+                    className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full border border-sm-border bg-paper hover:bg-cream-soft transition-colors flex-none"
                     data-testid="user-menu-button"
                     aria-label={t('ui_user_menu')}
                   >
-                    <div className="w-7 h-7 bg-teal/10 rounded-full flex items-center justify-center">
+                    <div className="w-7 h-7 flex-none bg-teal/10 rounded-full flex items-center justify-center">
                       <span className="text-teal text-xs font-bold">{user.name?.[0]?.toUpperCase()}</span>
                     </div>
-                    <ChevronDown size={12} className="text-ink-muted" />
+                    <ChevronDown size={12} className="text-ink-muted flex-none" />
                   </button>
                   {userMenuOpen && (
                     <div className="absolute right-0 mt-2 w-56 bg-paper border border-sm-border rounded-[14px] shadow-lg overflow-hidden animate-fade-in" data-testid="user-dropdown">
