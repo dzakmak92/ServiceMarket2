@@ -50,6 +50,44 @@ def _snap(v: Any) -> dict:
     return {}
 
 
+def totals_rows(quote: dict, lines: list) -> list[list[Any]]:
+    """The rows under the position table.
+
+    A pure function so it can be checked without rendering a PDF and reading
+    the bytes back.
+
+    The document discount gets its own row. The positions above print the
+    amount before it and "Nettobetrag" printed the amount after it, with
+    nothing in between to explain the gap: on a 20 % quote the single line
+    read 1.000,00 € and the net read 800,00 €. A legally binding offer whose
+    own figures do not add up is not a rounding complaint — it is a document
+    the customer is entitled to query and the pro cannot defend.
+
+    Optional positions are excluded from the subtotal for the same reason
+    they are excluded from the total: they are not part of the offer unless
+    the customer selects them.
+    """
+    disc_pct = _d(quote.get("discount_pct"))
+    net = _d(quote.get("net_total"))
+    rows: list[list[Any]] = []
+    if disc_pct and disc_pct < Decimal("100"):
+        subtotal = sum(
+            (_d(l.get("net_amount")) for l in lines
+             if not (l.get("is_optional") and not l.get("is_selected"))),
+            Decimal("0"))
+        if not subtotal:
+            subtotal = (net / (Decimal("1") - disc_pct / Decimal("100"))
+                        ).quantize(Decimal("0.01"))
+        rows.append(["Zwischensumme", _eur(subtotal)])
+        rows.append([f"Rabatt {disc_pct:.0f} %".replace(".", ","),
+                     "-" + _eur(subtotal - net)])
+    rows.append(["Nettobetrag", _eur(net)])
+    if _d(quote.get("vat_total")):
+        rows.append(["USt.", _eur(quote.get("vat_total"))])
+    rows.append(["Gesamtbetrag", _eur(quote.get("gross_total"))])
+    return rows
+
+
 def render_quote_pdf(quote: dict, *, pro: dict, customer: dict) -> bytes:
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
@@ -130,7 +168,11 @@ def render_quote_pdf(quote: dict, *, pro: dict, customer: dict) -> bytes:
         qty = _d(ln.get("qty"))
         waste = _d(ln.get("waste_factor"))
         effective_qty = qty * (Decimal("1") + waste)
-        amount = _d(ln.get("line_net"))
+        # `net_amount` is the generated column on quote_lines. This read
+        # `line_net`, a key that exists nowhere in the codebase, so the
+        # fallback recomputation ran on every line of every quote ever
+        # rendered — silently, and only correct by luck.
+        amount = _d(ln.get("net_amount"))
         if not amount:
             amount = effective_qty * _d(ln.get("unit_price"))
             amount -= amount * _d(ln.get("discount_pct")) / Decimal("100")
@@ -171,10 +213,14 @@ def render_quote_pdf(quote: dict, *, pro: dict, customer: dict) -> bytes:
     el.append(Spacer(1, 4 * mm))
 
     # ── Totals ─────────────────────────────────────────────────────────
-    totals = [["Nettobetrag", _eur(quote.get("net_total"))]]
-    if _d(quote.get("vat_total")):
-        totals.append(["USt.", _eur(quote.get("vat_total"))])
-    totals.append(["Gesamtbetrag", _eur(quote.get("gross_total"))])
+    #
+    # The document discount gets its own row. The positions above print the
+    # amount before it and "Nettobetrag" printed the amount after it, with
+    # nothing in between to explain the gap: on a 20 % quote the single line
+    # read 1.000,00 € and the net read 800,00 €. A legally binding offer whose
+    # own figures do not add up is not a rounding complaint — it is a document
+    # the customer is entitled to query and the pro cannot defend.
+    totals = totals_rows(quote, lines)
 
     el.append(Table(totals, colWidths=[120 * mm, 50 * mm], hAlign="RIGHT",
                     style=TableStyle([

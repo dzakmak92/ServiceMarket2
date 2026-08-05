@@ -82,12 +82,19 @@ export default function QuoteEditorPage() {
   // §13b reverse charge, cross-border — and the client has no business
   // guessing at that, so the server's figures are shown once it has recomputed.
   const previewNet = useMemo(
-    () => lines.reduce((sum, l) => {
-      if (l.is_optional && !l.is_selected) return sum;
-      const qty = Number(l.qty || 0) * (1 + Number(l.waste_factor || 0));
-      return sum + qty * Number(l.unit_price || 0) * (1 - Number(l.discount_pct || 0) / 100);
-    }, 0),
-    [lines],
+    () => {
+      const lineNet = lines.reduce((sum, l) => {
+        if (l.is_optional && !l.is_selected) return sum;
+        const qty = Number(l.qty || 0) * (1 + Number(l.waste_factor || 0));
+        return sum + qty * Number(l.unit_price || 0) * (1 - Number(l.discount_pct || 0) / 100);
+      }, 0);
+      /* The document discount belongs here too. Without it this screen showed
+         the pro € 2.000,00 on a quote the customer would receive for
+         € 1.600,00 — the two numbers that must never disagree, disagreeing by
+         the size of the discount. */
+      return lineNet * (1 - Number(quote?.discount_pct || 0) / 100);
+    },
+    [lines, quote],
   );
 
   const payload = () => lines
@@ -287,11 +294,32 @@ export default function QuoteEditorPage() {
           )}
         </div>
 
-        <div className="card mt-4 flex items-center justify-between">
-          <span className="text-sm text-ink-muted">{t('net_preview')}</span>
-          <span className="font-headings font-bold text-ink" data-testid="quote-editor-net">
-            {fmtEur(dirty ? previewNet : quote.net_total)}
-          </span>
+        <div className="card mt-4">
+          {/* A document discount was invisible on this screen: it is set when
+              the quote is created and there is no field for it anywhere, so a
+              pro could neither see it nor remove it, while the customer's copy
+              was reduced by it. Shown here at least — an editable field needs
+              an endpoint that does not exist yet. */}
+          {Number(quote.discount_pct || 0) > 0 && (
+            <div className="flex items-center justify-between text-sm mb-2 pb-2
+                            border-b border-sm-border">
+              <span className="text-ink-muted">
+                {t('quote_doc_discount').replace('{pct}',
+                  String(Number(quote.discount_pct).toFixed(0)))}
+              </span>
+              <span className="font-bold text-amber-text" data-testid="quote-editor-discount">
+                −{fmtEur((dirty ? previewNet : Number(quote.net_total))
+                  / (1 - Number(quote.discount_pct) / 100)
+                  - (dirty ? previewNet : Number(quote.net_total)))}
+              </span>
+            </div>
+          )}
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-ink-muted">{t('net_preview')}</span>
+            <span className="font-headings font-bold text-ink" data-testid="quote-editor-net">
+              {fmtEur(dirty ? previewNet : quote.net_total)}
+            </span>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-2 mt-4">
