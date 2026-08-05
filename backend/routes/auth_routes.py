@@ -93,6 +93,12 @@ class OnboardingIn(BaseModel):
     company_name: str = Field(min_length=2)
     licence_file_id: str = Field(min_length=1)
     insurance_file_id: Optional[str] = None
+    # The Meisterbrief is a different claim from the trade licence — see
+    # migration 017. Optional because which trades require it varies.
+    meister_file_id: Optional[str] = None
+    # Chosen on the first onboarding step, so the account keeps it on any
+    # device rather than only in the browser that signed up.
+    lang: Optional[str] = Field(default=None, pattern="^(de|en|tr|es)$")
     # Where the business actually is. Optional because a pro can decline the
     # browser's location prompt and still finish signing up — the address they
     # typed is enough to resolve a town from later.
@@ -454,13 +460,14 @@ async def onboarding(data: OnboardingIn, request: Request,
         await con.execute(
             """
             update users set country=$2, name=$3, given_name=$4, family_name=$5,
-              phone=$6, address=$7, postal_code=$8, city=$9, onboarding_complete=true
+              phone=$6, address=$7, postal_code=$8, city=$9, onboarding_complete=true,
+              lang = coalesce($10, lang)
             where id::text = $1
             """,
             user["id"], data.country, full_name,
             (data.name or "").strip() or None, (data.surname or "").strip() or None,
             data.phone.strip(), data.address.strip(),
-            data.postal_code.strip(), data.city.strip())
+            data.postal_code.strip(), data.city.strip(), data.lang)
 
         # The business address goes onto the profile as well as the user.
         # It was only ever written to `users`, so every pro finished onboarding
@@ -475,9 +482,10 @@ async def onboarding(data: OnboardingIn, request: Request,
                                       invoice_country, business_country,
                                       business_address, business_postal_code,
                                       business_city,
-                                      service_center_lat, service_center_lng)
+                                      service_center_lat, service_center_lng,
+                                      meister_file_id, meister_status)
             values ($1::uuid, $2, $3, $4, 'pending', $5, $6, $7, $7,
-                    $8, $9, $10, $11, $12)
+                    $8, $9, $10, $11, $12, $13, $14)
             on conflict (user_id) do update
               set business_name = excluded.business_name,
                   contact_person = excluded.contact_person,
@@ -491,12 +499,16 @@ async def onboarding(data: OnboardingIn, request: Request,
                   service_center_lat = coalesce(excluded.service_center_lat,
                                                 pro_profiles.service_center_lat),
                   service_center_lng = coalesce(excluded.service_center_lng,
-                                                pro_profiles.service_center_lng)
+                                                pro_profiles.service_center_lng),
+                  meister_file_id = excluded.meister_file_id,
+                  meister_status = excluded.meister_status
             """,
             user["id"], data.company_name.strip(), data.contact_person.strip(),
             data.licence_file_id, data.insurance_file_id,
             "pending" if data.insurance_file_id else "missing", data.country,
             data.address.strip(), data.postal_code.strip(), data.city.strip(),
-            data.service_center_lat, data.service_center_lng)
+            data.service_center_lat, data.service_center_lng,
+            data.meister_file_id,
+            "pending" if data.meister_file_id else "missing")
 
     return await load_user(user["id"])

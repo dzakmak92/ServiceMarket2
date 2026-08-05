@@ -175,6 +175,7 @@ with TestClient(entry.app) as c:
         "postal_code": "1100", "city": "Wien",
         "contact_person": "Ali Öztürk", "company_name": "Malerbetrieb Öztürk e.U.",
         "licence_file_id": "documents/placeholder-licence",
+        "meister_file_id": "documents/placeholder-meister", "lang": "de",
         "service_center_lat": 48.2082, "service_center_lng": 16.3738})
     check(ok(r), f"onboarding creates the business -> {r.status_code}")
 
@@ -192,6 +193,17 @@ with TestClient(entry.app) as c:
     check(pro.get("business_address") == "Werkgasse 4", "and the street")
     check(abs((pro.get("service_center_lat") or 0) - 48.2082) < 0.001,
           f"the location step's coordinates were kept ({pro.get('service_center_lat')})")
+    # The Meisterbrief is its own document — filed under the licence it would
+    # be a qualification nobody checked, shown as one that was.
+    check(pro.get("meister_file_id") == "documents/placeholder-meister",
+          f"the Meisterbrief is stored separately ({pro.get('meister_file_id')!r})")
+    check(pro.get("meister_status") == "pending",
+          f"and queued for verification like the licence ({pro.get('meister_status')!r})")
+    check(pro.get("licence_file_id") != pro.get("meister_file_id"),
+          "the two are not the same field")
+    me2 = c.get("/api/auth/me")
+    check(ok(me2) and me2.json().get("lang") == "de",
+          f"the language chosen on step one is on the account ({me2.json().get('lang')!r})")
 
     step("so the forecast has a place to ask about")
     # Not the forecast itself — that needs the open-meteo host, which the build
