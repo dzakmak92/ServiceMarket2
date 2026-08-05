@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import api from '../../api/client';
 import WeatherCard from '../../components/pro/WeatherCard';
 import JobSheet from '../../components/pro/JobSheet';
 import LoadFailed from '../../components/pro/LoadFailed';
 import useWeather from '../../hooks/useWeather';
+import useAppointments from '../../hooks/useAppointments';
 import useJobAction from '../../hooks/useJobAction';
 import {
   HALF_DAY_MIN, MIN, dayKey, durationLabel, halvesOf, hhmm, toMs,
@@ -40,11 +40,21 @@ function gridStart(monthStart) {
   return d;
 }
 
-export default function MonthScheduleView({ monthStart, onOpenDay, t, lang = 'de-AT' }) {
-  const [appts, setAppts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [failed, setFailed] = useState(false);
-  const [selected, setSelected] = useState(() => startOfDay(new Date()));
+export default function MonthScheduleView({
+  monthStart, selectedDate, onSelectDate, onOpenDay, t, lang = 'de-AT',
+}) {
+  /* Declared before the fetch that reads it: a `const` referenced above
+     its own declaration is a TDZ crash at render, not a warning. */
+  const from = useMemo(() => gridStart(monthStart), [monthStart]);
+
+  /* Shared, so the last request always wins — see useAppointments. */
+  const { appointments: appts, loading, failed, reload: load } = useAppointments(from, CELLS);
+  /* The selected day is the page's date, so the grid, the list under it and
+     the URL can never disagree. The local state is only a fallback for a
+     caller that does not control it. */
+  const [ownSelected, setOwnSelected] = useState(() => startOfDay(new Date()));
+  const selected = selectedDate ? startOfDay(selectedDate) : ownSelected;
+  const setSelected = (d) => (onSelectDate ? onSelectDate(d) : setOwnSelected(d));
   const [openJob, setOpenJob] = useState(null);
   const selRef = useRef(null);
   const gridFocused = useRef(false);
@@ -53,26 +63,10 @@ export default function MonthScheduleView({ monthStart, onOpenDay, t, lang = 'de
      Finish button was inert here. */
   const runAction = useJobAction({ t, onChanged: () => load() });
 
-  const from = useMemo(() => gridStart(monthStart), [monthStart]);
   const cells = useMemo(() => Array.from({ length: CELLS }, (_, i) => {
     const d = new Date(from); d.setDate(from.getDate() + i);
     return d;
   }), [from]);
-
-  const load = useCallback(() => {
-    setLoading(true);
-    api.get('/api/jobs/appointments', { params: { day: dayKey(from), days: CELLS } })
-      .then((r) => setAppts((r.data?.appointments || []).map((a) => ({
-        ...a,
-        start: new Date(a.scheduled_start),
-        end: new Date(a.scheduled_end || a.scheduled_start),
-      }))))
-      .then(() => setFailed(false))
-      .catch(() => { setAppts([]); setFailed(true); })
-      .finally(() => setLoading(false));
-  }, [from]);
-
-  useEffect(load, [load]);
 
   const byDay = useMemo(() => {
     const m = new Map();
@@ -99,13 +93,17 @@ export default function MonthScheduleView({ monthStart, onOpenDay, t, lang = 'de
   /* Keep the selection inside the month on screen — a list under the grid
      belonging to a day the grid is not showing is a quiet lie. */
   useEffect(() => {
+    /* When the caller owns the date, the month on screen is derived from it
+       and the selection is inside it by construction — correcting it here
+       would fight the URL. */
+    if (onSelectDate) return;
     if (!cells.some((d) => sameDay(d, selected) && inMonth(d))) {
       const today = startOfDay(new Date());
-      setSelected(cells.some((d) => sameDay(d, today) && inMonth(d))
+      setOwnSelected(cells.some((d) => sameDay(d, today) && inMonth(d))
         ? today : monthDays[0] || cells[0]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cells, month]);
+  }, [cells, month, onSelectDate]);
 
   /* Move the browser's focus with the selection, but only when the grid
      already had it — otherwise arrowing on some other control would yank

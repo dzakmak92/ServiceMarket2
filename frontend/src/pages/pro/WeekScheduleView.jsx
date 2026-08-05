@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../api/client';
 import WeatherCard from '../../components/pro/WeatherCard';
 import JobSheet from '../../components/pro/JobSheet';
 import LoadFailed from '../../components/pro/LoadFailed';
 import useWeather from '../../hooks/useWeather';
+import useAppointments from '../../hooks/useAppointments';
 import useJobAction from '../../hooks/useJobAction';
 import {
   MIN, bookableRuns, dayKey, durationLabel, hhmm, toMs,
@@ -42,11 +42,17 @@ const frac = (v) => {
   return Math.min(1, Math.max(0, (h - DAY_FROM) / SPAN));
 };
 
-export default function WeekScheduleView({ weekStart, onOpenDay, t, lang = 'de-AT' }) {
-  const [appts, setAppts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [failed, setFailed] = useState(false);
-  const [selected, setSelected] = useState(() => startOfDay(new Date()));
+export default function WeekScheduleView({
+  weekStart, selectedDate, onSelectDate, onOpenDay, t, lang = 'de-AT',
+}) {
+  /* Shared, so the last request always wins and a superseded one can never
+     paint another week's jobs under this week's header. */
+  const { appointments: appts, loading, failed, reload: load } = useAppointments(weekStart, 7);
+  /* Controlled by the page when it owns the date, so the column highlight,
+     the list underneath and the URL always name the same day. */
+  const [ownSelected, setOwnSelected] = useState(() => startOfDay(new Date()));
+  const selected = selectedDate ? startOfDay(selectedDate) : ownSelected;
+  const setSelected = (d) => (onSelectDate ? onSelectDate(d) : setOwnSelected(d));
   const [openJob, setOpenJob] = useState(null);
   const { weather, status: wxStatus } = useWeather(7);
   /* Same handler the day view uses. Without it the sheet's Start /
@@ -58,30 +64,16 @@ export default function WeekScheduleView({ weekStart, onOpenDay, t, lang = 'de-A
     return d;
   }), [weekStart]);
 
-  const load = useCallback(() => {
-    setLoading(true);
-    api.get('/api/jobs/appointments', { params: { day: dayKey(weekStart), days: 7 } })
-      .then((r) => setAppts((r.data?.appointments || []).map((a) => ({
-        ...a,
-        start: new Date(a.scheduled_start),
-        end: new Date(a.scheduled_end || a.scheduled_start),
-      }))))
-      .then(() => setFailed(false))
-      .catch(() => { setAppts([]); setFailed(true); })
-      .finally(() => setLoading(false));
-  }, [weekStart]);
-
-  useEffect(load, [load]);
-
   /* Keep the selection inside the week being looked at. Paging to next week
      and still showing last Tuesday's jobs underneath the grid would be a
      quiet lie about which day the list belongs to. */
   useEffect(() => {
+    if (onSelectDate) return;              // the page owns it; see the month view
     if (!days.some((d) => sameDay(d, selected))) {
       const today = startOfDay(new Date());
-      setSelected(days.some((d) => sameDay(d, today)) ? today : days[0]);
+      setOwnSelected(days.some((d) => sameDay(d, today)) ? today : days[0]);
     }
-  }, [days, selected]);
+  }, [days, selected, onSelectDate]);
 
   const byDay = useMemo(() => {
     const m = new Map(days.map((d) => [dayKey(d), []]));

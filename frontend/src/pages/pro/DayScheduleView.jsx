@@ -15,6 +15,7 @@ import JobSheet from '../../components/pro/JobSheet';
 import LoadFailed from '../../components/pro/LoadFailed';
 import useWeather from '../../hooks/useWeather';
 import useJobAction from '../../hooks/useJobAction';
+import useAppointments from '../../hooks/useAppointments';
 import useSheetModal from '../../hooks/useSheetModal';
 import {
   AlertTriangle, Car, Check, CheckCircle2, ChevronDown, ChevronUp, Copy, FileText,
@@ -269,15 +270,19 @@ function Block({ appt, top, height, running, progress, dragging, conflict,
 export default function DayScheduleView({ date, onDateChange, proName }) {
   const { t, lang } = useLang();
   const navigate = useNavigate();
-  const [appts, setAppts] = useState([]);
+  /* Shared with the week and month views. The guard matters most here: the
+     day view is the one with a "next" arrow that a thumb can hit twenty
+     times in a second, and a superseded response used to paint the seventh's
+     jobs under a header reading the twenty-fifth. */
+  const {
+    appointments: appts, setAppointments: setAppts, loading, failed, reload: load,
+  } = useAppointments(date, 1);
   /* Only the *first* fetch blanks the view. Every later one is a background
      refresh, and swapping the whole day for a spinner unmounted the
      new-appointment sheet under the pro's hands — a failed save reloaded, the
      sheet remounted with fresh state, and the title and customer they had
      just typed were gone. */
-  const [loading, setLoading] = useState(true);
-  const loadedOnce = useRef(false);
-  const [failed, setFailed] = useState(false);
+
   const [drag, setDrag] = useState(null);      // { id, endMs }
   const [pending, setPending] = useState(null); // the confirmation sheet
   const [sms, setSms] = useState(null);         // the message sheet
@@ -295,18 +300,6 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
 
   const dayStart = useMemo(() => startOfDay(date, DAY_FROM), [date]);
   const dayEnd = useMemo(() => startOfDay(date, DAY_TO), [date]);
-
-  const load = useCallback(() => {
-    if (!loadedOnce.current) setLoading(true);
-    api.get('/api/jobs/appointments', { params: { day: dayKey(date), days: 1 } })
-      .then((r) => setAppts((r.data?.appointments || []).map((a) => ({
-        ...a, start: a.scheduled_start, end: a.scheduled_end || a.scheduled_start,
-      }))))
-      .then(() => setFailed(false))
-      .catch(() => { setAppts([]); setFailed(true); })
-      .finally(() => { loadedOnce.current = true; setLoading(false); });
-  }, [date]);
-  useEffect(load, [load]);
 
   /* Asked once, not per card. Whether the pro owns the invoice toolkit decides
      what the prompt after completing a job can offer, and a card cannot know
