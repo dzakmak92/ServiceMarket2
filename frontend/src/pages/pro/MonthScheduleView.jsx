@@ -3,6 +3,7 @@ import api from '../../api/client';
 import WeatherCard from '../../components/pro/WeatherCard';
 import JobSheet from '../../components/pro/JobSheet';
 import useWeather from '../../hooks/useWeather';
+import useJobAction from '../../hooks/useJobAction';
 import { MIN, dayKey, durationLabel, hhmm, toMs } from '../../utils/schedule';
 import { Loader2, MapPin, User } from 'lucide-react';
 
@@ -45,6 +46,9 @@ export default function MonthScheduleView({ monthStart, onOpenDay, t, lang = 'de
   const [selected, setSelected] = useState(() => startOfDay(new Date()));
   const [openJob, setOpenJob] = useState(null);
   const { weather, status: wxStatus } = useWeather(7);
+  /* Same handler the day view uses. Without it the sheet's Start /
+     Finish button was inert here. */
+  const runAction = useJobAction({ t, onChanged: () => load() });
 
   const from = useMemo(() => gridStart(monthStart), [monthStart]);
   const cells = useMemo(() => Array.from({ length: CELLS }, (_, i) => {
@@ -257,7 +261,14 @@ export default function MonthScheduleView({ monthStart, onOpenDay, t, lang = 'de
         </button>
       ))}
 
-      {openJob && <JobSheet appt={openJob} onClose={() => setOpenJob(null)} t={t} />}
+      {openJob && (
+        <JobSheet
+          appt={openJob}
+          onClose={() => setOpenJob(null)}
+          onPrimary={(a, act) => { setOpenJob(null); runAction(a, act); }}
+          t={t}
+        />
+      )}
     </div>
   );
 }

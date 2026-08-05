@@ -4,6 +4,7 @@ import api from '../../api/client';
 import WeatherCard from '../../components/pro/WeatherCard';
 import JobSheet from '../../components/pro/JobSheet';
 import useWeather from '../../hooks/useWeather';
+import useJobAction from '../../hooks/useJobAction';
 import {
   MIN, bookableRuns, dayKey, durationLabel, hhmm, toMs,
 } from '../../utils/schedule';
@@ -46,6 +47,9 @@ export default function WeekScheduleView({ weekStart, onOpenDay, t, lang = 'de-A
   const [selected, setSelected] = useState(() => startOfDay(new Date()));
   const [openJob, setOpenJob] = useState(null);
   const { weather, status: wxStatus } = useWeather(7);
+  /* Same handler the day view uses. Without it the sheet's Start /
+     Finish button was inert here. */
+  const runAction = useJobAction({ t, onChanged: () => load() });
 
   const days = useMemo(() => Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart); d.setDate(weekStart.getDate() + i); d.setHours(0, 0, 0, 0);
@@ -284,7 +288,12 @@ export default function WeekScheduleView({ weekStart, onOpenDay, t, lang = 'de-A
         </React.Fragment>
       ))}
       {openJob && (
-        <JobSheet appt={openJob} onClose={() => setOpenJob(null)} t={t} />
+        <JobSheet
+          appt={openJob}
+          onClose={() => setOpenJob(null)}
+          onPrimary={(a, act) => { setOpenJob(null); runAction(a, act); }}
+          t={t}
+        />
       )}
     </div>
   );

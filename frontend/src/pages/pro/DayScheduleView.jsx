@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import api from '../../api/client';
+import api, { formatError } from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import {
   QUARTER, MIN, TRAVEL_GAP, bookableRuns, dayKey, hhmm, durationLabel, previewInsert,
@@ -12,6 +12,7 @@ import { routeHref } from '../../utils/maps';
 import WeatherCard from '../../components/pro/WeatherCard';
 import JobSheet from '../../components/pro/JobSheet';
 import useWeather from '../../hooks/useWeather';
+import useJobAction from '../../hooks/useJobAction';
 import {
   AlertTriangle, Car, Check, CheckCircle2, ChevronDown, ChevronUp, Copy, FileText,
   Lock, MapPin, Phone, Navigation, Play, Plus, Receipt, User, X,
@@ -250,7 +251,13 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
   const { t } = useLang();
   const navigate = useNavigate();
   const [appts, setAppts] = useState([]);
+  /* Only the *first* fetch blanks the view. Every later one is a background
+     refresh, and swapping the whole day for a spinner unmounted the
+     new-appointment sheet under the pro's hands — a failed save reloaded, the
+     sheet remounted with fresh state, and the title and customer they had
+     just typed were gone. */
   const [loading, setLoading] = useState(true);
+  const loadedOnce = useRef(false);
   const [drag, setDrag] = useState(null);      // { id, endMs }
   const [pending, setPending] = useState(null); // the confirmation sheet
   const [sms, setSms] = useState(null);         // the message sheet
@@ -270,13 +277,13 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
   const dayEnd = useMemo(() => startOfDay(date, DAY_TO), [date]);
 
   const load = useCallback(() => {
-    setLoading(true);
+    if (!loadedOnce.current) setLoading(true);
     api.get('/api/jobs/appointments', { params: { day: dayKey(date), days: 1 } })
       .then((r) => setAppts((r.data?.appointments || []).map((a) => ({
         ...a, start: a.scheduled_start, end: a.scheduled_end || a.scheduled_start,
       }))))
       .catch(() => setAppts([]))
-      .finally(() => setLoading(false));
+      .finally(() => { loadedOnce.current = true; setLoading(false); });
   }, [date]);
   useEffect(load, [load]);
 
@@ -294,19 +301,18 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
      job goes through them. Completing opens the invoice prompt; it does not
      create anything, because an invoice is a legal document and issuing one
      as a side effect of tapping "Fertig" is how a wrong figure gets sent. */
-  const onPrimary = async (appt, action) => {
-    if (action === 'invoice') { navigate(`/jobs/${appt.id}/invoice`); return; }
-    const next = action === 'start' ? 'in_progress' : 'completed';
-    try {
-      await api.patch(`/api/jobs/${appt.id}/status`, { status: next });
+  /* The shared handler, so the day, week and month views cannot drift apart
+     again — they already had, and two of the three did nothing at all. */
+  const onPrimary = useJobAction({
+    t,
+    onChanged: (appt, next) => {
+      /* Null means the server refused: this view's copy of the job is stale,
+         so refetch rather than paint a status the server did not agree to. */
+      if (!next) { load(); return; }
       setAppts((prev) => prev.map((a) => (a.id === appt.id ? { ...a, status: next } : a)));
       if (next === 'completed') setDone(appt);
-    } catch (err) {
-      toast.error(err?.response?.status === 409
-        ? t('day_status_refused')
-        : t('day_save_failed'));
-    }
-  };
+    },
+  });
 
   const now = Date.now();
   const showNow = sameDay(date, new Date());
@@ -422,10 +428,26 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
          exists, and in one go, means a failure here leaves the day visibly
          wrong rather than quietly overlapping. */
       if (moved.length) {
-        await Promise.all(moved.map((m) => api.patch(`/api/jobs/${m.id}/schedule`, {
-          scheduled_start: new Date(m.to.start).toISOString(),
-          scheduled_end: new Date(m.to.end).toISOString(),
-        })));
+        /* allSettled, not all. The job exists by now, so a rejected PATCH is
+           not a failed booking — it is a booking whose neighbours did not get
+           out of the way. Letting it throw sent control to the shared catch,
+           which said "could not be saved" about a job that had just been
+           saved; the natural response was to press the button again, and that
+           produced a duplicate. */
+        const results = await Promise.allSettled(moved.map(
+          (m) => api.patch(`/api/jobs/${m.id}/schedule`, {
+            scheduled_start: new Date(m.to.start).toISOString(),
+            scheduled_end: new Date(m.to.end).toISOString(),
+          })));
+        const stuck = results.filter((r) => r.status === 'rejected').length;
+        if (stuck) {
+          setBooking(null);
+          await load();
+          /* Named precisely, because the day now contains a real overlap and
+             the pro has to resolve it by hand. */
+          toast.error(t('day_moved_failed').replace('{n}', String(stuck)));
+          return;
+        }
       }
       setBooking(null);
       await load();
@@ -443,10 +465,15 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
         });
       }
     } catch (err) {
-      toast.error(err?.response?.data?.detail
-        ? String(err.response.data.detail)
-        : t('day_save_failed'));
-      load();
+      /* formatError, because FastAPI's 422 `detail` is an array of objects and
+         String() on it renders the literal text "[object Object]" — which is
+         what a pro saw for a title one character too long. */
+      toast.error(formatError(err) || t('day_save_failed'));
+      /* Deliberately no reload here. The sheet is mounted below the loading
+         gate, so refetching unmounts it and the pro loses the title, the
+         customer and the slot they had just set — for an error that is
+         usually transient and worth simply retrying. Nothing was written, so
+         there is nothing to refetch. */
     }
   };
 
@@ -657,9 +684,11 @@ function ConflictSheet({ pending, appts, onCancel, onConfirm, t }) {
             </p>
             <p className="text-[12px] text-ink-soft mt-1 leading-relaxed">
               {pending.moved.length === 1
-                ? `${affected?.title} bei ${affected?.customer_name || '—'} wird verschoben.`
-                : `${pending.moved.length} Termine werden verschoben.`}
-              {' '}Zwischen den Terminen bleiben {durationLabel(TRAVEL_GAP)} für die Fahrt.
+                ? t('day_conflict_one')
+                    .replace('{title}', affected?.title || '—')
+                    .replace('{customer}', affected?.customer_name || '—')
+                : t('day_conflict_many').replace('{n}', String(pending.moved.length))}
+              {' '}{t('day_conflict_gap').replace('{gap}', durationLabel(TRAVEL_GAP))}
             </p>
           </div>
         </div>
@@ -795,7 +824,11 @@ function SlotBand({ run, startMin, minutes, maxMinutes, windowMinutes,
     if (at == null) return;
     if (edge === 'start') {
       const latest = startMin + minutes - MIN_MINUTES;   // never shorter than the floor
-      const next = Math.min(latest, Math.max(0, at));
+      /* Dragging the start edge *left* lengthens the appointment, so the
+         eight-hour ceiling has to be enforced here too. It was not, and a
+         long free window let the start edge run away from the end one. */
+      const earliest = Math.max(0, startMin + minutes - MAX_MINUTES);
+      const next = Math.min(latest, Math.max(earliest, at));
       onChange({ startMin: next, minutes: startMin + minutes - next });
     } else {
       const earliest = startMin + MIN_MINUTES;
@@ -1083,9 +1116,14 @@ function NewAppointmentSheet({ run, appts, dayEnd, onCreate, onClose, t }) {
 
   /* How far the band reaches: eight hours, or the end of the day if that
      comes first. Not the window — the window is where booking is free. */
-  const maxMinutes = Math.max(
-    windowMinutes,
-    Math.min(MAX_MINUTES, Math.round((toMs(dayEnd) - toMs(run.start)) / MIN)));
+  /* How far the end edge may reach, measured from the start of the free
+     window. `Math.max(windowMinutes, …)` used to be the first term, which
+     meant any hole longer than eight hours simply overrode MAX_MINUTES —
+     an empty day offered twelve-hour appointments and saved them. The cap
+     is on the *duration*, so it moves with the start edge rather than being
+     a fixed point in the window. */
+  const dayEndMinutes = Math.round((toMs(dayEnd) - toMs(run.start)) / MIN);
+  const maxMinutes = Math.min(dayEndMinutes, startMin + MAX_MINUTES);
   const steps = durationSteps(maxMinutes - startMin);
 
   const start = new Date(toMs(run.start) + startMin * MIN);
@@ -1297,11 +1335,12 @@ function SmsSheet({ sms, body, onTemplate, onClose, t }) {
            onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-2 mb-3">
           <p className="font-headings font-bold text-[15px] text-ink flex-1">
-            SMS an {sms.appt.customer_name}
+            {t('day_sms_to').replace('{name}', sms.appt.customer_name || '—')}
           </p>
           <span className="text-[11px] text-ink-muted">{phone}</span>
-          <button onClick={onClose} className="p-1 text-ink-muted" aria-label="close">
-            <X size={18} />
+          <button type="button" onClick={onClose} aria-label={t('ui_close')}
+                  className="w-11 h-11 -mr-2 flex items-center justify-center text-ink-muted flex-none">
+            <X size={19} />
           </button>
         </div>
 
