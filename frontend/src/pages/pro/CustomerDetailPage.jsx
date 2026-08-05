@@ -1,16 +1,15 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import api from '../../api/client';
+import api, { formatError } from '../../api/client';
+import { toast } from 'sonner';
 import { useLang } from '../../contexts/LangContext';
 import { statusLabel } from '../../utils/jobStatus';
+import { fmtEur, fmtDate } from '../../utils/money';
 import {
   ArrowLeft, Loader2, AlertCircle, Mail, Phone, MapPin, Building2, User,
   Save, Trash2, Briefcase, Receipt,
 } from 'lucide-react';
 
-const fmtEur = (v) =>
-  new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
-const fmtDate = (v) => (v ? new Date(v).toLocaleDateString('de-AT') : '—');
 
 const Field = ({ label, children }) => (
   <label className="block">
@@ -78,11 +77,11 @@ export default function CustomerDetailPage() {
       setJobs(j.data.jobs || []);
       setInvoices(i.data.invoices || []);
     } catch (e) {
-      setError(e?.response?.data?.detail || t('generic_error'));
+      setError(formatError(e));
     } finally {
       setLoading(false);
     }
-  }, [customerId, t]);
+  }, [customerId]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -99,8 +98,12 @@ export default function CustomerDetailPage() {
         Object.entries(form).map(([k, v]) => [k, v === '' ? null : v]));
       const { data } = await api.patch(`/api/customers/${customerId}`, body);
       setCustomer(data);
+      /* Saving redrew the header with the new name and changed nothing else,
+         so on a page where the form is already filled in there was no way to
+         tell a successful save from a press that did nothing. */
+      toast.success(t('customer_saved'));
     } catch (e2) {
-      setError(e2?.response?.data?.detail || t('generic_error'));
+      setError(formatError(e2));
     } finally { setSaving(false); }
   };
 
@@ -110,7 +113,7 @@ export default function CustomerDetailPage() {
       await api.delete(`/api/customers/${customerId}`);
       navigate('/customers', { replace: true });
     } catch (e) {
-      setError(e?.response?.data?.detail || t('generic_error'));
+      setError(formatError(e));
       setSaving(false);
     }
   };

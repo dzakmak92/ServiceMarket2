@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Loader2, Clock } from 'lucide-react';
 import { useLang } from '../contexts/LangContext';
+import { dayKey } from '../utils/schedule';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const ORDERED_WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -220,7 +221,7 @@ export default function MonthBookingCalendar({ availability = [], bookings = [],
                         : 'cursor-default'}
                       ${isToday && !selected ? 'ring-1 ring-teal' : ''}
                     `}
-                    data-testid={`cal-day-${cell.date.toISOString().slice(0, 10)}`}
+                    data-testid={`cal-day-${dayKey(cell.date)}`}
                     data-has-slots={cell.hasSlots ? 'true' : 'false'}
                   >
                     {cell.date.getDate()}

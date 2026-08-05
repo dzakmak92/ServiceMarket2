@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useLang } from '../../contexts/LangContext';
 import { useAuth } from '../../contexts/AuthContext';
 import api, { formatError, apiBase } from '../../api/client';
+import { fmtDate } from '../../utils/money';
 import {
   CheckCircle, Loader2, AlertCircle, Star, Receipt, XCircle,
   Calendar, ExternalLink, TrendingUp, Gift, ChevronDown,
@@ -460,7 +461,7 @@ export default function BillingPage() {
                       <p className="font-medium text-ink capitalize" data-testid="txn-label">
                         {txn.display_label || 'Payment'}
                       </p>
-                      <p className="text-xs text-ink-muted">{new Date(txn.created_at).toLocaleDateString('de-AT')}</p>
+                      <p className="text-xs text-ink-muted">{fmtDate(txn.created_at)}</p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -572,7 +573,7 @@ function ExplorerActiveCard({ subStatus, proProfile, t }) {
         <span className="text-ink-muted">
           {t('explorer_all_unlocked')}
           {endsAt && (
-            <> · {t('explorer_ends_on')} <strong className="text-ink">{endsAt.toLocaleDateString('de-AT')}</strong></>
+            <> · {t('explorer_ends_on')} <strong className="text-ink">{fmtDate(endsAt)}</strong></>
           )}
           {days != null && (
             <span className={`ml-2 font-semibold ${days < 7 ? 'text-red-500' : 'text-teal'}`}>· {days} {t('billing_days_left')}</span>
@@ -755,13 +756,13 @@ function CurrentPlanCard({
           ) : isCancelling ? (
             <div>
               <p className="font-semibold text-red-warn">
-                {t('billing_cancels_on')} {subCancelsAt.toLocaleDateString('de-AT')}
+                {t('billing_cancels_on')} {fmtDate(subCancelsAt)}
               </p>
               <p className="text-xs text-ink-muted mt-0.5">{t('billing_cancelling_note')}</p>
             </div>
           ) : subValidUntil ? (
             <span className="text-ink-muted">
-              {t('billing_renews_on')} <strong className="text-ink">{subValidUntil.toLocaleDateString('de-AT')}</strong>
+              {t('billing_renews_on')} <strong className="text-ink">{fmtDate(subValidUntil)}</strong>
               {daysLeft !== null && (
                 <span className={`ml-2 font-semibold ${daysLeft < 7 ? 'text-red-500' : 'text-teal'}`}>
                   · {daysLeft} {t('billing_days_left')}

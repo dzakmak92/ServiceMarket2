@@ -8,8 +8,9 @@ import {
   Receipt, Car, Loader2, AlertCircle, FileText, Upload, Calendar, Coins, Eye,
 } from 'lucide-react';
 import ScrollSnapTabStrip, { SwipeableTabPanel } from '../../components/ScrollSnapTabStrip';
+import { dayKey } from '../../utils/schedule';
+import { fmtEur, fmtDate, fmtNum } from '../../utils/money';
 
-const fmtEur = (v) => new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
 const TABS = [
   { key: 'dashboard', icon: TrendingUp, labelKey: 'tax_tab_dashboard' },
   { key: 'ustva', icon: Calculator, labelKey: 'tax_tab_ustva' },
@@ -19,6 +20,19 @@ const TABS = [
   { key: 'receipts', icon: Receipt, labelKey: 'tax_tab_receipts' },
   { key: 'reports', icon: FileDown, labelKey: 'tax_tab_reports' },
 ];
+
+/* A fixed window around the current calendar year — next year (for a return
+   filed early), this one, and the seven behind it, which is how long § 132 BAO
+   makes you keep the records.
+
+   The list used to be built from the *selected* year: picking 2025 rebuilt the
+   options as 2026/2025/2024/2023, so each choice moved the window under the
+   pro's feet. Two picks backwards and the current year was no longer offered
+   at all, with no way back to it short of reloading the page. */
+const YEAR_OPTIONS = (() => {
+  const now = new Date().getFullYear();
+  return Array.from({ length: 9 }, (_, i) => now + 1 - i);
+})();
 
 export default function TaxToolkitPage() {
   const { t } = useLang();
@@ -31,9 +45,9 @@ export default function TaxToolkitPage() {
     api.get('/api/tax/dashboard?year=' + year)
       .catch((e) => {
         if (e?.response?.status === 402) setNeedsToolkit(true);
-        else setError(e?.response?.data?.detail || t('error_generic'));
+        else setError(formatError(e));
       });
-  }, [year, t]);
+  }, [year]);
 
   if (needsToolkit) {
     return (
@@ -67,7 +81,7 @@ export default function TaxToolkitPage() {
               className="sm-select text-sm"
               data-testid="tax-year-select"
             >
-              {[year + 1, year, year - 1, year - 2].map((y) => <option key={y} value={y}>{y}</option>)}
+              {YEAR_OPTIONS.map((y) => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
         </div>
@@ -339,7 +353,7 @@ function MileageTab({ year, t }) {
           <tbody>
             {data.trips.map((trip, i) => (
               <tr key={i} className="border-t border-sm-border">
-                <td className="py-2 whitespace-nowrap" data-label={t('tax_th_date')}>{trip.date ? new Date(trip.date).toLocaleDateString('de-AT') : '—'}</td>
+                <td className="py-2 whitespace-nowrap" data-label={t('tax_th_date')}>{fmtDate(trip.date)}</td>
                 <td className="text-ink-soft truncate max-w-[120px]" data-label={t('tax_th_job')}>{trip.job_title}</td>
                 <td className="text-ink-soft whitespace-nowrap" data-label={t('tax_th_city')}>{trip.city}</td>
                 <td className="text-right" data-label="km">
@@ -434,7 +448,7 @@ function SvsTab({ year, t }) {
               {(est.bands || []).map((b, i) => (
                 <tr key={i} className="border-t border-sm-border">
                   <td className="py-1.5">
-                    ≤ €{b.up_to_eur == null ? '∞' : Math.round(b.up_to_eur).toLocaleString('de-AT')}
+                    ≤ €{b.up_to_eur == null ? '∞' : fmtNum(Math.round(b.up_to_eur))}
                   </td>
                   <td className="text-right">{b.rate_pct}%</td>
                   <td className="text-right">{fmtEur(b.amount_eur)}</td>
@@ -486,7 +500,7 @@ function ReceiptsTab({ year, t }) {
   const [editing, setEditing] = useState(null);
 
   const blank = () => ({
-    expense_date: new Date().toISOString().slice(0, 10),
+    expense_date: dayKey(new Date()),
     vendor: '', category: 'Material', description: '',
     gross_amount: '', vat_rate: 20, vat_deductible: true,
     payment_method: 'card', job_id: '',
@@ -731,7 +745,7 @@ function ReceiptsTab({ year, t }) {
                     {r.vendor || t('tax_unknown_vendor')}
                   </p>
                   <p className="text-xs text-ink-muted">
-                    {r.expense_date ? new Date(r.expense_date).toLocaleDateString('de-AT') : '—'}
+                    {fmtDate(r.expense_date)}
                     {r.category && <span className="ml-2">· {r.category}</span>}
                     {r.vat_rate != null && <span className="ml-2">· {r.vat_rate}%</span>}
                     {r.vat_deductible === false && (

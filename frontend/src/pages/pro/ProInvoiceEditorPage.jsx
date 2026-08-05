@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import api, { formatError } from '../../api/client';
 import NumberField from '../../components/NumberField';
 import { useLang } from '../../contexts/LangContext';
+import { fmtEur } from '../../utils/money';
 import {
   Receipt, Plus, Trash2, Loader2, AlertCircle, ChevronLeft, CheckCircle2,
   FileText, Lock,
@@ -38,9 +39,6 @@ import {
  */
 
 const KINDS = ['labor', 'material', 'travel', 'other'];
-const fmtEur = (v) =>
-  new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' })
-    .format(Number(v || 0));
 
 export default function ProInvoiceEditorPage() {
   const { t } = useLang();

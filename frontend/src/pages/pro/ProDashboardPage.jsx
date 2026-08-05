@@ -13,9 +13,9 @@ import {
 import { Link } from 'react-router-dom';
 import StatusPill from '../../components/StatusPill';
 import { isPremiumTier } from '../../utils/tier';
+import { fmtEur } from '../../utils/money';
 
 const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const fmtEur = (v) => new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
 
 // ─── KPI tile ────────────────────────────────────────────────────────────────
 function KpiCard({ label, value, sub, icon: Icon, color, bg, to }) {

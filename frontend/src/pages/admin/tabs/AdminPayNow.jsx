@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../../api/client';
 import { useLang } from '../../../contexts/LangContext';
 import { Loader2, Banknote, TrendingUp, AlertTriangle, CreditCard } from 'lucide-react';
+import { fmtDateTime } from '../../../utils/money';
 
 function StatPill({ label, value, sub, icon: Icon }) {
   return (
@@ -18,7 +19,7 @@ function StatPill({ label, value, sub, icon: Icon }) {
 
 function formatDate(iso) {
   if (!iso) return '—';
-  try { return new Date(iso).toLocaleString('de-AT'); } catch { return iso; }
+  try { return fmtDateTime(iso); } catch { return iso; }
 }
 
 export default function AdminPayNow() {

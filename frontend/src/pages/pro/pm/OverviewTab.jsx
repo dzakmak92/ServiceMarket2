@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../../api/client';
+import { fmtEur, fmtDateLong as fmtDate } from '../../../utils/money';
+import { fmtDateTime } from '../../../utils/money';
 import {
   Loader2, MessageSquare, Phone, Mail, MapPin, FileText, Receipt, Clock,
   TrendingUp, AlertTriangle, Sparkles, CheckCircle2, FileSignature, Image as ImageIcon,
   Play, Square, Calendar as CalendarIcon,
 } from 'lucide-react';
 
-const fmtEur = (v) => new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString('de-AT', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
 const ACTIVITY_ICON = {
   project_created: Sparkles,
@@ -261,7 +261,7 @@ export default function OverviewTab({ projectId, t, onJumpTab }) {
             <ul className="space-y-1.5">
               {invoices.map((inv) => (
                 <li key={inv.id} className="flex items-center justify-between text-sm py-1.5 px-2 rounded-[8px] hover:bg-cream-soft" data-testid={`pm-overview-invoice-${inv.id}`}>
-                  <Link to={`/my-invoices?new=${inv.id}`} className="font-mono text-xs text-teal hover:underline">{inv.invoice_number}</Link>
+                  <Link to={`/my-invoices?q=${encodeURIComponent(inv.invoice_number)}`} className="font-mono text-xs text-teal hover:underline">{inv.invoice_number}</Link>
                   <div className="flex items-center gap-2">
                     <span className="text-ink font-medium">{fmtEur(inv.gross_total)}</span>
                     <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full ${inv.payment_state === 'paid' ? 'bg-green-pos/15 text-green-pos' : 'bg-amber/15 text-amber-deep'}`}>{inv.payment_state}</span>
@@ -292,7 +292,7 @@ export default function OverviewTab({ projectId, t, onJumpTab }) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-ink leading-tight">{a.label}</p>
-                    <p className="text-[11px] text-ink-muted mt-0.5">{a.ts && new Date(a.ts).toLocaleString('de-AT')}</p>
+                    <p className="text-[11px] text-ink-muted mt-0.5">{a.ts && fmtDateTime(a.ts)}</p>
                   </div>
                 </li>
               );

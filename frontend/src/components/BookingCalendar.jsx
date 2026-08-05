@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { useLang } from '../contexts/LangContext';
+import { dayKey } from '../utils/schedule';
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -77,7 +78,11 @@ export default function BookingCalendar({
     return map;
   }, [bookings]);
 
-  const isBooked = (date, slot) => bookedMap[`${date.toISOString().slice(0, 10)}|${slot}`];
+  /* dayKey, not toISOString: the booking dates arrive from the API as
+     calendar days, and converting the cell's local midnight to UTC pushes it
+     to the previous day everywhere east of Greenwich — every booked slot
+     showed up on the wrong column, or as free. */
+  const isBooked = (date, slot) => bookedMap[`${dayKey(date)}|${slot}`];
 
   const pick = (date, slot, weekday) => {
     if (disabled || date < today) return;
@@ -191,7 +196,7 @@ export default function BookingCalendar({
                         disabled={!slot || isPast || booked || disabled}
                         className={cls}
                         title={booked ? t('booking_booked_short') : (slot || '')}
-                        data-testid={`bcal-${row}-${d.toISOString().slice(0, 10)}`}
+                        data-testid={`bcal-${row}-${dayKey(d)}`}
                         data-state={booked ? 'booked' : isSel ? 'selected' : slot ? 'available' : 'off'}
                       >
                         {content}

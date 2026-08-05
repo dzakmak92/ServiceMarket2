@@ -3,8 +3,8 @@ import { useParams, useSearchParams, Link } from 'react-router-dom';
 import api from '../api/client';
 import { useLang } from '../contexts/LangContext';
 import { Loader2, CheckCircle2, AlertCircle, Briefcase, ShieldCheck } from 'lucide-react';
+import { fmtEur } from '../utils/money';
 
-const fmtEur = (v) => new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
 
 export default function PaySuccessPage() {
   const { token } = useParams();

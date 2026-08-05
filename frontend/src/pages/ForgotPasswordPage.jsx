@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import api from '../api/client';
+import api, { formatError } from '../api/client';
 import { useLang } from '../contexts/LangContext';
 import { Hammer, Loader2, MailCheck, KeyRound, ArrowLeft } from 'lucide-react';
 
@@ -36,7 +36,7 @@ export default function ForgotPasswordPage() {
       await api.post('/api/auth/forgot-password', { email: email.trim().toLowerCase() });
       setSent(true);
     } catch (err) {
-      setError(err?.response?.data?.detail || t('generic_error'));
+      setError(formatError(err));
     } finally { setBusy(false); }
   };
 
@@ -51,7 +51,7 @@ export default function ForgotPasswordPage() {
       // but into the app.
       navigate('/', { replace: true });
     } catch (err) {
-      setError(err?.response?.data?.detail || t('generic_error'));
+      setError(formatError(err));
     } finally { setBusy(false); }
   };
 

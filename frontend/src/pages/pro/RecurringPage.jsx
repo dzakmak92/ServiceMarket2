@@ -1,29 +1,40 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../api/client';
+import api, { formatError } from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
+import { dateLocale, dayKey } from '../../utils/schedule';
+import { fmtEur } from '../../utils/money';
+import NumberField from '../../components/NumberField';
 import {
   Loader2, Plus, X, Repeat, CalendarPlus, AlertCircle, ChevronDown, ChevronUp,
 } from 'lucide-react';
-
-const fmtEur = (v) =>
-  new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
 
 const CADENCES = ['weekly', 'fortnightly', 'monthly', 'quarterly', 'seasonal', 'on_demand'];
 const NEEDS_WEEKDAY = new Set(['weekly', 'fortnightly']);
 // The API generates nothing for these: they are triggered by conditions, not
 // by a calendar, so the UI says so instead of offering a dead button.
 const NO_SCHEDULE = new Set(['seasonal', 'on_demand']);
-const WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+
+/* Monday-first short weekday names in the interface language. These were
+   hardcoded German — 'Mo', 'Di', 'Mi' … — and read the same to an English,
+   Turkish or Spanish pro. Index 0 is Monday because that is the backend's
+   convention (Python's `weekday()`), and 2026-01-05 is a Monday, so the
+   offset arithmetic below lands on the right day. */
+const weekdayNames = (locale) => {
+  const fmt = new Intl.DateTimeFormat(locale, { weekday: 'short' });
+  return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(2026, 0, 5 + i)));
+};
 
 const EMPTY = {
   customer_id: '', title: '', cadence: 'fortnightly', weekday: 2,
   price_per_visit: '', billing: 'per_visit',
-  starts_on: new Date().toISOString().slice(0, 10), ends_on: '',
+  starts_on: dayKey(new Date()), ends_on: '',
 };
 
 export default function RecurringPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const locale = dateLocale(lang);
+  const WEEKDAYS = useMemo(() => weekdayNames(locale), [locale]);
   const [contracts, setContracts] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +58,7 @@ export default function RecurringPage() {
       setContracts(c.contracts || []);
       setCustomers(cu.customers || []);
     } catch (e) {
-      setError(e?.response?.data?.detail || 'Could not load contracts');
+      setError(formatError(e));
     } finally {
       setLoading(false);
     }
@@ -78,7 +89,7 @@ export default function RecurringPage() {
       setShowForm(false);
       await load();
     } catch (e2) {
-      setError(e2?.response?.data?.detail || 'Could not create the contract');
+      setError(formatError(e2));
     } finally {
       setSaving(false);
     }
@@ -92,13 +103,16 @@ export default function RecurringPage() {
       const { data } = await api.post(`/api/recurring/${id}/generate`, null, { params: { days: 90 } });
       // created and skipped are reported separately so a repeat press reads
       // as "already done" rather than as a failure.
+      /* The key is '{n} visits created'. Concatenating the count in front of
+         it left the placeholder in the sentence, so the banner read
+         "7 {n} Termine angelegt". `t` substitutes — let it. */
       setNotice(data.created
-        ? `${data.created} ${t('visits_created') || 'Termine angelegt'}`
-        : (t('visits_already_current') || 'Alle Termine sind bereits angelegt'));
+        ? t('visits_created', { n: data.created })
+        : t('visits_already_current'));
       await load();
       if (expanded === id) await openVisits(id, true);
     } catch (e) {
-      setError(e?.response?.data?.detail || 'Could not generate visits');
+      setError(formatError(e));
     } finally {
       setBusyId(null);
     }
@@ -176,9 +190,11 @@ export default function RecurringPage() {
             )}
 
             <div className="grid grid-cols-2 gap-3">
-              <input className="input" type="number" step="0.01" min="0" value={form.price_per_visit}
-                     onChange={(e) => set('price_per_visit', e.target.value)}
-                     placeholder={t('price_per_visit') || '€ pro Termin'} />
+              {/* A text field, not type="number": Chromium refuses the comma
+                  keystroke, so a pro typing "82,50" produced 8250. */}
+              <NumberField className="input" min={0} value={form.price_per_visit === '' ? null : Number(form.price_per_visit)}
+                           onChange={(n) => set('price_per_visit', n == null ? '' : n)}
+                           placeholder={t('price_per_visit') || '€ pro Termin'} />
               <select className="input" value={form.billing} onChange={(e) => set('billing', e.target.value)}>
                 <option value="per_visit">{t('billing_per_visit') || 'pro Termin'}</option>
                 <option value="monthly">{t('billing_monthly') || 'monatlich'}</option>
@@ -275,7 +291,7 @@ export default function RecurringPage() {
                           {v.job_number || t('visit') || 'Termin'}
                         </Link>
                         <span className="text-ink-muted">
-                          {new Date(v.visit_date).toLocaleDateString('de-AT', {
+                          {new Date(v.visit_date).toLocaleDateString(locale, {
                             weekday: 'short', day: 'numeric', month: 'short' })}
                         </span>
                       </li>

@@ -3,14 +3,13 @@ import { Link } from 'react-router-dom';
 import api from '../../api/client';
 import NumberField from '../../components/NumberField';
 import { useLang } from '../../contexts/LangContext';
+import { fmtEur } from '../../utils/money';
+import { fmtDate } from '../../utils/money';
 import {
   Loader2, Plus, X, Send, Check, Ban, FileText, AlertCircle, Trash2, Copy,
   Calculator,
 } from 'lucide-react';
 
-const fmtEur = (v) =>
-  new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' })
-    .format(Number(v || 0));
 
 const STATUS_STYLE = {
   draft:      'bg-cream-dark text-ink-muted',
@@ -381,7 +380,7 @@ export default function QuotesPage() {
 
                 {q.valid_until && ['sent', 'viewed', 'draft'].includes(q.status) && (
                   <p className="text-xs text-ink-muted mt-1">
-                    {t('valid_until') || 'Gültig bis'}: {new Date(q.valid_until).toLocaleDateString('de-AT')}
+                    {t('valid_until') || 'Gültig bis'}: {fmtDate(q.valid_until)}
                   </p>
                 )}
 

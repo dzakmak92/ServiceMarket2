@@ -251,6 +251,13 @@ async def plan_deletion(user_id: str) -> dict:
 
     return {
         "grace_days": DELETE_GRACE_DAYS,
+        # German prose *and* stable keys. The prose is the fallback and what
+        # the audit record stores; the keys let the app show this disclosure
+        # in the language the pro actually reads, which for an erasure notice
+        # under Art. 17 is not a nicety.
+        "delete_keys": [
+            "credentials", "profile", "work", "learned", "customers",
+        ],
         "deletes": [
             "Zugangsdaten und Anmeldung",
             "Profil, Einstellungen und Benachrichtigungen",
@@ -259,6 +266,7 @@ async def plan_deletion(user_id: str) -> dict:
             "Kundendaten ohne Rechnungsbezug",
         ],
         "retained": retained,
+        "retained_note_key": "pv_retained_note" if retained else "pv_no_retention",
         "retained_note": (
             "Diese Unterlagen bleiben aufgrund gesetzlicher "
             "Aufbewahrungspflichten erhalten (DSGVO Art. 17 Abs. 3 lit. b). "

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useLang } from '../../contexts/LangContext';
 import { useAuth } from '../../contexts/AuthContext';
 import api, { apiBase } from '../../api/client';
@@ -10,7 +10,7 @@ import { lookupBankFromIban, isValidIban } from '../../utils/ibanBicLookup';
 import { isPremiumTier, planLabel } from '../../utils/tier';
 import {
   User, Bell, Briefcase, Settings as SettingsIcon, Image as ImageIcon,
-  Globe, Plus, Trash2, Loader2, AlertCircle, CheckCircle2, Star, Eye, ExternalLink, Shield,
+  Globe, Plus, Trash2, Loader2, AlertCircle, CheckCircle2, Star, Eye, Shield,
   KeyRound,
   MessageSquare, Pencil, MapPin, Receipt, Building2, Banknote, Sparkles, Check,
 } from 'lucide-react';
@@ -43,7 +43,6 @@ const ALL_CATS = [
 export default function ProSettingsPage() {
   const { user, refreshUser } = useAuth();
   const { t, lang, changeLang } = useLang();
-  const navigate = useNavigate();
   const location = useLocation();
   const [tab, setTab] = useState('about_me');
 
@@ -198,10 +197,6 @@ export default function ProSettingsPage() {
     about_me: User, services_areas: Briefcase, notifications: Bell, portfolio: ImageIcon, account: SettingsIcon, privacy: Shield, invoice_details: Receipt,
   };
 
-  const previewPublic = () => {
-    if (user?._id) navigate(`/pros/${user._id}`);
-  };
-
   return (
     <div className="min-h-screen bg-cream pb-24 md:pb-12">
       <div className="page-container py-6">
@@ -211,14 +206,6 @@ export default function ProSettingsPage() {
             <h1 className="text-3xl font-headings font-bold text-ink">{t('settings_pro_title')}</h1>
             <p className="text-ink-muted text-sm mt-1">{t('settings_pro_subtitle')}</p>
           </div>
-          <button
-            onClick={previewPublic}
-            className="inline-flex items-center gap-1.5 rounded-full border border-sm-border bg-paper text-ink text-xs font-medium px-3 py-2 hover:bg-cream-soft transition-colors"
-            data-testid="preview-public-profile"
-          >
-            <Eye size={12} /> {t('btn_preview_public_profile')}
-            <ExternalLink size={11} />
-          </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">

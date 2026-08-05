@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
+import { fmtEur, fmtDateLong as fmtDate } from '../../utils/money';
 import {
   AlertTriangle, Loader2, Copy, Check, Eye, CheckCircle2, Mail, Phone,
 } from 'lucide-react';
@@ -24,11 +25,6 @@ import {
  * this app does not know.
  */
 
-const fmtEur = (v) =>
-  new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' })
-    .format(Number(v || 0));
-const fmtDate = (d) =>
-  d ? new Date(d).toLocaleDateString('de-AT', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
 /** Days overdue → which reminder is the natural next one to send. */
 function stage(days) {
@@ -186,7 +182,7 @@ export default function OverduePage() {
                           <Phone size={12} /> {t('overdue_call')}
                         </a>
                       )}
-                      <Link to={`/my-invoices?new=${r.id}`} className="btn-ghost text-xs">
+                      <Link to={`/my-invoices?q=${encodeURIComponent(r.invoice_number)}`} className="btn-ghost text-xs">
                         <Eye size={12} /> {t('overdue_view')}
                       </Link>
                       <button onClick={() => markPaid(r)} disabled={busy === r.id}

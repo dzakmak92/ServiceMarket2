@@ -96,7 +96,6 @@ EXPECTED_MISSING = {
     "/api/profile/pro/portfolio": "portfolio not ported",
     "/api/profile/pro/portfolio/{}": "portfolio not ported",
     "/api/analytics/pro-insights": "analytics not ported",
-    "/api/invoices/export.zip": "bulk export not ported",
     "/api/invoices/templates/list": "template picker not ported",
     # Nachtrag→invoice needed no endpoint of its own in the end:
     # POST /jobs/{id}/draft-invoice already inherits every approved change

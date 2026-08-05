@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import translations from '../translations';
-import { setDurationUnits } from '../utils/schedule';
+import { setDurationUnits, dateLocale } from '../utils/schedule';
+import { setMoneyLocale } from '../utils/money';
 
 const LangContext = createContext(null);
 
@@ -28,6 +29,11 @@ export function LangProvider({ children }) {
      the first paint after a language change would carry the old units. */
   const units = translations[lang];
   setDurationUnits({ h: units?.unit_h || 'h', min: units?.unit_min || 'min' });
+
+  /* Same arrangement for amounts and dates: every screen formatted them in
+     de-AT regardless of the chosen language. Registered during render for
+     the same reason as the units above. */
+  setMoneyLocale(dateLocale(lang));
 
   const changeLang = useCallback((newLang) => {
     setLang(newLang);

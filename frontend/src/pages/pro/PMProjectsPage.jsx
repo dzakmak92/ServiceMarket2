@@ -7,8 +7,8 @@ import {
   TrendingUp, AlertTriangle, Search, Filter, Calendar as CalendarIcon,
 } from 'lucide-react';
 import { STATUS_META, OPEN, EARNED } from '../../utils/jobStatus';
+import { fmtEur } from '../../utils/money';
 
-const fmtEur = (v) => new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
 
 export default function PMProjectsPage() {
   const { t } = useLang();

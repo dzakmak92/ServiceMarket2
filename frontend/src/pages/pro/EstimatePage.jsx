@@ -2,12 +2,18 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
+import { fmtEur0 as fmtEur, fmtEur as fmtEur2, fmtNum as fmtNumRaw } from '../../utils/money';
+
 import {
   Loader2, AlertTriangle, ArrowLeft, Calculator, FileText,
   Trash2, Clock, Package, Info, MapPin, TrendingUp, Bookmark,
   RefreshCw, Coins, Pencil, RotateCcw, Check, Layers,
   Paintbrush, Grid3x3, Zap, Droplet, Sprout, SprayCan, Wrench, Hammer,
 } from 'lucide-react';
+
+/* The estimator writes hours and square metres with one decimal;
+   money.js defaults to none. */
+const fmtNum = (v, d = 1) => fmtNumRaw(v, d);
 
 // One icon per offered trade. Keyed on the catalogue's own trade keys, so a
 // trade added to OFFERED_TRADES on the server shows up here with the Hammer
@@ -17,13 +23,6 @@ const TRADE_ICON = {
   garten: Sprout, reinigung: SprayCan, montage: Wrench,
 };
 
-const fmtEur = (v) =>
-  new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR',
-    maximumFractionDigits: 0 }).format(Number(v || 0));
-const fmtEur2 = (v) =>
-  new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
-const fmtNum = (v, d = 1) =>
-  new Intl.NumberFormat('de-AT', { maximumFractionDigits: d }).format(Number(v || 0));
 
 const TIERS = ['basic', 'standard', 'premium'];
 const TIER_LABEL = { basic: 'Basis', standard: 'Standard', premium: 'Premium' };

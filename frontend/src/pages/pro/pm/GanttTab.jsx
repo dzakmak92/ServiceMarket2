@@ -1,10 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import api from '../../../api/client';
+import { dayKey } from '../../../utils/schedule';
 import { Loader2, CalendarDays, AlertCircle, Users, Link2 } from 'lucide-react';
 import Gantt from 'frappe-gantt';
 import '../../../vendor/frappe-gantt.css';
 
-const isoDay = (d) => new Date(d).toISOString().slice(0, 10);
+/* Local, not UTC. `toISOString()` shifts a task starting at local
+   midnight back to the previous day everywhere east of Greenwich, so every
+   bar on the timeline was drawn a day early. */
+const isoDay = (d) => dayKey(d);
 
 export default function GanttTab({ projectId, t }) {
   const containerRef = useRef(null);

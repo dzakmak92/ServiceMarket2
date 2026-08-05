@@ -20,8 +20,9 @@ import BillingTab from './pm/BillingTab';
 import BarcodeScannerModal from '../../components/BarcodeScannerModal';
 import ExportJobFileModal from '../../components/ExportJobFileModal';
 import ScrollSnapTabStrip, { SwipeableTabPanel } from '../../components/ScrollSnapTabStrip';
+import { fmtEur } from '../../utils/money';
+import { fmtDateTime } from '../../utils/money';
 
-const fmtEur = (v) => new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
 const BACKEND = apiBase || '';
 
 const TABS = [
@@ -532,7 +533,7 @@ function DiaryTab({ projectId, t }) {
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-ink whitespace-pre-wrap">{e.text}</p>
                 <p className="text-xs text-ink-muted mt-1">
-                  {new Date(e.entry_date).toLocaleString('de-AT')}
+                  {fmtDateTime(e.entry_date)}
                   {e.hours > 0 && <span className="ml-2">· {e.hours.toFixed(1)} h</span>}
                   {e.source === 'timer' && <span className="ml-2 inline-block bg-amber/15 text-amber-deep text-[9px] uppercase px-1 rounded">timer</span>}
                   {e.source === 'sub' && <span className="ml-2 inline-block bg-teal/15 text-teal text-[9px] uppercase px-1 rounded">sub</span>}

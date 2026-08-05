@@ -8,6 +8,7 @@ import {
 import ScrollSnapTabStrip from '../../../components/ScrollSnapTabStrip';
 import AdminFilterBar from '../../../components/admin/AdminFilterBar';
 import AdminPagination from '../../../components/admin/AdminPagination';
+import { fmtEur } from '../../../utils/money';
 
 const SUB_TABS = ['subscriptions', 'online_payments', 'invoice_data', 'storno', 'settings'];
 const SUB_LABELS = {
@@ -19,8 +20,6 @@ const SUB_LABELS = {
   settings: 'invoicing_settings',
 };
 
-const fmtEur = (v) =>
-  new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
 const fmtDate = (iso) => (iso ? new Date(iso).toLocaleDateString() : '—');
 
 export default function AdminInvoicing({ flash }) {

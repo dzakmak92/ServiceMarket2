@@ -10,6 +10,10 @@ from datetime import date
 from decimal import Decimal
 from typing import Optional
 
+import asyncio
+import io
+import zipfile
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 
@@ -21,6 +25,10 @@ from routes._pro import require_pro_id
 from services.invoice_pdf import render_invoice_pdf
 
 router = APIRouter(prefix="/invoices", tags=["invoices"])
+
+# A whole year of invoices is a legitimate export; a whole account is a way
+# to make the server render PDFs until it falls over.
+MAX_EXPORT = 500
 
 
 class InvoiceLineIn(BaseModel):
@@ -237,6 +245,64 @@ async def cashflow(user: dict = Depends(get_current_user)):
                    "amount": float(r["amount"])} for r in rows],
         "overdue": float(overdue or 0),
     }
+
+
+# Mounted above the /{invoice_id} routes on purpose: "export.zip" would
+# otherwise be captured as an invoice id and answered with a 404.
+@router.get("/export.zip")
+async def export_zip(year: Optional[int] = None,
+                     month: Optional[int] = Query(default=None, ge=1, le=12),
+                     payment_status: Optional[str] = None,
+                     status: Optional[str] = None,
+                     user: dict = Depends(get_current_user)):
+    """Every invoice in the current filter, as PDFs in one archive.
+
+    The button for this shipped without the route behind it — the request
+    404'd, the click handler logged to the console and swallowed it, so
+    "Export all as PDF" did nothing at all and said nothing about it. An
+    accountant asking for the year's invoices is the whole reason the button
+    is there.
+
+    Drafts are excluded. A draft carries no invoice number and no issue date;
+    handing one to a Steuerberater in a folder of real invoices is worse than
+    leaving it out.
+    """
+    pro_id = await require_pro_id(user)
+    listing = await repo.list_for_pro(
+        pro_id, status=status, payment_state=payment_status,
+        year=year, month=month, sort_by="date", order="asc",
+        limit=MAX_EXPORT, offset=0)
+    rows = [r for r in (listing.get("invoices") or []) if r.get("status") != "draft"]
+    if not rows:
+        raise HTTPException(404, "No issued invoices match this filter")
+
+    buf = io.BytesIO()
+    used: set[str] = set()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for row in rows:
+            inv = await repo.get(pro_id, row["id"])
+            if not inv:
+                continue
+            number = (inv.get("invoice_number") or str(inv["id"]))
+            # Slashes are legal in an Austrian invoice number (RG/2026/0007)
+            # and would silently create directories inside the archive.
+            name = number.replace("/", "-").replace("\\", "-")
+            if name in used:
+                name = f"{name}-{inv['id'][:8]}"
+            used.add(name)
+            # Off the event loop: rendering a PDF is CPU-bound, and five
+            # hundred of them in a row would stall every other request on
+            # the worker for the duration.
+            pdf = await asyncio.to_thread(render_invoice_pdf, inv)
+            z.writestr(f"{name}.pdf", pdf)
+
+    label = f"{year}" if year else "alle"
+    if year and month:
+        label = f"{year}-{month:02d}"
+    return Response(
+        content=buf.getvalue(), media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="rechnungen-{label}.zip"'},
+    )
 
 
 @router.post("/{invoice_id}/mark-paid")

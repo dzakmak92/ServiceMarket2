@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLang } from '../contexts/LangContext';
 import api from '../api/client';
+import { fmtDate, fmtDateTime } from '../utils/money';
 import { useAuth } from '../contexts/AuthContext';
 import { useCookieConsent } from '../contexts/CookieConsentContext';
 import { Download, Trash2, AlertCircle, CheckCircle, Loader2, Mail, Cookie, Shield, RotateCcw } from 'lucide-react';
@@ -13,6 +14,16 @@ import { Download, Trash2, AlertCircle, CheckCircle, Loader2, Mail, Cookie, Shie
  *   3. Download my data (Right to Portability — Art. 20)
  *   4. Delete my account (Right to Erasure — Art. 17)
  */
+/* `t` returns the key itself when there is no translation, so a plain
+   `t(key) || r.de` fallback never fires — a retention rule added to the
+   server would surface in the UI as the literal string "pv_retain_whatever".
+   The German the server already sends is the fallback. */
+function retainLabel(t, r) {
+  const key = `pv_retain_${r.what}`;
+  const label = t(key);
+  return label === key ? r.de : label;
+}
+
 export default function PrivacySettings() {
   const { t } = useLang();
   const { user, refreshUser, logout } = useAuth();
@@ -175,7 +186,7 @@ export default function PrivacySettings() {
           className="btn-ghost text-xs"
           data-testid="privacy-cookies-edit"
         >
-          Change cookie preferences
+          {t('pv_cookies_change')}
         </button>
       </section>
 
@@ -186,7 +197,7 @@ export default function PrivacySettings() {
           <div>
             <h3 className="font-semibold text-ink text-sm">{t('pv_download')}</h3>
             <p className="text-[11px] text-ink-muted mt-0.5">
-              Get a machine-readable archive of everything we hold about you (GDPR Art. 20).
+              {t('pv_download_desc')}
             </p>
           </div>
         </div>
@@ -197,7 +208,7 @@ export default function PrivacySettings() {
           data-testid="privacy-export-btn"
         >
           {exporting ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
-          {exporting ? 'Preparing archive…' : 'Download ZIP'}
+          {exporting ? t('pv_export_preparing') : t('pv_export_btn')}
         </button>
       </section>
 
@@ -208,9 +219,7 @@ export default function PrivacySettings() {
           <div>
             <h3 className="font-semibold text-ink text-sm">{t('pv_delete')}</h3>
             <p className="text-[11px] text-ink-muted mt-0.5">
-              Löscht Ihr Konto und Ihre personenbezogenen Daten. Innerhalb der
-              Widerrufsfrist von {plan?.grace_days ?? 7} Tagen können Sie das
-              rückgängig machen.
+              {t('pv_delete_desc', { days: plan?.grace_days ?? 7 })}
             </p>
           </div>
         </div>
@@ -224,7 +233,12 @@ export default function PrivacySettings() {
                data-testid="privacy-delete-plan">
             <p className="text-xs font-medium text-ink">{t('pv_will_delete')}</p>
             <ul className="text-[11px] text-ink-muted list-disc pl-4 space-y-0.5">
-              {plan.deletes.map((d) => <li key={d}>{d}</li>)}
+              {/* The server sends stable keys alongside the German prose, so
+                  this erasure notice reads in the pro's own language. The
+                  prose is the fallback if an older API is answering. */}
+              {(plan.delete_keys || plan.deletes).map((d, i) => (
+                <li key={d}>{plan.delete_keys ? t(`pv_del_${d}`) : plan.deletes[i]}</li>
+              ))}
             </ul>
             {plan.retained.length > 0 && (
               <>
@@ -232,25 +246,25 @@ export default function PrivacySettings() {
                 <ul className="text-[11px] text-ink-muted list-disc pl-4 space-y-0.5">
                   {plan.retained.map((r) => (
                     <li key={r.what}>
-                      {r.de} — {r.count} {r.count === 1 ? 'Eintrag' : 'Einträge'},
-                      {' '}bis {new Date(r.until).toLocaleDateString('de-AT')} ({r.basis})
+                      {retainLabel(t, r)} — {r.count}{' '}
+                      {r.count === 1 ? t('pv_entry') : t('pv_entries')},{' '}
+                      {t('pv_retain_until', { date: fmtDate(r.until) })} ({r.basis})
                     </li>
                   ))}
                 </ul>
               </>
             )}
-            <p className="text-[11px] text-ink-muted pt-1">{plan.retained_note}</p>
+            <p className="text-[11px] text-ink-muted pt-1">
+              {plan.retained_note_key ? t(plan.retained_note_key) : plan.retained_note}
+            </p>
           </div>
         )}
 
         {deleteScheduled ? (
           <div className="rounded-[12px] bg-amber/10 border border-amber/30 p-3 space-y-2" data-testid="privacy-delete-scheduled">
             <p className="text-sm text-ink">
-              <strong>
-                Löschung vorgemerkt für {new Date(deleteScheduled).toLocaleString('de-AT')}.
-              </strong>{' '}
-              Bis dahin können Sie das Konto weiter nutzen und die Löschung
-              zurücknehmen.
+              <strong>{t('pv_delete_scheduled', { when: fmtDateTime(deleteScheduled) })}</strong>{' '}
+              {t('pv_delete_scheduled_help')}
             </p>
             <button
               onClick={cancelDelete}
@@ -259,13 +273,22 @@ export default function PrivacySettings() {
               data-testid="privacy-cancel-delete"
             >
               {cancellingDelete ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
-              Cancel deletion
+              {t('pv_cancel_deletion')}
             </button>
           </div>
         ) : (
           <div className="space-y-2">
+            {/* Split on the placeholder rather than concatenating a prefix
+                and a suffix: the confirmation word does not sit in the same
+                position in every language. DELETE itself stays untranslated —
+                it is a token the pro types, not a word they read. */}
             <p className="text-xs text-ink-muted">
-              Type <code className="bg-cream-deep px-1 py-0.5 rounded">DELETE</code> below to confirm.
+              {t('pv_delete_confirm_hint', { word: '\u0000' }).split('\u0000').map((part, i) => (
+                <React.Fragment key={i}>
+                  {i > 0 && <code className="bg-cream-deep px-1 py-0.5 rounded">DELETE</code>}
+                  {part}
+                </React.Fragment>
+              ))}
             </p>
             <input
               value={confirmText}
@@ -286,7 +309,7 @@ export default function PrivacySettings() {
               data-testid="privacy-delete-btn"
             >
               {deleting ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-              {deleting ? 'Scheduling deletion…' : 'Schedule deletion'}
+              {deleting ? t('pv_deleting') : t('pv_delete_btn')}
             </button>
           </div>
         )}

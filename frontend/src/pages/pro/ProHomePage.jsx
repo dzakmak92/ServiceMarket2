@@ -5,10 +5,8 @@ import { useLang } from '../../contexts/LangContext';
 import api from '../../api/client';
 import { Loader2, ArrowRight } from 'lucide-react';
 import { STAGES } from '../../utils/workflow';
+import { fmtEur, fmtDate } from '../../utils/money';
 
-const fmtEur = (v) =>
-  new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
-const fmtDate = (v) => (v ? new Date(v).toLocaleDateString('de-AT') : '—');
 
 /**
  * The home screen, rebuilt around the job's own lifecycle.

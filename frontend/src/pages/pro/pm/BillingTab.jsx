@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../../api/client';
+import { fmtEur } from '../../../utils/money';
 import {
   Loader2, Plus, Trash2, Send, FileSignature, Receipt, Check, AlertCircle, ArrowRight, Clock,
 } from 'lucide-react';
 
-const fmtEur = (v) => new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
 
 const CO_BADGE = {
   draft: 'bg-ink-muted/15 text-ink-muted',

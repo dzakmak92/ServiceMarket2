@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import { useLang } from '../contexts/LangContext';
+import { fmtEur } from '../utils/money';
 import {
   Loader2, AlertCircle, ShieldCheck, CheckCircle2, CreditCard, Briefcase, Info, Lock,
 } from 'lucide-react';
 
-const fmtEur = (v) => new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
 
 export default function PayInvoicePage() {
   const { token } = useParams();

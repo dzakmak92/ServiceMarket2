@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api, { apiBase } from '../api/client';
 import { useLang } from '../contexts/LangContext';
+import { fmtEur } from '../utils/money';
 import {
   Loader2, AlertCircle, FileSpreadsheet, FileText, ShieldCheck, Briefcase, TrendingUp, ArrowDownToLine,
 } from 'lucide-react';
 
-const fmtEur = (v) => new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
 
 export default function AccountantSharePage() {
   const { token } = useParams();

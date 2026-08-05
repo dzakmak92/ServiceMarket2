@@ -6,11 +6,23 @@ import { toast } from 'sonner';
 import { useLang } from '../../contexts/LangContext';
 import ScrollSnapTabStrip, { SwipeableTabPanel } from '../../components/ScrollSnapTabStrip';
 import AdminPagination from '../../components/admin/AdminPagination';
+import { dayKey } from '../../utils/schedule';
+import { fmtEur, fmtDateLong as fmtDate, fmtDate as fmtDateShort, moneyLocale } from '../../utils/money';
 import {
   Receipt, Loader2, Download, Share2, CheckCircle2, FileText, Eye, X,
   TrendingUp, Banknote, Hourglass, AlertCircle, Search,
   Plus, Ban, Trash2, FileX, CreditCard, ArrowUpDown, Globe, Trash, PlusCircle,
 } from 'lucide-react';
+
+/* Short month names in the interface language. They were an English array
+   literal, so the month filter read Jan/Mar/May/Oct in all four. 2026 is
+   arbitrary — only the month index matters.
+
+   A function rather than a module constant: this file is imported before
+   LangProvider has registered the locale, so a constant would freeze the
+   names at the de-AT default. */
+const monthNames = () => Array.from({ length: 12 }, (_, i) =>
+  new Date(2026, i, 1).toLocaleDateString(moneyLocale(), { month: 'short' }));
 
 const MYINV_TAB_KEYS = ['all', 'issued', 'partial', 'paid', 'storno', 'cancelled'];
 
@@ -24,11 +36,10 @@ function snapshotName(row) {
   return snap.name || '';
 }
 
-const fmtEur = (v) => new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
-const fmtDate = (iso) => (iso ? new Date(iso).toLocaleDateString('de-AT', { day: '2-digit', month: 'short', year: 'numeric' }) : '—');
 
 export default function MyInvoicesPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const MONTHS = useMemo(monthNames, [lang]);
   const location = useLocation();
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(0);
@@ -41,7 +52,10 @@ export default function MyInvoicesPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
   const [showExternal, setShowExternal] = useState(false);
-  const [search, setSearch] = useState('');
+  /* Seeded from ?q= so "View invoice" elsewhere in the app can land here
+     showing the one invoice it meant. */
+  const [search, setSearch] = useState(
+    () => new URLSearchParams(window.location.search).get('q') || '');
   const [year, setYear] = useState(null);
   const [month, setMonth] = useState(null);
   const [sortBy, setSortBy] = useState('invoice_date');
@@ -102,12 +116,16 @@ export default function MyInvoicesPage() {
   }, [statusFilter, sourceFilter, search, year, month, page, perPage, sortBy, sortOrder]);
 
   // Fetch aggregated KPI stats once + whenever the year filter changes
+  /* Keyed on `rows`, not `rows.length`. Marking an invoice paid reloads the
+     same page with the same number of rows, so the length never changed and
+     the four tiles above kept showing the pre-payment figures until a filter
+     was touched. `load` builds a fresh array every time, so this fires. */
   useEffect(() => {
     const params = year ? `?year=${year}` : '';
     api.get(`/api/invoices/stats${params}`)
       .then((r) => setStats(r.data))
       .catch(() => {});
-  }, [year, rows.length]);
+  }, [year, rows]);
 
   /* Server-side filtering — `rows` already contains the page after filters.
      Except the source tabs: `sourceFilter` drove a re-fetch but was never put
@@ -150,6 +168,41 @@ export default function MyInvoicesPage() {
     setBusy(inv.id);
     try { await api.post(`/api/invoices/${inv.id}/mark-paid`); await load(); }
     finally { setBusy(null); }
+  };
+
+  const [exporting, setExporting] = useState(false);
+
+  /* Every invoice in the current filter, as PDFs in one archive.
+
+     The old inline handler sent `statusFilter` as `payment_status` whatever
+     it was, so the three tabs that are not payment states — issued, cancelled,
+     storno — filtered on a value the API does not know, and it caught its own
+     failure into `console.error`. A pro pressing this saw nothing happen and
+     had no way to tell a broken export from an empty one. */
+  const exportZip = async () => {
+    setExporting(true);
+    try {
+      const params = new URLSearchParams();
+      if (year) params.set('year', year);
+      if (month) params.set('month', month);
+      if (statusFilter === 'issued' || statusFilter === 'cancelled') params.set('status', statusFilter);
+      else if (statusFilter !== 'all' && statusFilter !== 'storno') params.set('payment_status', statusFilter);
+      const r = await api.get(`/api/invoices/export.zip?${params.toString()}`, { responseType: 'blob' });
+      const blob = new Blob([r.data], { type: 'application/zip' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoices-${year || 'all'}${month ? `-${String(month).padStart(2, '0')}` : ''}.zip`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (e) {
+      /* responseType 'blob' means the error body is a Blob too, so the usual
+         `detail` read comes back undefined. 404 here means the filter matched
+         no issued invoice, which is a sentence, not an error. */
+      toast.error(e?.response?.status === 404
+        ? t('myinv_export_empty')
+        : formatError(e));
+    } finally { setExporting(false); }
   };
 
   // ── Payments + Storno state ──────────────────────────────
@@ -265,31 +318,15 @@ export default function MyInvoicesPage() {
               data-testid="myinv-filter-month"
             >
               <option value="">{t('inv_all_months')}</option>
-              {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m, i) => (
+              {MONTHS.map((m, i) => (
                 <option key={i + 1} value={i + 1}>{m}</option>
               ))}
             </select>
           )}
           <button
-            onClick={async () => {
-              const params = new URLSearchParams();
-              if (year) params.set('year', year);
-              if (month) params.set('month', month);
-              if (statusFilter !== 'all') params.set('payment_status', statusFilter);
-              try {
-                const r = await api.get(`/api/invoices/export.zip?${params.toString()}`, { responseType: 'blob' });
-                const blob = new Blob([r.data], { type: 'application/zip' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `invoices-${year || 'all'}${month ? `-${String(month).padStart(2, '0')}` : ''}.zip`;
-                a.click();
-                URL.revokeObjectURL(url);
-              } catch (e) {
-                console.error(e);
-              }
-            }}
-            className="btn-ghost text-xs"
+            onClick={exportZip}
+            disabled={exporting}
+            className="btn-ghost text-xs disabled:opacity-40"
             data-testid="myinv-export-all-pdf"
           >
             <Download size={12} /> {t('myinv_export_all_pdf') || 'Export all as PDF'}
@@ -581,6 +618,13 @@ function InvoiceCard({ inv, busy, t, onPreview, onDownload, onShare, onMarkPaid,
      in by hand. There is no `source` column in the backend, so this read
      undefined on every row and the badge never appeared. */
   const isExternal = !inv.job_id;
+  /* A draft has no invoice number, no issue date and no totals — those are
+     computed when it is issued. It was rendered with the full action row
+     anyway: "Mark paid" settled an outstanding balance of zero and returned
+     quietly, Share offered a link to a document that does not exist yet, and
+     Storno cancelled an invoice that was never issued. The only thing there
+     is to do with a draft is finish it. */
+  const isDraft = inv.status === 'draft';
   const brutto = Number(inv.brutto_total || 0);
   const paid = Number(inv.paid_total || 0);
   const outstanding = Number(inv.outstanding ?? Math.max(0, brutto - paid));
@@ -588,13 +632,15 @@ function InvoiceCard({ inv, busy, t, onPreview, onDownload, onShare, onMarkPaid,
   const isFullyPaid = !isStorno && !isCancelled && outstanding < 0.01 && brutto > 0;
   const paidPct = brutto > 0 ? Math.min(100, Math.round((paid / brutto) * 100)) : 0;
 
-  const status = isCancelled ? 'cancelled' : isStorno ? 'storno' : (inv.payment_status || inv.status || 'issued');
+  const status = isDraft ? 'draft'
+    : isCancelled ? 'cancelled' : isStorno ? 'storno' : (inv.payment_status || inv.status || 'issued');
   const pillCls = {
     paid: 'status-done',
     issued: 'status-pending',
     partial: 'bg-amber/15 text-amber-deep border border-amber/40',
     storno: 'bg-red-warn/10 text-red-warn border border-red-warn/30',
     cancelled: 'bg-ink-muted/15 text-ink-muted border border-ink-muted/30 line-through',
+    draft: 'bg-ink-muted/15 text-ink-muted border border-ink-muted/30',
   }[status] || 'status-pending';
 
   return (
@@ -605,7 +651,9 @@ function InvoiceCard({ inv, busy, t, onPreview, onDownload, onShare, onMarkPaid,
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <p className={`font-mono text-sm ${isCancelled ? 'line-through text-ink-muted' : 'text-ink'}`}>{inv.invoice_number}</p>
+            <p className={`font-mono text-sm ${isCancelled ? 'line-through text-ink-muted' : 'text-ink'}`}>
+              {inv.invoice_number || t('myinv_no_number_yet')}
+            </p>
             <span className={`status-pill ${pillCls}`}>
               {t(`myinv_status_${status}`) || status}
             </span>
@@ -622,7 +670,10 @@ function InvoiceCard({ inv, busy, t, onPreview, onDownload, onShare, onMarkPaid,
             )}
           </div>
           <p className="text-sm text-ink-soft">{inv.customer_snapshot?.name || '—'}</p>
-          <p className="text-xs text-ink-muted">{fmtDate(inv.invoice_date)} · {t('myinv_due_in').replace('{n}', inv.payment_due_days)}</p>
+          <p className="text-xs text-ink-muted">
+            {isDraft ? t('myinv_draft_hint')
+              : <>{fmtDate(inv.invoice_date)} · {t('myinv_due_in').replace('{n}', inv.payment_due_days)}</>}
+          </p>
         </div>
         <div className="text-right">
           <p className={`text-xl font-headings font-bold ${isStorno ? 'text-red-warn' : 'text-ink'}`}>{fmtEur(brutto)}</p>
@@ -648,6 +699,13 @@ function InvoiceCard({ inv, busy, t, onPreview, onDownload, onShare, onMarkPaid,
       <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-sm-border" data-testid={`myinv-actions-${inv.id}`}>
         {/* LEFT: read-only icons (Preview, Download, Share) */}
         <div className="flex items-center gap-1">
+          {isDraft && inv.job_id && (
+            <Link to={`/jobs/${inv.job_id}/invoice`} className="btn-secondary text-xs"
+                  data-testid={`myinv-continue-${inv.id}`}>
+              <FileText size={12} className="inline mr-1" />{t('myinv_continue_draft')}
+            </Link>
+          )}
+          {!isDraft && (<>
           <button
             onClick={onPreview}
             disabled={busy}
@@ -675,11 +733,12 @@ function InvoiceCard({ inv, busy, t, onPreview, onDownload, onShare, onMarkPaid,
           >
             <Share2 size={14} />
           </button>
+          </>)}
         </div>
 
         {/* RIGHT: payment-state actions */}
         <div className="flex items-center gap-1.5">
-          {!isStorno && !isCancelled && !isFullyPaid && (
+          {!isDraft && !isStorno && !isCancelled && !isFullyPaid && (
             <>
               <button
                 onClick={onAddPayment}
@@ -701,12 +760,12 @@ function InvoiceCard({ inv, busy, t, onPreview, onDownload, onShare, onMarkPaid,
               </button>
             </>
           )}
-          {isFullyPaid && (
+          {!isDraft && isFullyPaid && (
             <span className="inline-flex items-center gap-1 px-2.5 h-8 text-xs font-bold text-green-pos">
               <CheckCircle2 size={12} /> {t('myinv_status_paid')}
             </span>
           )}
-          {!isStorno && !isCancelled && (
+          {!isDraft && !isStorno && !isCancelled && (
             <button
               onClick={onStorno}
               disabled={busy}
@@ -830,7 +889,7 @@ function PaymentsModal({ invoice, onClose, reload, t }) {
   const [amount, setAmount] = useState(outstanding > 0 ? outstanding : '');
   const [method, setMethod] = useState('transfer');
   const [note, setNote] = useState('');
-  const [paidOn, setPaidOn] = useState(new Date().toISOString().slice(0, 10));
+  const [paidOn, setPaidOn] = useState(dayKey(new Date()));
   const [payLink, setPayLink] = useState({
     enabled: !!invoice.pay_link_enabled,
     token: invoice.pay_link_token || null,
@@ -957,7 +1016,7 @@ function PaymentsModal({ invoice, onClose, reload, t }) {
                   <li key={p.id} className="flex items-center justify-between rounded-[8px] bg-cream-soft px-2.5 py-1.5 text-sm" data-testid={`myinv-payment-${p.id}`}>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-ink">{fmtEur(p.amount_eur)} <span className="text-[10px] text-ink-muted uppercase ml-1">{p.method}</span></p>
-                      <p className="text-[11px] text-ink-muted">{p.paid_on ? new Date(p.paid_on).toLocaleDateString('de-AT') : ''} {p.note ? `· ${p.note}` : ''}</p>
+                      <p className="text-[11px] text-ink-muted">{p.paid_on ? fmtDateShort(p.paid_on) : ''} {p.note ? `· ${p.note}` : ''}</p>
                     </div>
                     <button onClick={() => remove(p.id)} disabled={busy} className="text-ink-muted hover:text-red-warn" data-testid={`myinv-payment-delete-${p.id}`}><Trash2 size={12} /></button>
                   </li>

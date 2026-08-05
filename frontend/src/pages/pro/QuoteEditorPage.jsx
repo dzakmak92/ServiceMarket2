@@ -3,13 +3,12 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import api from '../../api/client';
 import NumberField from '../../components/NumberField';
 import { useLang } from '../../contexts/LangContext';
+import { fmtEur } from '../../utils/money';
 import {
   ArrowLeft, Loader2, Plus, Trash2, Save, FileDown, Send, Check, Ban,
   AlertCircle, GitBranch, Copy,
 } from 'lucide-react';
 
-const fmtEur = (v) =>
-  new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
 
 const BLANK_LINE = {
   kind: 'labor', description: '', qty: 1, unit: 'pcs',

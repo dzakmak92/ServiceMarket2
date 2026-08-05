@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../api/client';
 import { useLang } from '../contexts/LangContext';
+import { fmtEur, fmtDateLong as fmtDate } from '../utils/money';
 import {
   Loader2, AlertCircle, CheckCircle2, Clock, BookOpen, ShieldCheck,
   FileSignature, Receipt, Hammer, MapPin, Mail, Phone, Check, X,
@@ -23,11 +24,6 @@ import {
  * Everything below reads the shape `get_by_share_token` actually returns.
  */
 
-const fmtEur = (v) =>
-  new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' })
-    .format(Number(v || 0));
-const fmtDate = (d) =>
-  d ? new Date(d).toLocaleDateString('de-AT', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
 const TIER_LABEL = { basic: 'tier_basic', standard: 'tier_standard', premium: 'tier_premium' };
 

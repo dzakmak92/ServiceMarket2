@@ -30,7 +30,11 @@ export default function AuthPage() {
       if (mode === 'login') {
         user = await login(email, password);
       } else {
-        if (!name.trim()) { setError('Name is required'); setLoading(false); return; }
+        if (!name.trim()) { setError(t('auth_name_required')); setLoading(false); return; }
+        /* The server requires eight and answers a shorter one with a
+           Pydantic array in English. Caught here so the requirement is
+           stated in the pro's language, before the round trip. */
+        if (password.length < 8) { setError(t('pw_too_short')); setLoading(false); return; }
         if (!acceptedTerms || !acceptedPrivacy) {
           setError(t('auth_consent_required'));
           setLoading(false);
@@ -159,7 +163,8 @@ export default function AuthPage() {
                   placeholder="••••••••"
                   className="sm-input pr-12"
                   required
-                  minLength={6}
+                  minLength={8}
+                  aria-describedby={mode === 'register' ? 'pw-rule' : undefined}
                   data-testid="auth-password-input"
                 />
                 <button type="button" onClick={() => setShowPw(!showPw)}
@@ -167,6 +172,9 @@ export default function AuthPage() {
                   {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+              {mode === 'register' && (
+                <p id="pw-rule" className="text-[11px] text-ink-muted mt-1">{t('pw_too_short')}</p>
+              )}
             </div>
 
             {error && (

@@ -73,7 +73,6 @@ export default function PrivacyPolicyPage() {
         <li>To match homeowners with relevant tradespersons (AI category classification, location matching).</li>
         <li>To deliver real-time chat, push notifications and booking calendars.</li>
         <li>To bill contact fees and pro subscriptions via Stripe and issue legally-required invoices.</li>
-        <li>To translate messages on demand (you opt in per-message — content is sent to Emergent's LLM provider only when you click Translate).</li>
         <li>To prevent fraud, abuse, and breach of our Terms (e.g. rate-limiting, suspicious quote detection).</li>
         <li>To comply with Austrian/EU legal obligations (tax records, anti-money-laundering checks for high-value bookings).</li>
         <li>With your explicit opt-in, to send marketing emails about new features. You can withdraw consent any time.</li>
@@ -96,22 +95,27 @@ export default function PrivacyPolicyPage() {
       <p>We do not sell your personal data. We share it only with the following sub-processors,
         each bound by a Data Processing Agreement:</p>
       <ul>
-        <li><strong>Stripe Payments Europe Ltd.</strong> (Ireland) — payment processing.</li>
-        <li><strong>MongoDB Atlas</strong> (Ireland, EU region) — encrypted database hosting.</li>
-        <li><strong>Emergent Labs Inc.</strong> — AI category classification and on-demand message translation.</li>
-        <li><strong>Web push providers (Mozilla / Google / Apple)</strong> — when you opt in to browser push notifications.</li>
-        <li><strong>Cloudflare, Inc.</strong> — anti-bot security challenge ("Turnstile") shown on the
-          homeowner signup form. Cloudflare receives your IP address, browser fingerprint, and the
-          interaction signal needed to confirm you are not a bot. No tracking cookies are set and no
-          data is used for advertising. Cloudflare is a recognised EU GDPR processor (DPF certified).
-          The data is retained for at most 24 hours for abuse prevention purposes. Lawful basis:
-          legitimate interest in preventing automated abuse (Art. 6(1)(f) GDPR).</li>
+        <li><strong>Stripe Payments Europe Ltd.</strong> (Ireland) — payment processing. We never
+          store card details ourselves.</li>
+        <li><strong>Supabase Inc.</strong> (EU region) — the PostgreSQL database and the private
+          object storage that holds job photos, licence uploads and receipts.</li>
+        <li><strong>Vercel Inc.</strong> — application hosting and CDN. Receives the request
+          metadata any web host receives: IP address, user-agent, requested path.</li>
+        <li><strong>Email delivery provider</strong> — transactional mail only: password resets,
+          and the quotes and invoices you choose to send. Receives the recipient address and the
+          contents of that message.</li>
+        <li><strong>Open-Meteo</strong> — the weather forecast shown on your calendar. Receives the
+          coordinates of the appointment location and nothing else: no account identifier, no name,
+          no address.</li>
+        <li><strong>Web push providers (Mozilla / Google / Apple)</strong> — when you opt in to
+          browser push notifications.</li>
       </ul>
-      <p>The current list is maintained on our <a href="/sub-processors">sub-processor page</a>.</p>
+      <p>This list is the current one. If it changes we update this page and, where the change is
+        material, tell you before it takes effect.</p>
 
       <h2 id="transfers">6. International transfers</h2>
       <p>Most processing happens in the EU/EEA. Where data is transferred outside the EEA
-        (e.g. Emergent infrastructure in the US), we rely on the European Commission's Standard
+        (e.g. hosting and push-notification infrastructure in the US), we rely on the European Commission's Standard
         Contractual Clauses (SCCs) and supplementary technical measures (encryption in transit and
         at rest).</p>
 
@@ -131,7 +135,7 @@ export default function PrivacyPolicyPage() {
       <h2 id="security">8. Security measures</h2>
       <ul>
         <li>TLS 1.2+ for all data in transit.</li>
-        <li>AES-256 encryption at rest (MongoDB Atlas).</li>
+        <li>AES-256 encryption at rest (Supabase-managed PostgreSQL and object storage).</li>
         <li>Passwords hashed with bcrypt (cost factor 12).</li>
         <li>JWT-based session tokens with refresh-token rotation.</li>
         <li>Role-based access control on every backend route.</li>

@@ -723,6 +723,27 @@ with TestClient(entry.app) as c:
         r = c.get(f"/api/invoices/{invoice_id}/pdf")
         check(ok(r) and r.content[:4] == b"%PDF", "the Rechnung renders as a PDF")
 
+        # The bulk export the "Export all as PDF" button calls. It shipped
+        # without a route behind it, and the click handler swallowed the 404,
+        # so the button did nothing and said nothing.
+        import io as _io, zipfile as _zipfile
+        r = c.get("/api/invoices/export.zip")
+        check(ok(r) and r.content[:2] == b"PK",
+              f"the bulk export returns a ZIP ({r.status_code})")
+        if r.status_code == 200:
+            z = _zipfile.ZipFile(_io.BytesIO(r.content))
+            names = z.namelist()
+            check(z.testzip() is None, "the archive is not corrupt")
+            check(bool(names) and all(n.endswith(".pdf") for n in names),
+                  f"and holds {len(names)} PDF(s)")
+            check(all(z.read(n)[:4] == b"%PDF" for n in names),
+                  "each of which is a real PDF, not an error page")
+            check(f"{inv.get('invoice_number')}.pdf".replace("/", "-") in names,
+                  "including the one just issued")
+        r = c.get("/api/invoices/export.zip", params={"year": 1999})
+        check(r.status_code == 404,
+              f"a filter matching nothing is a 404 with a reason, not a 500 ({r.status_code})")
+
         # Editing an issued invoice must be refused — this is the GoBD rule
         # the database enforces with a trigger, and the API should say so in
         # words rather than by raising.
