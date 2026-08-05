@@ -9,6 +9,7 @@ import {
 } from '../../utils/schedule';
 import { TEMPLATES, sendViaPhone, smsSegments, telHref } from '../../utils/sms';
 import WeatherCard from '../../components/pro/WeatherCard';
+import JobSheet from '../../components/pro/JobSheet';
 import useWeather from '../../hooks/useWeather';
 import {
   AlertTriangle, Car, Check, CheckCircle2, ChevronDown, ChevronUp, Copy, FileText,
@@ -80,7 +81,7 @@ function primaryAction(status) {
 
 /* ────────────────────────────────────────────── one appointment block */
 function Block({ appt, top, height, running, progress, dragging, conflict,
-                 onGrab, onPrimary, t }) {
+                 onGrab, onPrimary, onOpen, t }) {
   const room = { body: height >= 96, actions: height >= 150 && !dragging };
   const phone = telHref(appt.customer_phone);
   const action = primaryAction(appt.status);
@@ -127,9 +128,13 @@ function Block({ appt, top, height, running, progress, dragging, conflict,
         </div>
 
         <div className="px-3 pt-2 pb-[7px] flex-1 min-h-0 overflow-hidden">
-          <Link to={`/projects/${appt.id}`} className="font-extrabold text-[13.5px] text-ink leading-tight">
+          {/* The job, not the project dashboard. A two-hour visit does not
+              want a tab strip for Kanban and Gantt in front of the address. */}
+          <button type="button" onClick={() => onOpen(appt)}
+                  className="text-left font-extrabold text-[13.5px] text-ink leading-tight"
+                  data-testid={`day-open-${appt.id}`}>
             {appt.title}
-          </Link>
+          </button>
           {room.body && (
             <>
               {appt.customer_name && (
@@ -185,13 +190,14 @@ function Block({ appt, top, height, running, progress, dragging, conflict,
             >
               <Phone size={13} /> {t('day_call')}
             </a>
-            <Link
-              to={`/projects/${appt.id}`}
+            <button
+              type="button"
+              onClick={() => onOpen(appt)}
               className="flex-1 min-h-[44px] flex items-center justify-center gap-1
                          font-bold text-[10.5px] text-teal border-l border-sm-border"
             >
               <FileText size={13} /> {t('day_note')}
-            </Link>
+            </button>
             {action && (
               <button
                 type="button"
@@ -248,6 +254,7 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
   const [sms, setSms] = useState(null);         // the message sheet
   const [done, setDone] = useState(null);       // the "make an invoice?" prompt
   const [booking, setBooking] = useState(null); // the new-appointment sheet
+  const [openJob, setOpenJob] = useState(null);  // the job sheet
   const [hasInvoiceToolkit, setHasInvoiceToolkit] = useState(null);
   const { weather, status: wxStatus } = useWeather(7);
   const isToday = sameDay(date, new Date());
@@ -554,6 +561,7 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
                 conflict={isDragging && clash}
                 onGrab={onGrab}
                 onPrimary={onPrimary}
+                onOpen={setOpenJob}
                 t={t}
               />
             );
@@ -604,6 +612,14 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
           onInvoice={() => { const id = done.id; setDone(null); navigate(`/jobs/${id}/invoice`); }}
           onUnlock={() => { setDone(null); navigate('/billing'); }}
           onClose={() => setDone(null)}
+          t={t}
+        />
+      )}
+      {openJob && (
+        <JobSheet
+          appt={openJob}
+          onClose={() => setOpenJob(null)}
+          onPrimary={(a, act) => { setOpenJob(null); onPrimary(a, act); }}
           t={t}
         />
       )}

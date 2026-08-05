@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../api/client';
 import WeatherCard from '../../components/pro/WeatherCard';
+import JobSheet from '../../components/pro/JobSheet';
 import useWeather from '../../hooks/useWeather';
 import {
   MIN, bookableRuns, dayKey, durationLabel, hhmm, toMs,
@@ -37,6 +38,7 @@ export default function WeekScheduleView({ weekStart, onOpenDay, t }) {
   const [appts, setAppts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(() => startOfDay(new Date()));
+  const [openJob, setOpenJob] = useState(null);
   const { weather, status: wxStatus } = useWeather(7);
 
   const days = useMemo(() => Array.from({ length: 7 }, (_, i) => {
@@ -247,9 +249,10 @@ export default function WeekScheduleView({ weekStart, onOpenDay, t }) {
                 </span>
               </div>
             ))}
-          <Link
-            to={`/projects/${a.id}`}
-            className={`flex gap-2.5 rounded-[11px] border px-2.5 py-2 mb-1.5
+          <button
+            type="button"
+            onClick={() => setOpenJob(a)}
+            className={`w-full text-left flex gap-2.5 rounded-[11px] border px-2.5 py-2 mb-1.5
               ${a.urgency === 'emergency'
                 ? 'border-red-warn/35 bg-red-warn/[0.04]' : 'border-sm-border bg-paper'}`}
             data-testid={`week-sel-${a.id}`}
@@ -269,9 +272,12 @@ export default function WeekScheduleView({ weekStart, onOpenDay, t }) {
                 )}
               </span>
             </span>
-          </Link>
+          </button>
         </React.Fragment>
       ))}
+      {openJob && (
+        <JobSheet appt={openJob} onClose={() => setOpenJob(null)} t={t} />
+      )}
     </div>
   );
 }
