@@ -180,6 +180,20 @@ export function bookableRuns(appointments, dayStart, dayEnd, opts = {}) {
   }).filter((r) => toMs(r.end) - toMs(r.start) >= min);
 }
 
+/**
+ * A calendar day as YYYY-MM-DD, in the *local* zone.
+ *
+ * Not `toISOString().slice(0, 10)`. That converts to UTC first, so anywhere
+ * east of Greenwich local midnight is the previous day in UTC — in Vienna the
+ * day view asked the API for yesterday and then showed nothing the pro had
+ * just booked. The bug is invisible from a machine running in UTC, which is
+ * why it survived the tests.
+ */
+export const dayKey = (v) => {
+  const d = new Date(toMs(v));
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 export const hhmm = (v) =>
   new Date(toMs(v)).toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' });
 

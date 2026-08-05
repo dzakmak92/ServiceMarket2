@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import {
-  QUARTER, MIN, TRAVEL_GAP, bookableRuns, hhmm, durationLabel, previewInsert,
+  QUARTER, MIN, TRAVEL_GAP, bookableRuns, dayKey, hhmm, durationLabel, previewInsert,
   previewResize, resizeAndSettle, snapQuarter, toMs,
 } from '../../utils/schedule';
 import { TEMPLATES, sendViaPhone, smsSegments, telHref } from '../../utils/sms';
@@ -249,7 +249,7 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
   const [done, setDone] = useState(null);       // the "make an invoice?" prompt
   const [booking, setBooking] = useState(null); // the new-appointment sheet
   const [hasInvoiceToolkit, setHasInvoiceToolkit] = useState(null);
-  const weather = useWeather(7);
+  const { weather, status: wxStatus } = useWeather(7);
   const isToday = sameDay(date, new Date());
   const dragRef = useRef(null);
   /* The window listeners are bound once per gesture and would otherwise see
@@ -262,8 +262,7 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
 
   const load = useCallback(() => {
     setLoading(true);
-    const iso = new Date(date).toISOString().slice(0, 10);
-    api.get('/api/jobs/appointments', { params: { day: iso, days: 1 } })
+    api.get('/api/jobs/appointments', { params: { day: dayKey(date), days: 1 } })
       .then((r) => setAppts((r.data?.appointments || []).map((a) => ({
         ...a, start: a.scheduled_start, end: a.scheduled_end || a.scheduled_start,
       }))))
@@ -473,7 +472,7 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
       {/* Only on today. Standing in front of Thursday's rail, a forecast for
           right now would be describing a different day than the one on
           screen — which is worse than showing nothing. */}
-      {isToday && <WeatherCard weather={weather} t={t} />}
+      {isToday && <WeatherCard weather={weather} status={wxStatus} t={t} />}
       <div className="card-lg p-0 pt-3 pr-3 pb-7 relative" data-testid="day-rail">
         <div
           className="relative"

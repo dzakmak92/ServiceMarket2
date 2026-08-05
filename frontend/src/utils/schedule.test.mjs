@@ -7,6 +7,7 @@
 import {
   QUARTER, MIN, TRAVEL_GAP, snapQuarter, overlaps, travelShortfall,
   resizeAndSettle, previewResize, previewInsert, freeRuns, bookableRuns, MIN_SLOT, durationLabel,
+  dayKey,
 } from './schedule.js';
 
 let pass = 0, fail = 0;
@@ -211,6 +212,21 @@ step('booking a draft that outgrows its hole');
   const src = day();
   previewInsert(src, { start: at(11, 15), end: at(15, 30) });
   ok(+src[1].start === at(13, 30), 'the day it was asked about is untouched');
+}
+
+step('the calendar day is the local one');
+{
+  // Local midnight in any zone east of Greenwich is the previous day in UTC.
+  // `toISOString().slice(0,10)` returned that previous day, so in Vienna the
+  // day view asked the API for yesterday and showed none of today's work.
+  const midnight = new Date('2026-08-05T00:00:00');
+  ok(dayKey(midnight) === '2026-08-05',
+     `local midnight is its own day, not yesterday (${dayKey(midnight)})`);
+  const lateEvening = new Date('2026-08-05T23:30:00');
+  ok(dayKey(lateEvening) === '2026-08-05', 'and so is half past eleven at night');
+  ok(dayKey(new Date('2026-01-09T00:00:00')) === '2026-01-09', 'single digits are padded');
+  ok(dayKey(new Date('2026-12-31T23:59:00')) === '2026-12-31', "new year's eve does not roll over");
+  ok(dayKey(+midnight) === dayKey(midnight), 'it takes a timestamp as happily as a Date');
 }
 
 step('labels');

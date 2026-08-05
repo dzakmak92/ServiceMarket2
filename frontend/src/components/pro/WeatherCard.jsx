@@ -1,7 +1,8 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import {
   Cloud, CloudDrizzle, CloudFog, CloudLightning, CloudRain, CloudSnow,
-  CloudSun, Droplets, Sun, Wind,
+  CloudSun, CloudOff, Droplets, MapPin, Sun, Wind,
 } from 'lucide-react';
 
 /**
@@ -31,11 +32,39 @@ const KEY = {
 
 const round = (v) => (typeof v === 'number' ? Math.round(v) : null);
 
-export default function WeatherCard({ weather, t, compact = false }) {
-  /* No forecast is a normal state, not an error worth a slot on the screen:
-     a pro with no service centre set, an upstream that is down, an offline
-     phone. The calendar is the page — the card simply is not there. */
-  if (!weather?.current && !weather?.days?.length) return null;
+export default function WeatherCard({ weather, status = 'ok', t, compact = false }) {
+  const empty = !weather?.current && !weather?.days?.length;
+
+  /* Nothing while it is still being fetched — a placeholder that flashes for
+     200 ms is worse than a card that simply appears. */
+  if (empty && status === 'loading') return null;
+
+  /* But once it has failed, say so. Rendering nothing meant a pro with no
+     town on file, a pro behind a broken upstream and a pro on a build with
+     no weather endpoint all saw exactly the same thing — a calendar with no
+     weather and no way to find out why. Only the first of those is
+     actionable, so only the first gets a link. */
+  if (empty) {
+    const canFix = status === 'no-location';
+    return (
+      <div className={`rounded-[14px] border border-sm-border bg-cream-soft flex items-center gap-2.5
+                       ${compact ? 'px-3 py-2 mb-2.5' : 'px-3.5 py-2.5 mb-3'}`}
+           data-testid="wx-empty" data-status={status}>
+        {canFix ? <MapPin size={16} className="text-ink-muted flex-none" />
+                : <CloudOff size={16} className="text-ink-muted flex-none" />}
+        <p className="flex-1 font-bold text-[11.5px] text-ink-muted leading-snug">
+          {canFix ? t('wx_no_location') : t('wx_unavailable')}
+        </p>
+        {canFix && (
+          <Link to="/settings" className="font-extrabold text-[11.5px] text-teal whitespace-nowrap
+                                          underline min-h-[32px] flex items-center"
+                data-testid="wx-set-location">
+            {t('wx_set_location')}
+          </Link>
+        )}
+      </div>
+    );
+  }
 
   const today = weather.days?.[0];
   const cur = weather.current || {};

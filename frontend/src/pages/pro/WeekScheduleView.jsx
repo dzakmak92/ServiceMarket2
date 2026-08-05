@@ -4,7 +4,7 @@ import api from '../../api/client';
 import WeatherCard from '../../components/pro/WeatherCard';
 import useWeather from '../../hooks/useWeather';
 import {
-  MIN, bookableRuns, durationLabel, hhmm, toMs,
+  MIN, bookableRuns, dayKey, durationLabel, hhmm, toMs,
 } from '../../utils/schedule';
 import { Car, Loader2, MapPin, User } from 'lucide-react';
 
@@ -23,10 +23,6 @@ const SPAN = DAY_TO - DAY_FROM;
 const GRID_H = 300;
 
 const startOfDay = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
-const dayKey = (d) => {
-  const x = new Date(d);
-  return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
-};
 const sameDay = (a, b) => dayKey(a) === dayKey(b);
 
 /** Where in the column an instant falls, 0–1. Clamped, because an appointment
@@ -41,7 +37,7 @@ export default function WeekScheduleView({ weekStart, onOpenDay, t }) {
   const [appts, setAppts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(() => startOfDay(new Date()));
-  const weather = useWeather(7);
+  const { weather, status: wxStatus } = useWeather(7);
 
   const days = useMemo(() => Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart); d.setDate(weekStart.getDate() + i); d.setHours(0, 0, 0, 0);
@@ -110,7 +106,7 @@ export default function WeekScheduleView({ weekStart, onOpenDay, t }) {
       {/* Today, in detail — the same card the day view carries. It stays on
           today even while another day is selected below: it is the forecast
           for the work happening now, not an annotation on the selection. */}
-      <WeatherCard weather={weather} t={t} />
+      <WeatherCard weather={weather} status={wxStatus} t={t} />
 
       <div className="flex gap-1.5 mb-3">
         {[[t('week_appointments'), appts.length, ''],
