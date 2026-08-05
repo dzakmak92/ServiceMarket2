@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { MIN, durationLabel, hhmm, toMs } from '../../utils/schedule';
 import { telHref } from '../../utils/sms';
+import { jobAddress, routeHref } from '../../utils/maps';
 
 /**
  * One appointment, as the job it is.
@@ -39,8 +40,8 @@ export default function JobSheet({ appt, onClose, onPrimary, t }) {
   if (!appt) return null;
   const phone = telHref(appt.customer_phone);
   const action = primaryAction(appt.status);
-  const address = [appt.site_address || appt.customer_address,
-                   appt.site_city || appt.customer_city].filter(Boolean).join(', ');
+  const address = jobAddress(appt);
+  const route = routeHref(appt);
   const mins = (toMs(appt.end) - toMs(appt.start)) / MIN;
   const urgent = appt.urgency === 'emergency';
 
@@ -102,11 +103,12 @@ export default function JobSheet({ appt, onClose, onPrimary, t }) {
             things that matter, and they are one tap rather than two. */}
         <div className="flex gap-2 mb-2.5">
           <a
-            href={`https://www.openstreetmap.org/search?query=${encodeURIComponent(address)}`}
+            href={route || undefined}
             target="_blank" rel="noreferrer"
             className={`flex-1 min-h-[46px] rounded-[12px] border border-sm-border bg-paper
                         flex items-center justify-center gap-1.5 font-bold text-[12px] text-teal
-                        ${address ? '' : 'opacity-40 pointer-events-none'}`}
+                        ${route ? '' : 'opacity-40 pointer-events-none'}`}
+            aria-disabled={!route}
             data-testid="job-sheet-route"
           >
             <Navigation size={14} /> {t('day_route')}

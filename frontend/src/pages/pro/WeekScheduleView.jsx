@@ -23,6 +23,12 @@ const SPAN = DAY_TO - DAY_FROM;
    detail lives. */
 const GRID_H = 300;
 
+/* The column header: weekday, date, and the day's high. Three lines at 9,
+   11 and 8 px do not fit in 38 px once line-height is counted, and the
+   temperature was landing on top of the 08:00 grid line. Measured, not
+   guessed — the test asserts the header never overlaps the grid. */
+const HEAD_H = 48;
+
 const startOfDay = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
 const sameDay = (a, b) => dayKey(a) === dayKey(b);
 
@@ -105,10 +111,12 @@ export default function WeekScheduleView({ weekStart, onOpenDay, t, lang = 'de-A
 
   return (
     <div data-testid="week-view">
-      {/* Today, in detail — the same card the day view carries. It stays on
-          today even while another day is selected below: it is the forecast
-          for the work happening now, not an annotation on the selection. */}
-      <WeatherCard weather={weather} status={wxStatus} t={t} />
+      {/* Today by default, with the next seven days a tap away. The card's
+          day is deliberately independent of the day selected in the grid
+          below: "will it rain on Thursday" is a question you ask while
+          looking at Monday's work, and forcing the two to move together
+          would mean losing your place in the week to find out. */}
+      <WeatherCard weather={weather} status={wxStatus} t={t} lang={lang} outlook />
 
       <div className="flex gap-1.5 mb-3">
         {[[t('week_appointments'), appts.length, ''],
@@ -124,10 +132,10 @@ export default function WeekScheduleView({ weekStart, onOpenDay, t, lang = 'de-A
       {/* ── the grid ── */}
       <div className="flex rounded-[12px] border border-sm-border bg-paper p-2 pb-1.5"
            data-testid="week-grid">
-        <div className="w-[24px] flex-none relative" style={{ height: 38 + GRID_H }}>
+        <div className="w-[24px] flex-none relative" style={{ height: HEAD_H + GRID_H }}>
           {Array.from({ length: SPAN / 2 + 1 }, (_, i) => DAY_FROM + i * 2).map((h) => (
             <span key={h} className="absolute right-[3px] font-bold text-[8.5px] text-ink-faint"
-                  style={{ top: 38 + ((h - DAY_FROM) / SPAN) * GRID_H, transform: 'translateY(-50%)' }}>
+                  style={{ top: HEAD_H + ((h - DAY_FROM) / SPAN) * GRID_H, transform: 'translateY(-50%)' }}>
               {String(h).padStart(2, '0')}
             </span>
           ))}
@@ -146,7 +154,7 @@ export default function WeekScheduleView({ weekStart, onOpenDay, t, lang = 'de-A
                 onClick={() => setSelected(d)}
                 onDoubleClick={() => onOpenDay?.(d)}
                 className="flex-1 relative text-left"
-                style={{ height: 38 + GRID_H }}
+                style={{ height: HEAD_H + GRID_H }}
                 data-testid={`week-col-${dayKey(d)}`}
                 aria-pressed={isSel}
               >
@@ -154,7 +162,7 @@ export default function WeekScheduleView({ weekStart, onOpenDay, t, lang = 'de-A
                     and `display: block` on the button does not stop it — the
                     weekday label was landing halfway down the column. */}
                 <span className={`absolute left-0 right-0 top-0 text-center font-bold text-[9px]
-                  h-[38px] ${isToday ? 'text-teal' : 'text-ink-muted'}`}>
+                  h-[48px] ${isToday ? 'text-teal' : 'text-ink-muted'}`}>
                   {d.toLocaleDateString(lang, { weekday: 'short' })}
                   <b className={`block font-extrabold text-[11px] ${isToday ? 'text-teal' : 'text-ink'}`}>
                     {d.getDate()}
@@ -168,7 +176,7 @@ export default function WeekScheduleView({ weekStart, onOpenDay, t, lang = 'de-A
                   className={`absolute left-0 right-0 rounded-[4px] overflow-hidden block
                     ${isSel ? 'ring-[1.5px] ring-teal' : ''}
                     ${isToday ? 'bg-teal/10' : 'bg-cream-soft'}`}
-                  style={{ top: 38, height: GRID_H }}
+                  style={{ top: HEAD_H, height: GRID_H }}
                 >
                   {Array.from({ length: SPAN / 2 - 1 }, (_, i) => DAY_FROM + (i + 1) * 2).map((h) => (
                     <span key={h} className="absolute left-0 right-0 h-px bg-black/[0.05]"

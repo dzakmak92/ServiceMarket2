@@ -181,6 +181,11 @@ async def appointments(day: Optional[str] = Query(default=None),
                j.site_address,
                j.site_postal_code,
                j.site_city,
+               -- The Route button prefers coordinates: a geocoder given
+               -- "Bahnhofstraße 12" finds *a* Bahnhofstraße 12, and there are
+               -- several hundred of those in Austria alone.
+               j.site_lat,
+               j.site_lng,
                c.id::text            as customer_id,
                c.name                as customer_name,
                c.phone               as customer_phone,

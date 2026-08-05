@@ -8,6 +8,7 @@ import {
   previewResize, resizeAndSettle, snapQuarter, toMs,
 } from '../../utils/schedule';
 import { TEMPLATES, sendViaPhone, smsSegments, telHref } from '../../utils/sms';
+import { routeHref } from '../../utils/maps';
 import WeatherCard from '../../components/pro/WeatherCard';
 import JobSheet from '../../components/pro/JobSheet';
 import useWeather from '../../hooks/useWeather';
@@ -172,12 +173,13 @@ function Block({ appt, top, height, running, progress, dragging, conflict,
         {room.actions && (
           <div className="flex border-t border-sm-border flex-none">
             <a
-              href={`https://www.openstreetmap.org/search?query=${encodeURIComponent(
-                [appt.site_address || appt.customer_address, appt.site_city || appt.customer_city]
-                  .filter(Boolean).join(', '))}`}
+              href={routeHref(appt) || undefined}
               target="_blank" rel="noreferrer"
-              className="flex-1 min-h-[44px] flex items-center justify-center gap-1
-                         font-bold text-[10.5px] text-teal"
+              aria-disabled={!routeHref(appt)}
+              className={`flex-1 min-h-[44px] flex items-center justify-center gap-1
+                         font-bold text-[10.5px] text-teal
+                         ${routeHref(appt) ? '' : 'opacity-40 pointer-events-none'}`}
+              data-testid="day-route"
             >
               <Navigation size={13} /> {t('day_route')}
             </a>

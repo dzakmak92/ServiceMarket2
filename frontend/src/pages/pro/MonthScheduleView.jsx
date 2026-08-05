@@ -117,7 +117,10 @@ export default function MonthScheduleView({ monthStart, onOpenDay, t, lang = 'de
 
   return (
     <div data-testid="month-view">
-      <WeatherCard weather={weather} status={wxStatus} t={t} />
+      {/* The week and the month look ahead, so the card does too. The
+          day view does not — it has a date navigator of its own, and two
+          ways to change the day inside one screen can disagree. */}
+      <WeatherCard weather={weather} status={wxStatus} t={t} lang={lang} outlook />
 
       <div className="flex gap-1.5 mb-3">
         {[[t('week_appointments'), apptCount, ''],
