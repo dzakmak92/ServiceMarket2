@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../api/client';
+import api, { formatError } from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import {
   TrendingUp, Banknote, Hourglass, Calculator, FileSpreadsheet, FileDown,
@@ -159,29 +159,50 @@ function Tile({ icon: Icon, colour, label, value }) {
 // USt-VA
 // ──────────────────────────────────────────────
 function UstvaTab({ year, t }) {
-  const [quarter, setQuarter] = useState('Q1');
+  const [quarter, setQuarter] = useState(1);
   const [data, setData] = useState(null);
+  const [error, setError] = useState('');
+  /* The endpoint takes `quarter` as an int. This sent the string "Q1", which
+     FastAPI rejected with a 422 — and the `.catch(() => {})` swallowed it, so
+     the statutory filing view showed four buttons and a spinner that never
+     stopped, with nothing on screen to say anything had gone wrong. */
   useEffect(() => {
-    api.get(`/api/tax/ust-va?year=${year}&quarter=${quarter}`).then((r) => setData(r.data)).catch(() => {});
+    setData(null); setError('');
+    api.get(`/api/tax/ust-va?year=${year}&quarter=${quarter}`)
+      .then((r) => setData(r.data))
+      .catch((e) => setError(formatError(e)));
   }, [year, quarter]);
   return (
     <div className="space-y-4">
       <div className="flex gap-1.5 flex-wrap">
-        {['Q1', 'Q2', 'Q3', 'Q4'].map((q) => (
+        {[1, 2, 3, 4].map((q) => (
           <button
             key={q}
             onClick={() => setQuarter(q)}
-            className={`px-3 py-1.5 rounded-[8px] text-xs font-semibold ${quarter === q ? 'bg-teal text-paper' : 'bg-cream-soft text-ink-soft'}`}
-            data-testid={`tax-ustva-q-${q}`}
-          >{q}</button>
+            className={`px-3 py-1.5 rounded-[8px] text-xs font-semibold min-h-[44px]
+              ${quarter === q ? 'bg-teal text-paper' : 'bg-cream-soft text-ink-soft'}`}
+            data-testid={`tax-ustva-q-Q${q}`}
+            aria-pressed={quarter === q}
+          >Q{q}</button>
         ))}
       </div>
-      {!data ? <Loader2 size={20} className="text-teal animate-spin" /> : (
+      {error ? (
+        <div className="card-lg text-sm text-red-warn" role="alert" data-testid="tax-ustva-error">
+          {error}
+        </div>
+      ) : !data ? <Loader2 size={20} className="text-teal animate-spin" /> : (
         <>
           <div className="grid grid-cols-3 gap-3">
-            <Tile icon={TrendingUp} colour="text-teal" label={t('tax_net')} value={fmtEur(data.net)} />
-            <Tile icon={Calculator} colour="text-amber" label={t('tax_vat')} value={fmtEur(data.vat)} />
-            <Tile icon={Banknote} colour="text-ink" label={t('tax_brutto')} value={fmtEur(data.brutto)} />
+            {/* output_net / output_vat / payable — the names the endpoint
+                returns. `net`, `vat` and `brutto` are not on it, so all three
+                tiles read € 0,00 even once the request succeeded. `payable`
+                is what the pro actually owes: output VAT less input VAT. */}
+            <Tile icon={TrendingUp} colour="text-teal" label={t('tax_net')}
+                  value={fmtEur(data.output_net)} />
+            <Tile icon={Calculator} colour="text-amber" label={t('tax_vat')}
+                  value={fmtEur(data.output_vat)} />
+            <Tile icon={Banknote} colour="text-ink" label={t('tax_payable')}
+                  value={fmtEur(data.payable)} />
           </div>
           <div className="card-lg">
             <p className="text-xs uppercase font-bold text-ink-muted tracking-wider mb-2">{t('tax_ustva_buckets')}</p>
@@ -191,13 +212,14 @@ function UstvaTab({ year, t }) {
                 <tr><th className="text-left">{t('tax_rate')}</th><th className="text-right">{t('tax_net')}</th><th className="text-right">{t('tax_vat')}</th><th className="text-right">{t('tax_brutto')}</th><th className="text-right">#</th></tr>
               </thead>
               <tbody>
-                {Object.entries(data.buckets).map(([rate, b]) => (
-                  <tr key={rate} className="border-t border-sm-border">
-                    <td className="py-2 font-mono" data-label={t('tax_rate')}>{rate}%</td>
+                {(data.by_rate || []).map((b, i) => (
+                  <tr key={`${b.vat_rate}-${b.treatment}-${i}`} className="border-t border-sm-border">
+                    <td className="py-2 font-mono" data-label={t('tax_rate')}>{b.vat_rate}%</td>
                     <td className="text-right" data-label={t('tax_net')}>{fmtEur(b.net)}</td>
                     <td className="text-right" data-label={t('tax_vat')}>{fmtEur(b.vat)}</td>
-                    <td className="text-right font-semibold" data-label={t('tax_brutto')}>{fmtEur(b.brutto)}</td>
-                    <td className="text-right text-ink-muted" data-label="#">{b.count}</td>
+                    <td className="text-right font-semibold" data-label={t('tax_brutto')}>
+                      {fmtEur(Number(b.net) + Number(b.vat))}</td>
+                    <td className="text-right text-ink-muted" data-label="#">{b.treatment}</td>
                   </tr>
                 ))}
               </tbody>
@@ -230,9 +252,19 @@ function EurTab({ year, t }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <Tile icon={TrendingUp} colour="text-green-pos" label={t('tax_revenue')} value={fmtEur(data.revenue.paid_brutto)} />
-        <Tile icon={Hourglass} colour="text-red-warn" label={t('tax_expenses')} value={fmtEur(data.expenses.brutto)} />
-        <Tile icon={Coins} colour="text-teal" label={t('tax_profit')} value={fmtEur(data.profit_eur)} />
+        {/* The names the API actually returns. This read data.revenue.paid_brutto,
+            data.expenses.brutto and data.profit_eur — none of which exist on
+            /api/tax/eur — so opening the tab threw on the first one and the
+            error boundary took the whole Tax Toolkit down with it. */}
+        <Tile icon={TrendingUp} colour="text-green-pos" label={t('tax_revenue')}
+              value={fmtEur(data.income_net)} />
+        <Tile icon={Hourglass} colour="text-red-warn" label={t('tax_expenses')}
+              value={fmtEur(data.expenses_net)} />
+        {/* An EÜR is a net-against-net statement, so this is `profit`, not
+            the dashboard's `profit_eur` which subtracts gross expenses from
+            net revenue and understates it by the input VAT. */}
+        <Tile icon={Coins} colour="text-teal" label={t('tax_profit')}
+              value={fmtEur(data.profit)} />
       </div>
       <div className="card-lg">
         <p className="text-xs uppercase font-bold text-ink-muted tracking-wider mb-2">{t('tax_expenses_by_kind')}</p>
@@ -242,14 +274,14 @@ function EurTab({ year, t }) {
             <tr><th className="text-left">{t('tax_kind')}</th><th className="text-right">{t('tax_brutto')}</th><th className="text-right">#</th></tr>
           </thead>
           <tbody>
-            {Object.entries(data.expenses.by_kind || {}).map(([k, b]) => (
-              <tr key={k} className="border-t border-sm-border">
-                <td className="py-2 capitalize" data-label={t('tax_kind')}>{k}</td>
-                <td className="text-right" data-label={t('tax_brutto')}>{fmtEur(b.brutto)}</td>
+            {(data.by_category || []).map((b) => (
+              <tr key={b.category} className="border-t border-sm-border">
+                <td className="py-2 capitalize" data-label={t('tax_kind')}>{b.category}</td>
+                <td className="text-right" data-label={t('tax_brutto')}>{fmtEur(b.gross)}</td>
                 <td className="text-right text-ink-muted" data-label="#">{b.count}</td>
               </tr>
             ))}
-            {Object.keys(data.expenses.by_kind || {}).length === 0 && (
+            {(data.by_category || []).length === 0 && (
               <tr><td colSpan="3" className="text-center text-ink-muted py-4 text-xs">{t('tax_no_expenses')}</td></tr>
             )}
           </tbody>
@@ -287,8 +319,15 @@ function MileageTab({ year, t }) {
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-3">
         <Tile icon={Car} colour="text-teal" label={t('tax_trips')} value={data.trip_count} />
-        <Tile icon={TrendingUp} colour="text-ink" label={t('tax_estimated_km')} value={data.total_estimated_km + ' km'} />
-        <Tile icon={Coins} colour="text-green-pos" label={t('tax_mileage_total')} value={fmtEur(data.total_eur)} />
+        {/* implied_km / total_net_eur — the names the endpoint returns. The
+            tile printed the literal string "undefined km" and a permanent
+            € 0,00, because `total_estimated_km` and `total_eur` are not on
+            the response and `undefined + ' km'` concatenates rather than
+            throwing. */}
+        <Tile icon={TrendingUp} colour="text-ink" label={t('tax_estimated_km')}
+              value={`${Math.round(Number(data.implied_km) || 0)} km`} />
+        <Tile icon={Coins} colour="text-green-pos" label={t('tax_mileage_total')}
+              value={fmtEur(data.total_net_eur)} />
       </div>
       <div className="card-lg">
         <div className="overflow-x-auto -mx-1">
@@ -302,8 +341,10 @@ function MileageTab({ year, t }) {
                 <td className="py-2 whitespace-nowrap" data-label={t('tax_th_date')}>{trip.date ? new Date(trip.date).toLocaleDateString('de-AT') : '—'}</td>
                 <td className="text-ink-soft truncate max-w-[120px]" data-label={t('tax_th_job')}>{trip.job_title}</td>
                 <td className="text-ink-soft whitespace-nowrap" data-label={t('tax_th_city')}>{trip.city}</td>
-                <td className="text-right" data-label="km">{trip.estimated_km}</td>
-                <td className="text-right font-semibold" data-label="€">{fmtEur(trip.travel_cost_eur)}</td>
+                <td className="text-right" data-label="km">
+                  {Math.round(Number(trip.implied_km) || 0)}</td>
+                <td className="text-right font-semibold" data-label="€">
+                  {fmtEur(trip.travel_net_eur)}</td>
               </tr>
             ))}
             {data.trips.length === 0 && (

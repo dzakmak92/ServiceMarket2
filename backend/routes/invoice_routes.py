@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 from auth import get_current_user
 from db import pg
 from repositories import invoices as repo
+from services import tax_rules
 from routes._pro import require_pro_id
 from services.invoice_pdf import render_invoice_pdf
 
@@ -135,6 +136,12 @@ async def create_invoice(body: InvoiceIn, user: dict = Depends(get_current_user)
         # A customer_id or job_id belonging to another business — answered the
         # same way a nonexistent one is, so the 404 discloses nothing.
         raise HTTPException(404, str(exc)) from exc
+    except tax_rules.TreatmentRefused as exc:
+        # A tax treatment the customer's country and status cannot support.
+        # The quote route already answered this with a 400; here it escaped as
+        # a bare 500, so the pro was told "Internal Server Error" about a
+        # decision they can actually correct.
+        raise HTTPException(400, str(exc)) from exc
     return await repo.get(pro_id, str(inv["id"]))
 
 
@@ -276,6 +283,8 @@ async def replace_lines(invoice_id: str, body: LinesIn,
     pro_id = await require_pro_id(user)
     try:
         return await repo.replace_lines(pro_id, invoice_id, _lines(body.lines))
+    except tax_rules.TreatmentRefused as exc:
+        raise HTTPException(400, str(exc)) from exc
     except LookupError as e:
         raise HTTPException(404, str(e))
     except PermissionError as e:

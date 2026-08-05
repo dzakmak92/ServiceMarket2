@@ -490,6 +490,13 @@ function SurveyForm({ survey, answers, set, tier, setTier }) {
 }
 
 function Result({ result, calculating }) {
+  /* Its own translator. `t` lives in the default export's scope and these
+     are siblings, not children of it — calling it here threw
+     "t is not defined" the instant a template was opened, and the error
+     boundary took the whole calculation screen with it. Every trade,
+     every one of the 109 templates. */
+  const { t } = useLang();
+
   if (!result) {
     return (
       <div className="card-lg mb-4 flex items-center justify-center py-10 text-ink-muted">
@@ -645,6 +652,13 @@ function Stat({ icon: Icon, label, value, sub }) {
 
 function QuoteBox({ jobs, targetJob, setTargetJob, allTiers, setAllTiers, tiersDiffer,
                    creating, onCreate, saving, onSave }) {
+  /* Its own translator. `t` lives in the default export's scope and these
+     are siblings, not children of it — calling it here threw
+     "t is not defined" the instant a template was opened, and the error
+     boundary took the whole calculation screen with it. Every trade,
+     every one of the 109 templates. */
+  const { t } = useLang();
+
   return (
     <div className="card-lg mb-4 space-y-3" data-testid="estimate-quote-box">
       <p className="text-sm font-medium text-ink flex items-center gap-2">
@@ -779,6 +793,13 @@ function AccuracyCard({ data, open, onToggle, onRecalibrate, calibrating }) {
  * missing was any way to see them or correct one.
  */
 function RateCard({ rates, open, onToggle, onSave, onReset }) {
+  /* Its own translator. `t` lives in the default export's scope and these
+     are siblings, not children of it — calling it here threw
+     "t is not defined" the instant a template was opened, and the error
+     boundary took the whole calculation screen with it. Every trade,
+     every one of the 109 templates. */
+  const { t } = useLang();
+
   const [editing, setEditing] = useState(null);
   const [value, setValue] = useState('');
   const [busy, setBusy] = useState(false);

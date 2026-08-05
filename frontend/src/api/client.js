@@ -24,7 +24,18 @@ api.interceptors.response.use(
     const status = error?.response?.status;
     const url = error?.config?.url || '';
     const isAuthBootstrap = url.includes('/api/auth/me') || url.includes('/api/auth/login') || url.includes('/api/auth/register');
-    if (status === 401 && !isAuthBootstrap && !redirecting && typeof window !== 'undefined') {
+    /* Some calls are best-effort mirrors that a logged-out visitor is
+       expected to fail: the cookie banner writes its choice to localStorage
+       and then tries to mirror it to the server for the GDPR audit trail.
+       That POST 401s for anonymous visitors — which is fine and its own
+       catch says so — but this interceptor fired first and navigated the
+       page. The result: answering the cookie banner threw every logged-out
+       visitor onto the sign-in form, from the privacy policy, from
+       forgot-password, and from the payment, quote and accountant links sent
+       to people who have no account at all. */
+    const optional = error?.config?.skipAuthRedirect === true;
+    if (status === 401 && !isAuthBootstrap && !optional
+        && !redirecting && typeof window !== 'undefined') {
       const path = window.location.pathname;
       if (path !== '/auth') {
         redirecting = true;

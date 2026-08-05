@@ -75,7 +75,7 @@ export function CookieConsentProvider({ children }) {
         cookies_marketing: !!final.cookies_marketing,
         marketing_emails: !!final.marketing_emails,
         policy_version: POLICY_VERSION,
-      });
+      }, { skipAuthRedirect: true });
     } catch { /* logged-out or network error — fine */ }
   }, []);
 

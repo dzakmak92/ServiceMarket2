@@ -457,10 +457,14 @@ function ExternalInvoiceModal({ onClose, onCreated, t }) {
         payment_terms_days: Number(dueDays) || 14,
         note: note.trim() || null,
       });
-      /* A 201 is not proof: verify the invoice came back with the lines and
-         a total, rather than trusting the status code again. */
+      /* A 201 is not proof — but a draft's header totals are always 0.00:
+         they are computed by issue(), and there is no rollup trigger on
+         invoice_lines. Guarding on net_total therefore rejected every
+         invoice it had just created, leaving an orphan customer and an
+         orphan draft behind on each attempt. Check the lines instead, which
+         is what "did this actually save" means here. */
       const created = inv?.invoice || inv;
-      if (!created?.id || Number(created.net_total || 0) <= 0) {
+      if (!created?.id || !(created.lines || []).length) {
         toast.error(t('myinv_ext_err_generic'));
         return;
       }
