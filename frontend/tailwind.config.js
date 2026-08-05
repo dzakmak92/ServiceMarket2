@@ -10,7 +10,20 @@ module.exports = {
         'cream-soft': '#fef7ea',
         'cream-deep': '#f9e9cf',
         paper: '#ffffff',
-        ink: { DEFAULT: '#1a3a52', soft: '#4a5a6c', muted: '#7d8a9a', faint: '#b0b8c1' },
+        // The two lighter greys used to fail WCAG AA on every surface they
+        // appear on — muted at 2.94–3.52:1, faint at 1.68–2.01:1 — and
+        // because almost all of this text is 8–11 px, none of it qualified
+        // for the 3:1 large-text allowance. They are darkened here rather
+        // than per-component so nothing new can be built on a failing pair.
+        //
+        // The values are the *lightest* that clear 4.5:1 on the darkest
+        // surface each is used on (cream-deep), blended toward the brand ink
+        // so the family is unchanged. The ladder still reads in the right
+        // order — ink 0.038 < soft 0.099 < muted 0.120 < faint 0.142 in
+        // relative luminance — which nearly did not survive: at these sizes
+        // AA pushes both greys so far down that the hierarchy has to be
+        // aimed for deliberately rather than falling out of the numbers.
+        ink: { DEFAULT: '#1a3a52', soft: '#4a5a6c', muted: '#4d6477', faint: '#566c7e' },
         // `tint` is a third step mixed from the same hue, not a new colour.
         // The home tiles run a light-to-dark ramp down each column and three
         // values are the minimum that reads as a progression rather than as
@@ -27,7 +40,11 @@ module.exports = {
         // but the calendar page is warm cream, and 8% of a cool blue over
         // #fdf3e3 cancels to grey — the card stopped reading as blue at all.
         sky: { DEFAULT: '#5b8fb0', deep: '#3d6c8a', tint: '#dde9f0', pale: '#eef4f9' },
-        amber: { DEFAULT: '#f5a623', deep: '#e8941a', tint: '#fbe0b4' },
+        // `deep` is a fill, not a text colour: on white it is 2.03:1, so the
+        // "free days" figure printed in it failed AA at 15 px. `text` is the
+        // same hue darkened until it clears 4.5:1 on every cream surface —
+        // use it whenever amber has to be read rather than looked at.
+        amber: { DEFAULT: '#f5a623', deep: '#e8941a', tint: '#fbe0b4', text: '#905e11' },
         // Foreground for text sitting on an amber fill. The brand ink is a
         // blue navy and goes muddy on orange; this is the same hue family as
         // the amber itself, darkened. Named for its job, not its colour.

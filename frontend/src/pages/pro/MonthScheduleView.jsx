@@ -155,7 +155,7 @@ export default function MonthScheduleView({
       <div className="flex gap-1.5 mb-3">
         {[[t('week_appointments'), apptCount, ''],
           [t('week_booked'), durationLabel(totalMinutes * MIN), 'text-teal'],
-          [t('week_free_days'), freeDays, 'text-amber-deep']].map(([label, value, tone]) => (
+          [t('week_free_days'), freeDays, 'text-amber-text']].map(([label, value, tone]) => (
           <div key={label} className="flex-1 rounded-[11px] border border-sm-border bg-paper px-2.5 py-2">
             <p className="font-bold text-[9px] uppercase tracking-wide text-ink-muted">{label}</p>
             <p className={`font-extrabold text-[15px] mt-px ${tone || 'text-ink'}`}>{value}</p>
@@ -220,7 +220,7 @@ export default function MonthScheduleView({
                 aria-pressed={isSel}
               >
                 <span className={`font-extrabold text-[11px]
-                  ${out ? 'text-ink-faint opacity-50' : 'text-ink'}`}>
+                  ${out ? 'text-ink-faint opacity-70' : 'text-ink'}`}>
                   {d.getDate()}
                 </span>
 
