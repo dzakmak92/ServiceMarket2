@@ -1,7 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import api from '../../api/client';
 import WeatherCard from '../../components/pro/WeatherCard';
 import JobSheet from '../../components/pro/JobSheet';
+import LoadFailed from '../../components/pro/LoadFailed';
 import useWeather from '../../hooks/useWeather';
 import useJobAction from '../../hooks/useJobAction';
 import { MIN, dayKey, durationLabel, hhmm, toMs } from '../../utils/schedule';
@@ -43,8 +44,11 @@ function gridStart(monthStart) {
 export default function MonthScheduleView({ monthStart, onOpenDay, t, lang = 'de-AT' }) {
   const [appts, setAppts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const [selected, setSelected] = useState(() => startOfDay(new Date()));
   const [openJob, setOpenJob] = useState(null);
+  const selRef = useRef(null);
+  const gridFocused = useRef(false);
   const { weather, status: wxStatus } = useWeather(7);
   /* Same handler the day view uses. Without it the sheet's Start /
      Finish button was inert here. */
@@ -64,7 +68,8 @@ export default function MonthScheduleView({ monthStart, onOpenDay, t, lang = 'de
         start: new Date(a.scheduled_start),
         end: new Date(a.scheduled_end || a.scheduled_start),
       }))))
-      .catch(() => setAppts([]))
+      .then(() => setFailed(false))
+      .catch(() => { setAppts([]); setFailed(true); })
       .finally(() => setLoading(false));
   }, [from]);
 
@@ -103,12 +108,35 @@ export default function MonthScheduleView({ monthStart, onOpenDay, t, lang = 'de
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cells, month]);
 
+  /* Move the browser's focus with the selection, but only when the grid
+     already had it — otherwise arrowing on some other control would yank
+     focus into the calendar. */
+  useEffect(() => {
+    if (gridFocused.current) selRef.current?.focus();
+  }, [selected]);
+
   const selectedAppts = listOn(selected);
   const now = new Date();
 
+  /* Arrow keys walk the grid the way they walk a calendar: a day sideways, a
+     week up or down. Home and End reach the ends of the week. */
+  const onGridKey = (e) => {
+    const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[e.key];
+    const dow = (selected.getDay() + 6) % 7;
+    const jump = e.key === 'Home' ? -dow : e.key === 'End' ? 6 - dow : null;
+    if (step == null && jump == null) return;
+    e.preventDefault();
+    const next = new Date(selected);
+    next.setDate(next.getDate() + (step ?? jump));
+    /* Only inside the month on screen — stepping off the edge would select a
+       day the grid is not showing. */
+    if (cells.some((c) => sameDay(c, next) && c.getMonth() === month)) setSelected(next);
+  };
+
   if (loading) {
     return (
-      <div className="py-14 flex justify-center" data-testid="month-loading">
+      <div className="py-14 flex justify-center" data-testid="month-loading"
+           role="status" aria-live="polite" aria-label={t('ui_loading')}>
         <Loader2 className="text-teal animate-spin" />
       </div>
     );
@@ -121,6 +149,7 @@ export default function MonthScheduleView({ monthStart, onOpenDay, t, lang = 'de
 
   return (
     <div data-testid="month-view">
+      {failed && <LoadFailed onRetry={load} t={t} />}
       {/* The week and the month look ahead, so the card does too. The
           day view does not — it has a date navigator of its own, and two
           ways to change the day inside one screen can disagree. */}
@@ -144,7 +173,11 @@ export default function MonthScheduleView({ monthStart, onOpenDay, t, lang = 'de
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-[3px]">
+        <div className="grid grid-cols-7 gap-[3px]" role="grid"
+             onFocus={() => { gridFocused.current = true; }}
+             onBlur={(e) => {
+               if (!e.currentTarget.contains(e.relatedTarget)) gridFocused.current = false;
+             }}>
           {cells.map((d) => {
             const list = listOn(d);
             const mins = minutesOn(d);
@@ -159,6 +192,20 @@ export default function MonthScheduleView({ monthStart, onOpenDay, t, lang = 'de
                 type="button"
                 onClick={() => !out && setSelected(d)}
                 disabled={out}
+                /* One tab stop for the whole grid, arrows to move inside it.
+                   Thirty-one consecutive tab stops stood between the top of
+                   the page and the day list underneath. */
+                tabIndex={out || !isSel ? -1 : 0}
+                ref={isSel ? selRef : undefined}
+                onKeyDown={onGridKey}
+                /* The bar is the entire point of this view and it is pure
+                   geometry — no text, no label, nothing for a screen reader.
+                   The name carries the date and the load in words. */
+                aria-label={(mins > 0
+                  ? t('month_cell_label').replace('{hours}', durationLabel(mins * MIN))
+                  : t('month_cell_free'))
+                  .replace('{date}', d.toLocaleDateString(lang,
+                    { weekday: 'long', day: 'numeric', month: 'long' }))}
                 className={`relative rounded-[7px] h-[52px] flex flex-col items-center pt-[3px]
                   ${out ? 'bg-transparent' : isToday ? 'bg-teal/[0.12]' : 'bg-cream-soft'}
                   ${isToday ? 'ring-[1.5px] ring-teal' : ''}
@@ -221,7 +268,8 @@ export default function MonthScheduleView({ monthStart, onOpenDay, t, lang = 'de
           </span>
         )}
         <button type="button" onClick={() => onOpenDay?.(selected)}
-                className="ml-auto font-bold text-[11px] text-teal min-h-[32px] px-1"
+                className="ml-auto font-bold text-[11px] text-teal min-h-[44px] px-2
+                        flex items-center"
                 data-testid="month-open-day">
           {t('week_open_day')}
         </button>

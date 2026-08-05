@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import translations from '../translations';
+import { setDurationUnits } from '../utils/schedule';
 
 const LangContext = createContext(null);
 
@@ -19,6 +20,14 @@ function initialLang() {
 
 export function LangProvider({ children }) {
   const [lang, setLang] = useState(initialLang);
+
+  /* Keep the schedule module's unit words in step with the interface
+     language — "8 h 30 min" was hardcoded and read the same in all four.
+     Set during render, not in an effect: durationLabel is called by children
+     on this same pass, and an effect runs after they have already drawn, so
+     the first paint after a language change would carry the old units. */
+  const units = translations[lang];
+  setDurationUnits({ h: units?.unit_h || 'h', min: units?.unit_min || 'min' });
 
   const changeLang = useCallback((newLang) => {
     setLang(newLang);

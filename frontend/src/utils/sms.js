@@ -14,35 +14,28 @@
  * Belt and braces beats a message the pro thinks they sent.
  */
 
+/* The templates are keys, not prose.
+ *
+ * They used to be German string literals living in this module, so a Turkish
+ * or Spanish tradesperson picked a tab reading "Verspätung" and sent their
+ * customer a German paragraph — while every label around it was correctly
+ * translated. Prose in a plain .js data module is also invisible to the i18n
+ * audit, which is why it survived a clean run. */
 export const TEMPLATES = {
-  delay: {
-    key: 'delay',
-    label: 'Verspätung',
-    build: ({ customer, newStart, delayMinutes, proName }) =>
-      `Guten Tag ${customer},\n` +
-      `Ihr Termin heute verschiebt sich um ${delayMinutes} Minuten auf ${newStart} Uhr. ` +
-      `Der vorige Auftrag dauert länger als geplant, bitte entschuldigen Sie.\n` +
-      `${proName}`,
-  },
-  moved: {
-    key: 'moved',
-    label: 'Verschoben',
-    build: ({ customer, newStart, newDate, proName }) =>
-      `Guten Tag ${customer},\n` +
-      `Ihr Termin wurde auf ${newDate}, ${newStart} Uhr verschoben. ` +
-      `Passt Ihnen das? Bitte kurz zurückmelden.\n` +
-      `${proName}`,
-  },
-  cancelled: {
-    key: 'cancelled',
-    label: 'Abgesagt',
-    build: ({ customer, proName }) =>
-      `Guten Tag ${customer},\n` +
-      `Ihr heutiger Termin muss leider entfallen. Ich melde mich, um einen ` +
-      `neuen Termin zu vereinbaren.\n` +
-      `${proName}`,
-  },
+  delay:     { key: 'delay',     label: 'sms_lbl_delay',     body: 'sms_body_delay' },
+  moved:     { key: 'moved',     label: 'sms_lbl_moved',     body: 'sms_body_moved' },
+  cancelled: { key: 'cancelled', label: 'sms_lbl_cancelled', body: 'sms_body_cancelled' },
 };
+
+/** Fill a template in the interface language.
+ *  Split/join rather than a regex, so a customer named with a `$` or a `\`
+ *  cannot corrupt the message. */
+export function buildSms(t, key, vars = {}) {
+  const tpl = TEMPLATES[key] || TEMPLATES.delay;
+  return Object.entries(vars).reduce(
+    (out, [k, v]) => out.split(`{${k}}`).join(v == null ? '' : String(v)),
+    t(tpl.body));
+}
 
 /** GSM-7 fits 160 per segment, 153 when concatenated. Anything outside the
  *  basic alphabet forces UCS-2: 70 and 67. German umlauts are in GSM-7's

@@ -4,15 +4,18 @@ import { toast } from 'sonner';
 import api, { formatError } from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import {
-  QUARTER, MIN, TRAVEL_GAP, bookableRuns, dayKey, hhmm, durationLabel, previewInsert,
+  QUARTER, MIN, TRAVEL_GAP, bookableRuns, dateLocale, dayKey, hhmm, durationLabel,
+  previewInsert,
   previewResize, resizeAndSettle, snapQuarter, toMs,
 } from '../../utils/schedule';
-import { TEMPLATES, sendViaPhone, smsSegments, telHref } from '../../utils/sms';
+import { TEMPLATES, buildSms, sendViaPhone, smsSegments, telHref } from '../../utils/sms';
 import { routeHref } from '../../utils/maps';
 import WeatherCard from '../../components/pro/WeatherCard';
 import JobSheet from '../../components/pro/JobSheet';
+import LoadFailed from '../../components/pro/LoadFailed';
 import useWeather from '../../hooks/useWeather';
 import useJobAction from '../../hooks/useJobAction';
+import useSheetModal from '../../hooks/useSheetModal';
 import {
   AlertTriangle, Car, Check, CheckCircle2, ChevronDown, ChevronUp, Copy, FileText,
   Lock, MapPin, Phone, Navigation, Play, Plus, Receipt, User, X,
@@ -83,7 +86,7 @@ function primaryAction(status) {
 
 /* ────────────────────────────────────────────── one appointment block */
 function Block({ appt, top, height, running, progress, dragging, conflict,
-                 onGrab, onPrimary, onOpen, t }) {
+                 onGrab, onNudge, onPrimary, onOpen, t }) {
   const room = { body: height >= 96, actions: height >= 150 && !dragging };
   const phone = telHref(appt.customer_phone);
   const action = primaryAction(appt.status);
@@ -224,9 +227,21 @@ function Block({ appt, top, height, running, progress, dragging, conflict,
       <button
         type="button"
         onPointerDown={(e) => onGrab(e, appt)}
+        /* Dragging was the only way to change an appointment's length, so on
+           a keyboard the function did not exist: the handle took focus, had a
+           label, and answered no key at all. A quarter-hour per press is the
+           same step the drag snaps to. */
+        onKeyDown={(e) => {
+          const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
+          if (!step) return;
+          e.preventDefault();
+          onNudge?.(appt, step * QUARTER);
+        }}
         className="absolute left-1/2 grid place-items-center touch-none"
         style={{ bottom: -22, transform: 'translateX(-50%)', width: 44, height: 44, zIndex: 7 }}
+        role="slider"
         aria-label={t('day_extend')}
+        aria-valuetext={`${hhmm(appt.start)} – ${hhmm(appt.end)}`}
         data-testid={`day-extend-${appt.id}`}
       >
         {dragging ? (
@@ -248,7 +263,7 @@ function Block({ appt, top, height, running, progress, dragging, conflict,
 
 /* ══════════════════════════════════════════════════════════ the view */
 export default function DayScheduleView({ date, onDateChange, proName }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const navigate = useNavigate();
   const [appts, setAppts] = useState([]);
   /* Only the *first* fetch blanks the view. Every later one is a background
@@ -258,6 +273,7 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
      just typed were gone. */
   const [loading, setLoading] = useState(true);
   const loadedOnce = useRef(false);
+  const [failed, setFailed] = useState(false);
   const [drag, setDrag] = useState(null);      // { id, endMs }
   const [pending, setPending] = useState(null); // the confirmation sheet
   const [sms, setSms] = useState(null);         // the message sheet
@@ -282,7 +298,8 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
       .then((r) => setAppts((r.data?.appointments || []).map((a) => ({
         ...a, start: a.scheduled_start, end: a.scheduled_end || a.scheduled_start,
       }))))
-      .catch(() => setAppts([]))
+      .then(() => setFailed(false))
+      .catch(() => { setAppts([]); setFailed(true); })
       .finally(() => { loadedOnce.current = true; setLoading(false); });
   }, [date]);
   useEffect(load, [load]);
@@ -334,6 +351,17 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
       floor: toMs(appt.start) + QUARTER,
     };
     setDrag({ id: appt.id, endMs: toMs(appt.end) });
+  };
+
+  /* The keyboard equivalent of finishing a drag: same snap, same floor, same
+     preview-and-settle, so a nudge cannot produce a state a drag could not. */
+  const nudgeEnd = (appt, deltaMs) => {
+    const floor = toMs(appt.start) + QUARTER;
+    const endMs = Math.max(floor, snapQuarter(toMs(appt.end) + deltaMs));
+    if (endMs === toMs(appt.end)) return;
+    const preview = previewResize(apptsRef.current, appt.id, endMs, { dayEnd });
+    if (!preview.moved.length) { commitRef.current(appt.id, endMs, []); return; }
+    setPending({ id: appt.id, endMs, ...preview });
   };
 
   useEffect(() => {
@@ -479,15 +507,17 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
 
   const smsBody = useMemo(() => {
     if (!sms) return '';
-    return TEMPLATES[sms.template].build({
+    return buildSms(t, sms.template, {
       customer: sms.appt.customer_name || '',
-      newStart: hhmm(sms.newStart),
-      newDate: new Date(sms.newStart).toLocaleDateString('de-AT',
+      time: hhmm(sms.newStart),
+      /* The date follows the interface language too — it was pinned to de-AT,
+         so a Spanish message named the day "Mittwoch". */
+      date: new Date(sms.newStart).toLocaleDateString(dateLocale(lang),
         { weekday: 'long', day: 'numeric', month: 'long' }),
-      delayMinutes: sms.delayMinutes,
-      proName: proName || '',
+      minutes: sms.delayMinutes,
+      pro: proName || '',
     });
-  }, [sms, proName]);
+  }, [sms, proName, t, lang]);
 
   useEffect(() => { apptsRef.current = appts; }, [appts]);
   useEffect(() => { commitRef.current = commit; });
@@ -500,6 +530,7 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
 
   if (loading) {
     return <div className="card-lg py-10 text-center text-sm text-ink-muted"
+                role="status" aria-live="polite" aria-label={t('ui_loading')}
                 data-testid="day-loading">…</div>;
   }
 
@@ -509,6 +540,10 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
           right now would be describing a different day than the one on
           screen — which is worse than showing nothing. */}
       {isToday && <WeatherCard weather={weather} status={wxStatus} t={t} />}
+      {/* Before the rail, not after: a failed load draws a single empty
+          08:00–20:00 slot that reads as a completely free day, and that is
+          the thing a pro would act on. */}
+      {failed && <LoadFailed onRetry={load} t={t} />}
       <div className="card-lg p-0 pt-3 pr-3 pb-7 relative" data-testid="day-rail">
         <div
           className="relative"
@@ -589,6 +624,7 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
                 dragging={isDragging}
                 conflict={isDragging && clash}
                 onGrab={onGrab}
+                onNudge={nudgeEnd}
                 onPrimary={onPrimary}
                 onOpen={setOpenJob}
                 t={t}
@@ -667,15 +703,20 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
 
 /* ─────────────────────────────────────────────── the conflict sheet */
 function ConflictSheet({ pending, appts, onCancel, onConfirm, t }) {
+  /* A dialog, not a decorated div — Escape, a focus trap and a scroll lock.
+     Without this, Tab walked out of the sheet and onto the bottom navigation
+     behind the scrim. */
+  const { panel, dialogProps } = useSheetModal(true, onCancel, { label: t('day_conflict_title') });
   const [withSms, setWithSms] = useState(true);
   const first = pending.moved[0];
   const affected = appts.find((a) => a.id === first.id);
   const hasPhone = !!telHref(affected?.customer_phone);
   return (
     <div className="fixed inset-0 z-[210] bg-black/40 flex items-end" onClick={onCancel}
+         {...dialogProps}
          data-testid="day-conflict-sheet">
       <div className="w-full bg-paper rounded-t-[20px] p-5 shadow-2xl"
-           onClick={(e) => e.stopPropagation()}>
+           ref={panel} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start gap-2.5 mb-3">
           <AlertTriangle size={20} className="text-red-warn flex-none mt-0.5" />
           <div className="flex-1">
@@ -1095,6 +1136,10 @@ function durationSteps(maxMinutes) {
 }
 
 function NewAppointmentSheet({ run, appts, dayEnd, onCreate, onClose, t }) {
+  /* A dialog, not a decorated div — Escape, a focus trap and a scroll lock.
+     Without this, Tab walked out of the sheet and onto the bottom navigation
+     behind the scrim. */
+  const { panel, dialogProps } = useSheetModal(true, onClose, { label: t('day_new_title_label') });
   const windowMinutes = Math.round((toMs(run.end) - toMs(run.start)) / MIN);
   const [title, setTitle] = useState('');
   const [customerId, setCustomerId] = useState('');
@@ -1157,14 +1202,18 @@ function NewAppointmentSheet({ run, appts, dayEnd, onCreate, onClose, t }) {
 
   return (
     <div className="fixed inset-0 z-[210] bg-black/40 flex items-end" onClick={onClose}
+         {...dialogProps}
          data-testid="day-new-sheet">
       <form className="w-full bg-paper rounded-t-[20px] p-5 shadow-2xl"
-            onClick={(e) => e.stopPropagation()} onSubmit={submit}>
+            ref={panel} onClick={(e) => e.stopPropagation()} onSubmit={submit}>
         <div className="flex items-center gap-2 mb-1">
           <p className="font-headings font-bold text-[15px] text-ink flex-1">
             {t('day_new_appt_title')}
           </p>
-          <button type="button" onClick={onClose} className="p-1 text-ink-muted" aria-label="close">
+          <button type="button" onClick={onClose} aria-label={t('ui_close')}
+                  data-testid="day-new-close"
+                  className="w-11 h-11 -mr-2 -mt-1 flex items-center justify-center
+                             text-ink-muted flex-none">
             <X size={18} />
           </button>
         </div>
@@ -1252,11 +1301,16 @@ function NewAppointmentSheet({ run, appts, dayEnd, onCreate, onClose, t }) {
 
 /* ─────────────────────────────────── after completing: make an invoice? */
 function CompletedSheet({ appt, hasToolkit, onInvoice, onUnlock, onClose, t }) {
+  /* A dialog, not a decorated div — Escape, a focus trap and a scroll lock.
+     Without this, Tab walked out of the sheet and onto the bottom navigation
+     behind the scrim. */
+  const { panel, dialogProps } = useSheetModal(true, onClose, { label: t('day_completed_label') });
   return (
     <div className="fixed inset-0 z-[210] bg-black/40 flex items-end" onClick={onClose}
+         {...dialogProps}
          data-testid="day-completed-sheet">
       <div className="w-full bg-paper rounded-t-[20px] p-5 shadow-2xl"
-           onClick={(e) => e.stopPropagation()}>
+           ref={panel} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start gap-3 mb-4">
           <CheckCircle2 size={22} className="text-green-pos flex-none mt-0.5" />
           <div className="flex-1">
@@ -1316,6 +1370,10 @@ function CompletedSheet({ appt, hasToolkit, onInvoice, onUnlock, onClose, t }) {
 
 /* ──────────────────────────────────────────────────── the SMS sheet */
 function SmsSheet({ sms, body, onTemplate, onClose, t }) {
+  /* A dialog, not a decorated div — Escape, a focus trap and a scroll lock.
+     Without this, Tab walked out of the sheet and onto the bottom navigation
+     behind the scrim. */
+  const { panel, dialogProps } = useSheetModal(true, onClose, { label: t('day_sms_label') });
   const seg = smsSegments(body);
   const phone = sms.appt.customer_phone;
   const [copied, setCopied] = useState(false);
@@ -1330,9 +1388,10 @@ function SmsSheet({ sms, body, onTemplate, onClose, t }) {
 
   return (
     <div className="fixed inset-0 z-[210] bg-black/40 flex items-end" onClick={onClose}
+         {...dialogProps}
          data-testid="day-sms-sheet">
       <div className="w-full bg-paper rounded-t-[20px] p-5 shadow-2xl"
-           onClick={(e) => e.stopPropagation()}>
+           ref={panel} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-2 mb-3">
           <p className="font-headings font-bold text-[15px] text-ink flex-1">
             {t('day_sms_to').replace('{name}', sms.appt.customer_name || '—')}
@@ -1350,13 +1409,13 @@ function SmsSheet({ sms, body, onTemplate, onClose, t }) {
               key={tpl.key}
               type="button"
               onClick={() => onTemplate(tpl.key)}
-              className={`flex-1 min-h-[38px] rounded-[10px] font-bold text-[11px]
+              className={`flex-1 min-h-[44px] rounded-[10px] font-bold text-[11px]
                 ${sms.template === tpl.key
                   ? 'bg-teal text-paper'
                   : 'bg-cream-soft border border-sm-border text-ink-muted'}`}
               data-testid={`day-sms-tpl-${tpl.key}`}
             >
-              {tpl.label}
+              {t(tpl.label)}
             </button>
           ))}
         </div>

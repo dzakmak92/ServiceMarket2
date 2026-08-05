@@ -210,10 +210,26 @@ export const dateLocale = (lang) =>
 export const hhmm = (v) =>
   new Date(toMs(v)).toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' });
 
+/* The unit words, registered once by LangContext when the language changes.
+ *
+ * durationLabel is called from about thirty places — day blocks, free-slot
+ * labels, duration chips, week and month tiles, the job sheet, the conflict
+ * sheet — and threading `t` through all of them to translate two words would
+ * be a large change for a small gain. So the module holds the current pair
+ * instead. It is mutable module state, which is a smell; it is contained to
+ * these two strings, it has a sane default, and the alternative was leaving
+ * "8 h 30 min" untranslated in a Turkish UI directly beneath a legend that
+ * correctly read "Tam sütun = 8 saat".
+ *
+ * The default is the English/German pair, so anything importing this module
+ * without a running app — the tests, a script — behaves as it always did. */
+let UNITS = { h: 'h', min: 'min' };
+export const setDurationUnits = (u) => { UNITS = { ...UNITS, ...(u || {}) }; };
+
 export function durationLabel(ms) {
   const m = Math.round(ms / MIN);
   const h = Math.floor(m / 60);
   const r = m % 60;
-  if (!h) return `${r} min`;
-  return r ? `${h} h ${r} min` : `${h} h`;
+  if (!h) return `${r} ${UNITS.min}`;
+  return r ? `${h} ${UNITS.h} ${r} ${UNITS.min}` : `${h} ${UNITS.h}`;
 }

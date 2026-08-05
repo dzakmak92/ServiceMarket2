@@ -158,7 +158,9 @@ export default function WeatherCard({
       </div>
 
       {outlook && list.length > 1 && (
-        <div className="flex gap-1 mt-2.5 pt-2 border-t border-sky-tint" data-testid="wx-outlook">
+        <div className="flex gap-1 mt-2.5 pt-2 border-t border-sky-tint overflow-x-auto
+                        [-ms-overflow-style:none] [scrollbar-width:none]
+                        [&::-webkit-scrollbar]:hidden" data-testid="wx-outlook">
           {list.map((d, i) => {
             const DIcon = ICON[d.condition] || Cloud;
             const on = i === idx;
@@ -167,7 +169,11 @@ export default function WeatherCard({
                 key={d.date || i}
                 type="button"
                 onClick={() => setSel(i)}
-                className={`flex-1 min-w-0 min-h-[46px] rounded-[8px] py-1 flex flex-col
+                /* min-w-0 let seven chips squeeze to 43px wide at 390 and
+                   33px at 320 — under the 44px target, four pixels apart, on
+                   a control whose whole job is being tapped. Below 44 each
+                   the row scrolls rather than shrinking further. */
+                className={`flex-1 min-w-[44px] min-h-[46px] rounded-[8px] py-1 flex flex-col
                             items-center justify-center gap-px
                             ${on ? 'bg-paper shadow-sm ring-1 ring-sky/30' : ''}`}
                 data-testid={`wx-day-${i}`}

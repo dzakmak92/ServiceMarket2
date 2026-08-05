@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../../api/client';
 import WeatherCard from '../../components/pro/WeatherCard';
 import JobSheet from '../../components/pro/JobSheet';
+import LoadFailed from '../../components/pro/LoadFailed';
 import useWeather from '../../hooks/useWeather';
 import useJobAction from '../../hooks/useJobAction';
 import {
@@ -44,6 +45,7 @@ const frac = (v) => {
 export default function WeekScheduleView({ weekStart, onOpenDay, t, lang = 'de-AT' }) {
   const [appts, setAppts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const [selected, setSelected] = useState(() => startOfDay(new Date()));
   const [openJob, setOpenJob] = useState(null);
   const { weather, status: wxStatus } = useWeather(7);
@@ -64,7 +66,8 @@ export default function WeekScheduleView({ weekStart, onOpenDay, t, lang = 'de-A
         start: new Date(a.scheduled_start),
         end: new Date(a.scheduled_end || a.scheduled_start),
       }))))
-      .catch(() => setAppts([]))
+      .then(() => setFailed(false))
+      .catch(() => { setAppts([]); setFailed(true); })
       .finally(() => setLoading(false));
   }, [weekStart]);
 
@@ -107,7 +110,8 @@ export default function WeekScheduleView({ weekStart, onOpenDay, t, lang = 'de-A
 
   if (loading) {
     return (
-      <div className="py-14 flex justify-center" data-testid="week-loading">
+      <div className="py-14 flex justify-center" data-testid="week-loading"
+           role="status" aria-live="polite" aria-label={t('ui_loading')}>
         <Loader2 className="text-teal animate-spin" />
       </div>
     );
@@ -115,6 +119,7 @@ export default function WeekScheduleView({ weekStart, onOpenDay, t, lang = 'de-A
 
   return (
     <div data-testid="week-view">
+      {failed && <LoadFailed onRetry={load} t={t} />}
       {/* Today by default, with the next seven days a tap away. The card's
           day is deliberately independent of the day selected in the grid
           below: "will it rain on Thursday" is a question you ask while
@@ -230,7 +235,8 @@ export default function WeekScheduleView({ weekStart, onOpenDay, t, lang = 'de-A
           </span>
         )}
         <button type="button" onClick={() => onOpenDay?.(selected)}
-                className="ml-auto font-bold text-[11px] text-teal min-h-[32px] px-1"
+                className="ml-auto font-bold text-[11px] text-teal min-h-[44px] px-2
+                        flex items-center"
                 data-testid="week-open-day">
           {t('week_open_day')}
         </button>

@@ -32,7 +32,7 @@ export default function MySchedulePage() {
           key={k}
           type="button"
           onClick={() => setView(k)}
-          className={`flex-1 min-h-[38px] rounded-[9px] font-bold text-[12px] transition-colors
+          className={`flex-1 min-h-[44px] rounded-[9px] font-bold text-[12px] transition-colors
             ${view === k ? 'bg-paper text-teal shadow-sm' : 'text-ink-muted'}`}
           data-testid={`schedule-switch-${k}`}
         >
@@ -57,20 +57,20 @@ export default function MySchedulePage() {
           </div>
           {switcher}
           <div className="flex items-center justify-between mb-3">
-            <button onClick={() => shiftDay(-1)} className="btn-ghost text-xs min-h-[38px] px-3"
-                    data-testid="day-prev" aria-label="prev"><ChevronLeft size={15} /></button>
+            <button onClick={() => shiftDay(-1)} className="btn-ghost text-xs min-h-[44px] min-w-[44px] px-3"
+                    data-testid="day-prev" aria-label={t('nav_prev_day')}><ChevronLeft size={15} /></button>
             <p className="text-sm font-headings font-bold text-ink">
               {day.toLocaleDateString(loc, { day: 'numeric', month: 'long', year: 'numeric' })}
             </p>
             <div className="flex gap-1">
               {!isToday && (
                 <button onClick={() => { const d = new Date(); d.setHours(0, 0, 0, 0); setDay(d); }}
-                        className="btn-ghost text-xs min-h-[38px] px-3" data-testid="day-today">
+                        className="btn-ghost text-xs min-h-[44px] min-w-[44px] px-3" data-testid="day-today">
                   {t('pm_schedule_today')}
                 </button>
               )}
-              <button onClick={() => shiftDay(1)} className="btn-ghost text-xs min-h-[38px] px-3"
-                      data-testid="day-next" aria-label="next"><ChevronRight size={15} /></button>
+              <button onClick={() => shiftDay(1)} className="btn-ghost text-xs min-h-[44px] min-w-[44px] px-3"
+                      data-testid="day-next" aria-label={t('nav_next_day')}><ChevronRight size={15} /></button>
             </div>
           </div>
           <DayScheduleView date={day} onDateChange={setDay} proName={user?.name || ''} />
@@ -97,18 +97,18 @@ export default function MySchedulePage() {
           </div>
           {switcher}
           <div className="flex items-center justify-between mb-3">
-            <button onClick={() => shiftMonth(-1)} className="btn-ghost text-xs min-h-[38px] px-3"
-                    data-testid="month-prev" aria-label="prev"><ChevronLeft size={15} /></button>
+            <button onClick={() => shiftMonth(-1)} className="btn-ghost text-xs min-h-[44px] min-w-[44px] px-3"
+                    data-testid="month-prev" aria-label={t('nav_prev_month')}><ChevronLeft size={15} /></button>
             <p className="text-sm font-headings font-bold text-ink">{monthLabel}</p>
             <div className="flex gap-1">
               {!thisMonth && (
                 <button onClick={() => setMonthStart(startOfMonth(new Date()))}
-                        className="btn-ghost text-xs min-h-[38px] px-3" data-testid="month-today">
+                        className="btn-ghost text-xs min-h-[44px] min-w-[44px] px-3" data-testid="month-today">
                   {t('pm_schedule_today')}
                 </button>
               )}
-              <button onClick={() => shiftMonth(1)} className="btn-ghost text-xs min-h-[38px] px-3"
-                      data-testid="month-next" aria-label="next"><ChevronRight size={15} /></button>
+              <button onClick={() => shiftMonth(1)} className="btn-ghost text-xs min-h-[44px] min-w-[44px] px-3"
+                      data-testid="month-next" aria-label={t('nav_next_month')}><ChevronRight size={15} /></button>
             </div>
           </div>
           <MonthScheduleView
@@ -140,8 +140,8 @@ export default function MySchedulePage() {
         </div>
         {switcher}
         <div className="flex items-center justify-between mb-3">
-          <button onClick={() => shiftWeek(-1)} className="btn-ghost text-xs min-h-[38px] px-3"
-                  data-testid="week-prev" aria-label="prev"><ChevronLeft size={15} /></button>
+          <button onClick={() => shiftWeek(-1)} className="btn-ghost text-xs min-h-[44px] min-w-[44px] px-3"
+                  data-testid="week-prev" aria-label={t('nav_prev_week')}><ChevronLeft size={15} /></button>
           <p className="text-sm font-headings font-bold text-ink">
             {weekStart.toLocaleDateString(loc, { day: 'numeric', month: 'short' })} –{' '}
             {weekEnd.toLocaleDateString(loc, { day: 'numeric', month: 'short' })}
@@ -149,12 +149,12 @@ export default function MySchedulePage() {
           <div className="flex gap-1">
             {!thisWeek && (
               <button onClick={() => setWeekStart(startOfWeek(new Date()))}
-                      className="btn-ghost text-xs min-h-[38px] px-3" data-testid="week-today">
+                      className="btn-ghost text-xs min-h-[44px] min-w-[44px] px-3" data-testid="week-today">
                 {t('pm_schedule_today')}
               </button>
             )}
-            <button onClick={() => shiftWeek(1)} className="btn-ghost text-xs min-h-[38px] px-3"
-                    data-testid="week-next" aria-label="next"><ChevronRight size={15} /></button>
+            <button onClick={() => shiftWeek(1)} className="btn-ghost text-xs min-h-[44px] min-w-[44px] px-3"
+                    data-testid="week-next" aria-label={t('nav_next_week')}><ChevronRight size={15} /></button>
           </div>
         </div>
         <WeekScheduleView
