@@ -50,6 +50,9 @@ contain.
 """
 from __future__ import annotations
 
+import math
+import re
+
 import json
 import logging
 from functools import lru_cache
@@ -171,25 +174,145 @@ def _mid(pair) -> float:
     return (float(pair[0]) + float(pair[1])) / 2
 
 
-def resolve_qty(job: dict, answers: dict) -> float:
+# A quantity may arrive as a number or as whatever the pro typed. Both are
+# normal: the guided form posts JSON, but the field is free text and this is
+# a German-language product.
+_THOUSANDS = re.compile(r"^\d{1,3}(\.\d{3})+$")
+
+
+def parse_number(val) -> Optional[float]:
+    """A number from a person, or None.
+
+    German writes 12,5 where English writes 12.5, and the pro typing into a
+    German form types the comma. `float("12,5")` raises, the old code caught
+    the exception and moved on, and the estimate quietly fell back to the
+    job's typical size — 57.5 m² for a 12.5 m² room, a quote three times the
+    work described, with `qty_source` still reporting "answer". A wrong
+    number that announces itself is a nuisance; a wrong number wearing the
+    right label is how a pro loses money on a job.
+
+    The rules, in order, because "1.234" is genuinely ambiguous:
+      · both separators present → the last one is the decimal point
+      · only dots, in groups of three → thousands ("1.234" is 1234)
+      · a lone comma → decimal ("12,5" is 12.5)
+
+    Booleans are rejected outright. `float(True)` is 1.0, so a checkbox
+    posted into a quantity field used to quote a one-square-metre job.
+    """
+    if isinstance(val, bool) or val is None:
+        return None
+    if isinstance(val, (int, float)):
+        v = float(val)
+        return v if math.isfinite(v) else None
+    if not isinstance(val, str):
+        return None
+    t = val.strip().replace("\u00a0", "").replace(" ", "")
+    if not t:
+        return None
+    if "," in t and "." in t:
+        dec = max(t.rfind(","), t.rfind("."))
+        t = t[:dec].replace(",", "").replace(".", "") + "." + t[dec + 1:]
+    elif _THOUSANDS.match(t):
+        t = t.replace(".", "")
+    elif "," in t:
+        t = t.replace(",", ".")
+    try:
+        v = float(t)
+    except (TypeError, ValueError):
+        return None
+    # Rejected rather than passed on: `resolve_qty`'s `v > 0` lets +inf
+    # through, and an infinite quantity produced either a crash in the debris
+    # rounding or a JSON body containing the literal `Infinity`, which most
+    # parsers refuse.
+    return v if math.isfinite(v) else None
+
+
+# The same range services/calibration.py enforces; imported by value rather
+# than from that module to avoid a cycle, and asserted equal by the tests.
+HOURS_FACTOR_CLAMP = (0.5, 2.0)
+
+
+def _clamp_factor(val) -> float:
+    """A usable hours factor, whatever arrived."""
+    v = parse_number(val)
+    if v is None:
+        return 1.0
+    return min(max(v, HOURS_FACTOR_CLAMP[0]), HOURS_FACTOR_CLAMP[1])
+
+
+def _clamp_hourly(pair):
+    """A caller's (low, high) rate pair, ordered and finite, or None.
+
+    An inverted pair produced an estimate whose low exceeded its high, which
+    every downstream consumer reads as a range.
+    """
+    if pair is None:
+        return None
+    try:
+        lo, hi = parse_number(pair[0]), parse_number(pair[1])
+    except (TypeError, IndexError, KeyError):
+        return None
+    if lo is None or hi is None or lo < 0 or hi < 0:
+        return None
+    return (min(lo, hi), max(lo, hi))
+
+
+def as_bool(val) -> bool:
+    """A yes/no from an answer that may be a string.
+
+    `survey()` declares this question as `type: bool` and its own note rule
+    keys off the *string* "True", so string booleans are expected here — and
+    `notes_for` handles them. `estimate` did not: it tested truthiness, and
+    every non-empty string is truthy, so an answer of "false" or "nein"
+    switched the Notdienst rate on. Ninety per cent added to the low end of a
+    quote because the customer said no.
+    """
+    if isinstance(val, bool):
+        return val
+    if isinstance(val, (int, float)):
+        return bool(val)
+    if isinstance(val, str):
+        return val.strip().lower() in {"true", "yes", "y", "ja", "1", "on"}
+    return bool(val)
+
+
+def _norm_choice(val) -> str:
+    """A catalogue choice key from an answer, forgiving of case and padding.
+
+    A value round-tripped through a store that trims or upper-cases used to
+    stop matching and silently priced as an ordinary weekday.
+    """
+    return str(val or "").strip().lower()
+
+
+def resolve_qty_detail(job: dict, answers: Optional[dict]) -> tuple[float, str]:
+    """The quantity, and where it actually came from.
+
+    The second half is the point. `qty_source` used to be derived from the
+    shape of the job rather than from what happened — for any job with a
+    quantity question it named that question whether it had been answered,
+    left blank, or answered with something unusable.
+    """
+    answers = answers or {}
+    q = qty_question(job)
+    for key in ([q["key"]] if q else []) + ["qty"]:
+        if key not in answers:
+            continue
+        v = parse_number(answers.get(key))
+        if v is not None and v > 0:
+            return v, key
+    if job["band_basis"] == "total":
+        return 1.0, "unit_job"
+    return _mid(job["typical_size"]), "typical_size"
+
+
+def resolve_qty(job: dict, answers: Optional[dict] = None) -> float:
     """Quantity from the answers, or the middle of the job's typical size.
 
     The fallback is the midpoint rather than the small end on purpose: an
     estimate that assumes the smallest plausible job flatters itself.
     """
-    q = qty_question(job)
-    for key in ([q["key"]] if q else []) + ["qty"]:
-        val = answers.get(key)
-        if val not in (None, ""):
-            try:
-                v = float(val)
-            except (TypeError, ValueError):
-                continue
-            if v > 0:
-                return v
-    if job["band_basis"] == "total":
-        return 1.0
-    return _mid(job["typical_size"])
+    return resolve_qty_detail(job, answers)[0]
 
 
 def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT",
@@ -226,7 +349,7 @@ def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT
     access = answers.get("access")
     if access not in mods["access_uplift"]:
         access = "eg_oder_lift"
-    qty = resolve_qty(job, answers)
+    qty, qty_source = resolve_qty_detail(job, answers)
 
     cond_up = _rng(mods["condition_uplift"][condition])
     acc_up = _rng(mods["access_uplift"][access])
@@ -241,12 +364,13 @@ def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT
     up_lo = 1 + cond_up[0] + acc_up[0]
     up_hi = 1 + cond_up[1] + acc_up[1]
 
-    out_of_hours = str(answers.get("zeit") or "") in OUT_OF_HOURS
+    out_of_hours = _norm_choice(answers.get("zeit")) in OUT_OF_HOURS
     emergency = bool(
-        (answers.get("emergency") or out_of_hours) and job.get("emergency_capable"))
+        (as_bool(answers.get("emergency")) or out_of_hours) and job.get("emergency_capable"))
 
-    if hourly:
-        h_lo, h_hi = _rng(hourly)
+    safe_hourly = _clamp_hourly(hourly)
+    if safe_hourly:
+        h_lo, h_hi = safe_hourly
         rate_basis = "pro"
     elif emergency:
         h_lo, h_hi = _rng(cat["hourly_notdienst"][country])
@@ -284,6 +408,15 @@ def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT
 
     for op in job["operations"]:
         if TIER_ORDER.get(op.get("tier_min", "basic"), 0) > want_tier:
+            continue
+        # `optional` is skipped by backend/tools/catalogue/engine.py, which is
+        # the harness this module's docstring says it must stay identical to.
+        # This filter was missing, so an optional operation would have been
+        # priced into the total here and excluded there — the validation would
+        # have gone on passing while the app quoted something else. The
+        # shipped catalogue has no optional operations today, which is exactly
+        # why the drift was invisible.
+        if op.get("optional"):
             continue
 
         hpu = _rng(op["hours_per_unit"])
@@ -349,7 +482,15 @@ def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT
     # multiplies hours, never the rate: a business that runs long has a time
     # problem, and inflating its hourly rate to compensate would hide that
     # behind a number the customer compares against competitors.
-    cal = float((calibration or {}).get("hours_factor") or 1.0)
+    # Clamped here as well as in services/calibration.py. That module
+    # documents CLAMP = (0.5, 2.0) as the range beyond which a factor is a
+    # data problem rather than a slow tradesperson — but this line re-derived
+    # the number from a plain dict, so any caller building that dict itself
+    # bypassed the guard entirely. -1.0 produced a negative total with the
+    # low above the high; NaN produced a quote of NaN; 100.0 produced 68,460.
+    # The `or 1.0` also silently promoted a legitimate 0.0 to 1.0 while
+    # reporting the estimate as uncalibrated.
+    cal = _clamp_factor((calibration or {}).get("hours_factor"))
     if cal != 1.0:
         setup = (setup[0] * cal, setup[1] * cal)
         work = [work[0] * cal, work[1] * cal]
@@ -395,8 +536,12 @@ def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT
             "small_job_premium": job["small_job_premium"],
         },
         "qty": round(qty, 2),
-        "qty_source": (qty_question(job) or {}).get("key") or (
-            "answer" if answers.get("qty") else "typical_size"),
+        # Where the number actually came from, not what shape the job is.
+        # This used to name the quantity question for any job that had one —
+        # answered, blank or answered with something unusable, all reported
+        # the same — so a fallback to the typical size was indistinguishable
+        # from the pro's own figure.
+        "qty_source": qty_source,
         **_answer_provenance(job, answers, emergency),
         # Echoed so the stored estimate keeps the inputs that produced it.
         # When a coefficient turns out wrong, the answer that should have
@@ -427,7 +572,11 @@ def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT
         "rates_applied": sum(1 for ln in lines if ln["rate_source"] == "pro"),
         "per_unit": ([round(total[0] / qty, 2), round(total[1] / qty, 2)]
                      if qty else None),
-        "market_band": job["market_band_at"] if country == "AT" else job["market_band_de"],
+        # Copied. `catalogue()` is lru_cached, so this handed the caller a
+        # live reference into the process-wide catalogue: one `r["market_band"][0] = 999`
+        # anywhere and every later estimate for that job carried it, for the
+        # life of the process.
+        "market_band": list(job["market_band_at"] if country == "AT" else job["market_band_de"]),
         "band_basis": job["band_basis"],
         "lines": lines,
         "notes": notes,

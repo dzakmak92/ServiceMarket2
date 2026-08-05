@@ -280,6 +280,107 @@ _b = E.estimate(_flat, {}, country="AT", tier="premium", rates={}, calibration=N
 check(_a["total_net"] == _b["total_net"],
       f"{_flat}: tiers_differ is false and the numbers agree")
 
+# ── what the pro typed ────────────────────────────────────────────────────
+# Every case below produced a silently wrong number before, not an error.
+
+print("\n── a number as a person writes it ──")
+check(E.parse_number("12,5") == 12.5, "German decimal comma: 12,5 is twelve and a half")
+check(E.parse_number("12.5") == 12.5, "and an English decimal point still works")
+check(E.parse_number("1.234") == 1234.0, "dots in threes are thousands: 1.234 is one thousand")
+check(E.parse_number("1.234,50") == 1234.5, "German thousands with a decimal comma")
+check(E.parse_number("1,234.50") == 1234.5, "and the English form of the same number")
+check(E.parse_number(" 60 ") == 60.0, "padding is not part of the number")
+check(E.parse_number("60\u00a0m²") is None, "a unit stuck to the number is not a number")
+check(E.parse_number(True) is None and E.parse_number(False) is None,
+      "a checkbox is not a quantity — float(True) used to quote a 1 m² job")
+check(E.parse_number("abc") is None and E.parse_number("") is None
+      and E.parse_number(None) is None, "nonsense is rejected rather than guessed at")
+check(E.parse_number(float("inf")) is None and E.parse_number("inf") is None
+      and E.parse_number(float("nan")) is None,
+      "non-finite is rejected — it used to crash, or emit literal Infinity in JSON")
+
+print("\n── the quantity, and where it says it came from ──")
+_job = E.get_job("maler.innenanstrich")
+_typ = E._mid(_job["typical_size"])
+check(E.resolve_qty_detail(_job, {"qty": "12,5"}) == (12.5, "qty"),
+      "12,5 m² is quoted as 12,5 m², not as the typical size")
+_bad = E.estimate("maler.innenanstrich", {"qty": "12,5"})
+_good = E.estimate("maler.innenanstrich", {"qty": 12.5})
+check(_bad["total_net"] == _good["total_net"],
+      f"and the total matches the same job entered as a number ({_bad['total_net']})")
+check(E.resolve_qty_detail(_job, {})[1] == "typical_size",
+      "an unanswered quantity says typical_size, not the name of the question")
+check(E.resolve_qty_detail(_job, {"qty": -5})[1] == "typical_size",
+      "a negative quantity falls back and says so")
+check(E.resolve_qty_detail(_job, {"qty": 0})[1] == "typical_size",
+      "and so does zero")
+check(E.resolve_qty_detail(_job, {"qty": "abc"})[1] == "typical_size",
+      "and so does a word")
+check(E.estimate("elektrik.schalter_tauschen", {})["qty_source"] == "unit_job",
+      "a per-job price is not attributed to an answer nobody gave")
+check(E.resolve_qty(_job, None) == _typ,
+      "resolve_qty(job, None) falls back instead of raising")
+
+print("\n── yes means yes ──")
+_em = "elektrik.stoerungssuche"
+_no = E.estimate(_em, {"emergency": False})["total_net"]
+for falsey in ("false", "False", "nein", "0", "off", "", None):
+    check(E.estimate(_em, {"emergency": falsey})["total_net"] == _no,
+          f'emergency={falsey!r} is not an emergency')
+for truthy in (True, "true", "ja", "1", "on"):
+    check(E.estimate(_em, {"emergency": truthy})["total_net"] != _no,
+          f"emergency={truthy!r} is")
+check(E.estimate(_em, {"zeit": " NACHT_SONNTAG "})["total_net"]
+      == E.estimate(_em, {"zeit": "nacht_sonntag"})["total_net"],
+      "an out-of-hours value survives padding and case")
+
+print("\n── an injected rate cannot invert or poison the range ──")
+_inv = E.estimate("maler.innenanstrich", {"qty": 60}, hourly=(80, 40))["total_net"]
+check(_inv[0] <= _inv[1], f"an inverted hourly pair is ordered, not passed through ({_inv})")
+for bad_cal in (-1.0, float("nan"), 100.0, "nonsense", None):
+    _t = E.estimate("maler.innenanstrich", {"qty": 60},
+                    calibration={"hours_factor": bad_cal})["total_net"]
+    check(all(x == x and x > 0 for x in _t) and _t[0] <= _t[1],
+          f"hours_factor={bad_cal!r} gives a usable range ({_t})")
+_clamped = E.estimate("maler.innenanstrich", {"qty": 60},
+                      calibration={"hours_factor": 100.0})["total_net"]
+_at_max = E.estimate("maler.innenanstrich", {"qty": 60},
+                     calibration={"hours_factor": E.HOURS_FACTOR_CLAMP[1]})["total_net"]
+check(_clamped == _at_max,
+      "and a factor far outside the clamp prices as the clamp, not as itself")
+
+print("\n── the catalogue cannot be edited by reading an estimate ──")
+_r = E.estimate("maler.innenanstrich", {"qty": 60})
+_r["market_band"][0] = 999
+check(E.estimate("maler.innenanstrich", {"qty": 60})["market_band"][0] != 999,
+      "market_band is a copy — it used to be a live reference into the lru_cache")
+
+print("\n── optional operations are not billed ──")
+# The shipped catalogue has no optional operations, so this flips one in the
+# cached copy, prices the job, and puts it back. Without the flag being read,
+# the total is unchanged and this fails — which is what it did before.
+_key = "fliesen.entfernen_dickbett"
+_ops = E.catalogue()["jobs"][_key]["operations"] if isinstance(
+    E.catalogue()["jobs"], dict) else next(
+    j for j in E.catalogue()["jobs"] if j["key"] == _key)["operations"]
+if len(_ops) > 1:
+    _before = E.estimate(_key, {"qty": 60})["total_net"]
+    _n_before = len(E.estimate(_key, {"qty": 60})["lines"])
+    _ops[1]["optional"] = True
+    try:
+        _after = E.estimate(_key, {"qty": 60})["total_net"]
+        _n_after = len(E.estimate(_key, {"qty": 60})["lines"])
+    finally:
+        _ops[1].pop("optional")
+    check(_after[1] < _before[1],
+          f"an optional operation drops out of the total ({_before} -> {_after})")
+    check(_n_after < _n_before,
+          f"and out of the positions ({_n_before} -> {_n_after})")
+    check(E.estimate(_key, {"qty": 60})["total_net"] == _before,
+          "and the catalogue is back as it was")
+else:
+    check(False, f"{_key} has too few operations to test the optional filter")
+
 print("\n" + ("ALL PASS" if not fails else f"{len(fails)} FAILURE(S)"))
 for f in fails:
     print("  ·", f)
