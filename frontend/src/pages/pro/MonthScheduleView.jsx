@@ -5,7 +5,9 @@ import JobSheet from '../../components/pro/JobSheet';
 import LoadFailed from '../../components/pro/LoadFailed';
 import useWeather from '../../hooks/useWeather';
 import useJobAction from '../../hooks/useJobAction';
-import { MIN, dayKey, durationLabel, hhmm, toMs } from '../../utils/schedule';
+import {
+  HALF_DAY_MIN, MIN, dayKey, durationLabel, halvesOf, hhmm, toMs,
+} from '../../utils/schedule';
 import { Loader2, MapPin, User } from 'lucide-react';
 
 /**
@@ -18,12 +20,9 @@ import { Loader2, MapPin, User } from 'lucide-react';
  * neither.
  */
 
-/* A full day, against which every bar is measured. Eight hours is the bar's
-   ceiling, not a limit on the day: ten hours simply fills it. */
+/* A full day, for the summary tile above the grid. The cells themselves are
+   measured in halves — see HALF_DAY_MIN in utils/schedule. */
 const FULL_DAY_MIN = 8 * 60;
-/* Past this the day reads as full rather than merely busy, and the bar
-   darkens. Seven of eight hours booked leaves no room worth selling. */
-const HEAVY_MIN = 7 * 60;
 
 /* Six whole weeks, always. A grid that is five rows in one month and six in
    the next makes the list underneath it jump on every page turn. */
@@ -185,7 +184,7 @@ export default function MonthScheduleView({ monthStart, onOpenDay, t, lang = 'de
             const isToday = sameDay(d, now);
             const isSel = sameDay(d, selected);
             const urgent = list.some((a) => a.urgency === 'emergency');
-            const pct = Math.min(100, (mins / FULL_DAY_MIN) * 100);
+            const { am, pm } = halvesOf(list, d);
             return (
               <button
                 key={dayKey(d)}
@@ -201,8 +200,14 @@ export default function MonthScheduleView({ monthStart, onOpenDay, t, lang = 'de
                 /* The bar is the entire point of this view and it is pure
                    geometry — no text, no label, nothing for a screen reader.
                    The name carries the date and the load in words. */
+                /* The bars are pure geometry — no text, nothing for a screen
+                   reader — so the name says the same thing in words, and now
+                   says it per half-day, because that is what the cell draws. */
                 aria-label={(mins > 0
-                  ? t('month_cell_label').replace('{hours}', durationLabel(mins * MIN))
+                  ? t('month_cell_label')
+                      .replace('{hours}', durationLabel(mins * MIN))
+                      .replace('{am}', durationLabel(am * MIN))
+                      .replace('{pm}', durationLabel(pm * MIN))
                   : t('month_cell_free'))
                   .replace('{date}', d.toLocaleDateString(lang,
                     { weekday: 'long', day: 'numeric', month: 'long' }))}
@@ -212,6 +217,8 @@ export default function MonthScheduleView({ monthStart, onOpenDay, t, lang = 'de
                   ${isSel && !isToday ? 'ring-[1.5px] ring-teal-deep' : ''}`}
                 data-testid={`month-cell-${dayKey(d)}`}
                 data-minutes={out ? '' : mins}
+                data-am={out ? '' : am}
+                data-pm={out ? '' : pm}
                 aria-pressed={isSel}
               >
                 <span className={`font-extrabold text-[11px]
@@ -219,42 +226,49 @@ export default function MonthScheduleView({ monthStart, onOpenDay, t, lang = 'de
                   {d.getDate()}
                 </span>
 
-                {!out && mins > 0 && (
-                  <>
-                    <span className="absolute left-0 right-0 bottom-[25px] text-center
-                                     font-extrabold text-[8px] text-ink-soft">
-                      {durationLabel(mins * MIN).replace(' min', "'")}
-                    </span>
-                    <span className="absolute left-[3px] right-[3px] bottom-[3px] h-[20px]
-                                     rounded-[3px] bg-cream-deep overflow-hidden flex items-end">
-                      <span
-                        className={`w-full rounded-[3px] ${urgent ? 'bg-red-warn'
-                          : mins >= HEAVY_MIN ? 'bg-teal-deep' : 'bg-teal'}`}
-                        style={{ height: `${pct}%` }}
-                        data-testid={`month-bar-${dayKey(d)}`}
-                      />
-                    </span>
-                  </>
+                {!out && (
+                  <span className="absolute left-[4px] right-[4px] bottom-[5px]
+                                   flex flex-col gap-[3px]">
+                    {/* Morning over afternoon, each full at four hours. Two
+                        bars rather than one total, because "is Thursday
+                        afternoon free" is a question asked out loud on the
+                        phone and a single load bar cannot answer it. Always
+                        drawn, even empty: a missing track would make a free
+                        day look like a day with no data. */}
+                    {[[am, urgent ? 'bg-red-warn' : 'bg-teal', 'am'],
+                      [pm, urgent ? 'bg-red-warn' : 'bg-amber-deep', 'pm']].map(
+                      ([v, tone, half]) => (
+                        <span key={half}
+                              className="h-[6px] rounded-[3px] bg-cream-deep overflow-hidden block">
+                          <span
+                            className={`block h-full rounded-[3px] ${tone}`}
+                            style={{ width: `${Math.min(100, (v / HALF_DAY_MIN) * 100)}%` }}
+                            data-testid={`month-${half}-${dayKey(d)}`}
+                          />
+                        </span>
+                      ))}
+                  </span>
                 )}
               </button>
             );
           })}
         </div>
 
-        {/* The bar means nothing without its ceiling — a day at half height
-            is four hours only if you know the top is eight. */}
+        {/* Two bars mean nothing without saying which is which, or where
+            they end — a half-full bar is two hours only if you know the top
+            is four. */}
         <div className="flex items-center gap-2.5 mt-2 font-bold text-[9px] text-ink-muted flex-wrap"
              data-testid="month-legend">
           <span className="flex items-center gap-1">
-            <i className="w-2.5 h-2.5 rounded-[3px] bg-teal inline-block" /> {t('month_booked')}
+            <i className="w-2.5 h-2.5 rounded-[3px] bg-teal inline-block" /> {t('month_morning')}
           </span>
           <span className="flex items-center gap-1">
-            <i className="w-2.5 h-2.5 rounded-[3px] bg-teal-deep inline-block" /> {t('month_full')}
+            <i className="w-2.5 h-2.5 rounded-[3px] bg-amber-deep inline-block" /> {t('month_afternoon')}
           </span>
           <span className="flex items-center gap-1">
             <i className="w-2.5 h-2.5 rounded-[3px] bg-red-warn inline-block" /> {t('month_emergency')}
           </span>
-          <span className="ml-auto">{t('month_scale')}</span>
+          <span className="ml-auto">{t('month_half_scale')}</span>
         </div>
       </div>
 

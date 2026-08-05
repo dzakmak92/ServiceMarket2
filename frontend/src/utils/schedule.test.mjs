@@ -7,13 +7,14 @@
 import {
   QUARTER, MIN, TRAVEL_GAP, snapQuarter, overlaps, travelShortfall,
   resizeAndSettle, previewResize, previewInsert, freeRuns, bookableRuns, MIN_SLOT, durationLabel,
-  dayKey,
+  dayKey, halvesOf, splitAtNoon,
 } from './schedule.js';
 
 let pass = 0, fail = 0;
 const ok = (cond, msg) => { if (cond) { pass++; console.log('  ok  ', msg); }
                             else { fail++; console.log('  FAIL', msg); } };
 const step = (t) => console.log(`\n── ${t} ──`);
+const eq = (got, want, msg) => ok(got === want, `${msg} (got ${got}, want ${want})`);
 
 const D = '2025-08-08';
 const at = (h, m = 0) => new Date(`${D}T${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:00`).getTime();
@@ -233,6 +234,37 @@ step('labels');
 ok(durationLabel(90 * MIN) === '1 h 30 min', '90 min reads as 1 h 30 min');
 ok(durationLabel(60 * MIN) === '1 h', 'a round hour drops the minutes');
 ok(durationLabel(QUARTER) === '15 min', 'a quarter has no hour part');
+
+step('splitting a day at noon');
+
+const noonOn = (h, m = 0) => { const d = new Date(2026, 7, 5); d.setHours(h, m, 0, 0); return d; };
+const nAppt = (a, b) => ({ start: noonOn(a), end: noonOn(b) });
+
+eq(splitAtNoon(nAppt(8, 11)).am, 180, 'a morning job is all morning');
+eq(splitAtNoon(nAppt(8, 11)).pm, 0, 'and none of it is afternoon');
+eq(splitAtNoon(nAppt(13, 17)).pm, 240, 'an afternoon job is all afternoon');
+eq(splitAtNoon(nAppt(13, 17)).am, 0, 'and none of it is morning');
+
+// The case the whole design turns on.
+const straddle = splitAtNoon(nAppt(11, 15));
+eq(straddle.am, 60, 'a job across noon gives its real hour to the morning');
+eq(straddle.pm, 180, 'and the rest to the afternoon');
+ok(straddle.am + straddle.pm === 240, 'the two halves add up to the whole job');
+
+eq(splitAtNoon(nAppt(12, 14)).am, 0, 'a job starting exactly at noon is afternoon');
+eq(splitAtNoon(nAppt(10, 12)).pm, 0, 'a job ending exactly at noon is morning');
+eq(splitAtNoon(nAppt(9, 9)).am, 0, 'a zero-length job is zero minutes, not an error');
+eq(splitAtNoon({ start: noonOn(9), end: noonOn(8) }).am, 0,
+   'an end before its start does not produce negative minutes');
+
+const halves = halvesOf([nAppt(8, 10), nAppt(11, 15), nAppt(16, 17)]);
+eq(halves.am, 180, 'summed over a day, the mornings add up');
+eq(halves.pm, 240, 'and so do the afternoons');
+eq(halvesOf([]).am, 0, 'an empty day is an empty morning');
+
+// Noon is local, so this has to hold in every zone the tests run in.
+ok(splitAtNoon(nAppt(11, 13)).am === 60 && splitAtNoon(nAppt(11, 13)).pm === 60,
+   'noon is local noon, whatever zone the test runs in');
 
 console.log(`\n${fail ? `${fail} FAILURE(S)` : 'ALL PASS'}  (${pass} checks)`);
 process.exit(fail ? 1 : 0);

@@ -210,6 +210,46 @@ export const dateLocale = (lang) =>
 export const hhmm = (v) =>
   new Date(toMs(v)).toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' });
 
+/** Where a working day is cut in two. Noon, because that is what a
+ *  tradesperson means by "vormittag" and "nachmittag" on the phone — not
+ *  the midpoint of their own booked hours, which moves every day. */
+export const NOON_HOUR = 12;
+
+/** Half a day, in minutes: the value at which one of the month grid's two
+ *  bars is full. Four hours of morning is a morning. */
+export const HALF_DAY_MIN = 4 * 60;
+
+/**
+ * Minutes of an appointment falling before and after noon.
+ *
+ * Computed here rather than fetched: the month view already has every
+ * appointment's start and end, so asking the API for a second, pre-split
+ * copy of the same fact would be a new way for the two to disagree.
+ *
+ * An appointment straddling noon is divided at noon rather than assigned to
+ * whichever half holds more of it — a job from 11:00 to 15:00 genuinely
+ * occupies an hour of the morning, and rounding it wholly into the
+ * afternoon would show a free morning that is not free.
+ */
+export function splitAtNoon(appt, ref) {
+  const start = toMs(appt.start);
+  const end = Math.max(start, toMs(appt.end));
+  const noon = new Date(toMs(ref ?? appt.start));
+  noon.setHours(NOON_HOUR, 0, 0, 0);
+  const cut = noon.getTime();
+  const am = Math.max(0, Math.min(end, cut) - start) / MIN;
+  const pm = Math.max(0, end - Math.max(start, cut)) / MIN;
+  return { am, pm };
+}
+
+/** The same, summed over a day's appointments. */
+export function halvesOf(list = [], ref) {
+  return list.reduce((acc, a) => {
+    const { am, pm } = splitAtNoon(a, ref);
+    return { am: acc.am + am, pm: acc.pm + pm };
+  }, { am: 0, pm: 0 });
+}
+
 /* The unit words, registered once by LangContext when the language changes.
  *
  * durationLabel is called from about thirty places — day blocks, free-slot
