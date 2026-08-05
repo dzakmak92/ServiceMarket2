@@ -364,8 +364,8 @@ export default function BillingPage() {
         {isTrial && (
           <div className="card-lg mb-6 border border-amber/40 bg-amber/5 flex items-center justify-between gap-3 flex-wrap">
             <div>
-              <p className="font-semibold text-ink text-sm">Enjoying the trial?</p>
-              <p className="text-xs text-ink-muted">Lock in Pro now and keep all features.</p>
+              <p className="font-semibold text-ink text-sm">{t('bill_trial_q')}</p>
+              <p className="text-xs text-ink-muted">{t('bill_trial_cta')}</p>
             </div>
             <button onClick={handleUpgrade} disabled={checkoutLoading} className="btn-amber text-sm flex-shrink-0" data-testid="trial-upgrade-btn">
               {checkoutLoading ? <Loader2 size={14} className="animate-spin" /> : <Star size={14} />} Subscribe now
@@ -712,7 +712,7 @@ function CurrentPlanCard({
               Cancelling
             </span>
           ) : isTrial ? (
-            <span className="pro-badge bg-amber text-paper text-xs" data-testid="plan-active-badge">Trial</span>
+            <span className="pro-badge bg-amber text-paper text-xs" data-testid="plan-active-badge">{t('bill_trial')}</span>
           ) : isPro ? (
             <span className="pro-badge bg-teal text-paper text-xs" data-testid="plan-active-badge">
               {t('billing_active')}
@@ -845,8 +845,8 @@ function UpgradeSection({
           <div className="flex items-center gap-2">
             <Gift size={14} className="text-amber flex-shrink-0" />
             <div>
-              <p className="text-sm font-semibold text-ink">14-Day Free Trial</p>
-              <p className="text-xs text-ink-muted">All Pro features — no credit card needed</p>
+              <p className="text-sm font-semibold text-ink">{t('bill_trial_14')}</p>
+              <p className="text-xs text-ink-muted">{t('bill_trial_desc')}</p>
             </div>
           </div>
           <button onClick={onStartTrial} disabled={trialLoading} className="btn-amber text-xs flex-shrink-0" data-testid="start-trial-btn">
@@ -954,7 +954,7 @@ function ToolkitTab({ kind, meta, active, wasCancelled, selected, onClick, t }) 
           Cancelled
         </span>
       ) : (
-        <span className="text-[9px] text-ink-muted/60 font-medium uppercase tracking-wider">Inactive</span>
+        <span className="text-[9px] text-ink-muted/60 font-medium uppercase tracking-wider">{t('bill_inactive')}</span>
       )}
     </button>
   );

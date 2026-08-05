@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLang } from '../contexts/LangContext';
 import api from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { AlertTriangle, X, Loader2 } from 'lucide-react';
@@ -29,6 +30,7 @@ export default function ReportProblemButton({
   className = '',
   testidPrefix = 'report-problem',
 }) {
+  const { t } = useLang();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState('pricing');
@@ -72,7 +74,7 @@ export default function ReportProblemButton({
     <button
       onClick={() => setOpen(true)}
       className={`p-2 rounded-lg text-ink-muted hover:text-red-warn hover:bg-red-warn/10 transition-colors ${className}`}
-      title="Report a problem"
+      title={t('rp_title')}
       data-testid={`${testidPrefix}-trigger`}
     >
       <AlertTriangle size={14} />
@@ -103,21 +105,21 @@ export default function ReportProblemButton({
               </button>
             </div>
             {jobTitle && (
-              <p className="text-xs text-ink-muted mb-3">Job: <span className="text-ink font-bold">{jobTitle}</span></p>
+              <p className="text-xs text-ink-muted mb-3">{t('rp_job')} <span className="text-ink font-bold">{jobTitle}</span></p>
             )}
             {done ? (
               <div className="text-center py-8" data-testid={`${testidPrefix}-success`}>
                 <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-green-pos/15 flex items-center justify-center">
                   <AlertTriangle size={20} className="text-green-pos" />
                 </div>
-                <p className="font-bold text-ink">Thanks — your ticket is filed.</p>
-                <p className="text-sm text-ink-muted mt-1">Our team will review and respond shortly.</p>
+                <p className="font-bold text-ink">{t('rp_filed')}</p>
+                <p className="text-sm text-ink-muted mt-1">{t('rp_filed_desc')}</p>
               </div>
             ) : (
               <form onSubmit={submit} className="space-y-3">
                 {/* Category */}
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-ink-muted block mb-1">Category</label>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-ink-muted block mb-1">{t('fb_category')}</label>
                   <div className="grid grid-cols-1 gap-1.5">
                     {CATEGORIES.map((c) => (
                       <button
@@ -136,11 +138,11 @@ export default function ReportProblemButton({
                 </div>
                 {/* Subject */}
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-ink-muted block mb-1">Subject</label>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-ink-muted block mb-1">{t('fb_subject')}</label>
                   <input
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
-                    placeholder="Short summary"
+                    placeholder={t('rp_subject_ph')}
                     maxLength={140}
                     required
                     className="w-full px-3 py-2 rounded-lg border border-sm-border focus:outline-none focus:ring-2 focus:ring-teal text-sm"
@@ -149,12 +151,12 @@ export default function ReportProblemButton({
                 </div>
                 {/* Message */}
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-ink-muted block mb-1">Message</label>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-ink-muted block mb-1">{t('fb_message')}</label>
                   <textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     rows={4}
-                    placeholder="Describe what happened…"
+                    placeholder={t('rp_message_ph')}
                     maxLength={4000}
                     required
                     className="w-full px-3 py-2 rounded-lg border border-sm-border focus:outline-none focus:ring-2 focus:ring-teal text-sm"

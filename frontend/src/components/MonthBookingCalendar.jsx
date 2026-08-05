@@ -172,7 +172,7 @@ export default function MonthBookingCalendar({ availability = [], bookings = [],
             onClick={goPrev}
             className="p-1 rounded-full hover:bg-cream-soft transition-colors"
             data-testid="cal-prev"
-            aria-label="previous month"
+            aria-label={t('ui_prev_month')}
           >
             <ChevronLeft size={13} />
           </button>
@@ -184,7 +184,7 @@ export default function MonthBookingCalendar({ availability = [], bookings = [],
             onClick={goNext}
             className="p-1 rounded-full hover:bg-cream-soft transition-colors"
             data-testid="cal-next"
-            aria-label="next month"
+            aria-label={t('ui_next_month')}
           >
             <ChevronRight size={13} />
           </button>

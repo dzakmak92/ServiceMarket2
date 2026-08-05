@@ -124,7 +124,7 @@ export default function DatedAvailabilityMatrix({
           <button
             onClick={() => setWeekOffset((o) => o - 1)}
             className="p-1.5 rounded-full hover:bg-cream-soft transition-colors"
-            aria-label="previous week"
+            aria-label={t('ui_prev_week')}
             data-testid={`${testidPrefix}-prev`}
             type="button"
           >
@@ -136,7 +136,7 @@ export default function DatedAvailabilityMatrix({
           <button
             onClick={() => setWeekOffset((o) => o + 1)}
             className="p-1.5 rounded-full hover:bg-cream-soft transition-colors"
-            aria-label="next week"
+            aria-label={t('ui_next_week')}
             data-testid={`${testidPrefix}-next`}
             type="button"
           >

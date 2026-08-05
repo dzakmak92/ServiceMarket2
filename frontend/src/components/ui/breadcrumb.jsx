@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useLang } from "../../contexts/LangContext"
 import { Slot } from "@radix-ui/react-slot"
 import { ChevronRight, MoreHorizontal } from "lucide-react"
 
@@ -69,16 +70,18 @@ BreadcrumbSeparator.displayName = "BreadcrumbSeparator"
 const BreadcrumbEllipsis = ({
   className,
   ...props
-}) => (
+}) => {
+  const { t } = useLang();
+  return (
   <span
     role="presentation"
     aria-hidden="true"
     className={cn("flex h-9 w-9 items-center justify-center", className)}
     {...props}>
     <MoreHorizontal className="h-4 w-4" />
-    <span className="sr-only">More</span>
+    <span className="sr-only">{t('ui_more')}</span>
   </span>
-)
+); }
 BreadcrumbEllipsis.displayName = "BreadcrumbElipssis"
 
 export {

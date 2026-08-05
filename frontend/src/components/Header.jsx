@@ -305,7 +305,7 @@ export default function Header() {
                     onClick={() => { setUserMenuOpen(!userMenuOpen); setLangSubOpen(false); }}
                     className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full border border-sm-border bg-paper hover:bg-cream-soft transition-colors"
                     data-testid="user-menu-button"
-                    aria-label="user menu"
+                    aria-label={t('ui_user_menu')}
                   >
                     <div className="w-7 h-7 bg-teal/10 rounded-full flex items-center justify-center">
                       <span className="text-teal text-xs font-bold">{user.name?.[0]?.toUpperCase()}</span>

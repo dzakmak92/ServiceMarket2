@@ -265,8 +265,8 @@ export default function AuthPage() {
 
           <p className="text-center text-xs text-ink-faint mt-6">
             By signing up, you agree to our{' '}
-            <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-muted">Terms</a> and{' '}
-            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-muted">Privacy Policy</a>
+            <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-muted">{t('auth_terms_link')}</a> and{' '}
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-muted">{t('auth_privacy_link')}</a>
           </p>
         </div>
       </div>

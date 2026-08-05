@@ -254,7 +254,7 @@ export default function MyInvoicesPage() {
               className="sm-input text-xs h-8 py-0 max-w-[140px]"
               data-testid="myinv-filter-month"
             >
-              <option value="">All months</option>
+              <option value="">{t('inv_all_months')}</option>
               {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m, i) => (
                 <option key={i + 1} value={i + 1}>{m}</option>
               ))}
@@ -465,10 +465,10 @@ function ExternalInvoiceModal({ onClose, onCreated, t }) {
                     <input value={it.description} onChange={(e) => setItem(i, { description: e.target.value })} placeholder={t('myinv_ext_li_desc')} className="sm-input w-full text-sm" data-testid={`ext-li-desc-${i}`} />
                   </div>
                   <div className="w-14">
-                    <input type="number" min="0" step="1" value={it.qty} onChange={(e) => setItem(i, { qty: e.target.value })} placeholder="Qty" className="sm-input w-full text-sm" data-testid={`ext-li-qty-${i}`} />
+                    <input type="number" min="0" step="1" value={it.qty} onChange={(e) => setItem(i, { qty: e.target.value })} placeholder={t('inv_qty')} className="sm-input w-full text-sm" data-testid={`ext-li-qty-${i}`} />
                   </div>
                   <div className="w-24">
-                    <input type="number" min="0" step="0.01" value={it.unit_net} onChange={(e) => setItem(i, { unit_net: e.target.value })} placeholder="€ net" className="sm-input w-full text-sm" data-testid={`ext-li-price-${i}`} />
+                    <input type="number" min="0" step="0.01" value={it.unit_net} onChange={(e) => setItem(i, { unit_net: e.target.value })} placeholder={t('inv_net')} className="sm-input w-full text-sm" data-testid={`ext-li-price-${i}`} />
                   </div>
                   <button onClick={() => removeItem(i)} className="p-2 text-ink-muted hover:text-red-warn" data-testid={`ext-remove-line-${i}`}><Trash size={14} /></button>
                 </div>

@@ -122,9 +122,9 @@ export default function AccountantSharePage() {
         <div className="card-lg" data-testid="accountant-downloads">
           <p className="text-xs uppercase font-bold text-ink-muted tracking-wider mb-3 flex items-center gap-1"><ArrowDownToLine size={12} /> {t('accountant_downloads')}</p>
           <div className="flex items-center gap-2 flex-wrap">
-            <a href={`${apiBase}${data.downloads.revenue_csv}`} className="btn-ghost text-xs" data-testid="accountant-dl-revenue"><FileSpreadsheet size={12} /> Revenue CSV</a>
-            <a href={`${apiBase}${data.downloads.expenses_csv}`} className="btn-ghost text-xs" data-testid="accountant-dl-expenses"><FileSpreadsheet size={12} /> Expenses CSV</a>
-            <a href={`${apiBase}${data.downloads.year_pdf}`} className="btn-ghost text-xs" data-testid="accountant-dl-pdf"><FileText size={12} /> Year-end PDF</a>
+            <a href={`${apiBase}${data.downloads.revenue_csv}`} className="btn-ghost text-xs" data-testid="accountant-dl-revenue"><FileSpreadsheet size={12} /> {t('acc_revenue_csv')}</a>
+            <a href={`${apiBase}${data.downloads.expenses_csv}`} className="btn-ghost text-xs" data-testid="accountant-dl-expenses"><FileSpreadsheet size={12} /> {t('acc_expenses_csv')}</a>
+            <a href={`${apiBase}${data.downloads.year_pdf}`} className="btn-ghost text-xs" data-testid="accountant-dl-pdf"><FileText size={12} /> {t('acc_yearend_pdf')}</a>
           </div>
         </div>
 

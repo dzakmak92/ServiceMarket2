@@ -502,14 +502,14 @@ export default function ProSettingsPage() {
                         className="sm-input max-w-[200px]"
                         data-testid="business-country-input"
                       >
-                        <option value="AT">Österreich</option>
-                        <option value="DE">Deutschland</option>
-                        <option value="CH">Schweiz</option>
-                        <option value="IT">Italien</option>
-                        <option value="SI">Slowenien</option>
-                        <option value="SK">Slowakei</option>
-                        <option value="CZ">Tschechien</option>
-                        <option value="HU">Ungarn</option>
+                        <option value="AT">{t('co_at')}</option>
+                        <option value="DE">{t('co_de')}</option>
+                        <option value="CH">{t('co_ch')}</option>
+                        <option value="IT">{t('co_it')}</option>
+                        <option value="SI">{t('co_si')}</option>
+                        <option value="SK">{t('co_sk')}</option>
+                        <option value="CZ">{t('co_cz')}</option>
+                        <option value="HU">{t('co_hu')}</option>
                       </select>
                     </div>
                   </div>
@@ -571,7 +571,7 @@ export default function ProSettingsPage() {
                           );
                         }
                         if (clean.length > 10 && !isValidIban(clean)) {
-                          return <p className="text-xs text-red-500 mt-1">Invalid IBAN checksum</p>;
+                          return <p className="text-xs text-red-500 mt-1">{t('set_invalid_iban')}</p>;
                         }
                         return null;
                       })()}

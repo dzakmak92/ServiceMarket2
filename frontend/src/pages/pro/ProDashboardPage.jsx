@@ -264,10 +264,10 @@ export default function ProDashboard() {
             <div className="card-lg" data-testid="winrate-chart">
               <div className="flex items-center gap-2 mb-1">
                 <TrendingUp size={15} className="text-teal" />
-                <h2 className="font-headings font-bold text-ink text-base">Win rate by category</h2>
+                <h2 className="font-headings font-bold text-ink text-base">{t('dash_winrate_cat')}</h2>
                 <span className="pro-badge text-[9px] px-1.5 py-0.5">PRO</span>
               </div>
-              <p className="text-xs text-ink-muted mb-3">Focus on what you win most</p>
+              <p className="text-xs text-ink-muted mb-3">{t('dash_winrate_focus')}</p>
               {categoryData.length > 0 ? (
                 <div className="space-y-2">
                   {categoryData.map(c => (

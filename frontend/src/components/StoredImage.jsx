@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLang } from '../contexts/LangContext';
 import { ImageOff } from 'lucide-react';
 import { signedUrl } from '../api/files';
 
@@ -17,6 +18,7 @@ import { signedUrl } from '../api/files';
  */
 export default function StoredImage({ storageRef, alt = '', className = '',
                                       fallbackClassName = '', onResolved, ...rest }) {
+  const { t } = useLang();
   const [url, setUrl] = useState(null);
   const [failed, setFailed] = useState(false);
 
@@ -38,7 +40,7 @@ export default function StoredImage({ storageRef, alt = '', className = '',
   if (failed) {
     return (
       <div className={fallbackClassName || className}
-           title="Datei nicht verfügbar" data-testid="stored-image-missing">
+           title={t('ui_file_unavailable')} data-testid="stored-image-missing">
         <ImageOff size={14} className="text-ink-muted m-auto" />
       </div>
     );

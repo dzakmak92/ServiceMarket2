@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useLang } from '../contexts/LangContext';
 import api from '../api/client';
 import StoredImage from './StoredImage';
 import { signedUrl } from '../api/files';
@@ -19,6 +20,7 @@ const MAX_BYTES = 10 * 1024 * 1024;
  *  - mode: 'form' | 'inline'
  */
 export default function AttachmentUploader({ value = [], onChange, mode = 'form' }) {
+  const { t } = useLang();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const inputRef = useRef(null);
@@ -153,7 +155,7 @@ export default function AttachmentUploader({ value = [], onChange, mode = 'form'
                 type="button"
                 onClick={() => removeAt(i)}
                 className="p-0.5 rounded-full hover:bg-red-50 text-ink-muted hover:text-red-warn transition-colors"
-                aria-label="remove attachment"
+                aria-label={t('ui_remove_attachment')}
                 data-testid={`attachment-chip-${i}-remove`}
               >
                 <X size={14} />
@@ -203,7 +205,7 @@ export function AttachmentThumbStrip({ value = [], onChange }) {
               type="button"
               onClick={() => removeAt(i)}
               className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-ink text-paper flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
-              aria-label="remove attachment"
+              aria-label={t('ui_remove_attachment')}
               data-testid={`attachment-thumb-${i}-remove`}
             >
               <X size={10} strokeWidth={3} />

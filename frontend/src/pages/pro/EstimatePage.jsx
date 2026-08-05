@@ -509,7 +509,7 @@ function Result({ result, calculating }) {
     <div className={`card-lg mb-4 space-y-4 ${calculating ? 'opacity-60' : ''}`}
          data-testid="estimate-result">
       <div>
-        <p className="text-xs text-ink-muted">Netto, geschätzt</p>
+        <p className="text-xs text-ink-muted">{t('est_net_estimated')}</p>
         <p className="font-headings font-bold text-ink text-3xl">
           {fmtEur(lo)} – {fmtEur(hi)}
         </p>
@@ -575,7 +575,7 @@ function Result({ result, calculating }) {
 
       {!!result.notes.length && (
         <div className="space-y-2">
-          <p className="text-xs font-medium text-ink">Annahmen und Vorbehalte</p>
+          <p className="text-xs font-medium text-ink">{t('est_assumptions')}</p>
           {result.notes.map((n) => (
             <div key={n.key}
                  className={`text-xs border rounded-lg px-3 py-2 ${SEVERITY[n.severity]?.cls || SEVERITY.medium.cls}`}>
@@ -613,7 +613,7 @@ function Result({ result, calculating }) {
                 <td className="py-1.5 pr-2 text-ink">
                   {l.description}
                   {l.rate_source === 'pro' && (
-                    <span className="ml-1 text-[10px] text-green-700">eigener Satz</span>
+                    <span className="ml-1 text-[10px] text-green-700">{t('est_own_rate')}</span>
                   )}
                 </td>
                 <td className="py-1.5 pr-2 text-right text-ink-muted whitespace-nowrap">
@@ -652,7 +652,7 @@ function QuoteBox({ jobs, targetJob, setTargetJob, allTiers, setAllTiers, tiersD
       </p>
       <select className="input w-full" value={targetJob}
               onChange={(e) => setTargetJob(e.target.value)} data-testid="estimate-target-job">
-        <option value="">Auftrag wählen…</option>
+        <option value="">{t('est_pick_job')}</option>
         {jobs.map((j) => (
           <option key={j.id} value={j.id}>
             {j.job_number ? `${j.job_number} · ` : ''}{j.title}
@@ -853,7 +853,7 @@ function RateCard({ rates, open, onToggle, onSave, onReset }) {
                   </span>
                   <button type="button"
                           className="text-ink-muted hover:text-teal p-1"
-                          aria-label="Preis ändern" title="Preis ändern"
+                          aria-label={t('est_change_price')} title={t('est_change_price')}
                           onClick={() => { setEditing(r.key); setValue(String(r.amount)); }}>
                     <Pencil size={12} />
                   </button>
@@ -862,8 +862,8 @@ function RateCard({ rates, open, onToggle, onSave, onReset }) {
                     // accruing underneath the override the whole time.
                     <button type="button"
                             className="text-ink-muted hover:text-red-warn p-1"
-                            aria-label="Auf gelernten Wert zurücksetzen"
-                            title="Auf gelernten Wert zurücksetzen"
+                            aria-label={t('est_reset_learned')}
+                            title={t('est_reset_learned')}
                             onClick={() => onReset(r.key)}>
                       <RotateCcw size={12} />
                     </button>

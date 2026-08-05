@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { useLang } from '../contexts/LangContext';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 /**
@@ -22,6 +23,7 @@ export default function ScrollSnapTabStrip({
   sticky = false,
   className = '',
 }) {
+  const { t } = useLang();
   const stripRef = useRef(null);
   const tabRefs = useRef({});
   const [showArrows, setShowArrows] = useState({ left: false, right: false });
@@ -80,7 +82,7 @@ export default function ScrollSnapTabStrip({
         <button
           onClick={() => nudge(-1)}
           className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-paper border border-sm-border shadow-md flex items-center justify-center hover:bg-cream-deep transition-colors md:hidden"
-          aria-label="Scroll left"
+          aria-label={t('ui_scroll_left')}
           data-testid={`${testidPrefix}-scroll-left`}
         >
           <ChevronLeft size={14} />
@@ -91,7 +93,7 @@ export default function ScrollSnapTabStrip({
         <button
           onClick={() => nudge(1)}
           className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-paper border border-sm-border shadow-md flex items-center justify-center hover:bg-cream-deep transition-colors md:hidden"
-          aria-label="Scroll right"
+          aria-label={t('ui_scroll_right')}
           data-testid={`${testidPrefix}-scroll-right`}
         >
           <ChevronRight size={14} />

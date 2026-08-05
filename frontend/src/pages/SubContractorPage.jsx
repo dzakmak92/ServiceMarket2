@@ -72,7 +72,7 @@ export default function SubContractorPage() {
         <AlertCircle size={32} className="text-red-warn mx-auto mb-2" />
         <h1 className="font-headings font-bold text-ink text-xl">{t('pm_sub_revoked_title')}</h1>
         <p className="text-sm text-ink-muted mt-1">{t('pm_sub_revoked_body')}</p>
-        <Link to="/" className="btn-ghost text-xs mt-3 inline-flex">Home</Link>
+        <Link to="/" className="btn-ghost text-xs mt-3 inline-flex">{t('ui_home')}</Link>
       </div>
     </div>
   );

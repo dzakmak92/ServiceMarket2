@@ -110,7 +110,7 @@ export default function BookingCalendar({
             onClick={() => setWeekOffset((o) => o - 1)}
             className="p-1.5 rounded-full hover:bg-cream-soft transition-colors"
             data-testid="booking-cal-prev"
-            aria-label="previous week"
+            aria-label={t('ui_prev_week')}
           >
             <ChevronLeft size={14} />
           </button>
@@ -119,7 +119,7 @@ export default function BookingCalendar({
             onClick={() => setWeekOffset((o) => o + 1)}
             className="p-1.5 rounded-full hover:bg-cream-soft transition-colors"
             data-testid="booking-cal-next"
-            aria-label="next week"
+            aria-label={t('ui_next_week')}
           >
             <ChevronRight size={14} />
           </button>

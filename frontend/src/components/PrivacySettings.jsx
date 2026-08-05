@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLang } from '../contexts/LangContext';
 import api from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { useCookieConsent } from '../contexts/CookieConsentContext';
@@ -13,6 +14,7 @@ import { Download, Trash2, AlertCircle, CheckCircle, Loader2, Mail, Cookie, Shie
  *   4. Delete my account (Right to Erasure — Art. 17)
  */
 export default function PrivacySettings() {
+  const { t } = useLang();
   const { user, refreshUser, logout } = useAuth();
   const { openPreferences, consent } = useCookieConsent();
   const [marketing, setMarketing] = useState(!!user?.notif_email_marketing);
@@ -113,7 +115,7 @@ export default function PrivacySettings() {
       <div className="flex items-start gap-2">
         <Shield size={20} className="text-teal flex-shrink-0 mt-0.5" />
         <div>
-          <h2 className="font-headings font-bold text-ink text-lg">Privacy & data</h2>
+          <h2 className="font-headings font-bold text-ink text-lg">{t('pv_title')}</h2>
           <p className="text-xs text-ink-muted mt-0.5">
             Manage your consent and exercise your data-protection rights at any time.
           </p>
@@ -125,7 +127,7 @@ export default function PrivacySettings() {
         <div className="flex items-start gap-3 mb-3">
           <Mail size={16} className="text-teal flex-shrink-0 mt-0.5" />
           <div>
-            <h3 className="font-semibold text-ink text-sm">Marketing emails</h3>
+            <h3 className="font-semibold text-ink text-sm">{t('pv_marketing')}</h3>
             <p className="text-[11px] text-ink-muted mt-0.5">
               Product updates, tips and news. Off by default. Withdraw anytime.
             </p>
@@ -139,7 +141,7 @@ export default function PrivacySettings() {
             className="h-4 w-4 accent-teal"
             data-testid="privacy-marketing-toggle"
           />
-          <span>Send me product updates and tips</span>
+          <span>{t('pv_marketing_desc')}</span>
         </label>
         <button
           onClick={saveMarketingPrefs}
@@ -162,7 +164,7 @@ export default function PrivacySettings() {
         <div className="flex items-start gap-3 mb-3">
           <Cookie size={16} className="text-teal flex-shrink-0 mt-0.5" />
           <div>
-            <h3 className="font-semibold text-ink text-sm">Cookie preferences</h3>
+            <h3 className="font-semibold text-ink text-sm">{t('pv_cookies')}</h3>
             <p className="text-[11px] text-ink-muted mt-0.5">
               Currently: analytics {consent?.cookies_analytics ? 'on' : 'off'} · marketing {consent?.cookies_marketing ? 'on' : 'off'}
             </p>
@@ -182,7 +184,7 @@ export default function PrivacySettings() {
         <div className="flex items-start gap-3 mb-3">
           <Download size={16} className="text-teal flex-shrink-0 mt-0.5" />
           <div>
-            <h3 className="font-semibold text-ink text-sm">Download my data</h3>
+            <h3 className="font-semibold text-ink text-sm">{t('pv_download')}</h3>
             <p className="text-[11px] text-ink-muted mt-0.5">
               Get a machine-readable archive of everything we hold about you (GDPR Art. 20).
             </p>
@@ -204,7 +206,7 @@ export default function PrivacySettings() {
         <div className="flex items-start gap-3 mb-3">
           <Trash2 size={16} className="text-red-warn flex-shrink-0 mt-0.5" />
           <div>
-            <h3 className="font-semibold text-ink text-sm">Delete my account</h3>
+            <h3 className="font-semibold text-ink text-sm">{t('pv_delete')}</h3>
             <p className="text-[11px] text-ink-muted mt-0.5">
               Löscht Ihr Konto und Ihre personenbezogenen Daten. Innerhalb der
               Widerrufsfrist von {plan?.grace_days ?? 7} Tagen können Sie das
@@ -220,13 +222,13 @@ export default function PrivacySettings() {
         {plan && !deleteScheduled && (
           <div className="rounded-[12px] bg-cream-soft border border-sm-border p-3 mb-3 space-y-2"
                data-testid="privacy-delete-plan">
-            <p className="text-xs font-medium text-ink">Wird gelöscht</p>
+            <p className="text-xs font-medium text-ink">{t('pv_will_delete')}</p>
             <ul className="text-[11px] text-ink-muted list-disc pl-4 space-y-0.5">
               {plan.deletes.map((d) => <li key={d}>{d}</li>)}
             </ul>
             {plan.retained.length > 0 && (
               <>
-                <p className="text-xs font-medium text-ink pt-1">Bleibt erhalten</p>
+                <p className="text-xs font-medium text-ink pt-1">{t('pv_will_keep')}</p>
                 <ul className="text-[11px] text-ink-muted list-disc pl-4 space-y-0.5">
                   {plan.retained.map((r) => (
                     <li key={r.what}>

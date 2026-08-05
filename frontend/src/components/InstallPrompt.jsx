@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLang } from '../contexts/LangContext';
 import { X, Share, PlusSquare } from 'lucide-react';
 
 /**
@@ -10,6 +11,7 @@ import { X, Share, PlusSquare } from 'lucide-react';
  * via the `beforeinstallprompt` event, which we also handle here.
  */
 export default function InstallPrompt() {
+  const { t } = useLang();
   const [show, setShow] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -67,7 +69,7 @@ export default function InstallPrompt() {
         <div className="flex items-center gap-2.5 flex-1 min-w-0">
           <img src="/icon-192.png" alt="ServiceMarket" className="w-10 h-10 rounded-xl flex-shrink-0" />
           <div className="min-w-0">
-            <p className="font-headings font-bold text-ink text-sm">Add to Home Screen</p>
+            <p className="font-headings font-bold text-ink text-sm">{t('install_title')}</p>
             <p className="text-xs text-ink-muted leading-snug mt-0.5">
               {isIOS
                 ? 'Install the app to receive push notifications when you get new messages or quotes.'
@@ -75,18 +77,18 @@ export default function InstallPrompt() {
             </p>
           </div>
         </div>
-        <button onClick={dismiss} className="p-1 text-ink-muted hover:text-ink flex-shrink-0" aria-label="Dismiss">
+        <button onClick={dismiss} className="p-1 text-ink-muted hover:text-ink flex-shrink-0" aria-label={t('ui_dismiss')}>
           <X size={16} />
         </button>
       </div>
 
       {isIOS ? (
         <div className="mt-3 flex items-center gap-1.5 text-xs text-ink-soft bg-cream-soft rounded-xl px-3 py-2">
-          <span>Tap</span>
+          <span>{t('install_tap')}</span>
           <Share size={13} className="text-teal flex-shrink-0" />
           <span>then</span>
           <PlusSquare size={13} className="text-teal flex-shrink-0" />
-          <span className="font-semibold text-ink">"Add to Home Screen"</span>
+          <span className="font-semibold text-ink">{t('install_then')}</span>
         </div>
       ) : (
         <button

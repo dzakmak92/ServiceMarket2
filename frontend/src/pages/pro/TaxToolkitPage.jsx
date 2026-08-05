@@ -844,10 +844,10 @@ function ReportsTab({ year, t }) {
       <div className="card-lg">
         <p className="text-xs uppercase font-bold text-ink-muted tracking-wider mb-2 flex items-center gap-1"><Calendar size={12} /> {t('tax_ustva_deadlines')}</p>
         <ul className="text-sm space-y-1">
-          <li>· Q1 (Jan–Mar) → <b>15. April</b></li>
-          <li>· Q2 (Apr–Jun) → <b>15. Juli</b></li>
-          <li>· Q3 (Jul–Sep) → <b>15. Oktober</b></li>
-          <li>· Q4 (Okt–Dez) → <b>15. Januar</b> ({year + 1})</li>
+          <li>· {t('tax_q1')} → <b>{t('tax_d_apr')}</b></li>
+          <li>· {t('tax_q2')} → <b>{t('tax_d_jul')}</b></li>
+          <li>· {t('tax_q3')} → <b>{t('tax_d_oct')}</b></li>
+          <li>· {t('tax_q4')} → <b>{t('tax_d_jan')}</b> ({year + 1})</li>
         </ul>
         <p className="text-[11px] text-ink-muted mt-2">{t('tax_ustva_deadlines_help')}</p>
       </div>

@@ -30,6 +30,13 @@ const LANGS = ['en', 'de', 'tr', 'es'];
 const SKIP_FILES = [
   /\/translations\//, /\.test\.mjs$/, /\/data\/cities\.js$/,
   /\/setupTests\./, /\/reportWebVitals\./, /\/serviceWorker/,
+  /* ProCalendarPage is the marketplace booking calendar. It reads
+     /api/bookings, which no router mounts — the endpoint 404s — and nothing
+     links to it: the route exists but the nav dropped it. Ten strings there
+     are not worth translating on a page that cannot show data. It wants
+     deleting, not translating, and that is a call for the product owner
+     rather than a silent removal here. */
+  /\/pages\/pro\/ProCalendarPage\.jsx$/,
 ];
 
 /* Strings that are not prose: units, symbols, code, brand names, and the
@@ -37,6 +44,21 @@ const SKIP_FILES = [
 /* `a > b && c < d` inside a JSX expression looks exactly like text between
    two tags. Anything carrying an operator is code, not a sentence. */
 const LOOKS_LIKE_CODE = /(&&|\|\||=>|===|!==|<=|>=|\?\.|\+\+|\bnull\b|\bundefined\b|[{}();]|\w\.\w+\(|^[=!<>+\-*/]|[=!<>+\-*/]$)/;
+
+/* Things that are the same in every language, and things that are examples
+   rather than copy. A placeholder reading "Max Mustermann" is showing the
+   shape of an answer, not addressing the reader; translating the brand or
+   the OpenStreetMap attribution would be wrong outright. */
+const ALLOWED = new Set([
+  'OpenStreetMap', 'DATEV EXTF v700', 'Kleinunternehmer', 'Market',
+  'Weber Installations', 'Weber Installations GmbH', 'Mariahilfer Straße 12',
+  'Hauptstraße 12', 'Markus Weber', 'Max Mustermann', 'Anna Müller',
+  'Erste Bank', 'Baumarkt', 'Wien', 'Vienna 1010, Vienna 1020, ...',
+  'AT12 3456 7890 1234 5678', 'Homeowner:', 'Pro:',
+  'JPG / PNG / WebP / PDF · max 10 MB',
+  // a worked example of a pasted enquiry, shown so the pro sees the shape
+  'Name: Maria Gruber\\nTel: +43 664 1112233\\nBetreff: Bad sanieren\\n1210 Wien',
+]);
 
 const NOT_PROSE = [
   /^[\s\d\W]*$/,                       // punctuation, numbers, symbols only
@@ -63,7 +85,7 @@ const rel = (f) => path.relative(ROOT, f);
    is read by the operator, and a privacy policy is a legal instrument whose
    translation is a lawyer's call, not a developer's. The tradesperson- and
    customer-facing screens are the ones that must be complete. */
-const audience = (f) => (/\/pages\/admin\//.test(f) ? 'admin'
+const audience = (f) => (/\/(pages|components)\/admin\//.test(f) ? 'admin'
   : /\/pages\/legal\//.test(f) ? 'legal'
   : 'app');
 const files = walk(SRC).filter((f) => !SKIP_FILES.some((r) => r.test(f)));
@@ -126,6 +148,7 @@ for (const key of declared.en) {
 const isProse = (s) => {
   const v = s.trim();
   if (v.length < 2) return false;
+  if (ALLOWED.has(v)) return false;
   if (NOT_PROSE.some((r) => r.test(v))) return false;
   if (LOOKS_LIKE_CODE.test(v)) return false;
   if (!/[a-zA-ZäöüÄÖÜß]{2}/.test(v)) return false;

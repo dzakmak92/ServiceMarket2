@@ -90,8 +90,8 @@ export default function FeedbackPage() {
     <div className="min-h-screen bg-cream pt-8 pb-24 px-4">
       <div className="max-w-3xl mx-auto">
         <div className="mb-6">
-          <h1 className="font-headings font-bold text-4xl text-ink mb-1">Feedback & support</h1>
-          <p className="text-ink-muted">Tell us what's on your mind. We read every message.</p>
+          <h1 className="font-headings font-bold text-4xl text-ink mb-1">{t('fb_title')}</h1>
+          <p className="text-ink-muted">{t('fb_subtitle')}</p>
         </div>
 
         {/* Tabs */}
@@ -117,7 +117,7 @@ export default function FeedbackPage() {
           <form onSubmit={submit} className="bg-paper border border-sm-border rounded-2xl p-6 space-y-5" data-testid="feedback-submit-form">
             {/* Kind selector */}
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-ink-muted mb-2">What's it about?</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-ink-muted mb-2">{t('fb_about')}</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {KINDS.map(({ v, label, icon: Icon, accent }) => (
                   <button
@@ -143,7 +143,7 @@ export default function FeedbackPage() {
             {/* Rating (only for general feedback) */}
             {kind === 'feedback' && (
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-ink-muted mb-1">Overall rating <span className="text-ink-muted">(optional)</span></p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-ink-muted mb-1">{t('fb_rating')} <span className="text-ink-muted">{t('fb_optional')}</span></p>
                 <div className="flex gap-1">
                   {[1, 2, 3, 4, 5].map((n) => (
                     <button
@@ -160,11 +160,11 @@ export default function FeedbackPage() {
 
             {/* Subject */}
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider text-ink-muted block mb-1">Subject</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-ink-muted block mb-1">{t('fb_subject')}</label>
               <input
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                placeholder="A short title for your message"
+                placeholder={t('fb_subject_ph')}
                 maxLength={140}
                 required
                 className="w-full px-3 py-2 rounded-lg border border-sm-border focus:outline-none focus:ring-2 focus:ring-teal text-sm"
@@ -174,12 +174,12 @@ export default function FeedbackPage() {
 
             {/* Message */}
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider text-ink-muted block mb-1">Message</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-ink-muted block mb-1">{t('fb_message')}</label>
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 rows={6}
-                placeholder="Tell us more…"
+                placeholder={t('fb_message_ph')}
                 maxLength={4000}
                 required
                 className="w-full px-3 py-2 rounded-lg border border-sm-border focus:outline-none focus:ring-2 focus:ring-teal text-sm"
@@ -244,28 +244,28 @@ export default function FeedbackPage() {
                         {isExpanded && (
                           <div className="mt-3 space-y-3" data-testid={`mine-row-expanded-${i.id}`}>
                             <div>
-                              <p className="text-[10px] uppercase tracking-wider font-bold text-ink-muted mb-1">Your message</p>
+                              <p className="text-[10px] uppercase tracking-wider font-bold text-ink-muted mb-1">{t('fb_your_message')}</p>
                               <p className="text-sm text-ink whitespace-pre-wrap">{i.message}</p>
                             </div>
                             {isSupport && (
                               <div className="grid grid-cols-2 gap-3 text-xs">
                                 <div>
-                                  <p className="text-[10px] uppercase tracking-wider font-bold text-ink-muted">Category</p>
+                                  <p className="text-[10px] uppercase tracking-wider font-bold text-ink-muted">{t('fb_category')}</p>
                                   <p className="text-ink capitalize">{(i.category || '').replace('_', ' ')}</p>
                                 </div>
                                 <div>
-                                  <p className="text-[10px] uppercase tracking-wider font-bold text-ink-muted">Submitted</p>
+                                  <p className="text-[10px] uppercase tracking-wider font-bold text-ink-muted">{t('fb_submitted')}</p>
                                   <p className="text-ink">{new Date(i.created_at).toLocaleString()}</p>
                                 </div>
                                 {i.resolved_at && (
                                   <div>
-                                    <p className="text-[10px] uppercase tracking-wider font-bold text-ink-muted">Resolved at</p>
+                                    <p className="text-[10px] uppercase tracking-wider font-bold text-ink-muted">{t('fb_resolved_at')}</p>
                                     <p className="text-ink">{new Date(i.resolved_at).toLocaleString()}</p>
                                   </div>
                                 )}
                                 {i.job_title && (
                                   <div>
-                                    <p className="text-[10px] uppercase tracking-wider font-bold text-ink-muted">Related job</p>
+                                    <p className="text-[10px] uppercase tracking-wider font-bold text-ink-muted">{t('fb_related_job')}</p>
                                     <p className="text-ink truncate">{i.job_title}</p>
                                   </div>
                                 )}
@@ -273,13 +273,13 @@ export default function FeedbackPage() {
                             )}
                             {!isSupport && i.rating && (
                               <div>
-                                <p className="text-[10px] uppercase tracking-wider font-bold text-ink-muted">Your rating</p>
+                                <p className="text-[10px] uppercase tracking-wider font-bold text-ink-muted">{t('fb_your_rating')}</p>
                                 <p className="text-amber text-base">{'★'.repeat(i.rating)}{'☆'.repeat(5 - i.rating)}</p>
                               </div>
                             )}
                             {i.admin_response && (
                               <div className="bg-teal/5 border-l-2 border-teal pl-3 py-2 text-sm text-ink rounded-r-lg">
-                                <p className="text-[10px] uppercase tracking-wider font-bold text-teal mb-0.5">ServiceMarket response</p>
+                                <p className="text-[10px] uppercase tracking-wider font-bold text-teal mb-0.5">{t('fb_response')}</p>
                                 {i.admin_response}
                               </div>
                             )}
