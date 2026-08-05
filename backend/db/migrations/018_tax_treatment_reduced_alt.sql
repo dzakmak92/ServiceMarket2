@@ -1,0 +1,13 @@
+-- The Austrian 13 % band (Umsatzsteuer ermäßigt II).
+--
+-- services/tax_rules.py has carried `RATES["AT"]["reduced_alt"] = 13.0` since
+-- the table was written, and `resolve_treatment` will return "reduced_alt"
+-- when a caller asks for it — but the enum had no such value, so every
+-- request for the 13 % band raised a 500 from Postgres. The rate was
+-- reachable only by sending `vat_rate: 13` alongside treatment `standard`,
+-- which stores the right number under the wrong name and makes the USt-VA
+-- grouping wrong.
+--
+-- Adding a value to an enum cannot run inside a transaction block on older
+-- Postgres; `if not exists` makes the statement safe to re-run.
+alter type tax_treatment add value if not exists 'reduced_alt' after 'reduced';

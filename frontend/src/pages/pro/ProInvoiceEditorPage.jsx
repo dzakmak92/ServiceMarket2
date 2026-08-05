@@ -84,7 +84,12 @@ export default function ProInvoiceEditorPage() {
   // country, customer type, Bauleistung — and guessing it here would put a
   // number on the screen that the issued invoice then contradicts.
   const net = useMemo(
-    () => lines.reduce((s, l) => s + (Number(l.qty) || 0) * (Number(l.unit_price) || 0), 0),
+    /* The line discount belongs in the preview: without it this screen read
+       "Net total 1.325,11" for an invoice the server put at 1.175,11 —
+       the pro confirming a number the customer would never see. */
+    () => lines.reduce((s, l) => s
+      + (Number(l.qty) || 0) * (Number(l.unit_price) || 0)
+        * (1 - (Number(l.discount_pct) || 0) / 100), 0),
     [lines]);
 
   // A draft's `net_total`/`gross_total` are zero in the database — they are
@@ -113,16 +118,33 @@ export default function ProInvoiceEditorPage() {
     }]);
   const removeLine = (i) => setLines((arr) => arr.filter((_, ix) => ix !== i));
 
+  /* Everything the line carries, not only the fields this screen edits.
+     A PUT replaces the whole set, so any field left out of the payload was
+     silently reset to its default: adding one line to an invoice inherited
+     from an accepted quote wiped every per-line discount (a 15% line went
+     back to full price), re-taxed the 10% material positions at 20%, and
+     dropped every `source_quote_line_id`, which is the audit link back to
+     the offer the customer signed. */
   const payload = () => lines
     .filter((l) => l.description.trim())
-    .map((l, i) => ({
-      position: i + 1,
-      description: l.description.trim(),
-      qty: Number(l.qty) || 1,
-      unit: l.unit || 'pcs',
-      unit_price: Number(l.unit_price) || 0,
-      kind: l.kind,
-    }));
+    .map((l, i) => {
+      const out = {
+        position: i + 1,
+        description: l.description.trim(),
+        qty: Number(l.qty) || 1,
+        unit: l.unit || 'pcs',
+        unit_price: Number(l.unit_price) || 0,
+        kind: l.kind,
+        discount_pct: Number(l.discount_pct) || 0,
+      };
+      /* Only sent when the line has one: null would ask the server to
+         re-resolve, and undefined leaves its own decision alone. */
+      if (l.tax_treatment) out.tax_treatment = l.tax_treatment;
+      if (l.vat_rate != null && l.vat_rate !== '') out.vat_rate = Number(l.vat_rate);
+      if (l.source_quote_line_id) out.source_quote_line_id = l.source_quote_line_id;
+      if (l.source_change_order_id) out.source_change_order_id = l.source_change_order_id;
+      return out;
+    });
 
   /** Create the draft, inheriting from the accepted quote where there is one. */
   const createDraft = async () => {

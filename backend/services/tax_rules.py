@@ -45,19 +45,27 @@ def vat_rate(treatment: str, country: str = DEFAULT_COUNTRY) -> float:
     return table.get(treatment, table["standard"])
 
 
-def resolve_treatment(ctx: TaxContext, *, requested: Optional[str] = None) -> str:
-    """Pick the tax treatment for a line.
+class TreatmentRefused(ValueError):
+    """A requested tax treatment the context does not permit.
 
-    Order matters: Kleinunternehmer status overrides everything (they may not
-    show VAT at all), then §13b, then cross-border rules. An explicitly
-    requested reduced rate is honoured only once none of those apply.
+    Raised rather than quietly downgraded. A line sent as
+    `reverse_charge_13b` used to come back `standard` at 20 %: the pro
+    charged VAT they should not have collected, the §13b note never printed,
+    and the invoice was defective under §11 UStG — refusable by the
+    recipient. Whatever the right answer is, it is not "bill 20 % and say
+    nothing".
     """
+
+
+def _by_context(ctx: TaxContext, *, bauleistung: bool) -> str:
+    """The treatment the context alone dictates, ignoring any request."""
     if ctx.supplier_is_kleinunternehmer:
         return "kleinunternehmer"
 
     # §13b UStG — Bauleistung supplied to another Bauleister. The liability
     # shifts to the recipient; the invoice shows no VAT and must say why.
-    if ctx.is_bauleistung and ctx.customer_is_bauleister and ctx.customer_country == ctx.supplier_country:
+    if bauleistung and ctx.customer_is_bauleister \
+            and ctx.customer_country == ctx.supplier_country:
         return "reverse_charge_13b"
 
     if ctx.customer_country != ctx.supplier_country:
@@ -71,9 +79,50 @@ def resolve_treatment(ctx: TaxContext, *, requested: Optional[str] = None) -> st
         # immovable property that is the property's location — which for these
         # five trades is effectively always the site.
 
-    if requested in ("reduced", "reduced_alt", "zero"):
-        return requested
     return "standard"
+
+
+def resolve_treatment(ctx: TaxContext, *, requested: Optional[str] = None) -> str:
+    """Pick the tax treatment for a line.
+
+    Order matters: Kleinunternehmer status overrides everything (they may not
+    show VAT at all), then §13b, then cross-border rules. An explicitly
+    requested reduced rate is honoured only once none of those apply.
+
+    `requested="reverse_charge_13b"` is how a caller declares the line *is* a
+    Bauleistung. That is a fact about the work rather than about the customer,
+    so only the tradesperson issuing the invoice can know it — and nothing in
+    the product ever set `is_bauleistung`, which left §13b unreachable.
+
+    A request the context cannot grant raises. It used to resolve silently to
+    `standard`: the pro charged 20 % VAT they should not have collected, the
+    §13b note never printed, and the invoice was defective under §11 UStG and
+    refusable by the recipient. Whatever the right answer is, it is not "bill
+    twenty per cent and say nothing".
+    """
+    bauleistung = ctx.is_bauleistung or requested == "reverse_charge_13b"
+    resolved = _by_context(ctx, bauleistung=bauleistung)
+
+    if requested is None or requested == resolved:
+        return resolved
+
+    # The caller may choose a lower rate, but only where the context has not
+    # already decided something stronger.
+    if resolved == "standard" and requested in ("reduced", "reduced_alt", "zero"):
+        return requested
+
+    if requested == "reverse_charge_13b":
+        raise TreatmentRefused(
+            "§13b reverse charge needs a customer in the same country who is "
+            "marked as a Bauleister. Set that on the customer, or remove the "
+            "reverse-charge treatment from this line.")
+    if requested in ("kleinunternehmer", "intra_eu", "export"):
+        raise TreatmentRefused(
+            f"'{requested}' follows from the customer's country and status and "
+            f"cannot be set per line. This invoice resolves to '{resolved}'.")
+    # A reduced rate asked for on a line the context has already zero-rated:
+    # the context wins, and it is not an error to have asked.
+    return resolved
 
 
 def legal_note(treatment: str, country: str = DEFAULT_COUNTRY) -> Optional[str]:

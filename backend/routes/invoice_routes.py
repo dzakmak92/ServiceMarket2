@@ -30,8 +30,19 @@ class InvoiceLineIn(BaseModel):
     unit: str = "pcs"
     unit_price: float = 0
     discount_pct: float = Field(default=0, ge=0, le=100)
-    tax_treatment: Optional[str] = None
-    vat_rate: Optional[float] = None
+    # Constrained to the values the Postgres enum actually has. It was a free
+    # string, so `tax_treatment: "reverse_charge_13b"` — or a typo — was
+    # accepted, silently resolved to `standard`, and billed at 20 %.
+    tax_treatment: Optional[str] = Field(
+        default=None,
+        pattern="^(standard|reduced|reduced_alt|zero|kleinunternehmer"
+                "|reverse_charge_13b|intra_eu|export)$")
+    vat_rate: Optional[float] = Field(default=None, ge=0, le=100)
+    # Declared so an edit keeps the audit link back to the quote line or the
+    # change order the position came from. Pydantic drops what it has not been
+    # told about, so a PUT that replaced the lines was severing it.
+    source_quote_line_id: Optional[str] = None
+    source_change_order_id: Optional[str] = None
 
 
 class InvoiceIn(BaseModel):

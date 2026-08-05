@@ -324,11 +324,29 @@ function SvsTab({ year, t }) {
   const [svs, setSvs] = useState(null);
   const [est, setEst] = useState(null);
   const [profitOverride, setProfitOverride] = useState('');
+  /* One number, two different bases. `profit_eur` is gross profit; the
+     income-tax endpoint's `taxable_profit_eur` is profit *after* the SVS
+     contribution, which is deductible. Feeding the override straight into
+     both taxed the SVS bill as if it were income — on a 60,000 entry that
+     overstated the Einkommensteuer by roughly 40 % of a 15,283 contribution.
+     The liability endpoint already subtracts one from the other; this screen
+     now does the same, in the same order. */
   useEffect(() => {
+    let cancelled = false;
     const q = profitOverride ? `&profit_eur=${profitOverride}` : '';
-    api.get(`/api/tax/svs?year=${year}${q}`).then((r) => setSvs(r.data)).catch(() => {});
-    const qe = profitOverride ? `&taxable_profit_eur=${profitOverride}` : '';
-    api.get(`/api/tax/income-tax?year=${year}${qe}`).then((r) => setEst(r.data)).catch(() => {});
+    api.get(`/api/tax/svs?year=${year}${q}`)
+      .then((r) => {
+        if (cancelled) return;
+        setSvs(r.data);
+        const gross = profitOverride ? Number(profitOverride) : Number(r.data?.annual_profit_eur);
+        const svsDue = Number(r.data?.total_eur ?? 0);
+        const taxable = Number.isFinite(gross) ? Math.max(0, gross - svsDue) : null;
+        const qe = taxable == null ? '' : `&taxable_profit_eur=${taxable}`;
+        return api.get(`/api/tax/income-tax?year=${year}${qe}`)
+          .then((r2) => { if (!cancelled) setEst(r2.data); });
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
   }, [year, profitOverride]);
   return (
     <div className="space-y-4">
@@ -366,11 +384,18 @@ function SvsTab({ year, t }) {
           <table className="w-full text-xs overflow-x-auto block" style={{display:'block', overflowX:'auto'}}>
             <thead className="text-[10px] uppercase text-ink-muted"><tr><th className="text-left">{t('tax_est_bracket')}</th><th className="text-right">{t('tax_est_rate')}</th><th className="text-right">{t('tax_est_slice')}</th><th className="text-right">{t('tax_est_owed')}</th></tr></thead>
             <tbody>
-              {est.brackets.map((b, i) => (
+              {/* `bands`, `up_to_eur`, `amount_eur` — the names the API actually
+                  returns. This read `est.brackets.map(...)`, which is undefined,
+                  so opening this tab threw and the error boundary swallowed the
+                  whole SVS and Einkommensteuer estimator: unreachable, with a
+                  message that said the data was safe and to reload. */}
+              {(est.bands || []).map((b, i) => (
                 <tr key={i} className="border-t border-sm-border">
-                  <td className="py-1.5">≤ €{Number.isFinite(b.upper) ? Math.round(b.upper).toLocaleString('de-AT') : '∞'}</td>
+                  <td className="py-1.5">
+                    ≤ €{b.up_to_eur == null ? '∞' : Math.round(b.up_to_eur).toLocaleString('de-AT')}
+                  </td>
                   <td className="text-right">{b.rate_pct}%</td>
-                  <td className="text-right">{fmtEur(b.slice_eur)}</td>
+                  <td className="text-right">{fmtEur(b.amount_eur)}</td>
                   <td className="text-right font-semibold">{fmtEur(b.tax_eur)}</td>
                 </tr>
               ))}

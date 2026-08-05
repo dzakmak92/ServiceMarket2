@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import api from '../../api/client';
+import api, { formatError } from '../../api/client';
 import { toast } from 'sonner';
 import { useLang } from '../../contexts/LangContext';
 import ScrollSnapTabStrip, { SwipeableTabPanel } from '../../components/ScrollSnapTabStrip';
@@ -108,8 +108,17 @@ export default function MyInvoicesPage() {
       .catch(() => {});
   }, [year, rows.length]);
 
-  // Server-side filtering — `rows` already contains the page after filters.
-  const filtered = rows;
+  /* Server-side filtering — `rows` already contains the page after filters.
+     Except the source tabs: `sourceFilter` drove a re-fetch but was never put
+     in the query string, and the API has no `source` column to filter on
+     anyway, so the three tabs all showed the same list. An invoice with no
+     job behind it is what "external" means here, and that is decided on the
+     rows we already have rather than by a request that would be ignored. */
+  const filtered = useMemo(() => (
+    sourceFilter === 'external' ? rows.filter((r) => !r.job_id)
+      : sourceFilter === 'servicemarket' ? rows.filter((r) => !!r.job_id)
+        : rows
+  ), [rows, sourceFilter]);
 
   // ── Actions ──────────────────────────────────────────────
   const pdfUrl = (inv) =>
@@ -405,25 +414,60 @@ function ExternalInvoiceModal({ onClose, onCreated, t }) {
 
   const netTotal = items.reduce((s, it) => s + (Number(it.qty) || 0) * (Number(it.unit_net) || 0), 0);
 
+  /* This posted `{source, customer, line_items:[{unit_net}], payment_due_days}`.
+     The API takes `{customer_id, lines:[{unit_price}], payment_terms_days}`
+     and Pydantic drops what it was not told about, so every field of this
+     form was discarded: the call returned 201, the invoice had no customer,
+     no lines and a total of 0.00, and the UI said it had been created. The
+     exact trap the invoice editor's own docstring says was fixed there.
+
+     There is also no `source` column anywhere in the backend — an invoice
+     with no job is what "external" means here, and the list filter now says
+     the same thing. */
   const submit = async () => {
     if (!customer.name.trim()) { toast.error(t('myinv_ext_err_name')); return; }
-    const cleanItems = items
+    const lines = items
       .filter((it) => it.description.trim() && Number(it.unit_net) > 0)
-      .map((it) => ({ description: it.description.trim(), qty: Number(it.qty) || 1, unit_net: Number(it.unit_net) }));
-    if (cleanItems.length === 0) { toast.error(t('myinv_ext_err_items')); return; }
+      .map((it, i) => ({
+        position: i + 1,
+        kind: 'other',
+        description: it.description.trim(),
+        qty: Number(it.qty) || 1,
+        unit: 'pcs',
+        unit_price: Number(it.unit_net),
+      }));
+    if (lines.length === 0) { toast.error(t('myinv_ext_err_items')); return; }
     setSaving(true);
     try {
-      await api.post('/api/invoices', {
-        source: 'external',
-        customer,
-        line_items: cleanItems,
-        payment_due_days: Number(dueDays) || 14,
+      /* The invoice needs a customer row: `customer_id` is a foreign key and
+         the issued invoice freezes that record into its snapshot. */
+      const { data: made } = await api.post('/api/customers', {
+        name: customer.name.trim(),
+        address: customer.address || undefined,
+        postal_code: customer.postal_code || undefined,
+        city: customer.city || undefined,
+        country: customer.country || undefined,
+        email: customer.email || undefined,
+      });
+      const customerId = made?.customer?.id || made?.id;
+      if (!customerId) throw new Error('customer');
+      const { data: inv } = await api.post('/api/invoices', {
+        customer_id: customerId,
+        lines,
+        payment_terms_days: Number(dueDays) || 14,
         note: note.trim() || null,
       });
+      /* A 201 is not proof: verify the invoice came back with the lines and
+         a total, rather than trusting the status code again. */
+      const created = inv?.invoice || inv;
+      if (!created?.id || Number(created.net_total || 0) <= 0) {
+        toast.error(t('myinv_ext_err_generic'));
+        return;
+      }
       toast.success(t('myinv_ext_created'));
       onCreated();
     } catch (e) {
-      toast.error(e?.response?.data?.detail || t('myinv_ext_err_generic'));
+      toast.error(formatError(e) || t('myinv_ext_err_generic'));
     } finally { setSaving(false); }
   };
 
@@ -525,7 +569,10 @@ function StatCard({ icon: Icon, colour, label, value, sub }) {
 function InvoiceCard({ inv, busy, t, onPreview, onDownload, onShare, onMarkPaid, onAddPayment, onStorno }) {
   const isStorno = !!inv.is_storno;
   const isCancelled = !!inv.cancelled_by_storno_id;
-  const isExternal = inv.source === 'external';
+  /* "External" is an invoice with no job behind it — a paper invoice typed
+     in by hand. There is no `source` column in the backend, so this read
+     undefined on every row and the badge never appeared. */
+  const isExternal = !inv.job_id;
   const brutto = Number(inv.brutto_total || 0);
   const paid = Number(inv.paid_total || 0);
   const outstanding = Number(inv.outstanding ?? Math.max(0, brutto - paid));

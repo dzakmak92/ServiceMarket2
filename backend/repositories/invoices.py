@@ -13,7 +13,13 @@ defect the MongoDB build shipped.
 """
 from __future__ import annotations
 
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
+
+# Money is rounded per line and then summed, which is the convention every
+# other total in this system follows — the quote trigger, the invoice_lines
+# generated columns, the PDF's per-rate table and the USt-VA grouping all
+# agree on it.
+CENT = Decimal("0.01")
 from typing import Any, Optional
 
 from db import pg
@@ -84,7 +90,9 @@ async def create_draft(pro_id: str, *, job_id: Optional[str] = None,
     await _assert_owned(pro_id, customer_id=customer_id, job_id=job_id)
     ctx = await _tax_context(pro_id, customer_id)
     allowed = {"service_date_start", "service_date_end", "due_date",
-               "payment_terms_days", "note", "storno_of_id", "corrects_id"}
+               "payment_terms_days", "note", "storno_of_id", "corrects_id",
+               # Carried from the accepted quote by draft_invoice_from_job.
+               "discount_pct"}
     payload: dict[str, Any] = {k: v for k, v in fields.items() if k in allowed and v is not None}
     payload.update({
         "pro_id": pro_id, "job_id": job_id, "customer_id": customer_id,
@@ -162,14 +170,32 @@ async def issue(pro_id: str, invoice_id: str, *,
         if not lines:
             raise ValueError("Cannot issue an invoice with no line items.")
 
-        net = sum(_d(l["net_amount"]) for l in lines)
-        vat = sum(_d(l["vat_amount"]) for l in lines)
-        labor = sum(_d(l["net_amount"]) for l in lines if l["kind"] == "labor")
-        material = sum(_d(l["net_amount"]) for l in lines if l["kind"] == "material")
+        # The document discount, applied after each line's own. `quotes` has
+        # always had one and `invoices` did not, so an offer accepted at 10 %
+        # off was billed at full price — the entire discount, silently, and
+        # the invoice then exceeded the `contract_amount` written at accept().
+        #
+        # Applied per line rather than to the total so the VAT breakdown stays
+        # right: a discount taken off a mixed 20/10 invoice has to reduce each
+        # rate's base in proportion, and rounding per line is the convention
+        # every other total in this system already follows.
+        doc_disc = _d(inv["discount_pct"] or 0) / Decimal(100)
+        keep = Decimal(1) - doc_disc
+
+        def _net(l):
+            return (_d(l["net_amount"]) * keep).quantize(CENT, rounding=ROUND_HALF_UP)
+
+        def _vat(l):
+            return (_d(l["vat_amount"]) * keep).quantize(CENT, rounding=ROUND_HALF_UP)
+
+        net = sum(_net(l) for l in lines)
+        vat = sum(_vat(l) for l in lines)
+        labor = sum(_net(l) for l in lines if l["kind"] == "labor")
+        material = sum(_net(l) for l in lines if l["kind"] == "material")
         # Travel is kept apart from labour so neither column name lies, but
         # the §35a deductible base is labour + travel: the statute covers
         # Arbeits-, Maschinen- und Fahrtkosten and excludes only material.
-        travel = sum(_d(l["net_amount"]) for l in lines if l["kind"] == "travel")
+        travel = sum(_net(l) for l in lines if l["kind"] == "travel")
         reverse_charge = any(l["tax_treatment"] == "reverse_charge_13b" for l in lines)
 
         # A Schlussrechnung nets off what was already invoiced and paid on

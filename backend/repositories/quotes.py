@@ -492,9 +492,16 @@ async def draft_invoice_from_job(pro_id: str, job_id: str, *,
         raise ValueError(
             "Nothing to invoice: this job has no accepted quote and no approved change orders.")
 
+    # The accepted quote's document discount comes with it. Without this the
+    # customer was billed the undiscounted total of the offer they signed.
+    accepted = await pg.fetchrow(
+        "select discount_pct from quotes "
+        " where job_id = $1 and pro_id = $2 and status = 'accepted'", job_id, pro_id)
+
     inv = await invoices_repo.create_draft(
         pro_id, job_id=job_id, customer_id=str(job["customer_id"]) if job["customer_id"] else None,
         invoice_type=invoice_type, lines=lines,
+        discount_pct=float((accepted or {}).get("discount_pct") or 0),
         service_date_start=job.get("started_at") or job.get("created_at"),
         service_date_end=job.get("completed_at"),
     )

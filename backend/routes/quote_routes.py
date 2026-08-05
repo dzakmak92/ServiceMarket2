@@ -32,8 +32,14 @@ class QuoteLineIn(BaseModel):
     # far more than straight, and a flat guess loses money on tile one.
     waste_factor: float = Field(default=0, ge=0, le=1)
     discount_pct: float = Field(default=0, ge=0, le=100)
-    tax_treatment: Optional[str] = None
-    vat_rate: Optional[float] = None
+    # Constrained to the Postgres enum. As a free string a typo — or any of
+    # the treatments the resolver refuses to honour — was accepted and then
+    # silently billed at the standard rate.
+    tax_treatment: Optional[str] = Field(
+        default=None,
+        pattern="^(standard|reduced|reduced_alt|zero|kleinunternehmer"
+                "|reverse_charge_13b|intra_eu|export)$")
+    vat_rate: Optional[float] = Field(default=None, ge=0, le=100)
     is_optional: bool = False
     is_selected: bool = True
     # The join back to pro_rates, and the only reason acceptance can learn what
