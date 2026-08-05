@@ -39,14 +39,16 @@ function KpiCard({ label, value, sub, icon: Icon, color, bg, to }) {
 }
 
 // ─── Pro-only locked upsell card ─────────────────────────────────────────────
-function LockedFeature({ title, desc }) {
+function LockedFeature({ title, desc, t }) {
   return (
     <div className="card-lg border-dashed opacity-60 relative overflow-hidden">
       <div className="absolute inset-0 flex items-center justify-center z-10">
         <div className="text-center">
           <Lock size={20} className="text-ink-muted mx-auto mb-1" />
-          <p className="text-xs font-semibold text-ink-muted">PRO only</p>
-          <Link to="/billing" className="text-[11px] text-teal underline mt-0.5 inline-block">Upgrade →</Link>
+          <p className="text-xs font-semibold text-ink-muted">{t('pro_only')}</p>
+          <Link to="/billing" className="text-[11px] text-teal underline mt-0.5 inline-block">
+            {t('pro_upgrade')} →
+          </Link>
         </div>
       </div>
       <div className="blur-sm pointer-events-none select-none">
@@ -298,10 +300,12 @@ export default function ProDashboard() {
             <LockedFeature
               title={t('dash_cashflow_title')}
               desc={t('dash_cashflow_desc')}
+              t={t}
             />
             <LockedFeature
               title={t('dash_winrate_title')}
               desc={t('dash_winrate_desc')}
+              t={t}
             />
           </div>
         )}

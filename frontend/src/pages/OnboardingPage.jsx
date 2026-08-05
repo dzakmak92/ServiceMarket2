@@ -3,14 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLang } from '../contexts/LangContext';
 import api from '../api/client';
-import Turnstile from 'react-turnstile';
 import { COUNTRIES, isKnownCity, searchCities } from '../data/cities';
 import {
   ChevronRight, ChevronLeft, CheckCircle2, Upload, FileText, Loader2,
-  AlertCircle, MapPin, CloudSun, Award, Search, Plus, Check,
+  AlertCircle, MapPin, CloudSun, Award, Search, Plus, Check, ShieldCheck, Landmark,
 } from 'lucide-react';
-
-const TURNSTILE_SITE_KEY = process.env.REACT_APP_TURNSTILE_SITE_KEY;
 
 /* The four steps, and what the bar reads on each. The numbers are given
    rather than derived: a bar that starts at 25 % makes step one feel like
@@ -41,11 +38,9 @@ export default function OnboardingPage() {
   const [country, setCountry] = useState('AT');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [turnstileToken, setTurnstileToken] = useState('');
 
   const [form, setForm] = useState({
-    name: '', surname: '', phone: '', address: '', postal_code: '', city: '',
-    contact_person: '', company_name: '',
+    address: '', postal_code: '', city: '', contact_person: '', company_name: '',
     licence_file_id: '', insurance_file_id: '', meister_file_id: '',
     licence_filename: '', insurance_filename: '', meister_filename: '',
   });
@@ -65,10 +60,10 @@ export default function OnboardingPage() {
   const lastStep = STEPS.length - 1;
 
   const whereValid = () => !!country && !!form.city.trim();
-  const businessValid = () => ['contact_person', 'company_name', 'name', 'surname',
-    'phone', 'address', 'postal_code'].every((k) => form[k].trim());
+  const businessValid = () => ['company_name', 'address', 'postal_code', 'city',
+    'contact_person'].every((k) => form[k].trim());
   const docsValid = () => !!form.licence_file_id;
-  const allValid = () => whereValid() && businessValid() && docsValid() && !!turnstileToken;
+  const allValid = () => whereValid() && businessValid() && docsValid();
 
   const stepValid = (i) => (i === 1 ? whereValid() : i === 2 ? businessValid() : true);
 
@@ -124,9 +119,6 @@ export default function OnboardingPage() {
     try {
       await completeOnboarding({
         role: 'tradesperson', country, lang,
-        name: form.name.trim(),
-        surname: form.surname.trim(),
-        phone: form.phone.trim(),
         address: form.address.trim(),
         postal_code: form.postal_code.trim(),
         city: form.city.trim(),
@@ -137,7 +129,6 @@ export default function OnboardingPage() {
         meister_file_id: form.meister_file_id || undefined,
         service_center_lat: coords?.lat,
         service_center_lng: coords?.lng,
-        turnstile_token: turnstileToken,
       });
       await refreshUser();
       navigate('/dashboard', { replace: true });
@@ -337,45 +328,24 @@ export default function OnboardingPage() {
             </>
           )}
 
-          {/* ── STEP 3 — the business ───────────────────────────────── */}
+          {/* ── STEP 3 — the registered business ───────────────────────
+              Exactly what an invoice has to carry, and nothing else. The
+              town is prefilled from step two but stays editable: a business
+              registered in one place and working out of another is ordinary,
+              and the invoice must show the registered one. */}
           {step === 2 && (
             <>
               <h2 className="font-headings font-bold text-ink text-lg">
                 {t('onboarding_pro_details_title')}
               </h2>
+              <p className="text-ink-muted text-sm">{t('onboarding_business_subtitle')}</p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-ink mb-1.5">{t('field_contact_person')} *</label>
-                  <input value={form.contact_person} onChange={(e) => set('contact_person', e.target.value)}
-                         placeholder="Markus Weber" className="sm-input"
-                         data-testid="onboarding-contact-person" />
-                </div>
-                <div>
+                <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-ink mb-1.5">{t('field_company_name')} *</label>
                   <input value={form.company_name} onChange={(e) => set('company_name', e.target.value)}
                          placeholder="Weber Installations GmbH" className="sm-input"
                          data-testid="onboarding-company-name" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-ink mb-1.5">{t('field_first_name')} *</label>
-                  <input value={form.name} onChange={(e) => set('name', e.target.value)}
-                         placeholder="Markus" className="sm-input" data-testid="onboarding-name" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-ink mb-1.5">{t('field_surname')} *</label>
-                  <input value={form.surname} onChange={(e) => set('surname', e.target.value)}
-                         placeholder="Weber" className="sm-input" data-testid="onboarding-surname" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-ink mb-1.5">{t('field_phone')} *</label>
-                  <input value={form.phone} onChange={(e) => set('phone', e.target.value)}
-                         placeholder="+43 660 1234567" className="sm-input" data-testid="onboarding-phone" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-ink mb-1.5">{t('field_postal_code')} *</label>
-                  <input value={form.postal_code} onChange={(e) => set('postal_code', e.target.value)}
-                         placeholder="1070" className="sm-input" data-testid="onboarding-postal" />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-ink mb-1.5">{t('field_address')} *</label>
@@ -383,21 +353,42 @@ export default function OnboardingPage() {
                          placeholder="Mariahilfer Straße 12" className="sm-input"
                          data-testid="onboarding-address" />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-ink mb-1.5">{t('field_postal_code')} *</label>
+                  <input value={form.postal_code} onChange={(e) => set('postal_code', e.target.value)}
+                         placeholder="1070" className="sm-input" data-testid="onboarding-postal" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-ink mb-1.5">{t('field_city')} *</label>
+                  <input value={form.city} onChange={(e) => set('city', e.target.value)}
+                         placeholder="Wien" className="sm-input" data-testid="onboarding-city" />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-medium text-ink mb-1.5">{t('field_contact_person')} *</label>
+                  <input value={form.contact_person} onChange={(e) => set('contact_person', e.target.value)}
+                         placeholder="Markus Weber" className="sm-input"
+                         data-testid="onboarding-contact-person" />
+                </div>
               </div>
 
-              {/* The address is the one thing on this step with a legal
-                  consequence, so it is the one thing explained. */}
-              <div className="rounded-[12px] bg-cream-soft border border-sm-border p-3"
+              <div className="rounded-[12px] bg-cream-soft border border-sm-border p-3 space-y-2"
                    data-testid="onboarding-why">
                 <p className="flex items-start gap-2 text-[12px] text-ink-soft leading-relaxed">
                   <FileText size={14} className="text-teal flex-none mt-px" />
-                  <span>{t('onboarding_why_address').replace('{city}', form.city || t('onboarding_city'))}</span>
+                  <span>{t('onboarding_why_address_short')}</span>
+                </p>
+                {/* Said here rather than asked here: IBAN on a signup form is a
+                    wall, and it is not needed until the first invoice. */}
+                <p className="flex items-start gap-2 text-[12px] text-ink-soft leading-relaxed"
+                   data-testid="onboarding-bank-note">
+                  <Landmark size={14} className="text-teal flex-none mt-px" />
+                  <span>{t('onboarding_bank_later')}</span>
                 </p>
               </div>
             </>
           )}
 
-          {/* ── STEP 4 — documents, and the security check ──────────── */}
+          {/* ── STEP 4 — documents ─────────────────────────────────── */}
           {step === 3 && (
             <>
               <h2 className="font-headings font-bold text-ink text-lg">{t('onboarding_docs_title')}</h2>
@@ -442,30 +433,18 @@ export default function OnboardingPage() {
                 t={t}
               />
 
-              <div className="border-t border-sm-border pt-4">
-                <p className="font-bold text-sm text-ink mb-1">{t('onboarding_security_title')}</p>
-                <p className="text-ink-muted text-[12px] mb-2">{t('onboarding_security_subtitle')}</p>
-                {TURNSTILE_SITE_KEY ? (
-                  <div className="flex justify-center py-1" data-testid="onboarding-turnstile-wrap">
-                    <Turnstile
-                      sitekey={TURNSTILE_SITE_KEY}
-                      onVerify={(token) => setTurnstileToken(token)}
-                      onExpire={() => setTurnstileToken('')}
-                      onError={() => setTurnstileToken('')}
-                      theme="light"
-                      retry="auto"
-                    />
-                  </div>
-                ) : (
-                  <div className="text-xs text-amber-deep italic">
-                    Turnstile site key not configured — security check skipped in dev.
-                  </div>
-                )}
-                {turnstileToken && (
-                  <p className="text-xs text-green-pos flex items-center gap-1.5 mt-1">
-                    <CheckCircle2 size={12} /> {t('onboarding_security_passed')}
+              {/* What happens next, said before the button rather than after
+                  it. A pro who uploads a licence and lands on a dashboard with
+                  no badge should already know why. */}
+              <div className="rounded-[12px] border-[1.5px] border-teal/30 bg-teal/[0.06] p-3
+                              flex items-start gap-2.5" data-testid="onboarding-review-note">
+                <ShieldCheck size={17} className="text-teal flex-none mt-px" />
+                <div>
+                  <p className="font-bold text-[12.5px] text-ink">{t('onboarding_review_title')}</p>
+                  <p className="text-[12px] text-ink-soft leading-relaxed mt-0.5">
+                    {t('onboarding_review_body')}
                   </p>
-                )}
+                </div>
               </div>
             </>
           )}

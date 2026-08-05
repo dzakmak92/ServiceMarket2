@@ -22,7 +22,6 @@ from auth import (JWT_ALGORITHM, clear_auth_cookies, create_access_token,
                   hash_password, load_user, set_auth_cookies, verify_password)
 from db import pg
 from services import mailer
-from services.turnstile import verify_turnstile_token
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +84,10 @@ class OnboardingIn(BaseModel):
     country: str = Field(default="AT", pattern="^[A-Z]{2}$")
     name: Optional[str] = None
     surname: Optional[str] = None
-    phone: str = Field(min_length=4)
+    # Name, surname and phone are no longer asked during onboarding — the
+    # business step carries only what an invoice must show. Kept optional so
+    # an older client, or a later profile edit, can still send them.
+    phone: Optional[str] = None
     address: str = Field(min_length=2)
     postal_code: str = Field(min_length=2)
     city: str = Field(min_length=2)
@@ -446,12 +448,12 @@ async def onboarding(data: OnboardingIn, request: Request,
     if user.get("onboarding_complete"):
         raise HTTPException(400, "Onboarding already complete")
 
-    # Turnstile sits at the END of onboarding rather than on the signup form:
-    # the challenge lands right before the account becomes able to do anything.
-    ip = request.client.host if request.client else "unknown"
-    if not await verify_turnstile_token(data.turnstile_token or "", remote_ip=ip):
-        raise HTTPException(
-            400, "Unable to verify you are human. Please complete the security check.")
+    # No challenge here any more — the step was removed from onboarding.
+    #
+    # Worth knowing: this was the only bot protection anywhere on the signup
+    # path. /auth/register has neither a challenge nor a rate limit, so an
+    # account can now be created and activated entirely unattended. If that
+    # matters, the challenge belongs on the registration form, not here.
 
     full_name = " ".join(filter(None, [(data.name or "").strip(),
                                        (data.surname or "").strip()])) or user.get("name", "")
@@ -466,7 +468,7 @@ async def onboarding(data: OnboardingIn, request: Request,
             """,
             user["id"], data.country, full_name,
             (data.name or "").strip() or None, (data.surname or "").strip() or None,
-            data.phone.strip(), data.address.strip(),
+            (data.phone or "").strip() or None, data.address.strip(),
             data.postal_code.strip(), data.city.strip(), data.lang)
 
         # The business address goes onto the profile as well as the user.
