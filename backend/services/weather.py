@@ -61,6 +61,49 @@ def _first(d: dict, *names, default=None):
     return default
 
 
+# The strip on the day view runs across the working day, not midnight to
+# midnight: nobody is deciding whether to render a facade at 03:00, and eight
+# columns is what fits legibly on a phone.
+HOUR_FROM = 6
+HOUR_TO = 20
+
+
+def _hours_by_day(payload: dict) -> dict:
+    """Open-Meteo's flat hourly arrays, bucketed by calendar day.
+
+    Its `hourly.time` entries are local ISO strings ("2026-08-05T06:00") —
+    local because we ask for `timezone=auto` — so the date is the first ten
+    characters and the hour the two after the T. No parsing, no timezone
+    arithmetic, and nothing here can turn into the previous day the way a
+    UTC conversion would.
+    """
+    h = payload.get("hourly") or {}
+    times = h.get("time") or []
+    temps = _first(h, "temperature_2m", "temperature", default=[]) or []
+    codes = _first(h, "weather_code", "weathercode", default=[]) or []
+    rain = _first(h, "precipitation_probability", default=[]) or []
+
+    out: dict = {}
+    for i, ts in enumerate(times):
+        if not isinstance(ts, str) or len(ts) < 13 or ts[10] != "T":
+            continue
+        try:
+            hour = int(ts[11:13])
+        except ValueError:
+            continue
+        if hour < HOUR_FROM or hour > HOUR_TO:
+            continue
+        code = codes[i] if i < len(codes) else None
+        out.setdefault(ts[:10], []).append({
+            "hour": hour,
+            "temp": _num(temps[i] if i < len(temps) else None),
+            "code": code,
+            "condition": condition(code),
+            "rain_chance": _num(rain[i] if i < len(rain) else None),
+        })
+    return out
+
+
 def shape(payload: dict, days: int = 7) -> dict:
     """Open-Meteo's response, reduced to what the calendar draws.
 
@@ -81,6 +124,8 @@ def shape(payload: dict, days: int = 7) -> dict:
     def at(seq, i):
         return seq[i] if isinstance(seq, list) and i < len(seq) else None
 
+    by_day = _hours_by_day(payload)
+
     out_days = []
     for i, d in enumerate(dates[:days]):
         code = at(codes, i)
@@ -92,6 +137,9 @@ def shape(payload: dict, days: int = 7) -> dict:
             "low": _num(at(lows, i)),
             "rain_chance": _num(at(rain, i)),
             "wind_max": _num(at(wind, i)),
+            # Empty rather than absent when the upstream sends no hourly
+            # block, so the card can tell "no hours" from "not this shape".
+            "hours": by_day.get(d, []),
         })
 
     cur_code = _first(cur, "weather_code", "weathercode")
@@ -116,6 +164,9 @@ PARAMS = {
     "current": "temperature_2m,apparent_temperature,weather_code,wind_speed_10m",
     "daily": ("weather_code,temperature_2m_max,temperature_2m_min,"
               "precipitation_probability_max,wind_speed_10m_max"),
+    # The day view draws the hours across the working day. Three series is
+    # the whole strip: the line, the icons and the rain behind them.
+    "hourly": "temperature_2m,weather_code,precipitation_probability",
     "timezone": "auto",
 }
 

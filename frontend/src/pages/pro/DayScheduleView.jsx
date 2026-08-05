@@ -26,6 +26,10 @@ import {
    from its neighbour to read as a separate line. 80 gives a 20 px quarter. */
 const PPH = 80;
 const PX_PER_MS = PPH / (60 * MIN);
+
+/* A block never renders shorter than this, so a job clamped hard against
+   the edge of the window is still something a finger can find. */
+const MIN_BLOCK_PX = 26;
 const DAY_FROM = 8;
 /* 20:00, not 18:00. Emergency call-outs, a Saturday finish and the summer
    evenings a painter actually works are all past six, and a rail that stops
@@ -528,6 +532,22 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
   const runs = useMemo(() => bookableRuns(appts, dayStart, dayEnd), [appts, dayStart, dayEnd]);
   const topOf = (v) => (toMs(v) - toMs(dayStart)) * PX_PER_MS;
 
+  /* The rail draws 08:00–20:00 and nothing used to keep a block inside it.
+     A job starting at 06:30 got a negative top and was painted over the date
+     navigation above the card — measured at -231px — so the arrows could not
+     be clicked at all; a job running past 20:00 spilled the same way below.
+     Clamping rather than clipping, because a job you cannot see is worse
+     than one drawn against the edge: it stays visible, tappable, and the
+     block's own times still say when it really starts. */
+  const railHeight = (toMs(dayEnd) - toMs(dayStart)) * PX_PER_MS;
+  const clampBlock = (startV, endMs) => {
+    const rawTop = topOf(startV);
+    const rawBottom = endMs === null ? rawTop : (endMs - toMs(dayStart)) * PX_PER_MS;
+    const top = Math.max(0, Math.min(rawTop, railHeight - MIN_BLOCK_PX));
+    const bottom = Math.min(railHeight, Math.max(rawBottom, top + MIN_BLOCK_PX));
+    return { top, height: bottom - top, clipped: rawTop < 0 || rawBottom > railHeight };
+  };
+
   if (loading) {
     return <div className="card-lg py-10 text-center text-sm text-ink-muted"
                 role="status" aria-live="polite" aria-label={t('ui_loading')}
@@ -539,12 +559,24 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
       {/* Only on today. Standing in front of Thursday's rail, a forecast for
           right now would be describing a different day than the one on
           screen — which is worse than showing nothing. */}
-      {isToday && <WeatherCard weather={weather} status={wxStatus} t={t} />}
+      {/* The hourly strip, not the seven-day row: this view is one day, and
+          it already has a date navigator directly above the card. */}
+      {isToday && <WeatherCard weather={weather} status={wxStatus} t={t}
+                               lang={dateLocale(lang)} hours />}
       {/* Before the rail, not after: a failed load draws a single empty
           08:00–20:00 slot that reads as a completely free day, and that is
           the thing a pro would act on. */}
       {failed && <LoadFailed onRetry={load} t={t} />}
-      <div className="card-lg p-0 pt-3 pr-3 pb-7 relative" data-testid="day-rail">
+      {/* overflow-hidden, because the rail draws a 08:00–20:00 window and
+          nothing clamped a block to it. A job starting at 06:30 got a
+          negative `top` and was painted straight over the date navigation
+          above the card — measured at -231px in one timezone — so the arrows
+          could not be clicked at all and the only way out was the view
+          switcher or a reload. A job running past 20:00 spilled the same way
+          downwards. Clipping is the honest render: the badge below says what
+          is outside the window. */}
+      <div className="card-lg p-0 pt-3 pr-3 pb-7 relative overflow-hidden"
+           data-testid="day-rail">
         <div
           className="relative"
           style={{ marginLeft: 40, height: (DAY_TO - DAY_FROM) * PPH,
@@ -609,12 +641,13 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
             const end = isDragging ? drag.endMs : toMs(a.end);
             const clash = appts.some(
               (o) => o.id !== a.id && toMs(a.start) < toMs(o.end) && toMs(o.start) < end);
+            const geom = clampBlock(a.start, end);
             return (
               <Block
                 key={a.id}
                 appt={isDragging ? { ...a, end: new Date(end) } : a}
-                top={topOf(a.start)}
-                height={(end - toMs(a.start)) * PX_PER_MS}
+                top={geom.top}
+                height={geom.height}
                 running={running?.id === a.id}
                 progress={running?.id === a.id ? {
                   elapsed: now - toMs(a.start),

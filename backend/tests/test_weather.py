@@ -9,7 +9,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from services.weather import _num, condition, pick_place, shape  # noqa: E402
+from services.weather import (  # noqa: E402
+    HOUR_FROM, HOUR_TO, PARAMS, _num, condition, pick_place, shape,
+)
 
 passed = failed = 0
 
@@ -123,6 +125,75 @@ ok(pick_place({"results": [{"name": "X", "country_code": "AT"}]}, "AT") is None,
 step("numbers only")
 ok(_num(True) is None, "a bool is not a temperature, even though Python says it is an int")
 ok(_num(0) == 0, "but zero is")
+
+step("the hourly strip the day view draws")
+
+HOURLY = {
+    "timezone": "Europe/Vienna",
+    "current": {"temperature_2m": 24.3, "weather_code": 2, "wind_speed_10m": 11},
+    "daily": {
+        "time": ["2026-08-05", "2026-08-06"],
+        "weather_code": [2, 61],
+        "temperature_2m_max": [26, 19],
+        "temperature_2m_min": [14, 12],
+        "precipitation_probability_max": [10, 80],
+        "wind_speed_10m_max": [14, 22],
+    },
+    "hourly": {
+        # deliberately spans midnight and runs outside the working day
+        "time": [f"2026-08-05T{h:02d}:00" for h in range(24)]
+                + [f"2026-08-06T{h:02d}:00" for h in range(24)],
+        "temperature_2m": list(range(24)) + list(range(100, 124)),
+        "weather_code": [0] * 24 + [61] * 24,
+        "precipitation_probability": [5] * 24 + [90] * 24,
+    },
+}
+
+
+def _copy(extra=None):
+    import copy
+    p = copy.deepcopy(HOURLY)
+    if extra:
+        extra(p)
+    return p
+
+
+h = shape(HOURLY, days=2)["days"]
+ok([x["hour"] for x in h[0]["hours"]] == list(range(HOUR_FROM, HOUR_TO + 1)),
+   "every working hour of the day is present, in order")
+ok(h[0]["hours"][0]["temp"] == 6 and h[1]["hours"][0]["temp"] == 106,
+   "each day gets its own hours — the next day's values do not leak back")
+ok(min(x["hour"] for x in h[0]["hours"]) == HOUR_FROM
+   and max(x["hour"] for x in h[0]["hours"]) == HOUR_TO,
+   "03:00 and 23:00 are dropped: nobody renders a facade at three in the morning")
+ok({x["condition"] for x in h[0]["hours"]} == {"clear"}
+   and {x["condition"] for x in h[1]["hours"]} == {"rain"},
+   "hourly codes are folded to conditions, as the daily ones are")
+ok(all(x["rain_chance"] == 5 for x in h[0]["hours"]),
+   "rain probability rides along with each hour")
+
+no_hourly = _copy(lambda p: p.pop("hourly"))
+ok([d["hours"] for d in shape(no_hourly, days=2)["days"]] == [[], []],
+   "an upstream with no hourly block gives empty hours, not a crash")
+
+def _mangle(p):
+    p["hourly"]["time"] = ["nonsense", None, "2026-08-05T09:00", "2026-08-05Txx:00"]
+    p["hourly"]["temperature_2m"] = [1, 2, 21, 4]
+    p["hourly"]["weather_code"] = [0, 0, 0, 0]
+    p["hourly"]["precipitation_probability"] = [0, 0, 30, 0]
+mangled = shape(_copy(_mangle), days=1)["days"][0]["hours"]
+ok([x["hour"] for x in mangled] == [9] and mangled[0]["temp"] == 21,
+   "a malformed timestamp is skipped on its own, not taken as the whole day")
+
+short = shape(_copy(lambda p: p["hourly"].__setitem__("temperature_2m", [1, 2, 3])),
+              days=1)["days"][0]["hours"]
+ok(len(short) == HOUR_TO - HOUR_FROM + 1 and short[-1]["temp"] is None,
+   "a series shorter than its own time array gives None, not an IndexError")
+
+ok(all(k in PARAMS["hourly"] for k in
+       ("temperature_2m", "weather_code", "precipitation_probability")),
+   "the request asks for exactly the three series the strip draws")
+
 
 print(f"\n{'%d FAILURE(S)' % failed if failed else 'ALL PASS'}  ({passed} checks)")
 print("  note: services.weather.fetch() — the actual Open-Meteo request — is not")

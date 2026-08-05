@@ -32,6 +32,108 @@ const KEY = {
 
 const round = (v) => (typeof v === 'number' ? Math.round(v) : null);
 
+/* Every second hour across the working day: eight columns, which is what
+   stays legible at 390 px without the labels touching. */
+const HOUR_STEP = 2;
+/* Below this a rain probability is not weather, and drawing it makes a dry
+   day look busy. */
+const RAIN_FLOOR = 20;
+
+/**
+ * The day's shape, under the headline.
+ *
+ * Hour and icon on top, the temperature curve in the middle, degrees
+ * underneath — the numbers stay in their own straight rows rather than
+ * riding the curve, where they collided with the rain band. Rain
+ * probability sits behind the line as a soft column so the front coming in
+ * at four is a shape rather than five separate numbers to compare.
+ */
+function HourStrip({ hours, t }) {
+  const pts = hours.filter((_, i) => i % HOUR_STEP === 0);
+  if (pts.length < 2) return null;
+
+  /* The viewBox is sized to the card's real inner width rather than to a
+     tidy 100, because `preserveAspectRatio="none"` scales x and y
+     independently: on a 100-wide box the dots stretched into dashes. At 336
+     the horizontal scale is ~1 on a phone, so a circle stays a circle. */
+  const W = 336;
+  const H = 40;
+  const temps = pts.map((p) => p.temp).filter((v) => typeof v === 'number');
+  if (temps.length < 2) return null;
+  /* A flat day would divide by zero and a two-degree day would look like a
+     mountain range, so the scale never spans less than six degrees. */
+  const lo = Math.min(...temps);
+  const hi = Math.max(...temps);
+  const mid = (lo + hi) / 2;
+  const span = Math.max(6, hi - lo);
+  const min = mid - span / 2;
+
+  const x = (i) => ((i + 0.5) * W) / pts.length;
+  const y = (v) => H - 4 - ((v - min) / span) * (H - 14);
+  const line = pts
+    .map((p, i) => (typeof p.temp === 'number' ? `${x(i)},${y(p.temp)}` : null))
+    .filter(Boolean).join(' ');
+
+  return (
+    <div className="mt-2.5 pt-2 border-t border-sky-tint" data-testid="wx-hours">
+      <div className="flex gap-0.5">
+        {pts.map((p) => {
+          const HIcon = ICON[p.condition] || Cloud;
+          return (
+            <div key={p.hour} className="flex-1 min-w-0 text-center">
+              <p className="font-bold text-[9px] text-ink-muted">
+                {String(p.hour).padStart(2, '0')}
+              </p>
+              <HIcon size={15} className="mx-auto mt-0.5 text-sky-deep" strokeWidth={1.9} />
+            </div>
+          );
+        })}
+      </div>
+
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none"
+           className="block w-full h-[40px] mt-0.5" aria-hidden="true">
+        {pts.map((p, i) => {
+          const r = p.rain_chance;
+          if (typeof r !== 'number' || r < RAIN_FLOOR) return null;
+          const bh = (r / 100) * H;
+          return (
+            <rect key={p.hour} x={x(i) - W / pts.length / 2.6} y={H - bh}
+                  width={W / pts.length / 1.3} height={bh} rx="3"
+                  fill="#5b8fb0" opacity={r >= 60 ? 0.30 : 0.15} />
+          );
+        })}
+        <polyline points={line} fill="none" stroke="#3d6c8a" strokeWidth="1"
+                  vectorEffect="non-scaling-stroke"
+                  strokeLinejoin="round" strokeLinecap="round" />
+        {pts.map((p, i) => (typeof p.temp === 'number' ? (
+          <circle key={p.hour} cx={x(i)} cy={y(p.temp)} r="2.2"
+                  fill="#ffffff" stroke="#3d6c8a" strokeWidth="1.4"
+                  vectorEffect="non-scaling-stroke" />
+        ) : null))}
+      </svg>
+
+      <div className="flex gap-0.5">
+        {pts.map((p) => (
+          <div key={p.hour} className="flex-1 min-w-0 text-center">
+            <p className="font-extrabold text-[10px] text-ink-soft">
+              {round(p.temp) != null ? `${round(p.temp)}°` : '–'}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* The curve is a glance; this is the sentence a screen reader gets,
+          and the only part of the strip that is not purely visual. */}
+      <p className="sr-only" data-testid="wx-hours-text">
+        {pts.map((p) => `${String(p.hour).padStart(2, '0')}: `
+          + `${round(p.temp) != null ? `${round(p.temp)}°` : '–'}`
+          + `${typeof p.rain_chance === 'number' ? `, ${round(p.rain_chance)}% ${t('wx_rain')}` : ''}`)
+          .join('; ')}
+      </p>
+    </div>
+  );
+}
+
 /**
  * @param outlook  when true, the card grows a row of the next seven days and
  *                 the pro can look ahead. Off by default, and off on the day
@@ -41,7 +143,8 @@ const round = (v) => (typeof v === 'number' ? Math.round(v) : null);
  *                 of Monday's appointments.
  */
 export default function WeatherCard({
-  weather, status = 'ok', t, compact = false, lang = 'de-AT', outlook = false,
+  weather, status = 'ok', t, compact = false, lang = 'de-AT',
+  outlook = false, hours = false,
 }) {
   /* Today, always, on every arrival. The pro opens the calendar to work out
      today; looking ahead is the deliberate second act. */
@@ -156,6 +259,8 @@ export default function WeatherCard({
           )}
         </div>
       </div>
+
+      {hours && <HourStrip hours={day?.hours || []} t={t} />}
 
       {outlook && list.length > 1 && (
         <div className="flex gap-1 mt-2.5 pt-2 border-t border-sky-tint overflow-x-auto
