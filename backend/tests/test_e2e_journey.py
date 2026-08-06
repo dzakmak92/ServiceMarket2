@@ -372,6 +372,24 @@ with TestClient(entry.app) as c:
         check(moved and moved["scheduled_start"][11:16] == "09:15",
               "and it comes back changed")
 
+        # The same rule on the general route. /schedule guarded the ordering
+        # and PATCH /jobs/{id} beside it did not, so sending one field there
+        # walked around the guard — and a partial move is precisely the case
+        # the guard exists for. An appointment ending before it starts is not
+        # a shape the month grid can draw.
+        r = c.patch(f"/api/jobs/{jid}", json={"scheduled_start": f"{base}T23:00:00"})
+        check(r.status_code == 400,
+              f"pushing the start past a fixed end is refused here too ({r.status_code})")
+        r = c.patch(f"/api/jobs/{jid}", json={"scheduled_end": f"{base}T08:00:00"})
+        check(r.status_code == 400,
+              f"and pulling the end before the start ({r.status_code})")
+        r = c.patch(f"/api/jobs/{jid}", json={"scheduled_end": f"{base}T11:30:00"})
+        check(ok(r), f"a widening that stays in order is accepted ({r.status_code})")
+        r = c.get("/api/jobs/appointments")
+        after = next((a for a in r.json()["appointments"] if a["id"] == jid), None)
+        check(after and after["scheduled_start"][11:16] == "09:15",
+              "and the start it did not touch is untouched")
+
     # Booking an empty slot creates the job already scheduled. `status` was
     # undeclared on JobIn, so it was accepted, silently dropped and the job
     # came back a lead — with no lead → scheduled edge to correct it by.

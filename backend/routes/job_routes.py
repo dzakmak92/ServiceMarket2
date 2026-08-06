@@ -218,6 +218,11 @@ def _quarter_aligned(t: datetime) -> bool:
     return t.minute % 15 == 0 and t.second == 0 and t.microsecond == 0
 
 
+def _as_utc(t: datetime) -> datetime:
+    """A comparable instant. Naive input is UTC, as the column treats it."""
+    return t if t.tzinfo else t.replace(tzinfo=timezone.utc)
+
+
 @router.patch("/{job_id}/schedule")
 async def set_schedule(job_id: str, body: SchedulePatch,
                        user: dict = Depends(get_current_user)):
@@ -271,8 +276,38 @@ async def get_job(job_id: str, user: dict = Depends(get_current_user)):
 
 @router.patch("/{job_id}")
 async def update_job(job_id: str, body: JobPatch, user: dict = Depends(get_current_user)):
+    """Everything else about a job — including, unfortunately, its times.
+
+    `PATCH /{job_id}/schedule` next door refuses an end before a start, and
+    its own docstring says why: "a partial move is how an appointment ends up
+    with a start after its end". This route accepted the two fields
+    individually and applied no such rule, so the guard could be walked
+    around by sending one of them here instead. An appointment ending the day
+    before it began is not a shape the calendar can draw — the month grid
+    reports its half-day bars as not adding up to their own day, which is how
+    this surfaced.
+
+    Merged against what is stored, because the dangerous case is exactly the
+    partial one: moving only the start, against an end that stays put.
+    """
     pro_id = await require_pro_id(user)
-    job = await repo.update(pro_id, job_id, body.model_dump(exclude_none=True))
+    patch = body.model_dump(exclude_none=True)
+
+    if "scheduled_start" in patch or "scheduled_end" in patch:
+        current = await repo.get(pro_id, job_id)
+        if not current:
+            raise HTTPException(404, "Job not found")
+        start = patch.get("scheduled_start", current.get("scheduled_start"))
+        end = patch.get("scheduled_end", current.get("scheduled_end"))
+        # The stored values come back from a `timestamptz` and carry an
+        # offset; a body sending "2026-08-06T23:00:00" parses to a naive
+        # datetime, and comparing the two raises rather than answering. Naive
+        # input is read as UTC, which is what the column does with it on the
+        # way in — so the comparison matches the value that would be stored.
+        if start and end and _as_utc(end) <= _as_utc(start):
+            raise HTTPException(400, "scheduled_end must be after scheduled_start")
+
+    job = await repo.update(pro_id, job_id, patch)
     if not job:
         raise HTTPException(404, "Job not found")
     return job
