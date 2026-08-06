@@ -241,6 +241,15 @@ def sections_for(trade: str, job_keys: list[str]) -> list[dict] | None:
 # One sentence per question key, in the catalogue's own language. Shown under
 # the field.
 #
+# A line here must describe what the estimator *does*, not what the question
+# sounds like it should do. Only `qty`, `condition`, `access` and the Notdienst
+# flag reach the total; every `affects="variant"` question is recorded and may
+# attach a note, and the arithmetic does not read it — the estimator's own
+# docstring says so. Measured on maler.innenanstrich: all five Untergrund
+# options move the price by € 0 while Zustand moves it by up to €307. Wording
+# that implies otherwise is how a pro ends up quoting a crumbling wall at the
+# intact-wall price.
+#
 # Only the keys that appear often enough to be worth the words. `access` and
 # `condition` alone account for 129 of the 417 questions in the catalogue —
 # and they are the two that actually move the price, which is exactly what
@@ -265,19 +274,19 @@ FIELD_HELP: dict[str, str] = {
     "entfernung": "Je weiter, desto mehr Leitung und Grabarbeit.",
 
     # Common variant questions: they pick different work, not a surcharge.
-    "untergrund": "Bestimmt, welche Vorarbeit gerechnet wird.",
-    "untergrund_boden": "Alter Beton braucht meist einen Schleifgang mehr.",
-    "untergrund_aussen": "Bestimmt, welche Vorarbeit gerechnet wird.",
-    "verlegung": "Bestimmt Zuschnitt und Verschnitt.",
-    "verlegeart": "Bestimmt Zuschnitt und Verschnitt.",
-    "material": "Bestimmt Materialpreis und Verarbeitungszeit.",
-    "typ": "Bestimmt, welche Arbeitsschritte gerechnet werden.",
-    "umfang": "Bestimmt, welche Arbeitsschritte gerechnet werden.",
-    "groesse": "Bestimmt Aufwand und Entsorgungsmenge.",
-    "hoehe": "Mehr Höhe heißt mehr Material und mehr Trocknungszeit.",
-    "raum": "Bestimmt Vorarbeit und Materialwahl.",
+    "untergrund": "Wird im Angebot vermerkt. Der Preis rechnet den Untergrund noch nicht mit — bei rissigem oder abblätterndem Bestand Aufschlag selbst ansetzen.",
+    "untergrund_boden": "Wird vermerkt. Alter Beton braucht meist einen Schleifgang mehr — den rechnet die Schätzung noch nicht mit.",
+    "untergrund_aussen": "Wird im Angebot vermerkt. In den Preis fließt der Untergrund noch nicht ein.",
+    "verlegung": "Wird vermerkt. Diagonal oder im Verband heißt mehr Verschnitt — noch nicht eingerechnet.",
+    "verlegeart": "Wird vermerkt. Mehr Verschnitt ist noch nicht eingerechnet.",
+    "material": "Wird im Angebot vermerkt. Der Materialpreis in der Schätzung ist ein Mittelwert für diese Arbeit.",
+    "typ": "Wird im Angebot vermerkt.",
+    "umfang": "Wird im Angebot vermerkt.",
+    "groesse": "Bei manchen Vorlagen ist das die Menge und damit der größte Hebel; sonst wird es nur vermerkt.",
+    "hoehe": "Wird vermerkt. Mehr Höhe heißt mehr Material und Trocknungszeit — noch nicht eingerechnet.",
+    "raum": "Wird im Angebot vermerkt.",
     "zeit": "Abends, nachts und am Wochenende gilt der Notdiensttarif.",
-    "leitungen": "Neue Leitungen heißen stemmen, verputzen und mehr Zeit.",
+    "leitungen": "Wird vermerkt. Stemmen und Verputzen sind in der Schätzung noch nicht enthalten.",
 
     # Recorded only: these produce a note on the quote, not a surcharge.
     "baujahr": "Vor 1990 kann Asbest im Spiel sein — dann kommt ein Hinweis ins Angebot.",
@@ -327,45 +336,69 @@ FIELD_HELP_I18N: dict[str, dict[str, str]] = {
     "entfernung": {"en": "The further it runs, the more cable and digging.",
                    "tr": "Mesafe arttıkça kablo ve kazı artar.",
                    "es": "Cuanto más lejos, más cable y más zanja."},
-    "untergrund": {"en": "Sets which preparation work is priced in.",
-                   "tr": "Hangi ön hazırlığın hesaplanacağını belirler.",
-                   "es": "Determina qué trabajo previo se calcula."},
-    "untergrund_boden": {"en": "Old concrete usually needs one more grinding pass.",
-                         "tr": "Eski beton genelde bir tur daha zımpara ister.",
-                         "es": "El hormigón viejo suele necesitar un lijado más."},
-    "untergrund_aussen": {"en": "Sets which preparation work is priced in.",
-                          "tr": "Hangi ön hazırlığın hesaplanacağını belirler.",
-                          "es": "Determina qué trabajo previo se calcula."},
-    "verlegung": {"en": "Sets the cutting and the waste allowance.",
-                  "tr": "Kesim ve fire payını belirler.",
-                  "es": "Determina el corte y el desperdicio."},
-    "verlegeart": {"en": "Sets the cutting and the waste allowance.",
-                   "tr": "Kesim ve fire payını belirler.",
-                   "es": "Determina el corte y el desperdicio."},
-    "material": {"en": "Sets the material price and the working time.",
-                 "tr": "Malzeme fiyatını ve işçilik süresini belirler.",
-                 "es": "Determina el precio del material y el tiempo de trabajo."},
-    "typ": {"en": "Sets which steps of work are priced in.",
-            "tr": "Hangi iş adımlarının hesaplanacağını belirler.",
-            "es": "Determina qué pasos de trabajo se calculan."},
-    "umfang": {"en": "Sets which steps of work are priced in.",
-               "tr": "Hangi iş adımlarının hesaplanacağını belirler.",
-               "es": "Determina qué pasos de trabajo se calculan."},
-    "groesse": {"en": "Sets the effort and the amount to dispose of.",
-                "tr": "İş yükünü ve atık miktarını belirler.",
-                "es": "Determina el esfuerzo y la cantidad a retirar."},
-    "hoehe": {"en": "More height means more material and more drying time.",
-              "tr": "Yükseklik arttıkça malzeme ve kuruma süresi artar.",
-              "es": "Más altura significa más material y más secado."},
-    "raum": {"en": "Sets the preparation and the choice of material.",
-             "tr": "Ön hazırlığı ve malzeme seçimini belirler.",
-             "es": "Determina la preparación y la elección del material."},
+    "untergrund": {
+        "en": 'Noted on the quote. The price does not yet account for the substrate — add for cracked or flaking work yourself.',
+        "tr": 'Teklife not edilir. Fiyat zemini henüz hesaba katmıyor — çatlak veya dökülen yüzey için kendiniz ekleyin.',
+        "es": 'Se anota. El precio aún no tiene en cuenta el soporte: añade tú el recargo si está agrietado o descascarillado.',
+    },
+    "untergrund_boden": {
+        "en": 'Noted. Old concrete usually needs one more grinding pass — not yet in the price.',
+        "tr": 'Not edilir. Eski beton genelde bir tur daha zımpara ister — fiyata henüz dahil değil.',
+        "es": 'Se anota. El hormigón viejo suele necesitar un lijado más, aún no incluido en el precio.',
+    },
+    "untergrund_aussen": {
+        "en": 'Noted on the quote. The substrate does not yet feed into the price.',
+        "tr": 'Teklife not edilir. Zemin henüz fiyata yansımıyor.',
+        "es": 'Se anota. El soporte todavía no influye en el precio.',
+    },
+    "verlegung": {
+        "en": 'Noted. Diagonal or bonded means more waste — not yet counted.',
+        "tr": 'Not edilir. Çapraz veya şaşırtmalı daha çok fire demek — henüz sayılmıyor.',
+        "es": 'Se anota. En diagonal o a matajunta hay más desperdicio, aún no contabilizado.',
+    },
+    "verlegeart": {
+        "en": 'Noted. The extra waste is not yet counted.',
+        "tr": 'Not edilir. Ek fire henüz sayılmıyor.',
+        "es": 'Se anota. El desperdicio extra aún no se cuenta.',
+    },
+    "material": {
+        "en": 'Noted on the quote. The material figure is an average for this work.',
+        "tr": 'Teklife not edilir. Malzeme tutarı bu iş için ortalamadır.',
+        "es": 'Se anota. El importe de material es un promedio para este trabajo.',
+    },
+    "typ": {
+        "en": 'Noted on the quote.',
+        "tr": 'Teklife not edilir.',
+        "es": 'Se anota en el presupuesto.',
+    },
+    "umfang": {
+        "en": 'Noted on the quote.',
+        "tr": 'Teklife not edilir.',
+        "es": 'Se anota en el presupuesto.',
+    },
+    "groesse": {
+        "en": 'On some templates this is the quantity and the biggest lever; otherwise it is only noted.',
+        "tr": 'Bazı şablonlarda bu miktardır ve en büyük etkendir; aksi halde sadece not edilir.',
+        "es": 'En algunas plantillas es la cantidad y la mayor palanca; si no, solo se anota.',
+    },
+    "hoehe": {
+        "en": 'Noted. More height means more material and drying time — not yet in the price.',
+        "tr": 'Not edilir. Yükseklik malzeme ve kuruma süresi demek — fiyata henüz dahil değil.',
+        "es": 'Se anota. Más altura implica más material y secado, aún no en el precio.',
+    },
+    "raum": {
+        "en": 'Noted on the quote.',
+        "tr": 'Teklife not edilir.',
+        "es": 'Se anota en el presupuesto.',
+    },
     "zeit": {"en": "Evenings, nights and weekends are charged at the callout rate.",
              "tr": "Akşam, gece ve hafta sonu acil tarifesi geçerlidir.",
              "es": "Tardes, noches y fines de semana van a tarifa de urgencia."},
-    "leitungen": {"en": "New cabling means chasing, plastering and more time.",
-                  "tr": "Yeni tesisat kırım, sıva ve daha çok zaman demektir.",
-                  "es": "Cableado nuevo implica rozas, enlucido y más tiempo."},
+    "leitungen": {
+        "en": 'Noted. Chasing and plastering are not yet included in the estimate.',
+        "tr": 'Not edilir. Kırım ve sıva tahmine henüz dahil değil.',
+        "es": 'Se anota. Las rozas y el enlucido aún no están incluidos.',
+    },
     "baujahr": {"en": "Before 1990 asbestos is possible — that puts a note on the quote.",
                 "tr": "1990 öncesinde asbest olabilir — teklife bir not eklenir.",
                 "es": "Antes de 1990 puede haber amianto: se añade un aviso al presupuesto."},

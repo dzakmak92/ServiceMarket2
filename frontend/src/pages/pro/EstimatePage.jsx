@@ -362,7 +362,7 @@ export default function EstimatePage() {
                 every time. */}
             <PriceHeader result={result} calculating={calculating} />
             <SurveyForm survey={selected} answers={answers} set={set}
-                        tier={tier} setTier={setTier} />
+                        tier={tier} setTier={setTier} result={result} />
             <Result result={result} calculating={calculating} form={selected.form} />
             {result && selected.tiers_differ && (
               <TierCompare tiers={compare} busy={comparing} tier={tier}
@@ -601,17 +601,40 @@ function PriceHeader({ result, calculating }) {
   );
 }
 
-/* What each answer does to the number. The estimator has always sorted them
-   this way; the form has never said so, so five questions looked like five
-   levers when two of them were. */
+/* What each answer did to the number — measured, not declared.
+ *
+ * The first version of this read `affects` from the catalogue and badged
+ * anything marked `variant` as a price driver. It is not one. The estimator
+ * says so in its own docstring: "Questions declared affects='variant' … are
+ * recorded and attach notes, but nothing in the arithmetic reads them yet."
+ * Measured on maler.innenanstrich: all five Untergrund options, Farbwechsel,
+ * Nikotin and Möblierung move the total by exactly € 0, while Zustand moves
+ * it by up to €307 and Zugang by up to €128. A pro told that "Rissig oder
+ * abblätternd" is priced would quote a crumbling wall at the intact price.
+ *
+ * So the badge now comes from `answers_applied`, which is the estimator
+ * reporting what it actually used, rather than from a declaration that has
+ * drifted from the arithmetic. `zeit` is the case that proves the point: it
+ * is declared `variant`, but it can set the Notdienst flag, and when it does
+ * the estimator lists it — so it gets the price badge exactly when it earns
+ * one.
+ */
 const EFFECT = {
-  amount: { key: 'est_effect_amount', cls: 'bg-teal-tint text-teal-deep' },
-  surcharge: { key: 'est_effect_surcharge', cls: 'bg-teal-tint text-teal-deep' },
-  scope: { key: 'est_effect_scope', cls: 'bg-teal-tint text-teal-deep' },
+  price: { key: 'est_effect_price', cls: 'bg-teal-tint text-teal-deep' },
   note: { key: 'est_effect_note', cls: 'bg-cream-deep text-ink-muted' },
 };
 
-function SurveyForm({ survey, answers, set, tier, setTier }) {
+/** Did this answer reach the total on the last calculation? */
+function effectOf(result, key) {
+  if (!result) return null;                       // nothing measured yet
+  const applied = result.answers_applied || [];
+  if (applied.includes(key)) return EFFECT.price;
+  // `zeit` is reported as `emergency` once it trips the callout tariff.
+  if (key === 'zeit' && applied.includes('emergency')) return EFFECT.price;
+  return EFFECT.note;
+}
+
+function SurveyForm({ survey, answers, set, tier, setTier, result }) {
   const { t } = useLang();
   const job = survey.job;
   return (
@@ -676,7 +699,7 @@ function SurveyForm({ survey, answers, set, tier, setTier }) {
       )}
 
       {(survey.form || []).map((q) => {
-        const eff = EFFECT[q.price_effect] || EFFECT.note;
+        const eff = effectOf(result, q.key);
         const id = `est-q-${q.key}`;
         const helpId = q.help ? `${id}-help` : undefined;
         /* A checkbox is labelled by the question itself, not by a separate
@@ -688,12 +711,12 @@ function SurveyForm({ survey, answers, set, tier, setTier }) {
         const isBool = q.type === 'bool';
         /* Which answers reach the money and which only reach the wording of
            the quote. */
-        const badge = (
+        const badge = eff ? (
           <span className={`shrink-0 text-[9.5px] font-bold uppercase tracking-wide
                             px-1.5 py-0.5 rounded-full ${eff.cls}`}>
             {t(eff.key)}
           </span>
-        );
+        ) : null;
         return (
           <div key={q.key}>
             {/* A checkbox is its own label, so a heading above it would print
