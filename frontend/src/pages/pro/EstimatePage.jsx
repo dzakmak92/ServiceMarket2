@@ -8,6 +8,7 @@ import { fmtEur0 as fmtEur, fmtEur as fmtEur2, fmtNum as fmtNumRaw } from '../..
 import {
   Loader2, AlertTriangle, ArrowLeft, Calculator, FileText,
   Trash2, Clock, Package, Info, MapPin, TrendingUp, Bookmark, Search, X,
+  ChevronDown, ChevronUp,
   RefreshCw, Coins, Pencil, RotateCcw, Check, Layers,
   Paintbrush, Grid3x3, Zap, Droplet, Sprout, SprayCan, Wrench, Hammer,
 } from 'lucide-react';
@@ -67,6 +68,10 @@ export default function EstimatePage() {
 
   const [selected, setSelected] = useState(null);   // survey payload
   const [answers, setAnswers] = useState({});
+  /* Which answers the pro actually touched. Every question ships a default,
+     so a count of "filled in" would read 100 % before they had done
+     anything — the ring has to distinguish their figure from our guess. */
+  const [touched, setTouched] = useState(() => new Set());
   const [tier, setTier] = useState('standard');
   const [result, setResult] = useState(null);
   const [calculating, setCalculating] = useState(false);
@@ -157,6 +162,7 @@ export default function EstimatePage() {
       const seed = {};
       (data.form || []).forEach((q) => { if (q.default !== null && q.default !== undefined) seed[q.key] = q.default; });
       setAnswers(seed);
+      setTouched(new Set());
     } catch (e) {
       setError(e?.response?.data?.detail || 'Dieser Auftragstyp konnte nicht geladen werden');
     }
@@ -192,7 +198,10 @@ export default function EstimatePage() {
       .catch(() => setMyJobs([]));
   }, [selected]);
 
-  const set = (k, v) => setAnswers((a) => ({ ...a, [k]: v }));
+  const set = (k, v) => {
+    setAnswers((a) => ({ ...a, [k]: v }));
+    setTouched((prev) => (prev.has(k) ? prev : new Set(prev).add(k)));
+  };
 
   const saveEstimate = async () => {
     setSaving(true);
@@ -362,7 +371,10 @@ export default function EstimatePage() {
                 every time. */}
             <PriceHeader result={result} calculating={calculating} />
             <SurveyForm survey={selected} answers={answers} set={set}
-                        tier={tier} setTier={setTier} result={result} />
+                        tier={tier} setTier={setTier} result={result}
+                        touched={touched} />
+            {/* The running total, directly under the form it explains. */}
+            <Tally result={result} t={t} />
             <Result result={result} calculating={calculating} form={selected.form} />
             {result && selected.tiers_differ && (
               <TierCompare tiers={compare} busy={comparing} tier={tier}
@@ -634,59 +646,230 @@ function effectOf(result, key) {
   return EFFECT.note;
 }
 
-function SurveyForm({ survey, answers, set, tier, setTier, result }) {
-  const { t } = useLang();
-  const job = survey.job;
+/* ── the stepper ───────────────────────────────────────────────────────
+ *
+ * Three cards, and the order is the argument: how much, then the two answers
+ * that move the money, then everything that only reaches the wording of the
+ * quote. A pro who stops after card two has a usable number; one who stops
+ * after card one has the app's guess, and card one says so.
+ *
+ * No connecting rail. The first draft had one — a 22 px circle joined by a
+ * 2 px line — and it breaks at 200 % text size: the label grows, the line
+ * does not, and the circle stops lining up with what it numbers. A large
+ * numeral inside the card header carries the same ordering and scales with
+ * everything around it.
+ */
+
+/** Which card a question belongs on.
+ *
+ *  `qty` is card one. `condition` and `access` are card two: those are the
+ *  three the estimator reports in `answers_applied`, and unlike the
+ *  `variant` questions they really do reach the total. Everything else is
+ *  card three, which is honest about being documentation rather than
+ *  pricing.
+ *
+ *  Deliberately not derived from the live result: the cards would reshuffle
+ *  under the pro's fingers as each estimate lands. `affects` is reliable for
+ *  exactly these three — it is only `variant` that overclaims.
+ */
+function cardOf(q) {
+  if (q.key === 'qty') return 1;
+  if (q.affects === 'condition' || q.affects === 'access') return 2;
+  return 3;
+}
+
+/** How many of a card's answers came from the pro rather than from us.
+ *
+ *  Not "how many are filled in" — every question ships a default and the form
+ *  seeds them all, so that count reads 100 % before anyone has touched
+ *  anything.
+ *
+ *  Nor `qty_source` from the estimator, which was the first attempt: it
+ *  reports `typical_size` only when no quantity was sent at all, and this
+ *  form always sends one because it seeds the field with the catalogue's
+ *  midpoint. From the server the pro's 57,5 and our 57,5 are the same
+ *  request. Only the client knows which of them typed it.
+ */
+function confirmedCount(questions, touched) {
+  return questions.filter((q) => touched.has(q.key)).length;
+}
+
+function Ring({ done, total, t }) {
+  const R = 15;
+  const C = 2 * Math.PI * R;
+  const frac = total ? done / total : 0;
+  const full = done >= total && total > 0;
   return (
-    <div className="card-lg mb-3 space-y-3" data-testid="estimate-form">
-      <div>
-        <h2 className="font-headings font-bold text-ink text-[17px] leading-snug">
-          {job.label_de}
-        </h2>
-        {job.site_visit_required && (
-          /* Says what it wants, not just that something is special. The chip
-             on the list before this screen read "Besichtigung" and left a
-             first-time user to work out what that asked of them. */
-          <div className="mt-2 flex gap-2 rounded-xl border border-amber-tint bg-amber/8 px-3 py-2.5">
-            <MapPin size={15} className="text-amber-text mt-0.5 shrink-0" aria-hidden="true" />
-            <div>
-              <p className="text-[12px] font-semibold text-amber-text">{t('est_regie_title')}</p>
-              <p className="text-[11.5px] text-ink-soft leading-relaxed mt-0.5">
-                {t('est_regie_body')}
-              </p>
-            </div>
-          </div>
+    <div className="relative w-[34px] h-[34px] shrink-0"
+         role="img" aria-label={t('est_confirmed_of', { done, total })}>
+      <svg viewBox="0 0 36 36" className="w-[34px] h-[34px] -rotate-90" aria-hidden="true">
+        <circle cx="18" cy="18" r={R} fill="none" strokeWidth="3.5" className="stroke-cream-deep" />
+        <circle cx="18" cy="18" r={R} fill="none" strokeWidth="3.5" strokeLinecap="round"
+                className={full ? 'stroke-teal' : 'stroke-amber-deep'}
+                strokeDasharray={`${(C * frac).toFixed(2)} ${C.toFixed(2)}`} />
+      </svg>
+      <span aria-hidden="true"
+            className={`absolute inset-0 grid place-items-center text-[9.5px] font-bold tabular-nums
+                        ${full ? 'text-teal-deep' : 'text-amber-text'}`}>
+        {done}/{total}
+      </span>
+    </div>
+  );
+}
+
+/** One priced choice, as chips that carry what the other options would cost.
+ *
+ *  A dropdown hides the consequence behind a tap. "Should I price this as an
+ *  occupied Altbau?" is the question, and the answer — €307 more at the top
+ *  of the range — is the thing worth showing. The figure is the upper bound
+ *  against the current selection, because that is the number a quote gets
+ *  wrong in the expensive direction.
+ */
+function OptionChips({ q, value, onPick, alts, t }) {
+  const byValue = new Map((alts || []).map((a) => [a.value, a]));
+  return (
+    <div className="flex flex-wrap gap-1.5 mt-1.5" role="group"
+         aria-label={q.label_de} data-testid={`estimate-chips-${q.key}`}>
+      {(q.options || []).map(([v, label]) => {
+        const on = v === value;
+        const alt = byValue.get(v);
+        const hi = alt ? alt.delta[1] : null;
+        const show = !on && hi != null && Math.abs(hi) >= 1;
+        return (
+          <button key={v} type="button" onClick={() => onPick(v)} aria-pressed={on}
+                  data-testid={`estimate-chip-${q.key}-${v}`}
+                  className={`text-[11.5px] leading-tight px-2.5 py-1.5 rounded-full border transition
+                              min-h-[32px] ${on
+                    ? 'bg-ink text-paper border-ink font-semibold'
+                    : 'bg-paper text-ink-muted border-sm-border hover:border-ink/30'}`}>
+            {label}
+            {show && (
+              <span className={`ml-1 text-[10px] tabular-nums font-semibold
+                                ${hi < 0 ? 'text-green-pos' : 'text-ink-faint'}`}>
+                {hi > 0 ? '+' : '−'}{fmtEur(Math.abs(hi))}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function StepCard({ n, title, sub, ring, amount, muted, children, testid }) {
+  return (
+    <div className={`rounded-[14px] border border-sm-border p-3.5 mb-2.5
+                     ${muted ? 'bg-cream-soft' : 'bg-paper'}`}
+         data-testid={testid}>
+      <div className="flex items-start gap-2.5 mb-2.5">
+        <span aria-hidden="true"
+              className={`font-headings font-bold text-[24px] leading-[.85] w-5 shrink-0
+                          ${muted ? 'text-cream-dark' : 'text-teal-tint'}`}>{n}</span>
+        <div className="flex-1 min-w-0">
+          <h3 className={`text-[13px] font-bold leading-tight ${muted ? 'text-ink-muted' : 'text-ink'}`}>
+            {title}
+          </h3>
+          {sub && <p className="text-[10.5px] text-ink-faint mt-0.5 leading-snug">{sub}</p>}
+        </div>
+        {amount}
+        {ring}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function SurveyForm({ survey, answers, set, tier, setTier, result, touched }) {
+  const { t } = useLang();
+  const [notesOpen, setNotesOpen] = useState(false);
+  const job = survey.job;
+  const form = survey.form || [];
+  const bd = result?.breakdown;
+
+  const cards = { 1: [], 2: [], 3: [] };
+  form.forEach((q) => { cards[cardOf(q)].push(q); });
+
+  const field = (q) => {
+    const id = `est-q-${q.key}`;
+    const helpId = q.help ? `${id}-help` : undefined;
+    const alts = bd?.alternatives?.[q.key];
+    return (
+      <div key={q.key} className="mb-3 last:mb-0">
+        {q.type === 'bool' ? (
+          <label htmlFor={id} className="flex items-center gap-2 cursor-pointer">
+            <input id={id} type="checkbox" checked={!!answers[q.key]}
+                   aria-describedby={helpId}
+                   onChange={(e) => set(q.key, e.target.checked)}
+                   data-testid={`estimate-q-${q.key}`} />
+            <span className="text-[13px] text-ink leading-snug">{q.label_de}</span>
+          </label>
+        ) : (
+          <>
+            <label htmlFor={id} className="text-[11px] font-medium text-ink-muted">
+              {q.label_de}{q.unit ? ` (${q.unit})` : ''}
+            </label>
+            {q.type === 'number' && (
+              <NumberField id={id} className="input w-full mt-1" min={0}
+                           aria-describedby={helpId}
+                           value={answers[q.key] === '' || answers[q.key] == null
+                             ? null : Number(answers[q.key])}
+                           onChange={(n) => set(q.key, n == null ? '' : n)}
+                           data-testid={`estimate-q-${q.key}`} />
+            )}
+            {q.type === 'choice' && (alts
+              /* Chips where the options carry a price, a select where they
+                 do not — eight unpriced options as chips is a wall of pills
+                 that reads as more important than it is. */
+              ? <OptionChips q={q} value={answers[q.key]} alts={alts} t={t}
+                             onPick={(v) => set(q.key, v)} />
+              : (
+                <select id={id} className="input w-full mt-1" value={answers[q.key] ?? ''}
+                        aria-describedby={helpId}
+                        onChange={(e) => set(q.key, e.target.value)}
+                        data-testid={`estimate-q-${q.key}`}>
+                  {q.options.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
+                </select>
+              ))}
+          </>
+        )}
+        {q.help && (
+          <p id={helpId} className="mt-1 text-[10.5px] text-ink-faint leading-relaxed">{q.help}</p>
         )}
       </div>
+    );
+  };
 
-      {/* Shown only where it does something.
+  const ringFor = (list) => (
+    <Ring done={confirmedCount(list, touched)} total={list.length} t={t} />
+  );
 
-          A tier is not a markup — it selects which operations get priced, via
-          `tier_min` on each one. The catalogue has 149 basic operations, 4
-          standard ones and no premium ones at all, so Standard and Premium
-          return an identical figure everywhere, and Basis differs on 4 of 149
-          job types. Three of those four are in trades this app does not
-          offer, which leaves exactly one of the 109 reachable templates —
-          garten.beet_anlegen — where pressing these buttons changes anything.
+  const step2Delta = (bd?.steps || []).reduce(
+    (acc, s) => [acc[0] + s.delta[0], acc[1] + s.delta[1]], [0, 0]);
 
-          Three controls that return one number are worse than no control:
-          the pro presses Premium, sees the same price, and stops trusting the
-          rest of the screen. `tiers_differ` already knew, and the "create all
-          three variants" box below already used it; the buttons did not.
+  return (
+    <div data-testid="estimate-form">
+      <h2 className="font-headings font-bold text-ink text-[15.5px] leading-snug px-1 pb-2">
+        {job.label_de}
+      </h2>
 
-          `tier` stays at its default of standard when this is hidden, which
-          is the same estimate every tier would have produced. */}
+      {job.site_visit_required && (
+        <div className="mb-2.5 flex gap-2 rounded-xl border border-amber-tint bg-amber/8 px-3 py-2.5">
+          <MapPin size={15} className="text-amber-text mt-0.5 shrink-0" aria-hidden="true" />
+          <div>
+            <p className="text-[12px] font-semibold text-amber-text">{t('est_regie_title')}</p>
+            <p className="text-[11.5px] text-ink-soft leading-relaxed mt-0.5">{t('est_regie_body')}</p>
+          </div>
+        </div>
+      )}
+
       {survey.tiers_differ && (
-        <div>
+        <div className="mb-2.5">
           <div className="flex gap-1 bg-cream-deep rounded-xl p-1" role="group"
                aria-label={t('est_tier_label')}>
             {TIERS.map((tr) => (
-              <button key={tr} type="button" onClick={() => setTier(tr)}
-                      aria-pressed={tier === tr}
+              <button key={tr} type="button" onClick={() => setTier(tr)} aria-pressed={tier === tr}
                       className={`flex-1 text-xs font-semibold py-2 rounded-lg transition ${
-                        tier === tr
-                          ? 'bg-paper text-ink shadow-sm'
-                          : 'text-ink-muted hover:text-ink'}`}
+                        tier === tr ? 'bg-paper text-ink shadow-sm' : 'text-ink-muted hover:text-ink'}`}
                       data-testid={`estimate-tier-${tr}`}>
                 {TIER_LABEL[tr]}
               </button>
@@ -698,78 +881,105 @@ function SurveyForm({ survey, answers, set, tier, setTier, result }) {
         </div>
       )}
 
-      {(survey.form || []).map((q) => {
-        const eff = effectOf(result, q.key);
-        const id = `est-q-${q.key}`;
-        const helpId = q.help ? `${id}-help` : undefined;
-        /* A checkbox is labelled by the question itself, not by a separate
-           heading plus the word "Ja". Rendering both gave the one control two
-           `<label for>` elements — which is invalid, and which made a screen
-           reader announce the question twice and "Ja" as if it were a second
-           field. "Ja" alone is meaningless anyway once the heading above it
-           has scrolled past. */
-        const isBool = q.type === 'bool';
-        /* Which answers reach the money and which only reach the wording of
-           the quote. */
-        const badge = eff ? (
-          <span className={`shrink-0 text-[9.5px] font-bold uppercase tracking-wide
-                            px-1.5 py-0.5 rounded-full ${eff.cls}`}>
-            {t(eff.key)}
-          </span>
-        ) : null;
-        return (
-          <div key={q.key}>
-            {/* A checkbox is its own label, so a heading above it would print
-                the question twice. Everything else needs the heading, because
-                a select shows its value, not its question. */}
-            {!isBool && (
-              <div className="flex items-center justify-between gap-2">
-                <label htmlFor={id} className="text-[11.5px] font-medium text-ink-muted">
-                  {q.label_de}{q.unit ? ` (${q.unit})` : ''}
-                </label>
-                {badge}
-              </div>
-            )}
-            {q.type === 'number' && (
-              <NumberField id={id} className="input w-full mt-1" min={0}
-                           aria-describedby={helpId}
-                           value={answers[q.key] === '' || answers[q.key] == null
-                             ? null : Number(answers[q.key])}
-                           onChange={(n) => set(q.key, n == null ? '' : n)}
-                           data-testid={`estimate-q-${q.key}`} />
-            )}
-            {q.type === 'choice' && (
-              <select id={id} className="input w-full mt-1" value={answers[q.key] ?? ''}
-                      aria-describedby={helpId}
-                      onChange={(e) => set(q.key, e.target.value)}
-                      data-testid={`estimate-q-${q.key}`}>
-                {q.options.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
-              </select>
-            )}
-            {isBool && (
-              <div className="flex items-center justify-between gap-2">
-                <label htmlFor={id} className="flex items-center gap-2 cursor-pointer min-w-0">
-                  <input id={id} type="checkbox" checked={!!answers[q.key]}
-                         aria-describedby={helpId}
-                         onChange={(e) => set(q.key, e.target.checked)}
-                         data-testid={`estimate-q-${q.key}`} />
-                  {/* The question, not the help text. Putting the explanation
-                      inside the checkbox label made the box appear to mean the
-                      sentence — "Erzeugt einen Hinweis im Angebot" is not
-                      something you tick. */}
-                  <span className="text-[13px] text-ink leading-snug">{q.label_de}</span>
-                </label>
-                {badge}
-              </div>
-            )}
-            {q.help && (
-              <p id={helpId} className="mt-1 text-[11px] text-ink-faint leading-relaxed">
-                {q.help}
-              </p>
-            )}
-          </div>
-        );
-      })}
+      {cards[1].length > 0 && (
+        <StepCard n="1" testid="estimate-step-1"
+                  title={t('est_step_qty')}
+                  sub={touched.has('qty') ? t('est_step_qty_yours') : t('est_step_qty_guess')}
+                  ring={ringFor(cards[1])}>
+          {cards[1].map(field)}
+        </StepCard>
+      )}
+
+      {cards[2].length > 0 && (
+        <StepCard n="2" testid="estimate-step-2"
+                  title={t('est_step_price')}
+                  sub={bd ? t('est_step_price_sub') : null}
+                  amount={bd && (step2Delta[1] !== 0 || step2Delta[0] !== 0) ? (
+                    <span className="text-[12px] font-bold tabular-nums text-red-warn shrink-0 text-right leading-tight">
+                      <small className="block text-[9px] font-semibold uppercase tracking-wide text-ink-faint">
+                        {t('est_surcharge')}
+                      </small>
+                      + {fmtEur(step2Delta[0])} … {fmtEur(step2Delta[1])}
+                    </span>
+                  ) : null}
+                  ring={ringFor(cards[2])}>
+          {cards[2].map(field)}
+        </StepCard>
+      )}
+
+      {cards[3].length > 0 && (
+        <StepCard n="3" muted testid="estimate-step-3"
+                  title={t('est_step_note')}
+                  /* Only claimed when it is true. The card is filled by
+                     `affects`, and if a question declared `variant` ever
+                     starts reaching the total, `answers_applied` will say so
+                     and this stops promising otherwise. That drift is exactly
+                     what put a wrong badge on this screen once already. */
+                  sub={cards[3].some((q) => (result?.answers_applied || []).includes(q.key))
+                    ? null : t('est_step_note_sub')}
+                  ring={ringFor(cards[3])}>
+          <button type="button" onClick={() => setNotesOpen((o) => !o)}
+                  aria-expanded={notesOpen} data-testid="estimate-step-3-toggle"
+                  className="w-full flex items-center justify-between gap-2 text-left
+                             text-[12.5px] text-ink-soft min-h-[44px]">
+            <span>{cards[3].map((q) => q.label_de).join(' · ')}</span>
+            {notesOpen ? <ChevronUp size={14} className="text-ink-faint shrink-0" />
+                       : <ChevronDown size={14} className="text-ink-faint shrink-0" />}
+          </button>
+          {notesOpen && <div className="mt-2">{cards[3].map(field)}</div>}
+        </StepCard>
+      )}
+    </div>
+  );
+}
+
+/** The running total, ending on the figure in the header.
+ *
+ *  Every line comes from the estimator run again with one answer changed, so
+ *  the lines cannot disagree with the total — verified: 284,44 + 37,48 =
+ *  321,92, which is what the header says.
+ */
+function Tally({ result, t }) {
+  const bd = result?.breakdown;
+  if (!bd) return null;
+  const [lo, hi] = result.total_net;
+  return (
+    <div className="rounded-[14px] border border-sm-border bg-paper p-3.5 mb-3"
+         data-testid="estimate-tally">
+      <p className="text-[11px] font-medium text-ink-muted mb-1.5">{t('est_how_it_adds_up')}</p>
+      <Row k={`${fmtNum(result.qty, 2)} ${result.job.unit}`} sub={t('est_base_value')}
+           v={`${fmtEur(bd.base_net[0])} – ${fmtEur(bd.base_net[1])}`} />
+      {bd.steps.map((s) => (
+        <Row key={s.key} k={s.value_label || s.label} sub={s.label}
+             v={s.delta[1] === 0 && s.delta[0] === 0
+               ? `± ${fmtEur(0)}`
+               : `+ ${fmtEur(s.delta[0])} … ${fmtEur(s.delta[1])}`}
+             tone={s.delta[1] === 0 && s.delta[0] === 0 ? 'zero' : 'up'} />
+      ))}
+      {!!result.answers_recorded?.length && (
+        <Row k={t('est_recorded_short')} sub={t('est_note_only')}
+             v={`± ${fmtEur(0)}`} tone="zero" />
+      )}
+      <div className="flex justify-between items-baseline gap-3 border-t-[1.5px] border-sm-border mt-1.5 pt-2">
+        <span className="text-[12px] font-bold text-ink">{t('est_net_estimated')}</span>
+        <span className="font-headings font-bold text-[16px] tabular-nums">
+          {fmtEur(lo)} – {fmtEur(hi)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function Row({ k, sub, v, tone }) {
+  return (
+    <div className="flex justify-between items-baseline gap-3 py-1">
+      <span className="text-[12px] text-ink-soft min-w-0">
+        {k}{sub && <small className="block text-[10px] text-ink-faint">{sub}</small>}
+      </span>
+      <span className={`text-[12px] font-semibold tabular-nums shrink-0
+                        ${tone === 'up' ? 'text-red-warn' : tone === 'zero' ? 'text-ink-faint' : 'text-ink'}`}>
+        {v}
+      </span>
     </div>
   );
 }
@@ -857,34 +1067,11 @@ function Result({ result, calculating, form }) {
         </p>
       )}
 
-      {(!!result.answers_recorded?.length || !!result.answers_applied?.length) && (
-        /* This printed the raw column names — literally "Preiswirksam:
-           condition, access, qty. Nur vermerkt: untergrund_boden, feuchte."
-           Nobody outside this repository knows what `untergrund_boden` is,
-           and the pro reading it is being shown a database schema.
-           `labelFor` maps a key back to the question that asked it, which is
-           the wording the pro just answered. */
-        <div className="rounded-xl border border-sm-border bg-cream-soft px-3 py-2.5"
-             data-testid="estimate-drivers">
-          <p className="text-[11.5px] font-semibold text-ink flex items-center gap-1.5">
-            <Info size={12} className="shrink-0" aria-hidden="true" />
-            {t('est_what_moved')}
-          </p>
-          {!!result.answers_applied?.length && (
-            <p className="text-[11.5px] text-ink-soft leading-relaxed mt-1">
-              {result.answers_applied.map((k) => labelFor(form, k)).join(' · ')}
-            </p>
-          )}
-          {!!result.answers_recorded?.length && (
-            <p className="text-[11.5px] text-ink-faint leading-relaxed mt-1.5">
-              <span className="font-medium text-ink-muted">{t('est_recorded_only')}</span>{' '}
-              {result.answers_recorded.map((k) => labelFor(form, k)).join(' · ')}.{' '}
-              {t('est_recorded_why')}
-            </p>
-          )}
-        </div>
-      )}
-
+      {/* The drivers panel that used to sit here has moved into the tally
+          above the result, where each answer is listed with what it actually
+          contributed. Two panels naming the same answers in different words —
+          one with amounts, one without — is one more than the screen needs,
+          and the one without amounts is the weaker of the two. */}
       {!!result.notes.length && (
         /* These are the sentences that belong in the quote, not warnings —
            but three identical amber boxes stacked on top of each other read

@@ -37,6 +37,7 @@ from repositories import quotes as quotes_repo
 from routes._pro import require_pro_id
 from services import calibration as calib
 from services import catalogue_ui
+from services import estimate_breakdown
 from services import estimator
 
 logger = logging.getLogger(__name__)
@@ -115,10 +116,25 @@ async def _estimate(pro_id: str, body: "EstimateIn", *, tier: Optional[str] = No
     country = body.country or await _country_for(pro_id)
     rates = await _rates_for(pro_id) if body.use_own_rates else {}
     cal = await _calibration_for(pro_id, body.job_key, body.use_calibration)
-    result = estimator.estimate(body.job_key, body.answers, country=country,
-                                tier=tier or body.tier, rates=rates, calibration=cal)
+    kw = {"country": country, "tier": tier or body.tier, "rates": rates,
+          "calibration": cal}
+    result = estimator.estimate(body.job_key, body.answers, **kw)
     if cal:
         result["calibration_note"] = calib.explain(cal)
+
+    # How it adds up, and what the other options would cost. Computed by
+    # running the estimator again rather than by re-deriving its arithmetic —
+    # a breakdown that models the pricing separately drifts from it. Eight
+    # extra runs at 0.044 ms each.
+    try:
+        survey = estimator.survey(body.job_key)
+        result["breakdown"] = estimate_breakdown.build(
+            body.job_key, body.answers, result.get("answers_applied") or [],
+            survey.get("form") or [], **kw)
+    except Exception:
+        # A missing breakdown must never cost the pro their estimate.
+        logger.exception("breakdown failed for %s", body.job_key)
+        result["breakdown"] = None
     return result
 
 
