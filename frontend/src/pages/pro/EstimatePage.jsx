@@ -636,25 +636,44 @@ function SurveyForm({ survey, answers, set, tier, setTier }) {
         )}
       </div>
 
-      <div>
-        <div className="flex gap-1 bg-cream-deep rounded-xl p-1" role="group"
-             aria-label={t('est_tier_label')}>
-          {TIERS.map((tr) => (
-            <button key={tr} type="button" onClick={() => setTier(tr)}
-                    aria-pressed={tier === tr}
-                    className={`flex-1 text-xs font-semibold py-2 rounded-lg transition ${
-                      tier === tr
-                        ? 'bg-paper text-ink shadow-sm'
-                        : 'text-ink-muted hover:text-ink'}`}
-                    data-testid={`estimate-tier-${tr}`}>
-              {TIER_LABEL[tr]}
-            </button>
-          ))}
+      {/* Shown only where it does something.
+
+          A tier is not a markup — it selects which operations get priced, via
+          `tier_min` on each one. The catalogue has 149 basic operations, 4
+          standard ones and no premium ones at all, so Standard and Premium
+          return an identical figure everywhere, and Basis differs on 4 of 149
+          job types. Three of those four are in trades this app does not
+          offer, which leaves exactly one of the 109 reachable templates —
+          garten.beet_anlegen — where pressing these buttons changes anything.
+
+          Three controls that return one number are worse than no control:
+          the pro presses Premium, sees the same price, and stops trusting the
+          rest of the screen. `tiers_differ` already knew, and the "create all
+          three variants" box below already used it; the buttons did not.
+
+          `tier` stays at its default of standard when this is hidden, which
+          is the same estimate every tier would have produced. */}
+      {survey.tiers_differ && (
+        <div>
+          <div className="flex gap-1 bg-cream-deep rounded-xl p-1" role="group"
+               aria-label={t('est_tier_label')}>
+            {TIERS.map((tr) => (
+              <button key={tr} type="button" onClick={() => setTier(tr)}
+                      aria-pressed={tier === tr}
+                      className={`flex-1 text-xs font-semibold py-2 rounded-lg transition ${
+                        tier === tr
+                          ? 'bg-paper text-ink shadow-sm'
+                          : 'text-ink-muted hover:text-ink'}`}
+                      data-testid={`estimate-tier-${tr}`}>
+                {TIER_LABEL[tr]}
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-ink-faint text-center mt-1.5 leading-relaxed">
+            {t(`est_tier_help_${tier}`)}
+          </p>
         </div>
-        <p className="text-[11px] text-ink-faint text-center mt-1.5 leading-relaxed">
-          {t(`est_tier_help_${tier}`)}
-        </p>
-      </div>
+      )}
 
       {(survey.form || []).map((q) => {
         const eff = EFFECT[q.price_effect] || EFFECT.note;
