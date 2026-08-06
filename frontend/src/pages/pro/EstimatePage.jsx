@@ -662,18 +662,25 @@ function effectOf(result, key) {
 
 /** Which card a question belongs on.
  *
- *  `qty` is card one. `condition` and `access` are card two: those are the
- *  three the estimator reports in `answers_applied`, and unlike the
+ *  The quantity is card one. `condition` and `access` are card two: those are
+ *  the three the estimator reports in `answers_applied`, and unlike the
  *  `variant` questions they really do reach the total. Everything else is
  *  card three, which is honest about being documentation rather than
  *  pricing.
  *
+ *  `is_quantity` comes from the survey, and it has to: only 56 of the 149 job
+ *  types ask for the quantity under the key `qty`. The rest call it `anzahl`,
+ *  `flaeche`, `stufen`, `wohnflaeche` — and matching on the literal key,
+ *  which is what this did first, filed the most important question on every
+ *  one of those templates under "documentation" and left card one off the
+ *  screen entirely. Nor is `affects === 'qty'` the test: a cable run in lfm
+ *  on a job priced per Stk declares `qty` and moves the total by € 0.
+ *
  *  Deliberately not derived from the live result: the cards would reshuffle
- *  under the pro's fingers as each estimate lands. `affects` is reliable for
- *  exactly these three — it is only `variant` that overclaims.
+ *  under the pro's fingers as each estimate lands.
  */
 function cardOf(q) {
-  if (q.key === 'qty') return 1;
+  if (q.is_quantity) return 1;
   if (q.affects === 'condition' || q.affects === 'access') return 2;
   return 3;
 }
@@ -788,6 +795,7 @@ function SurveyForm({ survey, answers, set, tier, setTier, result, touched }) {
 
   const cards = { 1: [], 2: [], 3: [] };
   form.forEach((q) => { cards[cardOf(q)].push(q); });
+  const qtyKey = cards[1][0]?.key;
 
   const field = (q) => {
     const id = `est-q-${q.key}`;
@@ -881,14 +889,23 @@ function SurveyForm({ survey, answers, set, tier, setTier, result, touched }) {
         </div>
       )}
 
-      {cards[1].length > 0 && (
-        <StepCard n="1" testid="estimate-step-1"
-                  title={t('est_step_qty')}
-                  sub={touched.has('qty') ? t('est_step_qty_yours') : t('est_step_qty_guess')}
-                  ring={ringFor(cards[1])}>
-          {cards[1].map(field)}
-        </StepCard>
-      )}
+      {/* Card one always stands, even on the handful of templates with no
+          quantity to ask for. A screen that simply starts at "2" reads as a
+          form that failed to load — and the pro is entitled to know the
+          estimate covers one whole job rather than wondering which field
+          they missed. */}
+      <StepCard n="1" testid="estimate-step-1"
+                title={t('est_step_qty')}
+                sub={qtyKey
+                  ? (touched.has(qtyKey) ? t('est_step_qty_yours') : t('est_step_qty_guess'))
+                  : t('est_step_qty_flat_sub')}
+                ring={qtyKey ? ringFor(cards[1]) : null}>
+        {qtyKey ? cards[1].map(field) : (
+          <p className="text-[12px] text-ink-soft leading-relaxed" data-testid="estimate-step-1-flat">
+            {t('est_step_qty_flat')}
+          </p>
+        )}
+      </StepCard>
 
       {cards[2].length > 0 && (
         <StepCard n="2" testid="estimate-step-2"
@@ -986,11 +1003,11 @@ function Row({ k, sub, v, tone }) {
 
 /** A question key back to the words the pro just read on the form.
  *
- *  `qty` never appears in the form array — it is the quantity field the
- *  survey builds from `typical_size` — so it gets the unit it is measured
- *  in, which is what the pro sees above that input. Anything still
- *  unresolved falls back to the key rather than to an empty string: an
- *  ugly word is recoverable, a missing one is not.
+ *  The form carries every question the pro answered, `qty` included, so the
+ *  lookup nearly always wins. The two lines below cover keys the estimator
+ *  reports for jobs whose form does not name them. Anything still unresolved
+ *  falls back to the key rather than to an empty string: an ugly word is
+ *  recoverable, a missing one is not.
  */
 function labelFor(form, key) {
   const q = (form || []).find((x) => x.key === key);

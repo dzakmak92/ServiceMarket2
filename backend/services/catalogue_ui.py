@@ -282,7 +282,7 @@ FIELD_HELP: dict[str, str] = {
     "material": "Wird im Angebot vermerkt. Der Materialpreis in der Schätzung ist ein Mittelwert für diese Arbeit.",
     "typ": "Wird im Angebot vermerkt.",
     "umfang": "Wird im Angebot vermerkt.",
-    "groesse": "Bei manchen Vorlagen ist das die Menge und damit der größte Hebel; sonst wird es nur vermerkt.",
+    "groesse": "Der größte Hebel im Preis.",
     "hoehe": "Wird vermerkt. Mehr Höhe heißt mehr Material und Trocknungszeit — noch nicht eingerechnet.",
     "raum": "Wird im Angebot vermerkt.",
     "zeit": "Abends, nachts und am Wochenende gilt der Notdiensttarif.",
@@ -376,11 +376,8 @@ FIELD_HELP_I18N: dict[str, dict[str, str]] = {
         "tr": 'Teklife not edilir.',
         "es": 'Se anota en el presupuesto.',
     },
-    "groesse": {
-        "en": 'On some templates this is the quantity and the biggest lever; otherwise it is only noted.',
-        "tr": 'Bazı şablonlarda bu miktardır ve en büyük etkendir; aksi halde sadece not edilir.',
-        "es": 'En algunas plantillas es la cantidad y la mayor palanca; si no, solo se anota.',
-    },
+    "groesse": {"en": "The biggest lever on the price.", "tr": "Fiyattaki en büyük etken.",
+                "es": "La mayor palanca del precio."},
     "hoehe": {
         "en": 'Noted. More height means more material and drying time — not yet in the price.',
         "tr": 'Not edilir. Yükseklik malzeme ve kuruma süresi demek — fiyata henüz dahil değil.',
@@ -451,16 +448,63 @@ PRICE_EFFECT = {
     "note": "note",
 }
 
+# `affects="qty"` on a question does not mean that question is the quantity.
+# A cable run in lfm on a job priced per Stk is declared `qty` and measured at
+# a € 0 effect — the estimator has one quantity axis and `survey()` flags which
+# question owns it. These lines are used for the others, whose default help
+# (`laenge`: "der größte Hebel im Preis") would be the same overclaim the
+# variant fields made before.
+FIELD_HELP_NOT_QTY: dict[str, str] = {
+    "de": "Wird vermerkt. Bei dieser Vorlage ist das nicht die Menge — der Preis ändert sich dadurch nicht.",
+    "en": "Noted. On this template this is not the quantity — it does not change the price.",
+    "tr": "Not edilir. Bu şablonda miktar bu değildir — fiyatı değiştirmez.",
+    "es": "Se anota. En esta plantilla no es la cantidad: no cambia el precio.",
+}
+
+# The help under the quantity field that `survey()` builds itself. It carries
+# the job's unit and typical size, so it cannot live in the key-based table
+# above; the estimator hands over the pieces and the sentence is assembled per
+# language here, rather than shipping a German line to an English screen.
+QTY_HELP: dict[str, dict[str, str]] = {
+    "typical": {
+        "de": "Typisch {lo}–{hi} {unit}",
+        "en": "Typically {lo}–{hi} {unit}",
+        "tr": "Tipik olarak {lo}–{hi} {unit}",
+        "es": "Normalmente {lo}–{hi} {unit}",
+    },
+    "whole": {
+        "de": "Preis gilt je {unit}",
+        "en": "The price is per {unit}",
+        "tr": "Fiyat her {unit} için geçerlidir",
+        "es": "El precio es por {unit}",
+    },
+    "whole_range": {
+        "de": "Preis gilt je {unit}, typisch {lo}–{hi}",
+        "en": "The price is per {unit}, typically {lo}–{hi}",
+        "tr": "Fiyat her {unit} için geçerlidir, tipik olarak {lo}–{hi}",
+        "es": "El precio es por {unit}, normalmente {lo}–{hi}",
+    },
+}
+
 
 def decorate_question(q: dict, lang: str = "de") -> dict:
     """Add the help line and the price-effect class to one question."""
     out = dict(q)
     key = q.get("key")
-    if not out.get("help_de"):
-        out["help_de"] = FIELD_HELP.get(key, "")
-    if lang != "de":
-        out["help"] = (FIELD_HELP_I18N.get(key) or {}).get(lang) or out.get("help_de") or ""
+    fmt = q.get("help_fmt")
+    if fmt and fmt.get("id") in QTY_HELP:
+        table = QTY_HELP[fmt["id"]]
+        out["help"] = (table.get(lang) or table["de"]).format(**fmt.get("args", {}))
+        out["help_de"] = table["de"].format(**fmt.get("args", {}))
+    elif q.get("affects") == "qty" and not q.get("is_quantity"):
+        out["help"] = FIELD_HELP_NOT_QTY.get(lang) or FIELD_HELP_NOT_QTY["de"]
+        out["help_de"] = FIELD_HELP_NOT_QTY["de"]
     else:
-        out["help"] = out.get("help_de") or ""
+        if not out.get("help_de"):
+            out["help_de"] = FIELD_HELP.get(key, "")
+        if lang != "de":
+            out["help"] = (FIELD_HELP_I18N.get(key) or {}).get(lang) or out.get("help_de") or ""
+        else:
+            out["help"] = out.get("help_de") or ""
     out["price_effect"] = PRICE_EFFECT.get(q.get("affects"), "note")
     return out

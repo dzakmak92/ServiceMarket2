@@ -381,6 +381,35 @@ if len(_ops) > 1:
 else:
     check(False, f"{_key} has too few operations to test the optional filter")
 
+print("\n── every form points at its own quantity ──")
+# The screen files the quantity on its own card. It cannot find it by key:
+# only 56 of the job types call it `qty` and the rest use `anzahl`, `flaeche`,
+# `stufen`, `wohnflaeche`. Nor by `affects`, which is declared `qty` on three
+# questions that measure something else entirely — a cable run in lfm on a job
+# priced per Stk — and move the total by nothing. So `survey()` flags exactly
+# one, and this is the guard on that word "exactly".
+_no_qty, _changed = [], []
+for _j in E.catalogue()["jobs"]:
+    _s = E.survey(_j["key"])
+    _flagged = [q for q in _s["form"] if q.get("is_quantity")]
+    check(len(_flagged) <= 1, f"{_j['key']} flags {len(_flagged)} quantity questions")
+    if not _flagged:
+        _no_qty.append(_j["key"])
+        continue
+    check(E.qty_question(_j) is None or _flagged[0]["key"] == E.qty_question(_j)["key"],
+          f"{_j['key']} flags the question the estimator actually multiplies")
+    # Where the field is synthesised rather than the catalogue's own, adding
+    # it must not move a number: the estimator already assumed a quantity for
+    # those jobs, and the field only lets the pro disagree with the assumption.
+    if E.qty_question(_j) is None:
+        _d = {q["key"]: q["default"] for q in _s["form"] if q.get("default") is not None}
+        _without = {k: v for k, v in _d.items() if k != _flagged[0]["key"]}
+        if E.estimate(_j["key"], _d)["total_net"] != E.estimate(_j["key"], _without)["total_net"]:
+            _changed.append(_j["key"])
+check(not _changed, f"the default quantity is the one the estimator already used ({_changed[:3]})")
+check(_no_qty == ["sanitaer.rohrbruch"],
+      f"only the one Pauschale job has no quantity to ask for ({_no_qty})")
+
 print("\n" + ("ALL PASS" if not fails else f"{len(fails)} FAILURE(S)"))
 for f in fails:
     print("  ·", f)

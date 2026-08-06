@@ -690,6 +690,14 @@ def survey(job_key: str) -> dict:
     The shared condition and access questions are appended when the job does
     not already ask them, because they move the number on every job type and a
     form that omits them silently assumes the middle case.
+
+    Exactly one question is flagged `is_quantity`, wherever it comes from. The
+    UI needs to know which field is the quantity and it cannot tell from the
+    key: two thirds of the job types ask for it under their own name —
+    `anzahl`, `flaeche`, `stufen`, `wohnflaeche` — and a screen matching on
+    the literal key `qty` treated those as ordinary detail questions. The
+    catalogue knows which one multiplies; saying so here is cheaper than
+    every caller re-deriving `qty_question`'s unit rule.
     """
     job = get_job(job_key)
     if not job:
@@ -698,12 +706,39 @@ def survey(job_key: str) -> dict:
     form = [dict(q) for q in (job.get("guided_form") or [])]
     asked = {q["key"] for q in form}
 
-    if "qty" not in asked and not qty_question(job) and job["band_basis"] != "total":
+    own_qty = qty_question(job)
+    if own_qty is not None:
+        for q in form:
+            if q["key"] == own_qty["key"]:
+                q["is_quantity"] = True
+    elif "qty" not in asked and job["unit"] != "psch":
+        # Jobs priced as a whole get the question too. `band_basis == "total"`
+        # only sets the fallback quantity to one instead of the typical
+        # midpoint — `estimate()` multiplies by it either way — so leaving the
+        # field off meant a pro fitting three outdoor sockets was quoted for
+        # one with no field to say otherwise. The default stays at 1 for those
+        # jobs, which is what the estimator already assumed: adding the
+        # question must not move a single existing number.
+        whole = job["band_basis"] == "total"
+        lo, hi = job["typical_size"]
         form.insert(0, {
-            "key": "qty", "label_de": "Menge", "type": "number",
-            "unit": job["unit"], "options": [], "affects": "qty",
-            "default": _mid(job["typical_size"]), "note_if": {},
-            "help_de": f"Typisch {job['typical_size'][0]}–{job['typical_size'][1]} {job['unit']}",
+            "key": "qty", "label_de": "Anzahl" if whole else "Menge",
+            "type": "number", "unit": job["unit"], "options": [],
+            "affects": "qty", "is_quantity": True,
+            "default": 1.0 if whole else _mid(job["typical_size"]),
+            "note_if": {},
+            # The sentence is assembled where the other three languages live
+            # (`catalogue_ui`); what belongs here is the job's own numbers.
+            # `help_de` stays filled for callers that never pass through the
+            # decorator.
+            "help_fmt": {
+                "id": ("whole_range" if hi > lo else "whole") if whole else "typical",
+                "args": {"unit": job["unit"], "lo": lo, "hi": hi},
+            },
+            "help_de": (
+                f"Preis gilt je {job['unit']}"
+                + (f", typisch {lo}–{hi}" if hi > lo else "")
+                if whole else f"Typisch {lo}–{hi} {job['unit']}"),
         })
     if "condition" not in asked:
         form.append(_shared_choice(
