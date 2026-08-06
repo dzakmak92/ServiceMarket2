@@ -36,6 +36,7 @@ from repositories import estimates as estimates_repo
 from repositories import quotes as quotes_repo
 from routes._pro import require_pro_id
 from services import calibration as calib
+from services import catalogue_ui
 from services import estimator
 
 logger = logging.getLogger(__name__)
@@ -142,28 +143,44 @@ async def list_jobs(trade: Optional[str] = None, group: Optional[str] = None,
         needle = q.strip().lower()
         found = [j for j in found
                  if needle in j["label_de"].lower() or needle in j["key"].lower()]
-    return {
-        "jobs": [{
-            "key": j["key"], "trade": j["trade"], "label_de": j["label_de"],
-            "unit": j["unit"], "group": j["group"], "segment": j["segment"],
-            "typical_size": j["typical_size"], "confidence": j["confidence"],
-            "site_visit_required": j["site_visit_required"],
-            "quote_mode": j["quote_mode"],
-            "emergency_capable": j["emergency_capable"],
-            "question_count": len(j["guided_form"]),
-        } for j in found],
-        "total": len(found),
-    }
+    rows = [{
+        "key": j["key"], "trade": j["trade"], "label_de": j["label_de"],
+        "unit": j["unit"], "group": j["group"], "segment": j["segment"],
+        "typical_size": j["typical_size"], "confidence": j["confidence"],
+        "site_visit_required": j["site_visit_required"],
+        "quote_mode": j["quote_mode"],
+        "emergency_capable": j["emergency_capable"],
+        "question_count": len(j["guided_form"]),
+    } for j in found]
+
+    # How to chunk the list, when there is enough of it to be worth chunking.
+    # `group` cannot do this — every Maler template carries the same group,
+    # "Maler & Tapezierer", so grouping by it yields one heading over all 19.
+    # Absent for a search (the result set is already the answer) and for the
+    # seventeen trades with fewer than ten templates.
+    sections = None
+    if trade and not q:
+        sections = catalogue_ui.sections_for(trade, [r["key"] for r in rows])
+    return {"jobs": rows, "total": len(rows), "sections": sections}
 
 
 @router.get("/jobs/{job_key}")
-async def job_survey(job_key: str, user: dict = Depends(get_current_user)):
-    """The guided form for one job, ready to render."""
+async def job_survey(job_key: str, lang: str = Query(default="de", pattern="^(de|en|tr|es)$"),
+                     user: dict = Depends(get_current_user)):
+    """The guided form for one job, ready to render.
+
+    Each question gains a help line and a `price_effect`. The estimator has
+    always classified answers into the ones that reach the total and the ones
+    that only reach the wording, and the form has never said which is which —
+    so five questions looked like five levers when two of them were.
+    """
     await require_pro_id(user)
     try:
-        return estimator.survey(job_key)
+        out = dict(estimator.survey(job_key))
     except LookupError as exc:
         raise HTTPException(404, str(exc)) from exc
+    out["form"] = [catalogue_ui.decorate_question(q, lang) for q in out.get("form") or []]
+    return out
 
 
 @router.post("")

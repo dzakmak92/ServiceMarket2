@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { parseDecimal } from '../utils/number';
+import { moneyLocale } from '../utils/money';
 
 /**
  * A money/quantity field that accepts the number the pro actually types.
@@ -23,17 +24,30 @@ import { parseDecimal } from '../utils/number';
  *                 unreadable, which the caller must distinguish from 0.
  * @param min/max  clamped on blur, and announced to assistive tech.
  */
+/* Shown in the reader's convention, accepted in either. The display was
+   hardcoded to a comma, so an English or Spanish interface put "37,5" in the
+   field directly under a price reading "€2,114" — two different meanings for
+   the same mark, three centimetres apart. `parseDecimal` still reads both,
+   which is the half that matters for typing.
+
+   Outside the component so it is stable across renders and can sit in an
+   effect's dependency list without re-running it on every keystroke. */
+function show(v) {
+  if (v == null) return '';
+  return moneyLocale().startsWith('en') ? String(v) : String(v).replace('.', ',');
+}
+
 export default function NumberField({
   value, onChange, min, max, className = '', onBlur, ...rest
 }) {
-  const [text, setText] = useState(() => (value == null ? '' : String(value).replace('.', ',')));
+  const [text, setText] = useState(() => show(value));
   const [focused, setFocused] = useState(false);
 
   /* Follow the value when it changes from outside — a recalculation, a
      template being applied — but never while the pro is mid-word. */
   useEffect(() => {
     if (focused) return;
-    setText(value == null ? '' : String(value).replace('.', ','));
+    setText(show(value));
   }, [value, focused]);
 
   const commit = (raw) => {
@@ -59,7 +73,7 @@ export default function NumberField({
         const out = commit(e.target.value);
         /* Show what was understood. If "1.234,50" was read as 1234.5, the
            field says so rather than leaving the pro to wonder. */
-        setText(out == null ? '' : String(out).replace('.', ','));
+        setText(show(out));
         onBlur?.(e);
       }}
       aria-valuemin={min}
