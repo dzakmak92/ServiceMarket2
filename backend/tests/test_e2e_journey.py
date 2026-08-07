@@ -670,6 +670,19 @@ with TestClient(entry.app) as c:
     check(ok(r) and r.json().get("status") == "scheduled",
           "and a conversion with no times does not drag the status backwards")
 
+    # A quote whose job has been deleted must refuse, not answer 200 with a
+    # scheduled job the calendar will never show — it filters deleted rows.
+    r = c.post("/api/jobs", json={"title": "Wird gelöscht", "mode": "simple"})
+    doomed = r.json().get("id") if ok(r, 200, 201) else None
+    if doomed:
+        r = c.post("/api/quotes", json={
+            "job_id": doomed, "lines": [{"description": "X", "qty": 1, "unit_price": 10}]})
+        dq = r.json().get("id") if ok(r, 200, 201) else None
+        c.delete(f"/api/jobs/{doomed}")
+        r = c.post(f"/api/quotes/{dq}/convert", json={"mode": "simple"})
+        check(r.status_code == 409,
+              f"converting against a deleted job is refused -> {r.status_code}")
+
     # Compared against whatever the job is now, not a hardcoded "accepted" —
     # the conversion above legitimately moved it, and an assertion that names
     # the expected status rather than the expected *behaviour* fails for the

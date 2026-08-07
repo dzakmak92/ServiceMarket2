@@ -5,9 +5,10 @@ import NumberField from '../../components/NumberField';
 import { useLang } from '../../contexts/LangContext';
 import { fmtEur } from '../../utils/money';
 import { fmtDate } from '../../utils/money';
+import ConvertSheet from '../../components/pro/ConvertSheet';
 import {
   Loader2, Plus, X, Send, Check, Ban, FileText, AlertCircle, Trash2, Copy,
-  Calculator,
+  Calculator, ArrowRight, Layers, Hammer,
 } from 'lucide-react';
 
 
@@ -42,6 +43,8 @@ export default function QuotesPage() {
   const [quotes, setQuotes] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [statusFilter, setStatusFilter] = useState('');
+  // Which quote is being turned into work. Null when the sheet is closed.
+  const [converting, setConverting] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState(null);
@@ -354,73 +357,103 @@ export default function QuotesPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-2" data-testid="quote-list">
-            {quotes.map((q) => (
-              <div key={q.id} className="card" data-testid="quote-row">
+          <div className="space-y-2.5" data-testid="quote-list">
+            {quotes.map((q) => {
+              /* The one action that matters on a quote the customer has seen
+                 is what happens next. It leads, at full width and full size;
+                 everything else is secondary and sits on one row beneath it.
+                 A quote already converted says so instead of offering the
+                 button again. */
+              const answerable = ['sent', 'viewed', 'negotiating'].includes(q.status);
+              const convertible = answerable || q.status === 'accepted';
+              return (
+              <div key={q.id} className="rounded-2xl border border-sm-border bg-paper p-3.5"
+                   data-testid="quote-row">
                 <div className="flex items-start justify-between gap-3">
                   {/* The whole row is the way in — opening a quote to read it,
                       change it, revise it or print it was not possible from
                       anywhere before this link existed. */}
-                  <Link to={`/quotes/${q.id}`} className="min-w-0 flex-1 group"
+                  {/* min-h-[44px]: this link is the way into the quote and it
+                      measured 42 px, sized by its own two lines of text. Two
+                      pixels under is still under. */}
+                  <Link to={`/quotes/${q.id}`}
+                        className="min-w-0 flex-1 group min-h-[44px] flex flex-col justify-center"
                         data-testid="quote-open">
-                    <div className="font-headings font-bold text-ink truncate group-hover:text-teal">
+                    <div className="font-headings font-bold text-[16px] text-ink leading-tight
+                                    truncate group-hover:text-teal">
                       {q.title || q.job_title || (t('quote') || 'Angebot')}
                     </div>
-                    <div className="text-sm text-ink-muted truncate">
+                    <div className="text-[13px] text-ink-muted truncate mt-0.5">
                       {[q.quote_number, q.customer_name, q.job_number].filter(Boolean).join(' · ')}
                     </div>
                   </Link>
                   <div className="text-right shrink-0">
-                    <div className="font-headings font-bold text-ink">{fmtEur(q.gross_total)}</div>
-                    <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[11px] ${STATUS_STYLE[q.status] || 'bg-cream-dark text-ink-muted'}`}>
+                    <div className="font-headings font-bold text-[17px] text-ink tabular-nums">
+                      {fmtEur(q.gross_total)}
+                    </div>
+                    <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[12px] font-semibold ${STATUS_STYLE[q.status] || 'bg-cream-dark text-ink-muted'}`}>
                       {t(`quote_status_${q.status}`) || q.status}
                     </span>
                   </div>
                 </div>
 
                 {q.valid_until && ['sent', 'viewed', 'draft'].includes(q.status) && (
-                  <p className="text-xs text-ink-muted mt-1">
+                  <p className="text-[13px] text-ink-muted mt-1.5">
                     {t('valid_until') || 'Gültig bis'}: {fmtDate(q.valid_until)}
                   </p>
                 )}
 
-                <div className="flex flex-wrap gap-2 mt-3">
+                {convertible && (
+                  <button type="button" onClick={() => setConverting(q)}
+                          data-testid="quote-convert"
+                          className="w-full min-h-[50px] mt-3 rounded-xl bg-amber text-on-amber
+                                     font-bold text-[15px] flex items-center justify-center gap-2">
+                    {answerable ? <Check size={17} /> : <ArrowRight size={17} />}
+                    {answerable ? t('conv_cta_accept') : t('conv_cta_plain')}
+                  </button>
+                )}
+
+                <div className="flex flex-wrap gap-2 mt-2.5">
                   {q.status === 'draft' && (
-                    <button className="btn-secondary text-sm flex items-center gap-1"
+                    <button className="min-h-[44px] px-3.5 rounded-xl border border-sm-border
+                                       bg-paper text-[14px] font-semibold flex items-center gap-1.5"
                             disabled={busyId === q.id} onClick={() => act(q.id, 'send')}
                             data-testid="quote-send">
-                      <Send size={14} />{t('send') || 'Senden'}
+                      <Send size={15} />{t('send') || 'Senden'}
                     </button>
                   )}
-                  {['sent', 'viewed'].includes(q.status) && (
-                    <>
-                      <button className="btn-secondary text-sm flex items-center gap-1"
-                              disabled={busyId === q.id} onClick={() => act(q.id, 'accept')}
-                              data-testid="quote-accept">
-                        <Check size={14} />{t('mark_accepted') || 'Angenommen'}
-                      </button>
-                      <button className="btn-secondary text-sm flex items-center gap-1"
-                              disabled={busyId === q.id}
-                              onClick={() => act(q.id, 'reject', { reason: '' })}
-                              data-testid="quote-reject">
-                        <Ban size={14} />{t('mark_rejected') || 'Abgelehnt'}
-                      </button>
-                    </>
+                  {answerable && (
+                    <button className="min-h-[44px] px-3.5 rounded-xl border border-sm-border
+                                       bg-paper text-[14px] font-semibold flex items-center gap-1.5"
+                            disabled={busyId === q.id}
+                            onClick={() => act(q.id, 'reject', { reason: '' })}
+                            data-testid="quote-reject">
+                      <Ban size={15} />{t('mark_rejected') || 'Abgelehnt'}
+                    </button>
                   )}
                   {q.share_token && (
-                    <button className="btn-secondary text-sm flex items-center gap-1"
+                    <button className="min-h-[44px] px-3.5 rounded-xl border border-sm-border
+                                       bg-paper text-[14px] font-semibold flex items-center gap-1.5"
                             onClick={() => navigator.clipboard?.writeText(
                               `${window.location.origin}/p/${q.share_token}`)}>
-                      <Copy size={14} />{t('copy_link') || 'Link kopieren'}
+                      <Copy size={15} />{t('copy_link') || 'Link kopieren'}
                     </button>
                   )}
                   {busyId === q.id && <Loader2 size={16} className="animate-spin text-teal self-center" />}
                 </div>
               </div>
-            ))}
+            );})}
           </div>
         )}
       </div>
+
+      {converting && (
+        <ConvertSheet
+          quote={converting}
+          onClose={() => setConverting(null)}
+          onDone={() => { setConverting(null); load(); }}
+        />
+      )}
     </div>
   );
 }

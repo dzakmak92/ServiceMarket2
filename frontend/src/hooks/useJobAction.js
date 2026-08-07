@@ -27,6 +27,28 @@ export default function useJobAction({ t, onChanged }) {
        to check and a total to agree before anything is issued. */
     if (action === 'invoice') { navigate(`/jobs/${appt.id}/invoice`); return; }
 
+    /* Finishing draws up the invoice and opens it. Two steps that are one
+       decision — and split across two screens, the second is the one that
+       gets forgotten. The server does both in the right order and does not
+       roll the completion back if the billing fails: the work really is
+       finished, so the job stays completed and says why it could not be
+       billed. Here that means the pro lands on the calendar with a message
+       rather than on an invoice that does not exist. */
+    if (action === 'complete') {
+      try {
+        const { data } = await api.post(`/api/jobs/${appt.id}/complete`);
+        onChanged?.(appt, data?.job?.status || 'completed');
+        if (data?.invoice?.id) navigate(`/jobs/${appt.id}/invoice`);
+        else if (data?.invoice_error) toast.warning(data.invoice_error);
+        return;
+      } catch (err) {
+        const stale = err?.response?.status === 409;
+        toast.error(stale ? t('day_status_refused') : formatError(err));
+        onChanged?.(appt, null);
+        return;
+      }
+    }
+
     const next = action === 'start' ? 'in_progress' : 'completed';
     try {
       await api.patch(`/api/jobs/${appt.id}/status`, { status: next });

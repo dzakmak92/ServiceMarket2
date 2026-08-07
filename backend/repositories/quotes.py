@@ -585,8 +585,16 @@ async def convert(quote_id: str, pro_id: str, *, mode: str,
             # setting a date on it.
             sets.append("status = case when status = 'accepted' "
                         "then 'scheduled'::job_status else status end")
+        # `deleted_at is null`, and a hard failure when nothing matches. Without
+        # it this happily converted a quote whose job had been deleted: the
+        # call answered 200 with a scheduled job, and the calendar — which does
+        # filter deleted rows — never showed it. A success that produces
+        # nothing visible is worse than a refusal.
         job = await con.fetchrow(
-            f"update jobs set {', '.join(sets)} where id = $1 returning *", *args)
+            f"update jobs set {', '.join(sets)} "
+            f"where id = $1 and deleted_at is null returning *", *args)
+        if not job:
+            raise ValueError("The job behind this quote no longer exists.")
 
     if job and job.get("customer_id"):
         await customers_repo.refresh_rollups(str(job["customer_id"]))
