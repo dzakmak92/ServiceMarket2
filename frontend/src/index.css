@@ -129,6 +129,21 @@
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal
            disabled:cursor-not-allowed disabled:opacity-50 appearance-none;
   }
+  /* The class 81 fields across ten pro pages already ask for, and which was
+     never written. Until now every one of them rendered as a bare browser
+     input: measured at 24 px tall on the estimate screen — half the 44 px
+     minimum for something a thumb has to hit — with no radius, no brand
+     border and no focus ring. `sm-input` was here all along; this is the same
+     control under the name the markup uses. A touch shorter (44 rather than
+     48) because these sit in dense forms, and 44 is the floor, not a target. */
+  .input {
+    @apply flex h-11 w-full rounded-[12px] border border-sm-border bg-paper px-3.5 py-2 text-sm text-ink
+           placeholder:text-ink-muted
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-1
+           disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  select.input { @apply appearance-none pr-9; }
+  textarea.input { @apply h-auto py-2.5 leading-relaxed; }
   .sm-textarea {
     @apply flex w-full rounded-[14px] border border-sm-border bg-paper px-4 py-3 text-sm text-ink
            placeholder:text-ink-muted resize-none

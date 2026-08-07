@@ -8,7 +8,6 @@ import { fmtEur0 as fmtEur, fmtEur as fmtEur2, fmtNum as fmtNumRaw } from '../..
 import {
   Loader2, AlertTriangle, ArrowLeft, Calculator, FileText,
   Trash2, Clock, Package, Info, MapPin, TrendingUp, Bookmark, Search, X,
-  ChevronDown, ChevronUp,
   RefreshCw, Coins, Pencil, RotateCcw, Check, Layers,
   Paintbrush, Grid3x3, Zap, Droplet, Sprout, SprayCan, Wrench, Hammer,
 } from 'lucide-react';
@@ -72,6 +71,12 @@ export default function EstimatePage() {
      so a count of "filled in" would read 100 % before they had done
      anything — the ring has to distinguish their figure from our guess. */
   const [touched, setTouched] = useState(() => new Set());
+  // Which step is unfolded. One at a time — see the stepper comment. The
+  // quantity opens first because it is the one field nobody can skip.
+  const [openStep, setOpenStep] = useState('qty');
+  // What the last answer did to the total, shown for a moment beside it. The
+  // estimate has always recalculated on its own; nothing said so.
+  const [delta, setDelta] = useState(null);
   const [tier, setTier] = useState('standard');
   const [result, setResult] = useState(null);
   const [calculating, setCalculating] = useState(false);
@@ -163,6 +168,8 @@ export default function EstimatePage() {
       (data.form || []).forEach((q) => { if (q.default !== null && q.default !== undefined) seed[q.key] = q.default; });
       setAnswers(seed);
       setTouched(new Set());
+      setOpenStep('qty');
+      setDelta(null);
     } catch (e) {
       setError(e?.response?.data?.detail || 'Dieser Auftragstyp konnte nicht geladen werden');
     }
@@ -174,7 +181,21 @@ export default function EstimatePage() {
       const { data } = await api.post('/api/estimate', {
         job_key: key, answers: ans, tier: wantTier,
       });
-      setResult(data);
+      // Against the figure that was on screen, not against a stored baseline:
+      // this is "what did that tap do", and the answer is only meaningful
+      // relative to what the pro was just looking at.
+      setResult((prev) => {
+        const before = prev && prev.job.key === key ? prev.total_net[1] : null;
+        const move = before == null ? 0 : data.total_net[1] - before;
+        // In words, not with a sign. A pill reading "− € 623" is the same
+        // accounting minus that was taken off the option rows, and it lands
+        // on the one element the eye is already on.
+        setDelta(Math.abs(move) < 0.5 ? null : {
+          key: move > 0 ? 'est_delta_more' : 'est_delta_less',
+          amount: fmtEur(Math.abs(move)),
+        });
+        return data;
+      });
     } catch (e) {
       setError(e?.response?.data?.detail || 'Die Schätzung konnte nicht berechnet werden');
     } finally {
@@ -190,6 +211,14 @@ export default function EstimatePage() {
     const id = setTimeout(() => calculate(key, answers, tier), 350);
     return () => clearTimeout(id);
   }, [selected, answers, tier, calculate]);
+
+  // The pill is a notification, not a state: it says what just happened and
+  // then gets out of the way.
+  useEffect(() => {
+    if (!delta) return undefined;
+    const id = setTimeout(() => setDelta(null), 2600);
+    return () => clearTimeout(id);
+  }, [delta]);
 
   useEffect(() => {
     if (!selected) return;
@@ -369,10 +398,10 @@ export default function EstimatePage() {
                 field to see what it does to the number; with the number
                 underneath a five-field form they had to scroll to find out,
                 every time. */}
-            <PriceHeader result={result} calculating={calculating} />
+            <PriceHeader result={result} calculating={calculating} delta={delta} />
             <SurveyForm survey={selected} answers={answers} set={set}
                         tier={tier} setTier={setTier} result={result}
-                        touched={touched} />
+                        touched={touched} open={openStep} setOpen={setOpenStep} />
             {/* The running total, directly under the form it explains. */}
             <Tally result={result} t={t} />
             <Result result={result} calculating={calculating} form={selected.form} />
@@ -555,60 +584,63 @@ function Chip({ active, onClick, children }) {
  * past five fields, read, and scroll back — so most people changed one thing,
  * looked, and never tried the second.
  *
- * Sticky, and it keeps the last figure while the next one is in flight rather
- * than blanking: a number that disappears every time you touch a field reads
- * as an error, not as loading.
+ * It also used to be 146 px tall and pinned, which on a 390 x 664 phone meant
+ * 218 px of permanent chrome with the app bar — a third of the screen — and
+ * at mid-scroll it covered 146 px of the 328 px card underneath it. Measured,
+ * both. So the tall card is gone and what stays is a band: the figure, and
+ * what the last answer did to it.
+ *
+ * The bar that used to live here is gone too. It was filled to 100 % always,
+ * so it said nothing the two figures beside it did not, and it cost 30 px.
+ *
+ * Keeps the last figure while the next one is in flight rather than blanking:
+ * a number that disappears every time you touch a field reads as an error,
+ * not as loading. The delta pill is the point of the redesign — the estimate
+ * has always recalculated on its own (measured at 431 ms), but the number
+ * changed silently, so nothing on screen said "that tap cost you EUR 181".
  */
-function PriceHeader({ result, calculating }) {
+function PriceHeader({ result, calculating, delta }) {
   const { t } = useLang();
-  if (!result) {
-    return (
-      <div className="rounded-[17px] bg-teal text-paper p-4 mb-3 min-h-[104px]
-                      flex items-center justify-center" data-testid="estimate-price-header">
-        <Loader2 className="animate-spin" size={20} />
-      </div>
-    );
-  }
-  const [lo, hi] = result.total_net;
-  const unit = result.job.unit;
+  const body = !result ? (
+    <Loader2 className="animate-spin" size={18} />
+  ) : (
+    <>
+      <span className="text-[11px] font-bold uppercase tracking-wider text-teal-tint shrink-0">
+        {t('est_net_short')}
+      </span>
+      <span className="font-headings font-bold text-[20px] leading-none tracking-[-.03em]
+                       tabular-nums flex-1 text-center"
+            data-testid="estimate-price-value">
+        {fmtEur(result.total_net[0])} – {fmtEur(result.total_net[1])}
+      </span>
+      {delta ? (
+        <span className="text-[12.5px] font-bold tabular-nums rounded-full bg-paper/22 px-2.5 py-1
+                         shrink-0 whitespace-nowrap" data-testid="estimate-price-delta">
+          {t(delta.key, { amount: delta.amount })}
+        </span>
+      ) : (
+        <span className="w-[18px] shrink-0 grid place-items-center">
+          {calculating && <Loader2 className="animate-spin" size={13} />}
+        </span>
+      )}
+    </>
+  );
+  /* top-[4rem]: the app bar is `sticky top-0` and 4 rem tall, so a band pinned
+     to the viewport top slid underneath it. z-20 keeps it below that bar
+     rather than fighting it. Full-bleed by negative margin so the band spans
+     the screen the way a toolbar does, instead of floating as a third card. */
   return (
-    /* top-[4.5rem], not top-2: the app bar is `sticky top-0` and 4 rem tall,
-       so a price card pinned to the viewport top slid underneath it and the
-       figure — the one thing this card exists to show — was covered by the
-       logo. z-20 keeps it under that bar rather than fighting it. */
-    <div className={`sticky top-[4.5rem] z-20 rounded-[17px] bg-teal text-paper p-4 mb-3
-                     shadow-[0_6px_20px_rgba(26,58,82,.18)] transition-opacity
-                     ${calculating ? 'opacity-80' : ''}`}
+    <div className={`sticky top-[4rem] z-20 -mx-4 px-4 py-2.5 bg-teal text-paper mb-3
+                     flex items-center gap-3 min-h-[46px]
+                     shadow-[0_4px_14px_rgba(26,58,82,.2)] transition-opacity
+                     ${calculating ? 'opacity-90' : ''}`}
          data-testid="estimate-price-header">
-      <p className="text-[11.5px] text-teal-tint flex items-center gap-1.5">
-        {t('est_net_estimated')}
-        {calculating && <Loader2 className="animate-spin" size={11} />}
-      </p>
-      <p className="font-headings font-bold text-[30px] leading-[1.05] tracking-[-.035em]
-                    tabular-nums mt-0.5" data-testid="estimate-price-value">
-        {fmtEur(lo)} – {fmtEur(hi)}
-      </p>
-      <p className="text-[11.5px] text-teal-tint mt-1">
-        {fmtNum(result.qty, 2)} {unit}
-        {result.per_unit && ` · ${fmtEur2(result.per_unit[0])}–${fmtEur2(result.per_unit[1])} / ${unit}`}
-        {result.rate_basis === 'notdienst' && ` · ${t('est_callout_rate')}`}
-      </p>
-
-      {/* Two numbers become a span you can see rather than one you compute.
-          The fill is the whole track because lo and hi *are* the ends — the
-          bar exists to give the spread a size, not to locate it. */}
-      <div className="mt-3" aria-hidden="true">
-        <div className="h-2 rounded-full bg-paper/25 overflow-hidden">
-          <div className="h-full rounded-full bg-paper" style={{ width: '100%' }} />
-        </div>
-        <div className="flex justify-between text-[10.5px] text-teal-tint mt-1.5 tabular-nums">
-          <span>{t('est_best_case')} {fmtEur(lo)}</span>
-          <span>{t('est_worst_case')} {fmtEur(hi)}</span>
-        </div>
-      </div>
-      <p className="sr-only">
-        {t('est_range_sr', { lo: fmtEur(lo), hi: fmtEur(hi) })}
-      </p>
+      {body}
+      {result && (
+        <p className="sr-only">
+          {t('est_range_sr', { lo: fmtEur(result.total_net[0]), hi: fmtEur(result.total_net[1]) })}
+        </p>
+      )}
     </div>
   );
 }
@@ -648,114 +680,136 @@ function effectOf(result, key) {
 
 /* ── the stepper ───────────────────────────────────────────────────────
  *
- * Three cards, and the order is the argument: how much, then the two answers
- * that move the money, then everything that only reaches the wording of the
- * quote. A pro who stops after card two has a usable number; one who stops
- * after card one has the app's guess, and card one says so.
+ * One step open at a time. The order is the argument: how much, then each
+ * answer that moves the money, then everything that only reaches the wording
+ * of the quote. A pro who stops after the priced steps has a usable number;
+ * one who stops at the first has the app's guess, and that step says so.
+ *
+ * Why an accordion rather than three open cards: with everything unfolded the
+ * form is 2.9 screens on a phone and the controls have to shrink to fit. They
+ * did — the quantity field rendered at 24 px and the option chips at 32 px,
+ * eight of nine below the 44 px a thumb needs, with the price difference on
+ * each chip set in 10 px. Folding the steps buys the room to make the one
+ * thing you are touching full size, and a collapsed step still shows its
+ * answer and what that answer costs, so nothing is hidden by folding it.
  *
  * No connecting rail. The first draft had one — a 22 px circle joined by a
  * 2 px line — and it breaks at 200 % text size: the label grows, the line
- * does not, and the circle stops lining up with what it numbers. A large
- * numeral inside the card header carries the same ordering and scales with
- * everything around it.
+ * does not, and the circle stops lining up with what it numbers.
  */
 
-/** Which card a question belongs on.
+/** The steps, derived from the form the server sent.
  *
- *  The quantity is card one. `condition` and `access` are card two: those are
- *  the three the estimator reports in `answers_applied`, and unlike the
- *  `variant` questions they really do reach the total. Everything else is
- *  card three, which is honest about being documentation rather than
- *  pricing.
- *
- *  `is_quantity` comes from the survey, and it has to: only 56 of the 149 job
- *  types ask for the quantity under the key `qty`. The rest call it `anzahl`,
- *  `flaeche`, `stufen`, `wohnflaeche` — and matching on the literal key,
- *  which is what this did first, filed the most important question on every
- *  one of those templates under "documentation" and left card one off the
- *  screen entirely. Nor is `affects === 'qty'` the test: a cable run in lfm
- *  on a job priced per Stk declares `qty` and moves the total by € 0.
- *
- *  Deliberately not derived from the live result: the cards would reshuffle
- *  under the pro's fingers as each estimate lands.
+ *  Not a fixed three. A job type may ask for condition and not access, or ask
+ *  four recorded questions or none, and the survey is the only thing that
+ *  knows which. `is_quantity` comes from the server for the same reason: only
+ *  56 of the 149 job types call the quantity `qty` — the rest use `anzahl`,
+ *  `flaeche`, `stufen`, `wohnflaeche` — and matching on the key filed the most
+ *  important question of every one of those templates under "documentation".
  */
-function cardOf(q) {
-  if (q.is_quantity) return 1;
-  if (q.affects === 'condition' || q.affects === 'access') return 2;
-  return 3;
+function stepsOf(form) {
+  const list = form || [];
+  const qty = list.find((q) => q.is_quantity) || null;
+  const priced = list.filter((q) => q.affects === 'condition' || q.affects === 'access');
+  const rest = list.filter((q) => q !== qty && !priced.includes(q));
+  const steps = [{ id: 'qty', kind: 'qty', questions: qty ? [qty] : [] }];
+  priced.forEach((q) => steps.push({ id: q.key, kind: 'priced', questions: [q] }));
+  if (rest.length) steps.push({ id: 'notes', kind: 'notes', questions: rest });
+  return steps;
 }
 
-/** How many of a card's answers came from the pro rather than from us.
+/** How many answers came from the pro rather than from us.
  *
  *  Not "how many are filled in" — every question ships a default and the form
  *  seeds them all, so that count reads 100 % before anyone has touched
  *  anything.
  *
  *  Nor `qty_source` from the estimator, which was the first attempt: it
- *  reports `typical_size` only when no quantity was sent at all, and this
- *  form always sends one because it seeds the field with the catalogue's
- *  midpoint. From the server the pro's 57,5 and our 57,5 are the same
+ *  reports `typical_size` only when no quantity was sent at all, and this form
+ *  always sends one. From the server the pro's 57,5 and our 57,5 are the same
  *  request. Only the client knows which of them typed it.
  */
 function confirmedCount(questions, touched) {
   return questions.filter((q) => touched.has(q.key)).length;
 }
 
-function Ring({ done, total, t }) {
-  const R = 15;
-  const C = 2 * Math.PI * R;
-  const frac = total ? done / total : 0;
-  const full = done >= total && total > 0;
-  return (
-    <div className="relative w-[34px] h-[34px] shrink-0"
-         role="img" aria-label={t('est_confirmed_of', { done, total })}>
-      <svg viewBox="0 0 36 36" className="w-[34px] h-[34px] -rotate-90" aria-hidden="true">
-        <circle cx="18" cy="18" r={R} fill="none" strokeWidth="3.5" className="stroke-cream-deep" />
-        <circle cx="18" cy="18" r={R} fill="none" strokeWidth="3.5" strokeLinecap="round"
-                className={full ? 'stroke-teal' : 'stroke-amber-deep'}
-                strokeDasharray={`${(C * frac).toFixed(2)} ${C.toFixed(2)}`} />
-      </svg>
-      <span aria-hidden="true"
-            className={`absolute inset-0 grid place-items-center text-[9.5px] font-bold tabular-nums
-                        ${full ? 'text-teal-deep' : 'text-amber-text'}`}>
-        {done}/{total}
-      </span>
-    </div>
-  );
+/** Each option's surcharge over the cheapest one.
+ *
+ *  The figures used to be measured against whatever was selected at that
+ *  moment, which made every cheaper option render as a negative — a column of
+ *  "− € 159" that reads as a loss on a screen whose whole job is to price
+ *  work. Anchoring on the cheapest option instead means a surcharge can never
+ *  be negative: it is the distance from the floor, and the floor is labelled
+ *  rather than priced.
+ *
+ *  Checked against the whole catalogue: in all 298 priced questions one option
+ *  is cheapest at both ends of the range, so the anchor is well defined. The
+ *  null return is for the day that stops being true — the caller then falls
+ *  back to printing each option's own total, which is always honest, instead
+ *  of a surcharge that would have to be negative.
+ */
+function surchargesOver(alts) {
+  if (!alts || !alts.length) return null;
+  const lo = Math.min(...alts.map((a) => a.total_net[0]));
+  const hi = Math.min(...alts.map((a) => a.total_net[1]));
+  if (!alts.some((a) => a.total_net[0] - lo < 0.005 && a.total_net[1] - hi < 0.005)) return null;
+  return new Map(alts.map((a) => [a.value, [a.total_net[0] - lo, a.total_net[1] - hi]]));
 }
 
-/** One priced choice, as chips that carry what the other options would cost.
+/** A money span for a step header or an option row: "+ € 39 – € 159". */
+function spanOf(pair, t) {
+  if (!pair || (Math.abs(pair[0]) < 0.5 && Math.abs(pair[1]) < 0.5)) return null;
+  return Math.round(pair[0]) === Math.round(pair[1])
+    ? `+ ${fmtEur(pair[1])}`
+    : `+ ${fmtEur(pair[0])} – ${fmtEur(pair[1])}`;
+}
+
+/** One priced choice, as rows a thumb can hit and a column of prices to scan.
  *
  *  A dropdown hides the consequence behind a tap. "Should I price this as an
- *  occupied Altbau?" is the question, and the answer — €307 more at the top
- *  of the range — is the thing worth showing. The figure is the upper bound
- *  against the current selection, because that is the number a quote gets
- *  wrong in the expensive direction.
+ *  occupied Altbau?" is the question, and what it costs is the thing worth
+ *  showing. Full-width rows rather than wrapped chips because the prices then
+ *  line up in one right-hand column — ragged two-up chips cannot be scanned,
+ *  and the figure was the first thing to shrink when they had to fit.
  */
-function OptionChips({ q, value, onPick, alts, t }) {
+function OptionRows({ q, value, onPick, alts, t }) {
+  const over = surchargesOver(alts);
   const byValue = new Map((alts || []).map((a) => [a.value, a]));
   return (
-    <div className="flex flex-wrap gap-1.5 mt-1.5" role="group"
-         aria-label={q.label_de} data-testid={`estimate-chips-${q.key}`}>
+    <div className="flex flex-col gap-1.5" role="radiogroup"
+         aria-label={q.label_de} data-testid={`estimate-opts-${q.key}`}>
       {(q.options || []).map(([v, label]) => {
         const on = v === value;
+        const up = over ? over.get(v) : null;
+        const span = spanOf(up, t);
+        const isBase = !!over && !span;
         const alt = byValue.get(v);
-        const hi = alt ? alt.delta[1] : null;
-        const show = !on && hi != null && Math.abs(hi) >= 1;
         return (
-          <button key={v} type="button" onClick={() => onPick(v)} aria-pressed={on}
-                  data-testid={`estimate-chip-${q.key}-${v}`}
-                  className={`text-[11.5px] leading-tight px-2.5 py-1.5 rounded-full border transition
-                              min-h-[32px] ${on
-                    ? 'bg-ink text-paper border-ink font-semibold'
-                    : 'bg-paper text-ink-muted border-sm-border hover:border-ink/30'}`}>
-            {label}
-            {show && (
-              <span className={`ml-1 text-[10px] tabular-nums font-semibold
-                                ${hi < 0 ? 'text-green-pos' : 'text-ink-faint'}`}>
-                {hi > 0 ? '+' : '−'}{fmtEur(Math.abs(hi))}
+          <button key={v} type="button" role="radio" aria-checked={on} onClick={() => onPick(v)}
+                  data-testid={`estimate-opt-${q.key}-${v}`}
+                  className={`w-full min-h-[60px] flex items-center gap-3 px-3.5 py-2.5 rounded-[14px]
+                              border text-left transition
+                              focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal/25
+                              ${on ? 'border-teal bg-teal/[.07] shadow-[inset_3px_0_0_theme(colors.teal.DEFAULT)]'
+                                   : 'border-sm-border bg-paper hover:border-teal/40'}`}>
+            <span aria-hidden="true"
+                  className={`w-[21px] h-[21px] rounded-full border-2 shrink-0 grid place-items-center
+                              ${on ? 'border-teal' : 'border-cream-deep'}`}>
+              {on && <span className="w-[11px] h-[11px] rounded-full bg-teal" />}
+            </span>
+            <span className="flex-1 min-w-0 text-[15px] font-semibold leading-tight">{label}</span>
+            {over ? (
+              isBase
+                ? <span className="shrink-0 text-[12px] font-bold text-green-pos bg-green-pos/10
+                                   border border-green-pos/25 rounded-lg px-2 py-1">{t('est_opt_base')}</span>
+                : <span className="shrink-0 text-[14px] font-bold tabular-nums text-ink">{span}</span>
+            ) : alt ? (
+              /* The fallback: no anchor, so each option prints its own total
+                 rather than a difference that would have to be negative. */
+              <span className="shrink-0 text-[14px] font-bold tabular-nums text-ink">
+                {fmtEur(alt.total_net[1])}
               </span>
-            )}
+            ) : null}
           </button>
         );
       })}
@@ -763,109 +817,143 @@ function OptionChips({ q, value, onPick, alts, t }) {
   );
 }
 
-function StepCard({ n, title, sub, ring, amount, muted, children, testid }) {
+/** A yes/no as a switch, because a 13 px checkbox is not a touch target. */
+function SwitchRow({ id, label, help, checked, onChange, testid }) {
   return (
-    <div className={`rounded-[14px] border border-sm-border p-3.5 mb-2.5
+    <button type="button" role="switch" aria-checked={checked} id={id}
+            onClick={() => onChange(!checked)} data-testid={testid}
+            className="w-full min-h-[60px] flex items-center gap-3 px-3.5 py-2.5 rounded-[14px]
+                       border border-sm-border bg-paper text-left transition hover:border-teal/40
+                       focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal/25">
+      <span className="flex-1 min-w-0">
+        <span className="block text-[15px] font-semibold leading-tight">{label}</span>
+        {help && <span className="block text-[12px] text-ink-faint mt-0.5 leading-snug">{help}</span>}
+      </span>
+      <span aria-hidden="true"
+            className={`w-[50px] h-[30px] rounded-full shrink-0 relative transition-colors
+                        ${checked ? 'bg-teal' : 'bg-cream-deep'}`}>
+        <span className={`absolute top-[3px] left-[3px] w-6 h-6 rounded-full bg-paper shadow
+                          transition-transform ${checked ? 'translate-x-5' : ''}`} />
+      </span>
+    </button>
+  );
+}
+
+/** One step: a header that is always readable, a body that folds. */
+function Step({ n, title, sub, amount, amountMuted, done, open, onToggle, muted, children, testid }) {
+  return (
+    <div className={`rounded-2xl border mb-2.5 overflow-hidden
+                     ${open ? 'border-sm-border shadow-[0_4px_16px_rgba(26,58,82,.09)]' : 'border-sm-border'}
                      ${muted ? 'bg-cream-soft' : 'bg-paper'}`}
          data-testid={testid}>
-      <div className="flex items-start gap-2.5 mb-2.5">
+      <button type="button" onClick={onToggle} aria-expanded={open}
+              data-testid={`${testid}-toggle`}
+              className="w-full min-h-[64px] flex items-center gap-3 px-4 py-3 text-left
+                         focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal/25">
         <span aria-hidden="true"
-              className={`font-headings font-bold text-[24px] leading-[.85] w-5 shrink-0
-                          ${muted ? 'text-cream-dark' : 'text-teal-tint'}`}>{n}</span>
-        <div className="flex-1 min-w-0">
-          <h3 className={`text-[13px] font-bold leading-tight ${muted ? 'text-ink-muted' : 'text-ink'}`}>
+              className={`w-7 h-7 rounded-[9px] grid place-items-center text-[14px] font-bold shrink-0
+                          ${open ? 'bg-teal text-paper'
+                                 : done ? 'bg-green-pos/12 text-green-pos' : 'bg-cream-deep text-ink-muted'}`}>
+          {done && !open ? '✓' : n}
+        </span>
+        <span className="flex-1 min-w-0">
+          <span className="block text-[17px] font-headings font-bold leading-tight tracking-[-.015em]">
             {title}
-          </h3>
-          {sub && <p className="text-[10.5px] text-ink-faint mt-0.5 leading-snug">{sub}</p>}
-        </div>
-        {amount}
-        {ring}
-      </div>
-      {children}
+          </span>
+          {sub && <span className="block text-[13px] text-ink-muted mt-0.5 truncate">{sub}</span>}
+        </span>
+        <span className={`shrink-0 text-[15px] font-bold tabular-nums
+                          ${amountMuted ? 'text-ink-faint font-semibold text-[13px]' : 'text-ink'}`}>
+          {amount}
+        </span>
+      </button>
+      {open && <div className="px-4 pb-4">{children}</div>}
     </div>
   );
 }
 
-function SurveyForm({ survey, answers, set, tier, setTier, result, touched }) {
+function SurveyForm({ survey, answers, set, tier, setTier, result, touched, open, setOpen }) {
   const { t } = useLang();
-  const [notesOpen, setNotesOpen] = useState(false);
   const job = survey.job;
   const form = survey.form || [];
   const bd = result?.breakdown;
+  const steps = stepsOf(form);
+  const stepDelta = new Map((bd?.steps || []).map((s) => [s.key, s.delta]));
 
-  const cards = { 1: [], 2: [], 3: [] };
-  form.forEach((q) => { cards[cardOf(q)].push(q); });
-  const qtyKey = cards[1][0]?.key;
+  const answered = (q) => {
+    if (q.type === 'bool') return answers[q.key] ? q.label_de : null;
+    const opt = (q.options || []).find(([v]) => v === answers[q.key]);
+    return opt ? opt[1] : (answers[q.key] === '' || answers[q.key] == null ? null : String(answers[q.key]));
+  };
 
+  /* The control for one question, at a size a thumb can use. */
   const field = (q) => {
     const id = `est-q-${q.key}`;
     const helpId = q.help ? `${id}-help` : undefined;
+    if (q.type === 'bool') {
+      return (
+        <div key={q.key} className="mb-2 last:mb-0">
+          <SwitchRow id={id} label={q.label_de} help={q.help}
+                     checked={!!answers[q.key]} onChange={(v) => set(q.key, v)}
+                     testid={`estimate-q-${q.key}`} />
+        </div>
+      );
+    }
     const alts = bd?.alternatives?.[q.key];
     return (
-      <div key={q.key} className="mb-3 last:mb-0">
-        {q.type === 'bool' ? (
-          <label htmlFor={id} className="flex items-center gap-2 cursor-pointer">
-            <input id={id} type="checkbox" checked={!!answers[q.key]}
-                   aria-describedby={helpId}
-                   onChange={(e) => set(q.key, e.target.checked)}
-                   data-testid={`estimate-q-${q.key}`} />
-            <span className="text-[13px] text-ink leading-snug">{q.label_de}</span>
-          </label>
-        ) : (
-          <>
-            <label htmlFor={id} className="text-[11px] font-medium text-ink-muted">
-              {q.label_de}{q.unit ? ` (${q.unit})` : ''}
-            </label>
-            {q.type === 'number' && (
-              <NumberField id={id} className="input w-full mt-1" min={0}
-                           aria-describedby={helpId}
-                           value={answers[q.key] === '' || answers[q.key] == null
-                             ? null : Number(answers[q.key])}
-                           onChange={(n) => set(q.key, n == null ? '' : n)}
-                           data-testid={`estimate-q-${q.key}`} />
-            )}
-            {q.type === 'choice' && (alts
-              /* Chips where the options carry a price, a select where they
-                 do not — eight unpriced options as chips is a wall of pills
-                 that reads as more important than it is. */
-              ? <OptionChips q={q} value={answers[q.key]} alts={alts} t={t}
-                             onPick={(v) => set(q.key, v)} />
-              : (
-                <select id={id} className="input w-full mt-1" value={answers[q.key] ?? ''}
-                        aria-describedby={helpId}
-                        onChange={(e) => set(q.key, e.target.value)}
-                        data-testid={`estimate-q-${q.key}`}>
-                  {q.options.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
-                </select>
-              ))}
-          </>
+      <div key={q.key} className="mb-4 last:mb-0">
+        <label htmlFor={id}
+               className="block text-[13px] font-bold uppercase tracking-wider text-ink-muted mb-2">
+          {q.label_de}{q.unit ? ` (${q.unit})` : ''}
+        </label>
+        {q.type === 'number' && (
+          <NumberField id={id} className="w-full h-14 rounded-[14px] border-[1.5px] border-sm-border
+                                          bg-paper px-4 text-[24px] font-bold tabular-nums text-ink
+                                          focus-visible:outline-none focus-visible:border-teal
+                                          focus-visible:ring-4 focus-visible:ring-teal/20"
+                       min={0} aria-describedby={helpId}
+                       value={answers[q.key] === '' || answers[q.key] == null
+                         ? null : Number(answers[q.key])}
+                       onChange={(n) => set(q.key, n == null ? '' : n)}
+                       data-testid={`estimate-q-${q.key}`} />
+        )}
+        {q.type === 'choice' && (
+          <OptionRows q={q} value={answers[q.key]} alts={alts} t={t}
+                      onPick={(v) => set(q.key, v)} />
         )}
         {q.help && (
-          <p id={helpId} className="mt-1 text-[10.5px] text-ink-faint leading-relaxed">{q.help}</p>
+          <p id={helpId} className="mt-2 text-[13px] text-ink-faint leading-relaxed">{q.help}</p>
         )}
       </div>
     );
   };
 
-  const ringFor = (list) => (
-    <Ring done={confirmedCount(list, touched)} total={list.length} t={t} />
-  );
-
-  const step2Delta = (bd?.steps || []).reduce(
-    (acc, s) => [acc[0] + s.delta[0], acc[1] + s.delta[1]], [0, 0]);
+  const totalQ = form.length;
+  const doneQ = confirmedCount(form, touched);
 
   return (
     <div data-testid="estimate-form">
-      <h2 className="font-headings font-bold text-ink text-[15.5px] leading-snug px-1 pb-2">
+      <h2 className="font-headings font-bold text-ink text-[18px] leading-snug px-1 pb-1.5 tracking-[-.025em]">
         {job.label_de}
       </h2>
 
+      {/* Confirmations, not filled fields — see confirmedCount. */}
+      <div className="flex items-center gap-2.5 px-1 pb-3" data-testid="estimate-progress">
+        <span className="flex-1 h-1.5 rounded-full bg-cream-deep overflow-hidden">
+          <span className="block h-full rounded-full bg-green-pos transition-[width] duration-300"
+                style={{ width: `${totalQ ? (doneQ / totalQ) * 100 : 0}%` }} />
+        </span>
+        <span className="text-[12px] font-bold text-ink-muted shrink-0 tabular-nums">
+          {t('est_confirmed_of', { done: doneQ, total: totalQ })}
+        </span>
+      </div>
+
       {job.site_visit_required && (
-        <div className="mb-2.5 flex gap-2 rounded-xl border border-amber-tint bg-amber/8 px-3 py-2.5">
-          <MapPin size={15} className="text-amber-text mt-0.5 shrink-0" aria-hidden="true" />
+        <div className="mb-2.5 flex gap-2.5 rounded-xl border border-amber-tint bg-amber/8 px-3.5 py-3">
+          <MapPin size={16} className="text-amber-text mt-0.5 shrink-0" aria-hidden="true" />
           <div>
-            <p className="text-[12px] font-semibold text-amber-text">{t('est_regie_title')}</p>
-            <p className="text-[11.5px] text-ink-soft leading-relaxed mt-0.5">{t('est_regie_body')}</p>
+            <p className="text-[13.5px] font-bold text-amber-text">{t('est_regie_title')}</p>
+            <p className="text-[13px] text-ink-soft leading-relaxed mt-0.5">{t('est_regie_body')}</p>
           </div>
         </div>
       )}
@@ -876,76 +964,76 @@ function SurveyForm({ survey, answers, set, tier, setTier, result, touched }) {
                aria-label={t('est_tier_label')}>
             {TIERS.map((tr) => (
               <button key={tr} type="button" onClick={() => setTier(tr)} aria-pressed={tier === tr}
-                      className={`flex-1 text-xs font-semibold py-2 rounded-lg transition ${
+                      className={`flex-1 text-[13.5px] font-bold py-2.5 rounded-lg transition ${
                         tier === tr ? 'bg-paper text-ink shadow-sm' : 'text-ink-muted hover:text-ink'}`}
                       data-testid={`estimate-tier-${tr}`}>
                 {TIER_LABEL[tr]}
               </button>
             ))}
           </div>
-          <p className="text-[11px] text-ink-faint text-center mt-1.5 leading-relaxed">
+          <p className="text-[13px] text-ink-faint text-center mt-1.5 leading-relaxed">
             {t(`est_tier_help_${tier}`)}
           </p>
         </div>
       )}
 
-      {/* Card one always stands, even on the handful of templates with no
-          quantity to ask for. A screen that simply starts at "2" reads as a
-          form that failed to load — and the pro is entitled to know the
-          estimate covers one whole job rather than wondering which field
-          they missed. */}
-      <StepCard n="1" testid="estimate-step-1"
-                title={t('est_step_qty')}
-                sub={qtyKey
-                  ? (touched.has(qtyKey) ? t('est_step_qty_yours') : t('est_step_qty_guess'))
-                  : t('est_step_qty_flat_sub')}
-                ring={qtyKey ? ringFor(cards[1]) : null}>
-        {qtyKey ? cards[1].map(field) : (
-          <p className="text-[12px] text-ink-soft leading-relaxed" data-testid="estimate-step-1-flat">
-            {t('est_step_qty_flat')}
-          </p>
-        )}
-      </StepCard>
+      {steps.map((st, i) => {
+        const n = i + 1;
+        const isOpen = open === st.id;
+        const done = st.questions.length > 0
+          && st.questions.every((q) => touched.has(q.key));
+        const toggle = () => setOpen(isOpen ? null : st.id);
+        const testid = `estimate-step-${n}`;
 
-      {cards[2].length > 0 && (
-        <StepCard n="2" testid="estimate-step-2"
-                  title={t('est_step_price')}
-                  sub={bd ? t('est_step_price_sub') : null}
-                  amount={bd && (step2Delta[1] !== 0 || step2Delta[0] !== 0) ? (
-                    <span className="text-[12px] font-bold tabular-nums text-red-warn shrink-0 text-right leading-tight">
-                      <small className="block text-[9px] font-semibold uppercase tracking-wide text-ink-faint">
-                        {t('est_surcharge')}
-                      </small>
-                      + {fmtEur(step2Delta[0])} … {fmtEur(step2Delta[1])}
-                    </span>
-                  ) : null}
-                  ring={ringFor(cards[2])}>
-          {cards[2].map(field)}
-        </StepCard>
-      )}
+        if (st.kind === 'qty') {
+          const q = st.questions[0];
+          return (
+            <Step key={st.id} n={n} testid={testid} open={isOpen} onToggle={toggle} done={done}
+                  title={t('est_step_qty')}
+                  sub={q
+                    ? `${fmtNum(Number(answers[q.key]) || 0, 2)} ${q.unit || ''} · ${
+                        touched.has(q.key) ? t('est_step_qty_yours') : t('est_step_qty_guess_short')}`
+                    : t('est_step_qty_flat_sub')}
+                  amount={bd
+                    ? `${fmtEur(bd.base_net[0])} – ${fmtEur(bd.base_net[1])}`
+                    : ''}
+                  amountMuted={false}>
+              {q ? field(q) : (
+                <p className="text-[15px] text-ink-soft leading-relaxed"
+                   data-testid="estimate-step-1-flat">{t('est_step_qty_flat')}</p>
+              )}
+            </Step>
+          );
+        }
 
-      {cards[3].length > 0 && (
-        <StepCard n="3" muted testid="estimate-step-3"
-                  title={t('est_step_note')}
-                  /* Only claimed when it is true. The card is filled by
-                     `affects`, and if a question declared `variant` ever
-                     starts reaching the total, `answers_applied` will say so
-                     and this stops promising otherwise. That drift is exactly
-                     what put a wrong badge on this screen once already. */
-                  sub={cards[3].some((q) => (result?.answers_applied || []).includes(q.key))
-                    ? null : t('est_step_note_sub')}
-                  ring={ringFor(cards[3])}>
-          <button type="button" onClick={() => setNotesOpen((o) => !o)}
-                  aria-expanded={notesOpen} data-testid="estimate-step-3-toggle"
-                  className="w-full flex items-center justify-between gap-2 text-left
-                             text-[12.5px] text-ink-soft min-h-[44px]">
-            <span>{cards[3].map((q) => q.label_de).join(' · ')}</span>
-            {notesOpen ? <ChevronUp size={14} className="text-ink-faint shrink-0" />
-                       : <ChevronDown size={14} className="text-ink-faint shrink-0" />}
-          </button>
-          {notesOpen && <div className="mt-2">{cards[3].map(field)}</div>}
-        </StepCard>
-      )}
+        if (st.kind === 'priced') {
+          const q = st.questions[0];
+          const span = spanOf(stepDelta.get(q.key), t);
+          return (
+            <Step key={st.id} n={n} testid={testid} open={isOpen} onToggle={toggle} done={done}
+                  title={q.label_de} sub={answered(q) || ''}
+                  amount={span || t('est_included')} amountMuted={!span}>
+              <OptionRows q={q} value={answers[q.key]} alts={bd?.alternatives?.[q.key]} t={t}
+                          onPick={(v) => set(q.key, v)} />
+              {q.help && <p className="mt-2 text-[13px] text-ink-faint leading-relaxed">{q.help}</p>}
+            </Step>
+          );
+        }
+
+        /* Recorded only. The subtitle lists the answers rather than the
+           question names: what the pro wants from a folded step is what it
+           currently says, not what it could ask. */
+        const summary = st.questions.map(answered).filter(Boolean).join(' · ');
+        return (
+          <Step key={st.id} n={n} testid={testid} open={isOpen} onToggle={toggle} done={done} muted
+                title={t('est_step_note')}
+                sub={summary || st.questions.map((q) => q.label_de).join(' · ')}
+                amount={t('est_included')} amountMuted>
+            <p className="text-[13px] text-ink-faint leading-relaxed mb-3">{t('est_step_note_sub')}</p>
+            {st.questions.map(field)}
+          </Step>
+        );
+      })}
     </div>
   );
 }
