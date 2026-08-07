@@ -318,7 +318,8 @@ def resolve_qty(job: dict, answers: Optional[dict] = None) -> float:
 def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT",
              tier: str = "standard", hourly: Optional[tuple[float, float]] = None,
              rates: Optional[dict] = None,
-             calibration: Optional[dict] = None) -> dict:
+             calibration: Optional[dict] = None,
+             qty_overrides: Optional[dict] = None) -> dict:
     """Estimate one job.
 
     `answers` are the guided-form values. `rates` maps a rate key (see
@@ -327,6 +328,25 @@ def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT
     own finished jobs have shown about its speed — see
     `services.calibration` — and scales the hours, setup included, because a
     business that is a fifth slower is a fifth slower at unloading the van too.
+
+    `qty_overrides` maps a rate key to the quantity the pro says that position
+    actually is. The catalogue derives every position from one quantity axis —
+    62 m² of wall means 62 m² of masking — and on a real job that is often
+    wrong in one place: the floor is covered already, the ceiling is not being
+    painted. Rather than force the pro to abandon the estimate, a position can
+    be corrected in place.
+
+    The correction is exact for the position and additive to the total: the
+    line's own contribution is recomputed at its unit price and the difference
+    applied to both ends of the range. It cannot be more precise than that —
+    the range's ends come from a spread of hours, not from a spread of
+    quantities — and pretending otherwise would invent a precision the
+    coefficients do not have. `qty_adjusted` reports which keys moved so the
+    screen can say so rather than quietly showing a different number.
+
+    Keyed by rate key rather than by position index: checked across all 149
+    job types, no estimate contains the same rate key twice, and an index
+    shifts the moment an answer adds or drops an operation.
     """
     cat = catalogue()
     job = get_job(job_key)
@@ -516,6 +536,20 @@ def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT
               unit_price=_mid(disposal), rate_key=f"{job['trade']}.entsorgung",
               rate_source="catalogue")
 
+    # ── the pro's own quantities, where they disagree with the catalogue ──
+    adjusted: list[str] = []
+    for ln in lines:
+        want = parse_number((qty_overrides or {}).get(ln["rate_key"]))
+        if want is None or want < 0 or abs(want - ln["qty"]) < 1e-9:
+            continue
+        moved = (want - ln["qty"]) * (1 + ln["waste_factor"]) * ln["unit_price"]
+        ln["qty"] = round(want, 3)
+        ln["qty_source"] = "pro"
+        total = (total[0] + moved, total[1] + moved)
+        adjusted.append(ln["rate_key"])
+    # A corrected position must never drag the total below nothing.
+    total = (max(total[0], 0.0), max(total[1], 0.0))
+
     # What the positions actually come to. It sits inside `total_net` but is
     # not its exact midpoint — a midpoint of products is not the product of
     # midpoints — and the caller is entitled to see both rather than be told
@@ -566,6 +600,10 @@ def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT
         "disposal": [round(disposal[0], 2), round(disposal[1], 2)],
         "total_net": [round(total[0], 2), round(total[1], 2)],
         "lines_net": round(lines_net, 2),
+        # Which positions the pro corrected by hand. Empty on an untouched
+        # estimate, which is the only state in which total_net is purely the
+        # model's own arithmetic.
+        "qty_adjusted": adjusted,
         # How many positions were priced by this business rather than by the
         # catalogue. Zero means lines_net should sit inside total_net; above
         # zero means the two are measuring different things on purpose.

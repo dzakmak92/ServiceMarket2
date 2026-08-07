@@ -74,6 +74,11 @@ export default function EstimatePage() {
   // Which step is unfolded. One at a time — see the stepper comment. The
   // quantity opens first because it is the one field nobody can skip.
   const [openStep, setOpenStep] = useState('qty');
+  // The pro's own hourly rate for this estimate, and their own quantities for
+  // individual positions. Both empty by default: an untouched estimate is the
+  // catalogue's, and the screen says so.
+  const [hourlyRate, setHourlyRate] = useState('');
+  const [qtyOverrides, setQtyOverrides] = useState({});
   // What the last answer did to the total, shown for a moment beside it. The
   // estimate has always recalculated on its own; nothing said so.
   const [delta, setDelta] = useState(null);
@@ -170,16 +175,23 @@ export default function EstimatePage() {
       setTouched(new Set());
       setOpenStep('qty');
       setDelta(null);
+      // Both are about this job's positions, so neither survives a change of
+      // template — an override keyed to a rate key the new job does not have
+      // would be a setting with no control to clear it.
+      setHourlyRate('');
+      setQtyOverrides({});
     } catch (e) {
       setError(e?.response?.data?.detail || 'Dieser Auftragstyp konnte nicht geladen werden');
     }
   };
 
-  const calculate = useCallback(async (key, ans, wantTier) => {
+  const calculate = useCallback(async (key, ans, wantTier, rate, overrides) => {
     setCalculating(true);
     try {
       const { data } = await api.post('/api/estimate', {
         job_key: key, answers: ans, tier: wantTier,
+        hourly_rate: rate > 0 ? rate : null,
+        qty_overrides: overrides || {},
       });
       // Against the figure that was on screen, not against a stored baseline:
       // this is "what did that tap do", and the answer is only meaningful
@@ -208,9 +220,10 @@ export default function EstimatePage() {
   useEffect(() => {
     if (!selected) return undefined;
     const key = selected.job.key;
-    const id = setTimeout(() => calculate(key, answers, tier), 350);
+    const id = setTimeout(
+      () => calculate(key, answers, tier, Number(hourlyRate), qtyOverrides), 350);
     return () => clearTimeout(id);
-  }, [selected, answers, tier, calculate]);
+  }, [selected, answers, tier, hourlyRate, qtyOverrides, calculate]);
 
   // The pill is a notification, not a state: it says what just happened and
   // then gets out of the way.
@@ -399,12 +412,14 @@ export default function EstimatePage() {
                 underneath a five-field form they had to scroll to find out,
                 every time. */}
             <PriceHeader result={result} calculating={calculating} delta={delta} />
+            <RateBar value={hourlyRate} onChange={setHourlyRate} result={result} />
             <SurveyForm survey={selected} answers={answers} set={set}
                         tier={tier} setTier={setTier} result={result}
                         touched={touched} open={openStep} setOpen={setOpenStep} />
             {/* The running total, directly under the form it explains. */}
             <Tally result={result} t={t} />
-            <Result result={result} calculating={calculating} form={selected.form} />
+            <Result result={result} calculating={calculating} form={selected.form}
+                    overrides={qtyOverrides} setOverrides={setQtyOverrides} />
             {result && selected.tiers_differ && (
               <TierCompare tiers={compare} busy={comparing} tier={tier}
                            onCompare={compareTiers}
@@ -676,6 +691,64 @@ function effectOf(result, key) {
   // `zeit` is reported as `emergency` once it trips the callout tariff.
   if (key === 'zeit' && applied.includes('emergency')) return EFFECT.price;
   return EFFECT.note;
+}
+
+/** The pro's own hourly rate, at the top, feeding the calculation.
+ *
+ *  The catalogue prices labour from a trade-wide band — Maler in AT is
+ *  EUR 38-55/h — which is a cold start for someone who has never quoted the
+ *  work and wrong for everyone who has. A business that knows its rate knows
+ *  one number, so this takes one: the range that remains comes from the hours,
+ *  which is where the real uncertainty lives.
+ *
+ *  Empty means the catalogue's band, and the placeholder says which band that
+ *  is. This is deliberately not the rate card below, which stores per-operation
+ *  prices on the profile and applies them to every future job. This is one
+ *  estimate, and it forgets.
+ */
+function RateBar({ value, onChange, result }) {
+  const { t } = useLang();
+  const used = result?.hourly_used;
+  const own = value !== '' && Number(value) > 0;
+  return (
+    <div className="flex items-center gap-3 mb-3 rounded-2xl border border-sm-border
+                    bg-paper px-3.5 py-2.5" data-testid="estimate-rate-bar">
+      <label htmlFor="est-hourly" className="flex-1 min-w-0">
+        <span className="block text-[13px] font-bold text-ink leading-tight">
+          {t('est_hourly_label')}
+        </span>
+        <span className="block text-[12px] text-ink-faint mt-0.5 leading-snug">
+          {own ? t('est_hourly_own')
+               : (used ? t('est_hourly_catalogue', {
+                   lo: fmtEur(used[0]), hi: fmtEur(used[1]) }) : ' ')}
+        </span>
+      </label>
+      <div className="relative shrink-0">
+        <NumberField id="est-hourly" min={0}
+                     className="w-[118px] h-11 rounded-xl border-[1.5px] border-sm-border bg-paper
+                                pl-3 pr-11 text-[17px] font-bold tabular-nums text-ink text-right
+                                focus-visible:outline-none focus-visible:border-teal
+                                focus-visible:ring-4 focus-visible:ring-teal/20"
+                     value={value === '' ? null : Number(value)}
+                     onChange={(n) => onChange(n == null ? '' : n)}
+                     data-testid="estimate-hourly" />
+        <span aria-hidden="true"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[13px] font-semibold
+                         text-ink-faint pointer-events-none">
+          {t('est_per_hour')}
+        </span>
+      </div>
+      {own && (
+        <button type="button" onClick={() => onChange('')}
+                data-testid="estimate-hourly-reset"
+                aria-label={t('est_hourly_reset')}
+                className="shrink-0 w-11 h-11 grid place-items-center rounded-xl
+                           border border-sm-border text-ink-muted hover:text-ink">
+          <RotateCcw size={16} />
+        </button>
+      )}
+    </div>
+  );
 }
 
 /* ── the stepper ───────────────────────────────────────────────────────
@@ -1105,7 +1178,7 @@ function labelFor(form, key) {
   return key;
 }
 
-function Result({ result, calculating, form }) {
+function Result({ result, calculating, form, overrides, setOverrides }) {
   /* Its own translator. `t` lives in the default export's scope and these
      are siblings, not children of it — calling it here threw
      "t is not defined" the instant a template was opened, and the error
@@ -1226,31 +1299,110 @@ function Result({ result, calculating, form }) {
         </div>
       )}
 
-      <details>
-        <summary className="text-xs text-ink-muted cursor-pointer">
-          {result.lines.length} Positionen · {fmtEur2(result.lines_net)}
-        </summary>
-        <table className="w-full mt-2 text-xs">
-          <tbody>
-            {result.lines.map((l) => (
-              <tr key={l.position} className="border-b border-sm-border/60">
-                <td className="py-1.5 pr-2 text-ink">
-                  {l.description}
-                  {l.rate_source === 'pro' && (
-                    <span className="ml-1 text-[10px] text-green-700">{t('est_own_rate')}</span>
+      <Positions result={result} overrides={overrides} setOverrides={setOverrides} t={t} />
+    </div>
+  );
+}
+
+/** The positions, with the quantity of each one open to correction.
+ *
+ *  Every position is derived from the job's single quantity axis: 62 m² of
+ *  wall means 62 m² of masking and 62 m² of two-coat paint. On a real job that
+ *  is right in general and wrong in one place — the floor is already covered,
+ *  the ceiling is not being painted, half the room is tiled. Before this the
+ *  only way to say so was to abandon the estimate and price by hand.
+ *
+ *  A corrected quantity is exact for its own position — the line's contribution
+ *  is recomputed at its unit price and the difference applied to both ends of
+ *  the range. It cannot narrow the range: the ends come from a spread of
+ *  hours, not of quantities. The card says which positions were corrected
+ *  rather than quietly showing a different total.
+ */
+function Positions({ result, overrides, setOverrides, t }) {
+  const [open, setOpen] = useState(false);
+  const lines = result.lines || [];
+  const changed = result.qty_adjusted || [];
+  const setQty = (key, n) => setOverrides((prev) => {
+    const next = { ...prev };
+    if (n == null || n === '') delete next[key]; else next[key] = n;
+    return next;
+  });
+  return (
+    <div data-testid="estimate-positions">
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open}
+              data-testid="estimate-positions-toggle"
+              className="w-full min-h-[48px] flex items-center justify-between gap-3 text-left">
+        <span className="text-[14px] font-semibold text-ink">
+          {t('est_positions_n', { n: lines.length })}
+          {changed.length > 0 && (
+            <span className="ml-2 text-[12px] font-bold text-teal-deep bg-teal-tint
+                             rounded-lg px-2 py-0.5">
+              {t('est_positions_adjusted', { n: changed.length })}
+            </span>
+          )}
+        </span>
+        <span className="text-[14px] font-bold tabular-nums text-ink shrink-0">
+          {fmtEur2(result.lines_net)}
+        </span>
+      </button>
+
+      {open && (
+        <div className="mt-1.5 flex flex-col gap-1.5">
+          {lines.map((l) => {
+            const on = changed.includes(l.rate_key);
+            const shown = overrides[l.rate_key] ?? l.qty;
+            return (
+              <div key={l.position}
+                   className={`rounded-xl border px-3 py-2.5
+                               ${on ? 'border-teal bg-teal/[.06]' : 'border-sm-border bg-paper'}`}
+                   data-testid={`estimate-pos-${l.rate_key}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-[14px] text-ink leading-snug min-w-0">
+                    {l.description}
+                    {l.rate_source === 'pro' && (
+                      <span className="ml-1.5 text-[11px] font-semibold text-green-pos">
+                        {t('est_own_rate')}
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-[14px] font-bold tabular-nums text-ink shrink-0">
+                    {fmtEur2(shown * (1 + (l.waste_factor || 0)) * l.unit_price)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <NumberField min={0}
+                               className="w-[104px] h-11 rounded-xl border-[1.5px] border-sm-border
+                                          bg-paper px-3 text-[15px] font-bold tabular-nums text-ink
+                                          focus-visible:outline-none focus-visible:border-teal
+                                          focus-visible:ring-4 focus-visible:ring-teal/20"
+                               value={Number(shown)}
+                               onChange={(n) => setQty(l.rate_key, n)}
+                               aria-label={`${l.description} — ${l.unit}`}
+                               data-testid={`estimate-pos-qty-${l.rate_key}`} />
+                  <span className="text-[13px] text-ink-muted">{l.unit}</span>
+                  <span className="text-[13px] text-ink-faint ml-auto tabular-nums">
+                    × {fmtEur2(l.unit_price)}
+                  </span>
+                  {on && (
+                    <button type="button" onClick={() => setQty(l.rate_key, null)}
+                            aria-label={t('est_pos_reset')}
+                            data-testid={`estimate-pos-reset-${l.rate_key}`}
+                            className="shrink-0 w-11 h-11 grid place-items-center rounded-xl
+                                       border border-sm-border text-ink-muted hover:text-ink">
+                      <RotateCcw size={15} />
+                    </button>
                   )}
-                </td>
-                <td className="py-1.5 pr-2 text-right text-ink-muted whitespace-nowrap">
-                  {fmtNum(l.qty, 2)} {l.unit}
-                </td>
-                <td className="py-1.5 text-right text-ink whitespace-nowrap">
-                  {fmtEur2(l.unit_price)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </details>
+                </div>
+              </div>
+            );
+          })}
+          {changed.length > 0 && (
+            <p className="text-[12.5px] text-ink-faint leading-relaxed mt-1">
+              {t('est_positions_note')}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

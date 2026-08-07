@@ -63,6 +63,16 @@ class EstimateIn(BaseModel):
     use_own_rates: bool = True
     # Same, for the speed correction learned from finished jobs.
     use_calibration: bool = True
+    # The pro's own hourly rate for this estimate. One figure, not a range:
+    # a business that knows its rate knows one number, and the spread that
+    # remains comes from the hours, which is where the real uncertainty is.
+    # Bounded rather than trusted — a stray keystroke should not produce a
+    # five-figure quote — and rejected as a range error rather than clamped
+    # silently.
+    hourly_rate: Optional[float] = Field(default=None, gt=0, le=1000)
+    # Per-position quantity corrections, keyed by rate key. See
+    # `estimator.estimate`.
+    qty_overrides: dict[str, float] = Field(default_factory=dict)
 
 
 class SaveEstimateIn(EstimateIn):
@@ -118,6 +128,14 @@ async def _estimate(pro_id: str, body: "EstimateIn", *, tier: Optional[str] = No
     cal = await _calibration_for(pro_id, body.job_key, body.use_calibration)
     kw = {"country": country, "tier": tier or body.tier, "rates": rates,
           "calibration": cal}
+    if body.hourly_rate:
+        kw["hourly"] = (body.hourly_rate, body.hourly_rate)
+    # In `kw`, not passed separately, so the breakdown below runs with the same
+    # corrections. It reruns the estimator to build the tally, and a tally that
+    # did not carry the pro's own quantities would stop adding up to the figure
+    # in the header — the one property that makes a breakdown worth printing.
+    if body.qty_overrides:
+        kw["qty_overrides"] = body.qty_overrides
     result = estimator.estimate(body.job_key, body.answers, **kw)
     if cal:
         result["calibration_note"] = calib.explain(cal)
