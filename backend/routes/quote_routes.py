@@ -5,7 +5,7 @@ account: the customer never logs in, so the share token is their credential.
 """
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 from auth import get_current_user
 from db import pg
+from repositories import jobs as jobs_repo
 from repositories import quotes as repo
 from routes._pro import require_pro_id
 
@@ -87,6 +88,27 @@ class LinesIn(BaseModel):
 
 class RejectIn(BaseModel):
     reason: str = ""
+
+
+class SiteIn(BaseModel):
+    address: Optional[str] = Field(default=None, max_length=200)
+    postal_code: Optional[str] = Field(default=None, max_length=20)
+    city: Optional[str] = Field(default=None, max_length=100)
+    # The Route button prefers coordinates: a geocoder handed
+    # "Bahnhofstraße 12" finds *a* Bahnhofstraße 12, and Austria alone has
+    # several hundred.
+    lat: Optional[float] = Field(default=None, ge=-90, le=90)
+    lng: Optional[float] = Field(default=None, ge=-180, le=180)
+
+
+class ConvertIn(BaseModel):
+    # `recurring` is deliberately not offered here. A recurring contract is
+    # created from its own screen with a cadence; reaching it through a
+    # one-off quote would produce a contract with no schedule rule.
+    mode: str = Field(default="simple", pattern="^(simple|project)$")
+    scheduled_start: Optional[datetime] = None
+    scheduled_end: Optional[datetime] = None
+    site: Optional[SiteIn] = None
 
 
 class AcceptIn(BaseModel):
@@ -217,6 +239,38 @@ async def accept_quote(quote_id: str, body: AcceptIn = AcceptIn(),
         raise HTTPException(409, str(e))
 
 
+@router.post("/{quote_id}/convert")
+async def convert_quote(quote_id: str, body: ConvertIn,
+                        user: dict = Depends(get_current_user)):
+    """Accept a quote and make it an Auftrag or a Projekt, in one transaction.
+
+    The alternative — accept, then set the mode, then set the address, then
+    set the time — is four requests from a phone standing in a stairwell, and
+    any gap between them leaves a quote accepted against a job that has none
+    of the rest. Same reason `PATCH /{job_id}/schedule` refuses a
+    non-quarter-hour: the grid cannot draw what the API let through.
+    """
+    pro_id = await require_pro_id(user)
+    start, end = body.scheduled_start, body.scheduled_end
+    if bool(start) != bool(end):
+        raise HTTPException(400, "give both scheduled_start and scheduled_end, or neither")
+    if start and end:
+        if end <= start:
+            raise HTTPException(400, "scheduled_end must be after scheduled_start")
+        for t in (start, end):
+            if t.minute % 15 or t.second or t.microsecond:
+                raise HTTPException(400, "times must fall on a quarter hour")
+    try:
+        return await repo.convert(
+            quote_id, pro_id, mode=body.mode,
+            scheduled_start=start, scheduled_end=end,
+            site=body.site.model_dump() if body.site else None)
+    except LookupError as e:
+        raise HTTPException(404, str(e))
+    except ValueError as e:
+        raise HTTPException(409, str(e))
+
+
 @router.post("/{quote_id}/reject")
 async def reject_quote(quote_id: str, body: RejectIn, user: dict = Depends(get_current_user)):
     pro_id = await require_pro_id(user)
@@ -241,6 +295,46 @@ async def invoice_preview(job_id: str, user: dict = Depends(get_current_user)):
     """What the invoice would inherit, without creating anything."""
     pro_id = await require_pro_id(user)
     return {"lines": await repo.to_invoice_lines(pro_id, job_id)}
+
+
+@invoice_router.post("/{job_id}/complete", status_code=201)
+async def complete_job(job_id: str,
+                       invoice_type: str = Query(default="standard",
+                                                 pattern="^(standard|abschlag|schluss)$"),
+                       user: dict = Depends(get_current_user)):
+    """Mark the work done and draw up the invoice, in that order.
+
+    Two steps that are one decision: a pro who says "finished" means "and now
+    it gets billed". Split across two buttons on two screens, the second one
+    is the one that gets forgotten, and unbilled finished work is the most
+    expensive kind of forgetting there is.
+
+    Ordered deliberately. The status moves first, because it is the claim
+    about reality; the invoice follows, because it is the paperwork about the
+    claim. If the invoice cannot be drawn — no accepted quote, nothing to
+    inherit — the job stays `completed` and the reason comes back, rather
+    than the completion being rolled back because the billing failed. That is
+    a state the pro can act on: the work really is finished.
+    """
+    pro_id = await require_pro_id(user)
+    try:
+        job = await jobs_repo.set_status(pro_id, job_id, "completed")
+    except LookupError as e:
+        raise HTTPException(404, str(e))
+    except ValueError as e:
+        raise HTTPException(409, str(e))
+    try:
+        invoice = await repo.draft_invoice_from_job(pro_id, job_id, invoice_type=invoice_type)
+    except (LookupError, ValueError) as e:
+        return {"job": job, "invoice": None, "invoice_error": str(e)}
+    # Only once the invoice exists. `completed -> invoiced` is a real
+    # transition and claiming it without a document would be a lie the ledger
+    # then has to live with.
+    try:
+        job = await jobs_repo.set_status(pro_id, job_id, "invoiced")
+    except ValueError:
+        pass
+    return {"job": job, "invoice": invoice, "invoice_error": None}
 
 
 @invoice_router.post("/{job_id}/draft-invoice", status_code=201)

@@ -605,9 +605,79 @@ with TestClient(entry.app) as c:
     check(set(allowed or []) == {"scheduled", "in_progress", "cancelled"},
           f"and from accepted those are exactly the three ({allowed})")
 
+    step("one call turns an accepted quote into a booked Auftrag")
+    # The four requests this replaces — accept, set the mode, set the address,
+    # set the time — each had to survive a stairwell with one bar of signal.
+    # A gap between any two left a quote accepted against a job with no time,
+    # no mode and no address.
+    from datetime import datetime as _dt, timezone as _tz
+    slot_start = _dt.now(_tz.utc).replace(hour=8, minute=30, second=0, microsecond=0) \
+        + timedelta(days=3)
+    slot_end = slot_start + timedelta(hours=2)
+    r = c.post(f"/api/quotes/{quote_id}/convert", json={
+        "mode": "simple",
+        "scheduled_start": slot_start.isoformat(),
+        "scheduled_end": slot_end.isoformat(),
+        "site": {"address": "Bahnhofstraße 12", "postal_code": "1210",
+                 "city": "Wien", "lat": 48.2582, "lng": 16.3838}})
+    check(ok(r), f"the conversion answers -> {r.status_code}")
+    conv = r.json() if r.status_code < 400 else {}
+    check(conv.get("mode") == "simple", f"the job is an Auftrag ({conv.get('mode')})")
+    check(conv.get("status") == "scheduled",
+          f"and booking it moved it to scheduled in the same call ({conv.get('status')})")
+    check(bool(conv.get("scheduled_start")) and bool(conv.get("scheduled_end")),
+          "with both ends of the appointment set")
+    check(conv.get("site_city") == "Wien" and float(conv.get("site_lat") or 0) > 48,
+          f"and the place it happens, coordinates included ({conv.get('site_city')})")
+
+    # The calendar can only draw what it is told. Before this, the query that
+    # feeds all three views did not select mode at all.
+    r = c.get("/api/jobs/appointments", params={"days": 45})
+    appts = r.json().get("appointments", r.json()) if r.status_code < 400 else []
+    appts = appts if isinstance(appts, list) else appts.get("appointments", [])
+    mine_appt = [a for a in appts if a.get("id") == job_id]
+    check(bool(mine_appt), f"the appointment reaches the calendar ({len(appts)} in the window)")
+    check(all("mode" in a for a in appts),
+          "and every appointment carries its mode, so a project can be drawn apart from a job")
+
+    # Times the grid cannot draw are refused here, not only in the UI.
+    r = c.post(f"/api/quotes/{quote_id}/convert", json={
+        "mode": "simple",
+        "scheduled_start": (slot_start + timedelta(minutes=7)).isoformat(),
+        "scheduled_end": slot_end.isoformat()})
+    check(r.status_code == 400, f"16:07 is refused, not rounded silently -> {r.status_code}")
+    r = c.post(f"/api/quotes/{quote_id}/convert", json={
+        "mode": "simple", "scheduled_start": slot_end.isoformat(),
+        "scheduled_end": slot_start.isoformat()})
+    check(r.status_code == 400, f"and so is an end before its start -> {r.status_code}")
+    r = c.post(f"/api/quotes/{quote_id}/convert", json={
+        "mode": "simple", "scheduled_start": slot_start.isoformat()})
+    check(r.status_code == 400, f"and half an appointment -> {r.status_code}")
+    r = c.post(f"/api/quotes/{quote_id}/convert", json={"mode": "recurring"})
+    check(r.status_code == 422,
+          f"recurring is not reachable from a one-off quote -> {r.status_code}")
+
+    # Converting again as a project must move the shape without inventing a
+    # second record — same job, same id, same appointment.
+    r = c.post(f"/api/quotes/{quote_id}/convert", json={"mode": "project"})
+    check(ok(r) and r.json().get("id") == job_id,
+          "converting again changes the same job, it does not fork a new one")
+    check(r.json().get("mode") == "project" if r.status_code < 400 else False,
+          "and it is a Projekt now")
+    check(bool(r.json().get("scheduled_start")) if r.status_code < 400 else False,
+          "with the appointment it already had left alone")
+    r = c.post(f"/api/quotes/{quote_id}/convert", json={"mode": "simple"})
+    check(ok(r) and r.json().get("status") == "scheduled",
+          "and a conversion with no times does not drag the status backwards")
+
+    # Compared against whatever the job is now, not a hardcoded "accepted" —
+    # the conversion above legitimately moved it, and an assertion that names
+    # the expected status rather than the expected *behaviour* fails for the
+    # wrong reason the first time anything upstream changes.
+    was = c.get(f"/api/jobs/{job_id}").json().get("status")
     r = c.patch(f"/api/jobs/{job_id}", json={"status": "in_progress"})
-    check(ok(r) and r.json().get("status") == "accepted",
-          "the generic PATCH still refuses to move status, as it always did")
+    check(ok(r) and r.json().get("status") == was,
+          f"the generic PATCH still refuses to move status, as it always did ({was})")
 
     r = c.patch(f"/api/jobs/{job_id}/status", json={"status": "closed"})
     check(r.status_code == 409,
@@ -699,10 +769,42 @@ with TestClient(entry.app) as c:
         "signed_by": "H. Beispiel", "note": "Ohne Mängel übernommen."})
     check(ok(r, 200, 201), "Abnahme is recorded")
 
-    r = c.patch(f"/api/jobs/{job_id}/status", json={"status": "completed"})
-    check(ok(r) and r.json().get("status") == "completed", "and the job is completed")
-    check(bool(r.json().get("completed_at")) if r.status_code < 400 else False,
+    step("finishing the work and billing it are one action")
+    # Two steps that are one decision. Split across two screens, the second is
+    # the one that gets forgotten, and unbilled finished work is the most
+    # expensive kind of forgetting there is.
+    r = c.post(f"/api/jobs/{job_id}/complete")
+    check(ok(r, 200, 201), f"complete answers -> {r.status_code}")
+    done = r.json() if r.status_code < 400 else {}
+    check((done.get("job") or {}).get("status") == "invoiced",
+          f"the job is finished and billed ({(done.get('job') or {}).get('status')})")
+    check(bool((done.get("job") or {}).get("completed_at")),
           "with completed_at stamped, which is what the calibration reads")
+    check(bool(done.get("invoice")), "and an invoice came back with it")
+    check(len((done.get("invoice") or {}).get("lines") or []) > 1,
+          f"carrying {len((done.get('invoice') or {}).get('lines') or [])} positions, "
+          f"not one collapsed line")
+    check(done.get("invoice_error") is None,
+          f"and nothing was swallowed ({done.get('invoice_error')})")
+    # The status has to be real before the paperwork is: an invoice against a
+    # job that is not finished is a claim nobody made.
+    check(bool((done.get("invoice") or {}).get("id")), "the invoice exists to open")
+
+    # Completing a job that cannot be billed must leave it completed with a
+    # reason, not roll the completion back — the work really is finished.
+    r = c.post("/api/jobs", json={"title": "Nichts zu verrechnen", "mode": "simple"})
+    bare = r.json().get("id") if ok(r, 200, 201) else None
+    if bare:
+        for nxt in ("accepted", "in_progress"):
+            c.patch(f"/api/jobs/{bare}/status", json={"status": nxt})
+        r = c.post(f"/api/jobs/{bare}/complete")
+        check(ok(r, 200, 201), f"a job with no accepted quote still completes -> {r.status_code}")
+        b = r.json() if r.status_code < 400 else {}
+        check((b.get("job") or {}).get("status") == "completed",
+              f"and stays completed rather than being rolled back "
+              f"({(b.get('job') or {}).get('status')})")
+        check(b.get("invoice") is None and bool(b.get("invoice_error")),
+              f"with the reason it could not be billed ({b.get('invoice_error')})")
 
     step("the invoice inherits the accepted quote")
     r = c.get(f"/api/jobs/{job_id}/invoice-preview")
@@ -745,9 +847,14 @@ with TestClient(entry.app) as c:
     r = c.get("/api/invoices", params={"sort_by": "amount", "order": "desc",
                                        "page": 1, "per_page": 20})
     by_amount = r.json().get("invoices", []) if ok(r) else []
-    check(not by_amount or by_amount[0].get("status") != "draft"
-          or len(by_amount) == 1,
-          "but sorting by amount still sorts by amount")
+    # Checked directly, on the amounts. The first version used "the top row is
+    # not a draft" as a proxy for "the draft-first rule was not applied here",
+    # and that proxy is wrong: a draft may legitimately be the largest invoice
+    # on the list, which is exactly what happens once a job is completed and
+    # billed in one step.
+    amounts = [float(x.get("gross_total") or 0) for x in by_amount]
+    check(amounts == sorted(amounts, reverse=True),
+          f"but sorting by amount still sorts by amount ({amounts})")
 
     if invoice_id:
         step("issuing freezes it, and after that it can only be stornoed")

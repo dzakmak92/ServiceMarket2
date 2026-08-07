@@ -514,3 +514,80 @@ async def draft_invoice_from_job(pro_id: str, job_id: str, *,
             "update change_orders set status = 'invoiced' where id = any($1::uuid[])", co_ids)
 
     return await invoices_repo.get(pro_id, str(inv["id"]))
+
+
+async def convert(quote_id: str, pro_id: str, *, mode: str,
+                  scheduled_start=None, scheduled_end=None,
+                  site: Optional[dict] = None) -> dict:
+    """Accept a quote and turn it into the thing that gets worked on.
+
+    One call, one transaction. The four steps this replaces — accept the
+    quote, set the job's mode, give it a place, put it in the day — were four
+    round trips from the phone, and a failure between any two of them left a
+    quote accepted against a job with no time, no mode and no address. On a
+    site with one bar of signal that is not a rare case.
+
+    `mode` is the fork the pro actually faces at the doorstep: a
+    half-day job goes in the calendar now, a bathroom refit becomes a project
+    and gets its stages later. It is the same table either way — `mode` on
+    `jobs` has carried `simple | project | recurring` since the spine was
+    built — so this decides a shape, it does not create a second kind of
+    record.
+
+    Scheduling is optional and independent of the mode. A project may well
+    have its first stage booked on the spot, and a small job may be accepted
+    on Tuesday for a date not yet agreed. Tying the two together would force
+    a pro to invent a time to record a decision they have already made.
+    """
+    async with pg.transaction() as con:
+        q = await con.fetchrow(
+            "select * from quotes where id = $1 and pro_id = $2 for update",
+            quote_id, pro_id)
+        if not q:
+            raise LookupError("Quote not found")
+        if q["status"] in ("expired", "superseded", "rejected"):
+            raise ValueError(f"A {q['status']} quote cannot be converted.")
+        if not q["job_id"]:
+            raise ValueError("This quote is not attached to a job.")
+
+        if q["status"] != "accepted":
+            await con.execute(
+                "update quotes set status = 'accepted', decided_at = now() where id = $1",
+                quote_id)
+            await con.execute(
+                "update quotes set status = 'superseded' "
+                "where group_id = $1 and id <> $2 and status not in ('accepted','superseded')",
+                q["group_id"], quote_id)
+            await con.execute(
+                "update jobs set status = 'accepted', contract_amount = $2 "
+                "where id = $1 and status in ('lead','quoted')",
+                q["job_id"], q["gross_total"])
+            try:
+                await rates_repo.learn_from_quote(con, str(q["pro_id"]), quote_id)
+            except Exception:  # noqa: BLE001
+                logger.exception("rate learning failed for quote %s", quote_id)
+
+        sets, args = ["mode = $2::job_mode"], [q["job_id"], mode]
+        for col, val in (("site_address", (site or {}).get("address")),
+                         ("site_postal_code", (site or {}).get("postal_code")),
+                         ("site_city", (site or {}).get("city")),
+                         ("site_lat", (site or {}).get("lat")),
+                         ("site_lng", (site or {}).get("lng"))):
+            if val not in (None, ""):
+                args.append(val)
+                sets.append(f"{col} = ${len(args)}")
+        if scheduled_start and scheduled_end:
+            args.extend([scheduled_start, scheduled_end])
+            sets.append(f"scheduled_start = ${len(args) - 1}")
+            sets.append(f"scheduled_end = ${len(args)}")
+            # Only from `accepted`, and only forward. A job already in
+            # progress must not be dragged back to `scheduled` by someone
+            # setting a date on it.
+            sets.append("status = case when status = 'accepted' "
+                        "then 'scheduled'::job_status else status end")
+        job = await con.fetchrow(
+            f"update jobs set {', '.join(sets)} where id = $1 returning *", *args)
+
+    if job and job.get("customer_id"):
+        await customers_repo.refresh_rollups(str(job["customer_id"]))
+    return dict(job)
