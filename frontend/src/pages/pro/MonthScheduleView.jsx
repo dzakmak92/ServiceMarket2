@@ -8,6 +8,7 @@ import useJobAction from '../../hooks/useJobAction';
 import {
   HALF_DAY_MIN, MIN, dayKey, durationLabel, halvesOf, hhmm, toMs,
 } from '../../utils/schedule';
+import { isProject, cardClass } from '../../utils/apptStyle';
 import { Loader2, MapPin, User } from 'lucide-react';
 
 /**
@@ -189,6 +190,12 @@ export default function MonthScheduleView({
             const isSel = sameDay(d, selected);
             const urgent = list.some((a) => a.urgency === 'emergency');
             const { am, pm } = halvesOf(list, d);
+            /* Hollow only when the whole half-day is project work. These bars
+               are aggregates — one bar can stand for three appointments — and
+               a day carrying one project stage plus two ordinary jobs is not a
+               project day. Drawing it hollow would say it was. */
+            const amProject = list.length > 0 && list.every(isProject);
+            const pmProject = amProject;
             return (
               <button
                 key={dayKey(d)}
@@ -243,14 +250,23 @@ export default function MonthScheduleView({
                         phone and a single load bar cannot answer it. Always
                         drawn, even empty: a missing track would make a free
                         day look like a day with no data. */}
-                    {[[am, urgent ? 'bg-red-warn' : 'bg-teal', 'am'],
-                      [pm, urgent ? 'bg-red-warn' : 'bg-amber-deep', 'pm']].map(
-                      ([v, tone, half]) => (
+                    {[[am, urgent ? 'bg-red-warn' : 'bg-teal',
+                       urgent ? 'ring-red-warn' : 'ring-teal', amProject, 'am'],
+                      [pm, urgent ? 'bg-red-warn' : 'bg-amber-deep',
+                       urgent ? 'ring-red-warn' : 'ring-amber-deep', pmProject, 'pm']].map(
+                      ([v, tone, ring, hollow, half]) => (
                         <span key={half}
                               className="h-[6px] rounded-[3px] bg-cream-deep overflow-hidden block">
+                          {/* Hollow for a project, solid for a job — fill, not
+                              hue, because hue is already spent twice here:
+                              red is Notdienst and teal/amber is morning /
+                              afternoon. An inset ring keeps the bar the same
+                              6 px whichever it is. */}
                           <span
-                            className={`block h-full rounded-[3px] ${tone}`}
+                            className={`block h-full rounded-[3px] ${
+                              hollow ? `bg-transparent ring-[1.5px] ring-inset ${ring}` : tone}`}
                             style={{ width: `${Math.min(100, (v / HALF_DAY_MIN) * 100)}%` }}
+                            data-project={hollow ? '1' : undefined}
                             data-testid={`month-${half}-${dayKey(d)}`}
                           />
                         </span>
@@ -275,6 +291,13 @@ export default function MonthScheduleView({
           </span>
           <span className="flex items-center gap-1">
             <i className="w-2.5 h-2.5 rounded-[3px] bg-red-warn inline-block" /> {t('month_emergency')}
+          </span>
+          <span className="flex items-center gap-1.5">
+            {/* The grid has no room for a word beside a 6 px bar, so the
+                legend carries it — WCAG 1.4.1 asks that colour, or in this
+                case fill, never be the only carrier of meaning. */}
+            <i className="w-2.5 h-2.5 rounded-[3px] bg-transparent ring-[1.5px]
+                          ring-inset ring-teal inline-block" /> {t('cal_project')}
           </span>
           <span className="ml-auto">{t('month_half_scale')}</span>
         </div>
@@ -310,7 +333,7 @@ export default function MonthScheduleView({
           onClick={() => setOpenJob(a)}
           className={`w-full text-left flex gap-2.5 rounded-[11px] border px-2.5 py-2 mb-1.5
             ${a.urgency === 'emergency'
-              ? 'border-red-warn/35 bg-red-warn/[0.04]' : 'border-sm-border bg-paper'}`}
+              ? 'border-red-warn/35 bg-red-warn/[0.04]' : cardClass(a)}`}
           data-testid={`month-sel-${a.id}`}
         >
           <span className="w-[44px] flex-none">

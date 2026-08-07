@@ -176,6 +176,10 @@ async def appointments(day: Optional[str] = Query(default=None),
                j.title,
                j.status,
                j.urgency,
+               -- A project stage and a one-visit job look identical on a
+               -- calendar without this, and they are not the same commitment:
+               -- one is the whole work, the other is a slice of it.
+               j.mode,
                j.scheduled_start,
                j.scheduled_end,
                j.site_address,

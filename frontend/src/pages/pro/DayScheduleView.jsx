@@ -8,6 +8,7 @@ import {
   previewInsert,
   previewResize, resizeAndSettle, snapQuarter, toMs,
 } from '../../utils/schedule';
+import { isProject, PROJECT_KEY } from '../../utils/apptStyle';
 import { TEMPLATES, buildSms, sendViaPhone, smsSegments, telHref } from '../../utils/sms';
 import { routeHref } from '../../utils/maps';
 import WeatherCard from '../../components/pro/WeatherCard';
@@ -110,11 +111,26 @@ function Block({ appt, top, height, running, progress, dragging, conflict,
           boxShadow: dragging ? '0 6px 18px rgba(0,0,0,.16)' : '0 1px 4px rgba(0,0,0,.07)',
         }}
       >
+        {/* A project stage is the same card, hollow: tinted head with the
+            colour as text and a ring, instead of a solid fill. Fill rather
+            than hue — red is Notdienst here and a third colour would make one
+            header say two things. teal-deep on teal-tint is 6,7:1, so the
+            time stays as readable as it was on the solid head. */}
         <div className={`flex items-center gap-2 px-3 flex-none
           ${action && !room.actions ? 'py-1' : 'py-[7px]'}
-          ${running ? 'bg-teal text-paper' : 'bg-teal-deep text-paper'}`}>
+          ${isProject(appt)
+            ? 'bg-teal-tint text-teal-deep border-b-[1.5px] border-teal'
+            : running ? 'bg-teal text-paper' : 'bg-teal-deep text-paper'}`}
+          data-project={isProject(appt) ? '1' : undefined}>
           <p className="font-extrabold text-[0.8125rem]">{hhmm(appt.start)}–{hhmm(appt.end)}</p>
-          <p className="font-bold text-[0.65625rem] opacity-75">
+          {isProject(appt) && (
+            <span className="font-extrabold text-[0.5625rem] uppercase tracking-wide
+                             rounded bg-teal text-paper px-1.5 py-px">{t(PROJECT_KEY)}</span>
+          )}
+          {/* Full strength on the hollow head. 75 % of white on a dark fill is
+              still legible; 75 % of teal-deep on teal-tint measures 3,82:1 and
+              fails AA at this size. The opacity is a solid-head device. */}
+          <p className={`font-bold text-[0.65625rem] ${isProject(appt) ? '' : 'opacity-75'}`}>
             · {durationLabel(toMs(appt.end) - toMs(appt.start))}
           </p>
           {action && !room.actions ? (

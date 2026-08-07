@@ -9,6 +9,7 @@ import useJobAction from '../../hooks/useJobAction';
 import {
   MIN, bookableRuns, dayKey, durationLabel, hhmm, toMs,
 } from '../../utils/schedule';
+import { isProject, cardClass, PROJECT_KEY } from '../../utils/apptStyle';
 import { Car, Loader2, MapPin, User } from 'lucide-react';
 
 /* The same window the day view draws, so a block in the same place means the
@@ -196,9 +197,26 @@ export default function WeekScheduleView({
                     return (
                       <span
                         key={a.id}
+                        /* Hollow for a project stage, solid for a job. Fill
+                           rather than hue: red already means Notdienst here,
+                           and a third colour on the same channel would make one
+                           bar say two things. The ring is inset so the block
+                           stays exactly as wide as its slot. */
                         className={`absolute left-px right-px rounded-[3px] overflow-hidden
-                                    font-extrabold text-[0.46875rem] text-paper pl-[2px] pt-px
-                          ${a.urgency === 'emergency' ? 'bg-red-warn' : 'bg-teal'}`}
+                                    font-extrabold text-[0.46875rem] pl-[2px] pt-px
+                          ${isProject(a)
+                            /* The hour label is darkened, not hidden. The first
+                               version made it `text-transparent` so it would not
+                               clash with the hollow bar — which is invisible text
+                               that is still text: it stays in the accessibility
+                               tree and the contrast sweep counted it as a
+                               failure, correctly. teal-deep on the cell is
+                               8,1:1. */
+                            ? `bg-transparent ring-[1.5px] ring-inset ${
+                                a.urgency === 'emergency'
+                                  ? 'ring-red-warn text-red-warn' : 'ring-teal text-teal-deep'}`
+                            : `text-paper ${a.urgency === 'emergency' ? 'bg-red-warn' : 'bg-teal'}`}`}
+                        data-project={isProject(a) ? '1' : undefined}
                         style={{ top, height: h }}
                         data-testid={`week-block-${a.id}`}
                         data-start={new Date(a.start).toISOString()}
@@ -270,7 +288,7 @@ export default function WeekScheduleView({
             onClick={() => setOpenJob(a)}
             className={`w-full text-left flex gap-2.5 rounded-[11px] border px-2.5 py-2 mb-1.5
               ${a.urgency === 'emergency'
-                ? 'border-red-warn/35 bg-red-warn/[0.04]' : 'border-sm-border bg-paper'}`}
+                ? 'border-red-warn/35 bg-red-warn/[0.04]' : cardClass(a)}`}
             data-testid={`week-sel-${a.id}`}
           >
             <span className="w-[44px] flex-none">
@@ -280,7 +298,16 @@ export default function WeekScheduleView({
               </i>
             </span>
             <span className="flex-1 min-w-0">
-              <b className="block font-extrabold text-[0.75rem] text-ink truncate">{a.title}</b>
+              <b className="block font-extrabold text-[0.75rem] text-ink truncate">
+                {a.title}
+                {/* The word, because fill alone would leave the difference on
+                    a purely visual channel — WCAG 1.4.1. */}
+                {isProject(a) && (
+                  <i className="not-italic ml-1.5 align-middle font-extrabold text-[0.5625rem]
+                                uppercase tracking-wide text-teal-deep bg-teal-tint
+                                rounded px-1.5 py-px">{t(PROJECT_KEY)}</i>
+                )}
+              </b>
               <span className="flex items-center gap-1 font-bold text-[0.625rem] text-ink-muted mt-0.5">
                 {a.customer_name && <><User size={10} /> {a.customer_name}</>}
                 {(a.site_city || a.customer_city) && (
