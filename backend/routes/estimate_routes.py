@@ -33,6 +33,7 @@ from pydantic import BaseModel, Field
 from auth import get_current_user
 from db import pg
 from repositories import estimates as estimates_repo
+from repositories import jobs as jobs_repo
 from repositories import quotes as quotes_repo
 from routes._pro import require_pro_id
 from services import calibration as calib
@@ -82,7 +83,22 @@ class SaveEstimateIn(EstimateIn):
 
 
 class EstimateToQuoteIn(EstimateIn):
-    job_id: str
+    # Optional. A quote is what you send *before* there is work — the job is
+    # what acceptance creates, not what quoting requires. Making the pro pick
+    # an existing job first put the sequence backwards and, on a new enquiry,
+    # made quoting impossible until they had invented a job to attach it to.
+    #
+    # `quotes.job_id` stays `not null`: the job is the spine every quote,
+    # invoice and appointment hangs from, and making it nullable would put a
+    # branch in every one of those queries. Instead the job is created here,
+    # as a `lead`, from what the estimate already knows. That is the state the
+    # ladder starts at, and `lead -> quoted -> accepted` then runs as it
+    # always has.
+    job_id: Optional[str] = None
+    # Optional customer for the job created above. Without one the quote
+    # carries no tax context beyond the business's own, which is the same
+    # position a quote written for an unknown enquirer has always been in.
+    customer_id: Optional[str] = None
     title: Optional[str] = None
     # Three tiers in one call. The doc's escape from pure price comparison:
     # a customer choosing between options is not a customer choosing the
@@ -307,6 +323,20 @@ async def estimate_to_quote(body: EstimateToQuoteIn,
         raise HTTPException(404, str(exc)) from exc
 
     ref = results[tiers[-1]]
+
+    # No job named? Make one, from what the calculation already knows. It is a
+    # lead until the quote is sent, which is exactly what it is.
+    job_id = body.job_id
+    created_job = None
+    if not job_id:
+        created_job = await jobs_repo.create(pro_id, {
+            "title": body.title or ref["job"]["label_de"],
+            "category": ref["job"]["trade"],
+            "customer_id": body.customer_id,
+            "mode": "simple",
+            "source": "manual",
+        })
+        job_id = str(created_job["id"])
     fields = {
         "title": body.title or ref["job"]["label_de"],
         "assumptions": ref["assumptions"] or None,
@@ -325,11 +355,11 @@ async def estimate_to_quote(body: EstimateToQuoteIn,
     try:
         if body.all_tiers:
             created = await quotes_repo.create_tiers(
-                pro_id, body.job_id,
+                pro_id, job_id,
                 {t: results[t]["lines"] for t in tiers}, **fields)
         else:
             created = [await quotes_repo.create(
-                pro_id, body.job_id, lines=ref["lines"], tier=body.tier, **fields)]
+                pro_id, job_id, lines=ref["lines"], tier=body.tier, **fields)]
     except LookupError as exc:
         raise HTTPException(404, str(exc)) from exc
     except ValueError as exc:
@@ -345,11 +375,12 @@ async def estimate_to_quote(body: EstimateToQuoteIn,
     estimate_id = None
     try:
         row = await estimates_repo.save(
-            pro_id, quoted, job_id=body.job_id, quote_id=str(created[0]["id"]),
+            pro_id, quoted, job_id=job_id, quote_id=str(created[0]["id"]),
             calibration_applied=(quoted.get("calibration") or {}).get("hours_factor"))
         estimate_id = str(row["id"])
     except Exception as exc:  # noqa: BLE001 — the quote is the deliverable
         logger.error("estimate snapshot not stored for quote %s: %s",
                      created[0]["id"], exc)
 
-    return {"quotes": created, "estimate": ref, "estimate_id": estimate_id}
+    return {"quotes": created, "estimate": ref, "estimate_id": estimate_id,
+            "job_id": job_id, "job_created": created_job is not None}

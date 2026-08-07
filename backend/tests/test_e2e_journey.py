@@ -486,6 +486,35 @@ with TestClient(entry.app) as c:
     quote_id = (body.get("quotes") or [{}])[0].get("id")
     check(bool(body.get("estimate_id")),
           "and the estimate is stored for the accuracy comparison later")
+    check(body.get("job_created") is False,
+          "the job named in the request is the one used, not a new one")
+
+    # A quote is what you send *before* there is work. Requiring a job first
+    # put the sequence backwards: on a new enquiry there is nothing to attach
+    # a quote to until one has been invented.
+    r = c.post("/api/estimate/quote", json={
+        "job_key": "maler.innenanstrich",
+        "answers": {"qty": 40}, "tier": "standard"})
+    check(ok(r, 201, 200), f"a calculation quotes with no job named -> {r.status_code}")
+    solo = r.json() if r.status_code < 400 else {}
+    check(solo.get("job_created") is True, "and the job is created for it")
+    check(bool(solo.get("job_id")), "with an id the caller can follow")
+    if solo.get("job_id"):
+        r = c.get(f"/api/jobs/{solo['job_id']}")
+        check(ok(r), "the job exists")
+        # `lead` is where the ladder starts, and it is what this is: quoted,
+        # not yet won. Sending the quote moves it on, acceptance creates the
+        # commitment.
+        check(r.json().get("status") == "lead",
+              f"as a lead, which is what it is ({r.json().get('status')})")
+        check(bool(r.json().get("title")),
+              f"carrying the template's own name ({r.json().get('title')})")
+        # And it converts like any other, which is the whole point of the
+        # chain: calculate, quote, win, plan.
+        sq = (solo.get("quotes") or [{}])[0].get("id")
+        r = c.post(f"/api/quotes/{sq}/convert", json={"mode": "simple"})
+        check(ok(r) and r.json().get("status") == "accepted",
+              f"and the quote it carries converts into work ({r.status_code})")
 
     step("the quote carries what it must")
     r = c.get(f"/api/quotes/{quote_id}")

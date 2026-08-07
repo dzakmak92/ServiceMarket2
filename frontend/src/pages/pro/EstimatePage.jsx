@@ -264,13 +264,12 @@ export default function EstimatePage() {
   };
 
   const createQuote = async () => {
-    if (!targetJob) return;
     setCreating(true);
     setError('');
     try {
       const { data } = await api.post('/api/estimate/quote', {
         job_key: selected.job.key, answers, tier,
-        job_id: targetJob, all_tiers: allTiers,
+        job_id: targetJob || null, all_tiers: allTiers,
       });
       const n = (data.quotes || []).length;
       setNotice(`${n} ${n === 1 ? 'Angebot' : 'Angebote'} erstellt.`);
@@ -1433,9 +1432,16 @@ function QuoteBox({ jobs, targetJob, setTargetJob, allTiers, setAllTiers, tiersD
       <p className="text-sm font-medium text-ink flex items-center gap-2">
         <FileText size={15} />Als Angebot übernehmen
       </p>
+      {/* Empty is the default and it is not an error. A quote is what a pro
+          sends *before* there is work — requiring an existing job first put
+          the sequence backwards, and on a fresh enquiry made quoting
+          impossible until a job had been invented to hang it on. The server
+          creates one from the calculation when none is named. Picking an
+          existing job is still offered, because a second quote on work
+          already captured belongs on that job and not on a new one. */}
       <select className="input w-full" value={targetJob}
               onChange={(e) => setTargetJob(e.target.value)} data-testid="estimate-target-job">
-        <option value="">{t('est_pick_job')}</option>
+        <option value="">{t('est_job_new')}</option>
         {jobs.map((j) => (
           <option key={j.id} value={j.id}>
             {j.job_number ? `${j.job_number} · ` : ''}{j.title}
@@ -1455,15 +1461,13 @@ function QuoteBox({ jobs, targetJob, setTargetJob, allTiers, setAllTiers, tiersD
         </label>
       )}
       <button type="button" className="btn-primary w-full flex items-center justify-center gap-2"
-              disabled={!targetJob || creating} onClick={onCreate} data-testid="estimate-create-quote">
+              disabled={creating} onClick={onCreate} data-testid="estimate-create-quote">
         {creating ? <Loader2 className="animate-spin" size={16} /> : <Calculator size={16} />}
         Angebot erstellen
       </button>
-      {!jobs.length && (
-        <p className="text-xs text-ink-muted">
-          Kein offener Auftrag vorhanden. Ein Angebot hängt immer an einem Auftrag.
-        </p>
-      )}
+      <p className="text-[12.5px] text-ink-faint leading-relaxed">
+        {targetJob ? t('est_job_existing_help') : t('est_job_new_help')}
+      </p>
       {/* Separate from the quote on purpose. A job that was calculated and not
           quoted is real evidence about how this business prices; learning only
           from work that was won would bias the model toward the cheap jobs. */}
