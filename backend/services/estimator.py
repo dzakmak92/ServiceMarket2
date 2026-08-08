@@ -898,7 +898,12 @@ def survey(job_key: str) -> dict:
         axis = axis_for(job, key)
         if axis:
             form.append(_shared_choice(key, job.get(f"{key}_axis") or "gebaeude", axis))
-    if job.get("messy", True) is False and job.get("emergency_capable"):
+    # Not when the job already asks `zeit`. That question already reaches the
+    # Notdienst rate — `OUT_OF_HOURS` reads it — so appending the checkbox put
+    # two controls for one fact on the same screen, and a pro could set them
+    # against each other.
+    if (job.get("messy", True) is False and job.get("emergency_capable")
+            and "zeit" not in asked):
         form.append({
             "key": "emergency", "label_de": "Notdienst", "type": "bool",
             "unit": "", "options": [], "affects": "variant", "default": False,

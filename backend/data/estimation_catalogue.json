@@ -22429,10 +22429,101 @@
       "group": "Bauen & Renovieren",
       "segment": "Schlüsseldienst",
       "messy": false,
-      "emergency_capable": false,
+      "emergency_capable": true,
       "condition_axis": "gebaeude",
       "access_axis": "gebaeude",
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "schloss",
+          "label_de": "Zustand des Schlosses",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "zugefallen",
+              "Nur zugefallen"
+            ],
+            [
+              "abgesperrt",
+              "Abgesperrt"
+            ],
+            [
+              "sicherheitsschloss",
+              "Sicherheitsschloss oder Mehrfachverriegelung"
+            ]
+          ],
+          "affects": "variant",
+          "default": "zugefallen",
+          "note_if": {},
+          "help_de": "Zugefallen ist eine Minutensache. Abgesperrt ist eine andere Arbeit.",
+          "uplift": {
+            "abgesperrt": [
+              0.5,
+              1.0
+            ],
+            "sicherheitsschloss": [
+              0.9,
+              1.8
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "zeit",
+          "label_de": "Einsatzzeit",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "regulaer",
+              "Werktag 7-17 Uhr"
+            ],
+            [
+              "abend",
+              "Abend oder Samstag"
+            ],
+            [
+              "nacht_sonntag",
+              "Nacht oder Sonn-/Feiertag"
+            ]
+          ],
+          "affects": "variant",
+          "default": "regulaer",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "abend": [
+              0.2,
+              0.4
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "beschaedigung",
+          "label_de": "Öffnung ohne Beschädigung erforderlich",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": true,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "False": [
+              -0.2,
+              -0.12
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        }
+      ],
       "note_keys": [
         "identitaetsnachweis",
         "nacht_zuschlag"
@@ -24743,7 +24834,115 @@
       "emergency_capable": false,
       "condition_axis": "verschmutzung",
       "access_axis": "gebaeude",
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "flaeche",
+          "label_de": "Wohnfläche",
+          "type": "number",
+          "unit": "m2",
+          "options": [],
+          "affects": "qty",
+          "default": 95,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "umfang",
+          "label_de": "Umfang",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "standard",
+              "Böden, Bad, Küche, Staubflächen"
+            ],
+            [
+              "mit_fenster",
+              "Zusätzlich Fenster innen"
+            ],
+            [
+              "komplett",
+              "Zusätzlich Schränke innen und Fenster"
+            ]
+          ],
+          "affects": "variant",
+          "default": "standard",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "mit_fenster": [
+              0.2,
+              0.35
+            ],
+            "komplett": [
+              0.4,
+              0.7
+            ]
+          },
+          "material_uplift": {
+            "komplett": [
+              0.1,
+              0.25
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "kueche_fett",
+          "label_de": "Küche stark verfettet",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": false,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "True": [
+              0.12,
+              0.25
+            ]
+          },
+          "material_uplift": {
+            "True": [
+              0.1,
+              0.25
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "bad_kalk",
+          "label_de": "Starke Kalk- oder Urinsteinablagerungen",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": false,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "True": [
+              0.1,
+              0.2
+            ]
+          },
+          "material_uplift": {
+            "True": [
+              0.1,
+              0.25
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        }
+      ],
       "note_keys": [
         "schluessel_uebergabe"
       ],
@@ -24807,7 +25006,113 @@
       "emergency_capable": false,
       "condition_axis": "verschmutzung",
       "access_axis": "hoehe",
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "anzahl",
+          "label_de": "Anzahl Fensterflügel",
+          "type": "number",
+          "unit": "Stk",
+          "options": [],
+          "affects": "qty",
+          "default": 18,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "art",
+          "label_de": "Fensterart",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "standard",
+              "Standardfenster"
+            ],
+            [
+              "sprossen",
+              "Sprossenfenster"
+            ],
+            [
+              "dachfenster",
+              "Dachfenster"
+            ],
+            [
+              "grossflaeche",
+              "Großflächiges Glaselement"
+            ]
+          ],
+          "affects": "variant",
+          "default": "standard",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "sprossen": [
+              0.45,
+              0.9
+            ],
+            "dachfenster": [
+              0.2,
+              0.4
+            ],
+            "grossflaeche": [
+              0.15,
+              0.35
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "rahmen",
+          "label_de": "Rahmen und Falz mitreinigen",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": true,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "False": [
+              -0.25,
+              -0.15
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "bauschluss",
+          "label_de": "Nach Bauarbeiten (Zement- und Farbreste)",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": false,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "True": [
+              0.4,
+              0.8
+            ]
+          },
+          "material_uplift": {
+            "True": [
+              0.3,
+              0.7
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        }
+      ],
       "note_keys": [
         "erreichbarkeit"
       ],
@@ -24871,7 +25176,91 @@
       "emergency_capable": false,
       "condition_axis": "verschmutzung",
       "access_axis": "gebaeude",
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "geschosse",
+          "label_de": "Geschosse",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "bis_3",
+              "Bis 3"
+            ],
+            [
+              "bis_6",
+              "4 bis 6"
+            ],
+            [
+              "ueber_6",
+              "Mehr als 6"
+            ]
+          ],
+          "affects": "variant",
+          "default": "bis_3",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "bis_6": [
+              0.35,
+              0.65
+            ],
+            "ueber_6": [
+              0.7,
+              1.3
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "leistungen",
+          "label_de": "Umfang je Besuch",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "kehren",
+              "Kehren und Wischen"
+            ],
+            [
+              "komplett",
+              "Zusätzlich Glas, Geländer, Müllraum"
+            ],
+            [
+              "aussen",
+              "Zusätzlich Außenflächen und Müllplatz"
+            ]
+          ],
+          "affects": "variant",
+          "default": "kehren",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "komplett": [
+              0.3,
+              0.6
+            ],
+            "aussen": [
+              0.55,
+              1.0
+            ]
+          },
+          "material_uplift": {
+            "komplett": [
+              0.15,
+              0.35
+            ],
+            "aussen": [
+              0.25,
+              0.55
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        }
+      ],
       "note_keys": [
         "schluessel_uebergabe"
       ],
@@ -24935,7 +25324,122 @@
       "emergency_capable": false,
       "condition_axis": "verschmutzung",
       "access_axis": "gebaeude",
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "schaedling",
+          "label_de": "Schädling",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "ameisen",
+              "Ameisen"
+            ],
+            [
+              "schaben",
+              "Schaben"
+            ],
+            [
+              "nager",
+              "Ratten oder Mäuse"
+            ],
+            [
+              "wespen",
+              "Wespen oder Hornissen"
+            ],
+            [
+              "bettwanzen",
+              "Bettwanzen"
+            ]
+          ],
+          "affects": "variant",
+          "default": "schaben",
+          "note_if": {
+            "bettwanzen": "raeumung_waehrend"
+          },
+          "help_de": "",
+          "uplift": {
+            "ameisen": [
+              -0.25,
+              -0.15
+            ],
+            "wespen": [
+              -0.15,
+              -0.05
+            ],
+            "nager": [
+              0.1,
+              0.25
+            ],
+            "bettwanzen": [
+              0.5,
+              0.95
+            ]
+          },
+          "material_uplift": {
+            "ameisen": [
+              -0.3,
+              -0.2
+            ],
+            "nager": [
+              0.1,
+              0.25
+            ],
+            "bettwanzen": [
+              0.4,
+              0.9
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "befall",
+          "label_de": "Ausmaß",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "ein_raum",
+              "Ein Raum"
+            ],
+            [
+              "wohnung",
+              "Ganze Wohnung"
+            ],
+            [
+              "gebaeude",
+              "Mehrere Einheiten oder Gebäude"
+            ]
+          ],
+          "affects": "variant",
+          "default": "wohnung",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "ein_raum": [
+              -0.35,
+              -0.25
+            ],
+            "gebaeude": [
+              0.6,
+              1.1
+            ]
+          },
+          "material_uplift": {
+            "ein_raum": [
+              -0.35,
+              -0.25
+            ],
+            "gebaeude": [
+              0.6,
+              1.1
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        }
+      ],
       "note_keys": [
         "nachkontrolle",
         "raeumung_waehrend"
@@ -25023,7 +25527,105 @@
       "emergency_capable": false,
       "condition_axis": "verschmutzung",
       "access_axis": "gebaeude",
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "flaeche",
+          "label_de": "Fläche",
+          "type": "number",
+          "unit": "m2",
+          "options": [],
+          "affects": "qty",
+          "default": 150,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "bauphase",
+          "label_de": "Bauphase",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "grob",
+              "Grobreinigung, noch Rohbau"
+            ],
+            [
+              "endreinigung",
+              "Bauendreinigung vor Übergabe"
+            ],
+            [
+              "feinreinigung",
+              "Feinreinigung, bezugsfertig"
+            ]
+          ],
+          "affects": "variant",
+          "default": "endreinigung",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "grob": [
+              -0.3,
+              -0.2
+            ],
+            "feinreinigung": [
+              0.25,
+              0.5
+            ]
+          },
+          "material_uplift": {
+            "feinreinigung": [
+              0.15,
+              0.35
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "estrich_zement",
+          "label_de": "Zement- oder Mörtelreste auf dem Boden",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": true,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "False": [
+              -0.15,
+              -0.08
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "fenster_mit",
+          "label_de": "Fenster und Rahmen enthalten",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": true,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "False": [
+              -0.2,
+              -0.12
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        }
+      ],
       "note_keys": [],
       "labour_variance": 3.64,
       "site_visit_required": false,
@@ -25108,7 +25710,152 @@
       "emergency_capable": false,
       "condition_axis": "verschmutzung",
       "access_axis": "hoehe",
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "flaeche",
+          "label_de": "Fläche",
+          "type": "number",
+          "unit": "m2",
+          "options": [],
+          "affects": "qty",
+          "default": 11,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "untergrund",
+          "label_de": "Untergrund",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "glatt",
+              "Glatter Lack, Glas oder Metall"
+            ],
+            [
+              "putz",
+              "Putz oder Beton"
+            ],
+            [
+              "klinker",
+              "Klinker oder Naturstein"
+            ],
+            [
+              "holz",
+              "Holz"
+            ]
+          ],
+          "affects": "variant",
+          "default": "putz",
+          "note_if": {},
+          "help_de": "Poröser Untergrund saugt die Farbe auf — das ist der Preisunterschied.",
+          "uplift": {
+            "glatt": [
+              -0.4,
+              -0.25
+            ],
+            "klinker": [
+              0.35,
+              0.7
+            ],
+            "holz": [
+              0.25,
+              0.55
+            ]
+          },
+          "material_uplift": {
+            "glatt": [
+              -0.3,
+              -0.2
+            ],
+            "klinker": [
+              0.25,
+              0.55
+            ],
+            "holz": [
+              0.2,
+              0.45
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "schutz",
+          "label_de": "Schutzbeschichtung vorhanden",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "ja",
+              "Ja"
+            ],
+            [
+              "nein",
+              "Nein"
+            ],
+            [
+              "unbekannt",
+              "Unbekannt"
+            ]
+          ],
+          "affects": "variant",
+          "default": "nein",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "ja": [
+              -0.45,
+              -0.3
+            ],
+            "unbekannt": [
+              0.0,
+              0.1
+            ]
+          },
+          "material_uplift": {
+            "ja": [
+              -0.4,
+              -0.25
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "alter",
+          "label_de": "Alter",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "frisch",
+              "Wenige Tage"
+            ],
+            [
+              "alt",
+              "Älter als ein Monat"
+            ]
+          ],
+          "affects": "variant",
+          "default": "alt",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "frisch": [
+              -0.25,
+              -0.15
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        }
+      ],
       "note_keys": [],
       "labour_variance": 4.28,
       "site_visit_required": true,
@@ -25170,7 +25917,139 @@
       "emergency_capable": false,
       "condition_axis": "verschmutzung",
       "access_axis": "gebaeude",
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "flaeche",
+          "label_de": "Fläche",
+          "type": "number",
+          "unit": "m2",
+          "options": [],
+          "affects": "qty",
+          "default": 27,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "objekt",
+          "label_de": "Objekt",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "teppich",
+              "Teppich oder Teppichboden"
+            ],
+            [
+              "polstermoebel",
+              "Polstermöbel"
+            ],
+            [
+              "matratze",
+              "Matratze"
+            ],
+            [
+              "fahrzeug",
+              "Fahrzeugpolster"
+            ]
+          ],
+          "affects": "variant",
+          "default": "teppich",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "polstermoebel": [
+              0.25,
+              0.5
+            ],
+            "matratze": [
+              0.15,
+              0.35
+            ],
+            "fahrzeug": [
+              0.35,
+              0.7
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "flecken",
+          "label_de": "Flecken",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "keine",
+              "Keine besonderen"
+            ],
+            [
+              "vereinzelt",
+              "Vereinzelt"
+            ],
+            [
+              "stark",
+              "Stark, Tierhaare oder Urin"
+            ]
+          ],
+          "affects": "variant",
+          "default": "vereinzelt",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "keine": [
+              -0.2,
+              -0.12
+            ],
+            "stark": [
+              0.35,
+              0.7
+            ]
+          },
+          "material_uplift": {
+            "keine": [
+              -0.2,
+              -0.12
+            ],
+            "stark": [
+              0.3,
+              0.6
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "impraegnierung",
+          "label_de": "Imprägnierung gewünscht",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": false,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "True": [
+              0.15,
+              0.3
+            ]
+          },
+          "material_uplift": {
+            "True": [
+              0.35,
+              0.7
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        }
+      ],
       "note_keys": [],
       "labour_variance": 3.76,
       "site_visit_required": false,
@@ -25232,7 +26111,131 @@
       "emergency_capable": false,
       "condition_axis": "verschmutzung",
       "access_axis": "grundstueck",
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "flaeche",
+          "label_de": "Fläche",
+          "type": "number",
+          "unit": "m2",
+          "options": [],
+          "affects": "qty",
+          "default": 850,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "verfahren",
+          "label_de": "Verfahren",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "kehren",
+              "Maschinell kehren"
+            ],
+            [
+              "nass",
+              "Nass reinigen mit Aufsitzmaschine"
+            ],
+            [
+              "hochdruck",
+              "Hochdruck mit Schmutzwasseraufnahme"
+            ]
+          ],
+          "affects": "variant",
+          "default": "kehren",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "nass": [
+              0.45,
+              0.85
+            ],
+            "hochdruck": [
+              0.9,
+              1.6
+            ]
+          },
+          "material_uplift": {
+            "nass": [
+              0.3,
+              0.7
+            ],
+            "hochdruck": [
+              0.6,
+              1.2
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "oel",
+          "label_de": "Ölflecken vorhanden",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": true,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "False": [
+              -0.12,
+              -0.06
+            ]
+          },
+          "material_uplift": {
+            "False": [
+              -0.15,
+              -0.08
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "belegung",
+          "label_de": "Stellplätze",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "leer",
+              "Frei geräumt"
+            ],
+            [
+              "teilweise",
+              "Teilweise belegt"
+            ],
+            [
+              "belegt",
+              "Voll belegt, in Etappen"
+            ]
+          ],
+          "affects": "variant",
+          "default": "teilweise",
+          "note_if": {},
+          "help_de": "Um parkende Autos herum zu arbeiten kostet mehr als die Fläche selbst.",
+          "uplift": {
+            "leer": [
+              -0.2,
+              -0.12
+            ],
+            "belegt": [
+              0.3,
+              0.6
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        }
+      ],
       "note_keys": [],
       "labour_variance": 4.13,
       "site_visit_required": false,
@@ -25294,7 +26297,143 @@
       "emergency_capable": false,
       "condition_axis": "verschmutzung",
       "access_axis": "gebaeude",
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "flaeche",
+          "label_de": "Bürofläche",
+          "type": "number",
+          "unit": "m2",
+          "options": [],
+          "affects": "qty",
+          "default": 240,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "frequenz",
+          "label_de": "Häufigkeit",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "taeglich",
+              "Täglich"
+            ],
+            [
+              "dreimal",
+              "3x pro Woche"
+            ],
+            [
+              "woechentlich",
+              "Wöchentlich"
+            ]
+          ],
+          "affects": "variant",
+          "default": "dreimal",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "taeglich": [
+              -0.15,
+              -0.08
+            ],
+            "woechentlich": [
+              0.2,
+              0.4
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "sanitaer_umfang",
+          "label_de": "Sanitäranlagen",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "keine",
+              "Nicht enthalten"
+            ],
+            [
+              "eine",
+              "Eine Anlage"
+            ],
+            [
+              "mehrere",
+              "Mehrere Anlagen"
+            ]
+          ],
+          "affects": "variant",
+          "default": "eine",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "keine": [
+              -0.15,
+              -0.08
+            ],
+            "mehrere": [
+              0.25,
+              0.5
+            ]
+          },
+          "material_uplift": {
+            "keine": [
+              -0.2,
+              -0.12
+            ],
+            "mehrere": [
+              0.25,
+              0.5
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "zeitfenster",
+          "label_de": "Zeitfenster",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "tagsueber",
+              "Während der Bürozeit"
+            ],
+            [
+              "rand",
+              "Früh oder abends"
+            ],
+            [
+              "nacht",
+              "Nachts"
+            ]
+          ],
+          "affects": "variant",
+          "default": "rand",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "tagsueber": [
+              0.1,
+              0.2
+            ],
+            "nacht": [
+              0.15,
+              0.35
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        }
+      ],
       "note_keys": [],
       "labour_variance": 4.38,
       "site_visit_required": false,
@@ -25603,7 +26742,94 @@
       "emergency_capable": false,
       "condition_axis": "gebaeude",
       "access_axis": "gebaeude",
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "stunden",
+          "label_de": "Geschätzte Stunden",
+          "type": "number",
+          "unit": "h",
+          "options": [],
+          "affects": "qty",
+          "default": 4,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "taetigkeit",
+          "label_de": "Art der Arbeit",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "allgemein",
+              "Allgemeine Handwerksarbeiten"
+            ],
+            [
+              "moebel",
+              "Möbel und Einrichtung"
+            ],
+            [
+              "reparatur",
+              "Kleinreparaturen"
+            ],
+            [
+              "aussen",
+              "Außen und Garten"
+            ]
+          ],
+          "affects": "note",
+          "default": "allgemein",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "werkzeug",
+          "label_de": "Spezialwerkzeug nötig",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "nein",
+              "Nein, Standardwerkzeug"
+            ],
+            [
+              "bohrhammer",
+              "Bohrhammer oder Kernbohrung"
+            ],
+            [
+              "buehne",
+              "Gerüst oder Hebebühne"
+            ]
+          ],
+          "affects": "variant",
+          "default": "nein",
+          "note_if": {
+            "buehne": "arbeitsbuehne"
+          },
+          "help_de": "",
+          "uplift": {
+            "bohrhammer": [
+              0.1,
+              0.2
+            ],
+            "buehne": [
+              0.3,
+              0.6
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        }
+      ],
       "note_keys": [
         "regie_abrechnung"
       ],
@@ -25667,7 +26893,178 @@
       "emergency_capable": false,
       "condition_axis": "gebaeude",
       "access_axis": "gebaeude",
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "laenge",
+          "label_de": "Küchenzeile gesamt",
+          "type": "number",
+          "unit": "lfm",
+          "options": [],
+          "affects": "qty",
+          "default": 5.5,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "form",
+          "label_de": "Form",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "zeile",
+              "Einzeilig"
+            ],
+            [
+              "winkel",
+              "L-Form"
+            ],
+            [
+              "u_form",
+              "U-Form"
+            ],
+            [
+              "insel",
+              "Mit Kochinsel"
+            ]
+          ],
+          "affects": "variant",
+          "default": "zeile",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "winkel": [
+              0.15,
+              0.3
+            ],
+            "u_form": [
+              0.25,
+              0.5
+            ],
+            "insel": [
+              0.4,
+              0.8
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "geraete",
+          "label_de": "Elektrogeräte",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "keine",
+              "Keine"
+            ],
+            [
+              "standard",
+              "Standardgeräte einbauen"
+            ],
+            [
+              "voll",
+              "Inkl. Kochfeld, Dunstabzug, Geschirrspüler"
+            ]
+          ],
+          "affects": "variant",
+          "default": "standard",
+          "note_if": {
+            "voll": "e_befund"
+          },
+          "help_de": "",
+          "uplift": {
+            "keine": [
+              -0.2,
+              -0.12
+            ],
+            "voll": [
+              0.25,
+              0.5
+            ]
+          },
+          "material_uplift": {
+            "keine": [
+              -0.3,
+              -0.2
+            ],
+            "voll": [
+              0.1,
+              0.25
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "arbeitsplatte",
+          "label_de": "Arbeitsplatte",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "laminat",
+              "Laminat, werkseitig zugeschnitten"
+            ],
+            [
+              "holz",
+              "Massivholz, vor Ort anpassen"
+            ],
+            [
+              "stein",
+              "Naturstein oder Keramik, bauseits aufgemessen"
+            ]
+          ],
+          "affects": "variant",
+          "default": "laminat",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "holz": [
+              0.2,
+              0.45
+            ],
+            "stein": [
+              0.1,
+              0.3
+            ]
+          },
+          "material_uplift": {
+            "holz": [
+              0.1,
+              0.3
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "altkueche",
+          "label_de": "Alte Küche muss zuerst raus",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": false,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "True": [
+              0.35,
+              0.7
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        }
+      ],
       "note_keys": [],
       "labour_variance": 3.43,
       "site_visit_required": true,
@@ -25752,7 +27149,105 @@
       "emergency_capable": false,
       "condition_axis": "gebaeude",
       "access_axis": "gebaeude",
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "anzahl",
+          "label_de": "Anzahl",
+          "type": "number",
+          "unit": "Stk",
+          "options": [],
+          "affects": "qty",
+          "default": 3,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "bauart",
+          "label_de": "Bauart",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "spannrahmen",
+              "Spannrahmen im Fensterfalz"
+            ],
+            [
+              "drehrahmen",
+              "Drehrahmen für Türen"
+            ],
+            [
+              "plissee",
+              "Plissee oder Rollo"
+            ]
+          ],
+          "affects": "variant",
+          "default": "spannrahmen",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "drehrahmen": [
+              0.45,
+              0.9
+            ],
+            "plissee": [
+              0.3,
+              0.6
+            ]
+          },
+          "material_uplift": {
+            "drehrahmen": [
+              0.6,
+              1.2
+            ],
+            "plissee": [
+              0.4,
+              0.85
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "mass",
+          "label_de": "Maße",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "standard",
+              "Standardmaß ab Lager"
+            ],
+            [
+              "sondermass",
+              "Sondermaß, muss angepasst werden"
+            ]
+          ],
+          "affects": "variant",
+          "default": "standard",
+          "note_if": {
+            "sondermass": "aufmass_vor_fertigung"
+          },
+          "help_de": "",
+          "uplift": {
+            "sondermass": [
+              0.2,
+              0.45
+            ]
+          },
+          "material_uplift": {
+            "sondermass": [
+              0.15,
+              0.35
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        }
+      ],
       "note_keys": [],
       "labour_variance": 3.77,
       "site_visit_required": false,
@@ -25814,7 +27309,130 @@
       "emergency_capable": false,
       "condition_axis": "gebaeude",
       "access_axis": "gebaeude",
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "anzahl",
+          "label_de": "Anzahl Türen",
+          "type": "number",
+          "unit": "Stk",
+          "options": [],
+          "affects": "qty",
+          "default": 2,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "zarge",
+          "label_de": "Zarge",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "bestand",
+              "Bestandszarge bleibt, nur Türblatt"
+            ],
+            [
+              "neu_holz",
+              "Neue Holzzarge"
+            ],
+            [
+              "neu_stahl",
+              "Stahlzarge, einputzen"
+            ]
+          ],
+          "affects": "variant",
+          "default": "neu_holz",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "bestand": [
+              -0.4,
+              -0.28
+            ],
+            "neu_stahl": [
+              0.35,
+              0.7
+            ]
+          },
+          "material_uplift": {
+            "bestand": [
+              -0.35,
+              -0.22
+            ],
+            "neu_stahl": [
+              0.25,
+              0.55
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "mass",
+          "label_de": "Maße",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "standard",
+              "Standardmaß ab Lager"
+            ],
+            [
+              "sondermass",
+              "Sondermaß, muss angepasst werden"
+            ]
+          ],
+          "affects": "variant",
+          "default": "standard",
+          "note_if": {
+            "sondermass": "aufmass_vor_fertigung"
+          },
+          "help_de": "",
+          "uplift": {
+            "sondermass": [
+              0.2,
+              0.45
+            ]
+          },
+          "material_uplift": {
+            "sondermass": [
+              0.15,
+              0.35
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "beschlag",
+          "label_de": "Neue Beschläge und Drücker",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": true,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "False": [
+              -0.08,
+              -0.04
+            ]
+          },
+          "material_uplift": {
+            "False": [
+              -0.15,
+              -0.1
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        }
+      ],
       "note_keys": [],
       "labour_variance": 3.44,
       "site_visit_required": false,
@@ -25899,7 +27517,169 @@
       "emergency_capable": false,
       "condition_axis": "umfeld",
       "access_axis": "hoehe",
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "bauart",
+          "label_de": "Bauart",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "gelenkarm",
+              "Gelenkarmmarkise"
+            ],
+            [
+              "kassette",
+              "Kassettenmarkise"
+            ],
+            [
+              "senkrecht",
+              "Senkrecht- oder Fallarmmarkise"
+            ]
+          ],
+          "affects": "variant",
+          "default": "gelenkarm",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "kassette": [
+              0.15,
+              0.3
+            ],
+            "senkrecht": [
+              -0.15,
+              -0.08
+            ]
+          },
+          "material_uplift": {
+            "kassette": [
+              0.25,
+              0.5
+            ],
+            "senkrecht": [
+              -0.2,
+              -0.1
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "breite",
+          "label_de": "Breite",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "bis_300",
+              "Bis 3 m"
+            ],
+            [
+              "bis_500",
+              "3 bis 5 m"
+            ],
+            [
+              "ueber_500",
+              "Über 5 m"
+            ]
+          ],
+          "affects": "variant",
+          "default": "bis_500",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "bis_300": [
+              -0.2,
+              -0.12
+            ],
+            "ueber_500": [
+              0.25,
+              0.5
+            ]
+          },
+          "material_uplift": {
+            "bis_300": [
+              -0.2,
+              -0.12
+            ],
+            "ueber_500": [
+              0.25,
+              0.5
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "befestigung",
+          "label_de": "Befestigungsgrund",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "massiv",
+              "Massivwand"
+            ],
+            [
+              "wdvs",
+              "Wand mit Wärmedämmung"
+            ],
+            [
+              "sparren",
+              "Dachsparren oder Balkonplatte"
+            ]
+          ],
+          "affects": "variant",
+          "default": "massiv",
+          "note_if": {
+            "wdvs": "untergrund_tragfaehig"
+          },
+          "help_de": "",
+          "uplift": {
+            "wdvs": [
+              0.25,
+              0.5
+            ],
+            "sparren": [
+              0.15,
+              0.35
+            ]
+          },
+          "material_uplift": {
+            "wdvs": [
+              0.15,
+              0.35
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "motor",
+          "label_de": "Mit Motor und Funk",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": true,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "False": [
+              -0.15,
+              -0.08
+            ]
+          },
+          "material_uplift": {
+            "False": [
+              -0.25,
+              -0.15
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        }
+      ],
       "note_keys": [],
       "labour_variance": 3.8,
       "site_visit_required": true,
@@ -25961,7 +27741,80 @@
       "emergency_capable": false,
       "condition_axis": "gebaeude",
       "access_axis": "gebaeude",
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "anzahl",
+          "label_de": "Anzahl Möbelstücke",
+          "type": "number",
+          "unit": "Stk",
+          "options": [],
+          "affects": "qty",
+          "default": 2,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "groesse",
+          "label_de": "Größe",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "klein",
+              "Kommode, Nachttisch, Stuhl"
+            ],
+            [
+              "mittel",
+              "Kleiderschrank, 2 bis 3 Türen"
+            ],
+            [
+              "gross",
+              "Schrankwand oder Eckschrank"
+            ]
+          ],
+          "affects": "variant",
+          "default": "mittel",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "klein": [
+              -0.35,
+              -0.25
+            ],
+            "gross": [
+              0.45,
+              0.9
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "wandbefestigung",
+          "label_de": "Muss an der Wand gesichert werden",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": true,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "False": [
+              -0.1,
+              -0.05
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        }
+      ],
       "note_keys": [],
       "labour_variance": 4.52,
       "site_visit_required": false,
@@ -26023,7 +27876,118 @@
       "emergency_capable": false,
       "condition_axis": "gebaeude",
       "access_axis": "gebaeude",
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "anzahl",
+          "label_de": "Anzahl",
+          "type": "number",
+          "unit": "Stk",
+          "options": [],
+          "affects": "qty",
+          "default": 3,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "wand",
+          "label_de": "Wandaufbau",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "ziegel",
+              "Ziegel oder Beton"
+            ],
+            [
+              "hohlwand",
+              "Gipskarton oder Hohlwand"
+            ],
+            [
+              "porenbeton",
+              "Porenbeton oder Altbauputz"
+            ]
+          ],
+          "affects": "variant",
+          "default": "ziegel",
+          "note_if": {
+            "hohlwand": "untergrund_tragfaehig",
+            "porenbeton": "untergrund_tragfaehig"
+          },
+          "help_de": "Entscheidet über Dübel und Bohrzeit — Beton ist die teure Antwort.",
+          "uplift": {
+            "hohlwand": [
+              0.1,
+              0.25
+            ],
+            "porenbeton": [
+              0.05,
+              0.18
+            ]
+          },
+          "material_uplift": {
+            "hohlwand": [
+              0.2,
+              0.45
+            ],
+            "porenbeton": [
+              0.1,
+              0.3
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "traglast",
+          "label_de": "Belastung",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "leicht",
+              "Dekoration"
+            ],
+            [
+              "mittel",
+              "Bücher oder Geschirr"
+            ],
+            [
+              "schwer",
+              "Hängeschrank oder schwere Last"
+            ]
+          ],
+          "affects": "variant",
+          "default": "mittel",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "leicht": [
+              -0.2,
+              -0.12
+            ],
+            "schwer": [
+              0.25,
+              0.5
+            ]
+          },
+          "material_uplift": {
+            "leicht": [
+              -0.2,
+              -0.12
+            ],
+            "schwer": [
+              0.3,
+              0.6
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        }
+      ],
       "note_keys": [],
       "labour_variance": 5.03,
       "site_visit_required": false,
@@ -26085,7 +28049,132 @@
       "emergency_capable": false,
       "condition_axis": "gebaeude",
       "access_axis": "gebaeude",
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "anzahl",
+          "label_de": "Anzahl Rollläden",
+          "type": "number",
+          "unit": "Stk",
+          "options": [],
+          "affects": "qty",
+          "default": 1,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "fehler",
+          "label_de": "Was ist defekt",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "gurt",
+              "Gurt gerissen"
+            ],
+            [
+              "wickler",
+              "Gurtwickler defekt"
+            ],
+            [
+              "welle",
+              "Welle oder Lager"
+            ],
+            [
+              "panzer",
+              "Panzer beschädigt"
+            ],
+            [
+              "motor",
+              "Motor defekt"
+            ]
+          ],
+          "affects": "variant",
+          "default": "gurt",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "wickler": [
+              0.25,
+              0.5
+            ],
+            "welle": [
+              0.6,
+              1.2
+            ],
+            "panzer": [
+              0.8,
+              1.5
+            ],
+            "motor": [
+              0.7,
+              1.4
+            ]
+          },
+          "material_uplift": {
+            "wickler": [
+              0.3,
+              0.7
+            ],
+            "welle": [
+              0.8,
+              1.6
+            ],
+            "panzer": [
+              1.2,
+              2.4
+            ],
+            "motor": [
+              1.2,
+              2.4
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "zugang_kasten",
+          "label_de": "Rollladenkasten",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "innen",
+              "Von innen zugänglich"
+            ],
+            [
+              "aussen",
+              "Nur von außen"
+            ],
+            [
+              "zugeputzt",
+              "Zugeputzt oder verbaut"
+            ]
+          ],
+          "affects": "variant",
+          "default": "innen",
+          "note_if": {
+            "zugeputzt": "oeffnung_wand"
+          },
+          "help_de": "Ein zugeputzter Kasten ist der Unterschied zwischen 30 Minuten und einem halben Tag.",
+          "uplift": {
+            "aussen": [
+              0.15,
+              0.35
+            ],
+            "zugeputzt": [
+              0.6,
+              1.2
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        }
+      ],
       "note_keys": [],
       "labour_variance": 4.84,
       "site_visit_required": false,
@@ -26147,7 +28236,101 @@
       "emergency_capable": false,
       "condition_axis": "gebaeude",
       "access_axis": "gebaeude",
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "anzahl",
+          "label_de": "Anzahl Zylinder",
+          "type": "number",
+          "unit": "Stk",
+          "options": [],
+          "affects": "qty",
+          "default": 1,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "art",
+          "label_de": "Ausführung",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "standard",
+              "Standardzylinder"
+            ],
+            [
+              "sicherheit",
+              "Sicherheitszylinder mit Karte"
+            ],
+            [
+              "knauf",
+              "Knaufzylinder"
+            ],
+            [
+              "schliessanlage",
+              "Teil einer Schließanlage"
+            ]
+          ],
+          "affects": "variant",
+          "default": "standard",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "sicherheit": [
+              0.05,
+              0.15
+            ],
+            "knauf": [
+              0.0,
+              0.1
+            ],
+            "schliessanlage": [
+              0.25,
+              0.55
+            ]
+          },
+          "material_uplift": {
+            "sicherheit": [
+              0.6,
+              1.4
+            ],
+            "knauf": [
+              0.2,
+              0.5
+            ],
+            "schliessanlage": [
+              0.8,
+              1.8
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "mass_bekannt",
+          "label_de": "Maß des alten Zylinders bekannt",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": false,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "True": [
+              -0.15,
+              -0.08
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        }
+      ],
       "note_keys": [],
       "labour_variance": 3.72,
       "site_visit_required": false,
@@ -26209,7 +28392,166 @@
       "emergency_capable": false,
       "condition_axis": "gebaeude",
       "access_axis": "gebaeude",
-      "guided_form": [],
+      "guided_form": [
+        {
+          "key": "anzahl",
+          "label_de": "Anzahl",
+          "type": "number",
+          "unit": "Stk",
+          "options": [],
+          "affects": "qty",
+          "default": 1,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "wand",
+          "label_de": "Wandaufbau",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "ziegel",
+              "Ziegel oder Beton"
+            ],
+            [
+              "hohlwand",
+              "Gipskarton oder Hohlwand"
+            ],
+            [
+              "porenbeton",
+              "Porenbeton oder Altbauputz"
+            ]
+          ],
+          "affects": "variant",
+          "default": "ziegel",
+          "note_if": {
+            "hohlwand": "untergrund_tragfaehig",
+            "porenbeton": "untergrund_tragfaehig"
+          },
+          "help_de": "Entscheidet über Dübel und Bohrzeit — Beton ist die teure Antwort.",
+          "uplift": {
+            "hohlwand": [
+              0.1,
+              0.25
+            ],
+            "porenbeton": [
+              0.05,
+              0.18
+            ]
+          },
+          "material_uplift": {
+            "hohlwand": [
+              0.2,
+              0.45
+            ],
+            "porenbeton": [
+              0.1,
+              0.3
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "halterung",
+          "label_de": "Halterung",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "fix",
+              "Starr"
+            ],
+            [
+              "neigbar",
+              "Neigbar"
+            ],
+            [
+              "schwenkarm",
+              "Schwenkarm"
+            ]
+          ],
+          "affects": "variant",
+          "default": "neigbar",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "fix": [
+              -0.1,
+              -0.05
+            ],
+            "schwenkarm": [
+              0.15,
+              0.3
+            ]
+          },
+          "material_uplift": {
+            "fix": [
+              -0.2,
+              -0.12
+            ],
+            "schwenkarm": [
+              0.3,
+              0.6
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "kabel",
+          "label_de": "Kabelführung",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "sichtbar",
+              "Sichtbar"
+            ],
+            [
+              "kanal",
+              "Im Kabelkanal"
+            ],
+            [
+              "unterputz",
+              "Unterputz, Wand aufstemmen"
+            ]
+          ],
+          "affects": "variant",
+          "default": "sichtbar",
+          "note_if": {
+            "unterputz": "oeffnung_wand"
+          },
+          "help_de": "",
+          "uplift": {
+            "kanal": [
+              0.15,
+              0.3
+            ],
+            "unterputz": [
+              0.6,
+              1.2
+            ]
+          },
+          "material_uplift": {
+            "kanal": [
+              0.2,
+              0.5
+            ],
+            "unterputz": [
+              0.3,
+              0.7
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        }
+      ],
       "note_keys": [
         "untergrund_tragfaehig",
         "leitungsortung"

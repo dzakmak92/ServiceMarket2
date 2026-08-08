@@ -8,7 +8,8 @@ from garten_deep import GARTEN_DEEP
 from trades import ALL as CORE
 from wide1 import BAUEN, TISCHLER, KUECHE
 from wide2 import FENSTER, DACH
-from wide3 import HEIZUNG, UMZUG, REINIGUNG, POLSTER, SOLAR, MONTAGE, GUTACHTER
+from wide3 import (HEIZUNG, UMZUG, REINIGUNG, POLSTER, SOLAR, MONTAGE,
+                   GUTACHTER, REINIGUNG_FORMS, MONTAGE_FORMS)
 from wide4 import FAHRZEUGE
 from sanitaer_deep import SANITAER_DEEP
 from elektrik_deep import ELEKTRIK_DEEP
@@ -47,6 +48,19 @@ for j in ALL_JOBS:
 _own = [(j.key, q.key) for j in ALL_JOBS for q in j.guided_form
         if q.key in ("condition", "access") or q.affects in ("condition", "access")]
 assert not _own, f"condition/access belong to the axis, not the job: {_own}"
+
+# The Reinigung and Montage forms are attached here rather than inline, so
+# that all twenty can be read in `wide3.py` as one list of what those two
+# trades actually ask. One of them — the lockout — lives in `wide1.py` under
+# Bauen & Renovieren, which is the other reason this loop runs over every job
+# rather than over the two buckets.
+_FORMS = {**REINIGUNG_FORMS, **MONTAGE_FORMS}
+for j in ALL_JOBS:
+    if j.key in _FORMS:
+        assert not j.guided_form, f"{j.key} already has a form"
+        j.guided_form = list(_FORMS[j.key])
+_unplaced = sorted(set(_FORMS) - {j.key for j in ALL_JOBS})
+assert not _unplaced, f"forms written for jobs that do not exist: {_unplaced}"
 
 # What each answer costs. Assigned centrally for the same reason the axes are:
 # the tables are worth more when the whole trade can be read down one column

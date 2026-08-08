@@ -320,10 +320,118 @@ PRICING: dict[str, dict] = {
     "altanlage": _u(uplift={"modern": (-0.12, -0.06), "mit_pe": (-0.06, 0.00),
                             "klassisch_null": (0.20, 0.40)}),
 
-    # ══ Reinigung und Montage ═══════════════════════════════════════════
+    # ══ Reinigung ═══════════════════════════════════════════════════════
 
-    # These trades' templates get their guided forms in the next commit; the
-    # question keys they will use are priced there, with the questions.
+    "reinigung.grundreinigung/umfang": _u(
+        uplift={"mit_fenster": (0.20, 0.35), "komplett": (0.40, 0.70)},
+        material={"komplett": (0.10, 0.25)}),
+    "kueche_fett": _u(uplift={"True": (0.12, 0.25)}, material={"True": (0.10, 0.25)}),
+    "bad_kalk": _u(uplift={"True": (0.10, 0.20)}, material={"True": (0.10, 0.25)}),
+    # Muntins are the whole cost of window cleaning: a Sprossenfenster is a
+    # dozen small panes and every one has four edges.
+    "reinigung.fenster/art": _u(
+        uplift={"sprossen": (0.45, 0.90), "dachfenster": (0.20, 0.40),
+                "grossflaeche": (0.15, 0.35)}),
+    "rahmen": _u(uplift={"False": (-0.25, -0.15)}),
+    "bauschluss": _u(uplift={"True": (0.40, 0.80)}, material={"True": (0.30, 0.70)}),
+    "geschosse": _u(uplift={"bis_6": (0.35, 0.65), "ueber_6": (0.70, 1.30)}),
+    "leistungen": _u(uplift={"komplett": (0.30, 0.60), "aussen": (0.55, 1.00)},
+                     material={"komplett": (0.15, 0.35), "aussen": (0.25, 0.55)}),
+    "schaedling": _u(
+        uplift={"ameisen": (-0.25, -0.15), "wespen": (-0.15, -0.05),
+                "nager": (0.10, 0.25), "bettwanzen": (0.50, 0.95)},
+        material={"ameisen": (-0.30, -0.20), "nager": (0.10, 0.25),
+                  "bettwanzen": (0.40, 0.90)}),
+    "befall": _u(uplift={"ein_raum": (-0.35, -0.25), "gebaeude": (0.60, 1.10)},
+                 material={"ein_raum": (-0.35, -0.25), "gebaeude": (0.60, 1.10)}),
+    "bauphase": _u(uplift={"grob": (-0.30, -0.20), "feinreinigung": (0.25, 0.50)},
+                   material={"feinreinigung": (0.15, 0.35)}),
+    "estrich_zement": _u(uplift={"False": (-0.15, -0.08)}),
+    "fenster_mit": _u(uplift={"False": (-0.20, -0.12)}),
+    # Porous surfaces absorb the paint; a sealed one lets it wipe off.
+    "reinigung.graffiti/untergrund": _u(
+        uplift={"glatt": (-0.40, -0.25), "klinker": (0.35, 0.70), "holz": (0.25, 0.55)},
+        material={"glatt": (-0.30, -0.20), "klinker": (0.25, 0.55), "holz": (0.20, 0.45)}),
+    "schutz": _u(uplift={"ja": (-0.45, -0.30), "unbekannt": (0.00, 0.10)},
+                 material={"ja": (-0.40, -0.25)}),
+    "alter": _u(uplift={"frisch": (-0.25, -0.15)}),
+    "objekt": _u(uplift={"polstermoebel": (0.25, 0.50), "matratze": (0.15, 0.35),
+                         "fahrzeug": (0.35, 0.70)}),
+    "flecken": _u(uplift={"keine": (-0.20, -0.12), "stark": (0.35, 0.70)},
+                  material={"keine": (-0.20, -0.12), "stark": (0.30, 0.60)}),
+    "impraegnierung": _u(uplift={"True": (0.15, 0.30)},
+                         material={"True": (0.35, 0.70)}),
+    "verfahren": _u(uplift={"nass": (0.45, 0.85), "hochdruck": (0.90, 1.60)},
+                    material={"nass": (0.30, 0.70), "hochdruck": (0.60, 1.20)}),
+    "oel": _u(uplift={"False": (-0.12, -0.06)}, material={"False": (-0.15, -0.08)}),
+    "belegung": _u(uplift={"leer": (-0.20, -0.12), "belegt": (0.30, 0.60)}),
+    # More often is cheaper per visit: less has accumulated since the last one.
+    "frequenz": _u(uplift={"taeglich": (-0.15, -0.08), "woechentlich": (0.20, 0.40)}),
+    "sanitaer_umfang": _u(uplift={"keine": (-0.15, -0.08), "mehrere": (0.25, 0.50)},
+                          material={"keine": (-0.20, -0.12), "mehrere": (0.25, 0.50)}),
+    "zeitfenster": _u(uplift={"tagsueber": (0.10, 0.20), "nacht": (0.15, 0.35)}),
+
+    # ══ Montage ═════════════════════════════════════════════════════════
+
+    "werkzeug": _u(uplift={"bohrhammer": (0.10, 0.20), "buehne": (0.30, 0.60)}),
+    "form": _u(uplift={"winkel": (0.15, 0.30), "u_form": (0.25, 0.50),
+                       "insel": (0.40, 0.80)}),
+    "geraete": _u(uplift={"keine": (-0.20, -0.12), "voll": (0.25, 0.50)},
+                  material={"keine": (-0.30, -0.20), "voll": (0.10, 0.25)}),
+    "arbeitsplatte": _u(uplift={"holz": (0.20, 0.45), "stein": (0.10, 0.30)},
+                        material={"holz": (0.10, 0.30)}),
+    "altkueche": _u(uplift={"True": (0.35, 0.70)}),
+    "montage.fliegengitter/bauart": _u(
+        uplift={"drehrahmen": (0.45, 0.90), "plissee": (0.30, 0.60)},
+        material={"drehrahmen": (0.60, 1.20), "plissee": (0.40, 0.85)}),
+    "mass": _u(uplift={"sondermass": (0.20, 0.45)},
+               material={"sondermass": (0.15, 0.35)}),
+    "zarge": _u(uplift={"bestand": (-0.40, -0.28), "neu_stahl": (0.35, 0.70)},
+                material={"bestand": (-0.35, -0.22), "neu_stahl": (0.25, 0.55)}),
+    "beschlag": _u(uplift={"False": (-0.08, -0.04)},
+                   material={"False": (-0.15, -0.10)}),
+    "montage.markise/bauart": _u(
+        uplift={"kassette": (0.15, 0.30), "senkrecht": (-0.15, -0.08)},
+        material={"kassette": (0.25, 0.50), "senkrecht": (-0.20, -0.10)}),
+    "breite": _u(uplift={"bis_300": (-0.20, -0.12), "ueber_500": (0.25, 0.50)},
+                 material={"bis_300": (-0.20, -0.12), "ueber_500": (0.25, 0.50)}),
+    "befestigung": _u(uplift={"wdvs": (0.25, 0.50), "sparren": (0.15, 0.35)},
+                      material={"wdvs": (0.15, 0.35)}),
+    "motor": _u(uplift={"False": (-0.15, -0.08)}, material={"False": (-0.25, -0.15)}),
+    "montage.moebel/groesse": _u(
+        uplift={"klein": (-0.35, -0.25), "gross": (0.45, 0.90)}),
+    "wandbefestigung": _u(uplift={"False": (-0.10, -0.05)}),
+    "montage.regal/wand": _u(
+        uplift={"hohlwand": (0.10, 0.25), "porenbeton": (0.05, 0.18)},
+        material={"hohlwand": (0.20, 0.45), "porenbeton": (0.10, 0.30)}),
+    "montage.tv_wandhalterung/wand": _u(
+        uplift={"hohlwand": (0.10, 0.25), "porenbeton": (0.05, 0.18)},
+        material={"hohlwand": (0.20, 0.45), "porenbeton": (0.10, 0.30)}),
+    "traglast": _u(uplift={"leicht": (-0.20, -0.12), "schwer": (0.25, 0.50)},
+                   material={"leicht": (-0.20, -0.12), "schwer": (0.30, 0.60)}),
+    # A snapped strap is fifteen minutes. A damaged slat curtain is a new one.
+    "fehler": _u(
+        uplift={"wickler": (0.25, 0.50), "welle": (0.60, 1.20),
+                "panzer": (0.80, 1.50), "motor": (0.70, 1.40)},
+        material={"wickler": (0.30, 0.70), "welle": (0.80, 1.60),
+                  "panzer": (1.20, 2.40), "motor": (1.20, 2.40)}),
+    "zugang_kasten": _u(uplift={"aussen": (0.15, 0.35), "zugeputzt": (0.60, 1.20)}),
+    "montage.schliesszylinder/art": _u(
+        uplift={"sicherheit": (0.05, 0.15), "knauf": (0.00, 0.10),
+                "schliessanlage": (0.25, 0.55)},
+        material={"sicherheit": (0.60, 1.40), "knauf": (0.20, 0.50),
+                  "schliessanlage": (0.80, 1.80)}),
+    "mass_bekannt": _u(uplift={"True": (-0.15, -0.08)}),
+    "halterung": _u(uplift={"fix": (-0.10, -0.05), "schwenkarm": (0.15, 0.30)},
+                    material={"fix": (-0.20, -0.12), "schwenkarm": (0.30, 0.60)}),
+    "kabel": _u(uplift={"kanal": (0.15, 0.30), "unterputz": (0.60, 1.20)},
+                material={"kanal": (0.20, 0.50), "unterputz": (0.30, 0.70)}),
+    "schloss": _u(uplift={"abgesperrt": (0.50, 1.00),
+                          "sicherheitsschloss": (0.90, 1.80)}),
+    # `nacht_sonntag` is deliberately absent: it switches the whole job to the
+    # Notdienst hourly rate, and an uplift on top would charge the night twice.
+    "schluessel.tueroeffnung/zeit": _u(uplift={"abend": (0.20, 0.40)}),
+    "beschaedigung": _u(uplift={"False": (-0.20, -0.12)}),
 }
 
 
