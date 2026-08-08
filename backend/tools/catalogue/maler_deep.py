@@ -33,16 +33,6 @@ SRC = ["fixbuddy.at/was-kostet-maler", "daibau.at/baukostenrechner/maler",
 SRC_FAS = ["hausbau-magazin.at/malerkosten-oesterreich",
            "daibau.at/baukostenrechner/fassade"]
 
-Q_ZUGANG = Q("access", "Zugang", "choice", affects="access",
-             options=[("eg_oder_lift", "Erdgeschoss oder Lift"),
-                      ("og_ohne_lift", "Obergeschoss ohne Lift"),
-                      ("enge_treppe", "Enge Treppe")], default="eg_oder_lift")
-Q_ZUSTAND = Q("condition", "Zustand", "choice", affects="condition",
-              options=[("neubau", "Neubau, besenrein"),
-                       ("renovierung_leer", "Renovierung, leerstehend"),
-                       ("renovierung_bewohnt", "Renovierung, bewohnt"),
-                       ("altbau_bewohnt", "Altbau, bewohnt")],
-              default="renovierung_leer")
 # The question that moves the number most on every surface job.
 Q_UNTERGRUND = Q("untergrund", "Untergrund", "choice", affects="variant",
                  options=[("gipskarton_neu", "Gipskarton, neu gespachtelt"),
@@ -80,8 +70,7 @@ MALER_DEEP = [
       market_band_at=(7, 15), market_band_de=(7, 20),
       confidence="high", sources=SRC,
       note_keys=["moebel_bauseits", "trocknung_nutzung"],
-      guided_form=[Q_UNTERGRUND, Q_FARBWECHSEL, Q_NIKOTIN, Q_MOEBEL,
-                   Q_ZUSTAND, Q_ZUGANG],
+      guided_form=[Q_UNTERGRUND, Q_FARBWECHSEL, Q_NIKOTIN, Q_MOEBEL],
       operations=[
           Op("abdecken", "Abdecken und Abkleben", "m2", (0.030, 0.050)),
           Op("anstrich2", "Wandanstrich, zwei Anstriche", "m2", (0.055, 0.085)),
@@ -94,7 +83,7 @@ MALER_DEEP = [
       market_band_at=(9, 18), market_band_de=(9, 22),
       confidence="high", sources=SRC,
       note_keys=["trocknung_nutzung"],
-      guided_form=[Q_UNTERGRUND, Q_NIKOTIN, Q_MOEBEL, Q_ZUSTAND, Q_ZUGANG],
+      guided_form=[Q_UNTERGRUND, Q_NIKOTIN, Q_MOEBEL],
       operations=[
           Op("abdecken", "Abdecken", "m2", (0.030, 0.050)),
           # Overhead work is slower than a wall and the reason ceilings carry
@@ -115,7 +104,7 @@ MALER_DEEP = [
       guided_form=[
           Q("wohnflaeche", "Wohnfläche", "number", unit="m2", affects="qty",
             default=70, help_de="Wand- und Deckenfläche werden daraus gerechnet"),
-          Q_UNTERGRUND, Q_FARBWECHSEL, Q_NIKOTIN, Q_MOEBEL, Q_ZUSTAND, Q_ZUGANG],
+          Q_UNTERGRUND, Q_FARBWECHSEL, Q_NIKOTIN, Q_MOEBEL],
       operations=[
           Op("abdecken", "Abdecken und Abkleben", "m2", (0.075, 0.125)),
           Op("waende", "Wände, zwei Anstriche", "m2", (0.130, 0.200)),
@@ -130,7 +119,7 @@ MALER_DEEP = [
       market_band_at=(12, 25), market_band_de=(12, 28),
       confidence="high", sources=SRC,
       note_keys=["untergrund_tragfaehig", "staub"],
-      guided_form=[Q_UNTERGRUND, Q_MOEBEL, Q_ZUSTAND, Q_ZUGANG],
+      guided_form=[Q_UNTERGRUND, Q_MOEBEL],
       operations=[
           Op("grundierung", "Grundierung", "m2", (0.020, 0.035)),
           Op("spachtel_arbeit", "Flächenspachtelung Q3", "m2", (0.110, 0.180)),
@@ -146,7 +135,7 @@ MALER_DEEP = [
       # Q4 is the level customers ask for by name after seeing one bad wall in
       # raking light, and the level most often quoted at Q3 prices.
       note_keys=["untergrund_tragfaehig", "staub", "trocknung_nutzung"],
-      guided_form=[Q_UNTERGRUND, Q_MOEBEL, Q_ZUSTAND, Q_ZUGANG],
+      guided_form=[Q_UNTERGRUND, Q_MOEBEL],
       operations=[
           Op("grundierung", "Grundierung", "m2", (0.020, 0.035)),
           Op("q3", "Grundspachtelung", "m2", (0.110, 0.180)),
@@ -171,7 +160,7 @@ MALER_DEEP = [
             default="raufaser_1x",
             note_if={"raufaser_mehrfach": "untergrund_tragfaehig",
                      "papier_alt": "altbau_untergrund"}),
-          Q_MOEBEL, Q_ZUSTAND, Q_ZUGANG],
+          Q_MOEBEL],
       operations=[
           # Raufaser peels; woodchip painted over five times does not.
           Op("loesen", "Tapete lösen und abziehen", "m2", (0.070, 0.160),
@@ -184,7 +173,7 @@ MALER_DEEP = [
       market_band_at=(11, 22), market_band_de=(11, 25),
       confidence="medium", sources=SRC,
       note_keys=["untergrund_eben", "trocknung_nutzung"],
-      guided_form=[Q_UNTERGRUND, Q_MOEBEL, Q_ZUSTAND, Q_ZUGANG],
+      guided_form=[Q_UNTERGRUND, Q_MOEBEL],
       operations=[
           Op("vorbereiten", "Untergrund vorbereiten und grundieren", "m2", (0.030, 0.055)),
           Op("tapezieren", "Raufaser ansetzen und tapezieren", "m2", (0.090, 0.150)),
@@ -207,7 +196,7 @@ MALER_DEEP = [
             default="gerade", note_if={"versetzt": "verschnitt_muster"}),
           Q("material_bauseits", "Tapete wird beigestellt", "bool", affects="variant",
             default=False, note_if={"True": "stoff_bauseits_moeglich"}),
-          Q_UNTERGRUND, Q_MOEBEL, Q_ZUSTAND, Q_ZUGANG],
+          Q_UNTERGRUND, Q_MOEBEL],
       operations=[
           Op("vorbereiten", "Untergrund vorbereiten und grundieren", "m2", (0.035, 0.065)),
           Op("verlegen", "Tapete ansetzen und verlegen", "m2", (0.130, 0.250)),
@@ -228,7 +217,7 @@ MALER_DEEP = [
                      ("abblaetternd", "Abblätternd"),
                      ("furnier_roh", "Furnier oder roh")],
             default="intakt", note_if={"abblaetternd": "untergrund_tragfaehig"}),
-          Q_BAUJAHR, Q_ZUSTAND, Q_ZUGANG],
+          Q_BAUJAHR],
       operations=[
           Op("demontage", "Beschläge demontieren und montieren", "Stk", (0.25, 0.45)),
           Op("schleifen", "Schleifen und entstauben", "Stk", (0.45, 0.90)),
@@ -249,8 +238,7 @@ MALER_DEEP = [
           Q("typ", "Bauart", "choice", affects="variant",
             options=[("flach", "Flachheizkörper"), ("rippen", "Rippenheizkörper"),
                      ("guss_alt", "Alter Gussradiator")],
-            default="flach"),
-          Q_ZUSTAND, Q_ZUGANG],
+            default="flach")],
       operations=[
           Op("abdecken", "Abdecken und Abkleben", "Stk", (0.20, 0.35)),
           Op("schleifen", "Entrosten und anschleifen", "Stk", (0.30, 0.65)),
@@ -272,7 +260,7 @@ MALER_DEEP = [
                      ("schaeden", "Holzschäden sichtbar")],
             default="verwittert",
             note_if={"schaeden": "untergrund_tragfaehig"}),
-          Q_BAUJAHR, Q_GERUEST, Q_ZUSTAND, Q_ZUGANG],
+          Q_BAUJAHR, Q_GERUEST],
       operations=[
           Op("demontage", "Beschläge lösen und wieder montieren", "Stk", (0.30, 0.55)),
           Op("vorbereiten", "Altanstrich anschleifen, lose Teile entfernen", "Stk", (0.70, 1.60)),
@@ -304,7 +292,7 @@ MALER_DEEP = [
                      "wasserschaden": "folgeschaeden"}),
           Q("umfang_gross", "Mehr als 0,5 m² befallen", "bool", affects="note",
             default=True, note_if={"True": "schimmel_grossflaechig"}),
-          Q_MOEBEL, Q_ZUSTAND, Q_ZUGANG],
+          Q_MOEBEL],
       operations=[
           Op("abschotten", "Arbeitsbereich abschotten", "m2", (0.060, 0.120)),
           Op("entfernen", "Befallenen Putz bzw. Anstrich entfernen", "m2", (0.150, 0.320),
@@ -326,7 +314,7 @@ MALER_DEEP = [
                      ("spachtel_dekor", "Dekorspachtel / Beton-Optik")],
             default="reibeputz",
             note_if={"spachtel_dekor": "musteranstrich"}),
-          Q_UNTERGRUND, Q_MOEBEL, Q_ZUSTAND, Q_ZUGANG],
+          Q_UNTERGRUND, Q_MOEBEL],
       operations=[
           Op("grundieren", "Haftgrund", "m2", (0.025, 0.045)),
           Op("auftragen", "Putz auftragen und strukturieren", "m2", (0.150, 0.300)),
@@ -347,8 +335,7 @@ MALER_DEEP = [
                      ("setzriss", "Setzriss, durchgehend"),
                      ("anschlussfuge", "Anschlussfuge Wand/Decke")],
             default="haarriss",
-            note_if={"setzriss": "statik_nicht_tragend"}),
-          Q_ZUSTAND, Q_ZUGANG],
+            note_if={"setzriss": "statik_nicht_tragend"})],
       operations=[
           Op("oeffnen", "Riss öffnen und entstauben", "lfm", (0.060, 0.140),
              debris_kg_per_unit=(0.3, 0.9)),
@@ -382,7 +369,7 @@ MALER_DEEP = [
             options=[("bis_2", "Bis 2 Geschosse"), ("bis_4", "3 bis 4 Geschosse"),
                      ("ueber_4", "Mehr als 4 Geschosse")],
             default="bis_2", note_if={"ueber_4": "absturzsicherung_norm"}),
-          Q_GERUEST, Q_ZUSTAND],
+          Q_GERUEST],
       operations=[
           Op("reinigen", "Fassade reinigen", "m2", (0.035, 0.070)),
           Op("grundierung", "Tiefengrund", "m2", (0.025, 0.045)),
@@ -403,7 +390,7 @@ MALER_DEEP = [
                      ("algen", "Algen und Grünbelag"),
                      ("graffiti", "Graffiti")],
             default="algen", note_if={"graffiti": "regie_abrechnung"}),
-          Q_GERUEST, Q_ZUSTAND],
+          Q_GERUEST],
       operations=[
           Op("reinigen", "Reinigen, Niederdruck", "m2", (0.040, 0.085)),
           Op("impraegnieren", "Imprägnierung auftragen", "m2", (0.030, 0.055)),
@@ -427,7 +414,7 @@ MALER_DEEP = [
           Q("staerke", "Dämmstärke", "choice", affects="variant",
             options=[("12", "12 cm"), ("16", "16 cm"), ("20", "20 cm")],
             default="16"),
-          Q_GERUEST, Q_ZUSTAND],
+          Q_GERUEST],
       operations=[
           Op("vorbereiten", "Untergrund prüfen und vorbereiten", "m2", (0.050, 0.100)),
           Op("kleben", "Dämmplatten kleben und dübeln", "m2", (0.220, 0.380)),
@@ -449,8 +436,7 @@ MALER_DEEP = [
                      ("lasiert_intakt", "Lasiert, intakt"),
                      ("vergraut", "Vergraut oder abblätternd")],
             default="vergraut",
-            note_if={"vergraut": "untergrund_tragfaehig"}),
-          Q_ZUSTAND, Q_ZUGANG],
+            note_if={"vergraut": "untergrund_tragfaehig"})],
       operations=[
           Op("vorbereiten", "Reinigen, schleifen, entgrauen", "m2", (0.060, 0.130)),
           Op("lasieren", "Zweimal lasieren", "m2", (0.070, 0.130)),
@@ -470,8 +456,7 @@ MALER_DEEP = [
             default="beton_alt",
             note_if={"beschichtet": "untergrund_tragfaehig"}),
           Q("feuchte", "Aufsteigende Feuchte bekannt", "bool", affects="note",
-            default=False, note_if={"True": "folgeschaeden"}),
-          Q_ZUSTAND, Q_ZUGANG],
+            default=False, note_if={"True": "folgeschaeden"})],
       operations=[
           Op("schleifen", "Schleifen und entstauben", "m2", (0.060, 0.120),
              debris_kg_per_unit=(0.5, 1.5)),

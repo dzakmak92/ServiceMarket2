@@ -36,18 +36,6 @@ S_BAUM = "Baumpflege"
 SRC = ["daibau.at/baukostenrechner/gartengestaltung", "my-hammer.at/gartenbau",
        "galabau-preise.de"]
 
-Q_ZUGANG = Q("access", "Zugang zum Grundstück", "choice", affects="access",
-             options=[("eg_oder_lift", "Direkt befahrbar"),
-                      ("og_ohne_lift", "Nur über Gehweg oder Tor"),
-                      ("enge_treppe", "Nur über Treppe oder Durchgang")],
-             default="eg_oder_lift",
-             help_de="Ob die Maschine bis zur Fläche kommt, entscheidet über Stunden.")
-Q_ZUSTAND = Q("condition", "Zustand der Fläche", "choice", affects="condition",
-              options=[("neubau", "Neuanlage, frei"),
-                       ("renovierung_leer", "Bestand, gepflegt"),
-                       ("renovierung_bewohnt", "Bestand, verwildert"),
-                       ("altbau_bewohnt", "Stark verwildert, Wurzelwerk")],
-              default="renovierung_leer")
 Q_ABTRANSPORT = Q("gruenschnitt", "Grünschnitt", "choice", affects="variant",
                   options=[("abtransport", "Wird abtransportiert"),
                            ("verbleibt", "Verbleibt vor Ort")],
@@ -74,7 +62,7 @@ GARTEN_DEEP = [
                      ("woechentlich", "Wöchentlich")],
             default="14_taegig",
             note_if={"14_taegig": "wartungsvertrag", "woechentlich": "wartungsvertrag"}),
-          Q_ABTRANSPORT, Q_ZUGANG],
+          Q_ABTRANSPORT],
       operations=[
           Op("maehen", "Rasen mähen", "m2", (0.0012, 0.0025)),
           Op("kanten", "Kanten und Ränder", "m2", (0.0003, 0.0007)),
@@ -90,7 +78,7 @@ GARTEN_DEEP = [
       guided_form=[
           Q("flaeche", "Rasenfläche", "number", unit="m2", affects="qty", default=300),
           Q("moos", "Starker Moosbefall", "bool", affects="variant", default=True),
-          Q_ABTRANSPORT, Q_ZUGANG],
+          Q_ABTRANSPORT],
       operations=[
           Op("kurz_maehen", "Kurz mähen", "m2", (0.0012, 0.0022)),
           Op("vertikutieren", "Vertikutieren", "m2", (0.0035, 0.0065)),
@@ -110,7 +98,7 @@ GARTEN_DEEP = [
           Q("menge", "Laubmenge", "choice", affects="variant",
             options=[("leicht", "Leicht"), ("stark", "Stark, mehrere Bäume")],
             default="stark"),
-          Q_ABTRANSPORT, Q_ZUGANG],
+          Q_ABTRANSPORT],
       operations=[
           Op("zusammen", "Laub zusammenblasen und aufnehmen", "m2", (0.0025, 0.0050),
              debris_kg_per_unit=(0.30, 0.90), debris_type="gruenschnitt"),
@@ -132,7 +120,7 @@ GARTEN_DEEP = [
             options=[("beidseitig", "Beidseitig und Oberkante"),
                      ("einseitig", "Nur eine Seite")],
             default="beidseitig"),
-          Q_ABTRANSPORT, Q_ZUGANG],
+          Q_ABTRANSPORT],
       operations=[
           Op("schnitt", "Hecke schneiden", "lfm", (0.05, 0.11)),
           Op("gruenschnitt", "Grünschnitt entsorgen", "lfm", (0.02, 0.05),
@@ -152,7 +140,7 @@ GARTEN_DEEP = [
                      ("gross", "Über 10 m, Seilklettertechnik")],
             default="mittel",
             note_if={"gross": "skt_erforderlich"}),
-          Q_ABTRANSPORT, Q_ZUGANG],
+          Q_ABTRANSPORT],
       operations=[
           Op("schnitt", "Kronenpflege bzw. Auslichten", "Stk", (1.6, 4.2)),
           Op("haeckseln", "Häckseln und verladen", "Stk", (0.9, 2.2),
@@ -180,8 +168,7 @@ GARTEN_DEEP = [
           Q("genehmigung", "Fällgenehmigung", "choice", affects="note",
             options=[("liegt_vor", "Liegt vor"), ("nicht_noetig", "Nicht erforderlich"),
                      ("offen", "Noch zu klären")],
-            default="offen", note_if={"offen": "baumschutz_satzung"}),
-          Q_ZUGANG],
+            default="offen", note_if={"offen": "baumschutz_satzung"})],
       operations=[
           Op("sichern", "Fallbereich sichern und abseilen", "Stk", (1.2, 3.0)),
           Op("faellen", "Fällen bzw. Stückfällung", "Stk", (2.0, 5.5)),
@@ -209,8 +196,7 @@ GARTEN_DEEP = [
             note_if={"bereitschaft_24": "bereitschaft_pauschale"}),
           Q("streumittel", "Streumittel", "choice", affects="variant",
             options=[("splitt", "Splitt"), ("salz", "Auftausalz")],
-            default="splitt", note_if={"salz": "streumittel_vorgabe"}),
-          Q_ZUGANG],
+            default="splitt", note_if={"salz": "streumittel_vorgabe"})],
       operations=[
           # Per m2 and per season: roughly 25-45 Einsätze in a normal DACH
           # winter, each a few seconds per m2 once the machine is there.
@@ -232,7 +218,7 @@ GARTEN_DEEP = [
                      ("altrasen", "Alter Rasen vorhanden"),
                      ("bauland", "Baustellenfläche, verdichtet")],
             default="altrasen", note_if={"bauland": "bodenaustausch_moeglich"}),
-          Q_LEITUNGEN, Q_ZUSTAND, Q_ZUGANG],
+          Q_LEITUNGEN],
       operations=[
           Op("fraesen", "Boden fräsen und planieren", "m2", (0.020, 0.040)),
           Op("substrat", "Rasentragschicht", "m2", (0.010, 0.025),
@@ -253,7 +239,7 @@ GARTEN_DEEP = [
                      ("altrasen", "Alter Rasen vorhanden"),
                      ("bauland", "Baustellenfläche, verdichtet")],
             default="altrasen", note_if={"bauland": "bodenaustausch_moeglich"}),
-          Q_LEITUNGEN, Q_ZUSTAND, Q_ZUGANG],
+          Q_LEITUNGEN],
       operations=[
           Op("vorbereitung", "Boden vorbereiten", "m2", (0.025, 0.045),
              material_per_unit=(2.00, 4.00)),
@@ -273,8 +259,7 @@ GARTEN_DEEP = [
                      ("gehoelze", "Gehölze und Solitäre")],
             default="stauden"),
           Q("vlies", "Mit Unkrautvlies und Mulch", "bool", affects="variant",
-            default=True),
-          Q_ZUSTAND, Q_ZUGANG],
+            default=True)],
       operations=[
           Op("aushub", "Boden lockern und Aushub", "m2", (0.10, 0.22),
              debris_kg_per_unit=(60, 140), debris_type="aushub"),
@@ -297,7 +282,7 @@ GARTEN_DEEP = [
             options=[("bis_100", "Bis 100 cm"), ("bis_175", "100 bis 175 cm"),
                      ("ueber_175", "Über 175 cm")],
             default="bis_175"),
-          Q_LEITUNGEN, Q_ZUSTAND, Q_ZUGANG],
+          Q_LEITUNGEN],
       operations=[
           Op("graben", "Pflanzgraben ausheben", "lfm", (0.18, 0.35),
              debris_kg_per_unit=(120, 260), debris_type="aushub"),
@@ -325,7 +310,7 @@ GARTEN_DEEP = [
                      ("zisterne", "Zisterne")],
             default="hausanschluss",
             note_if={"brunnen": "wasseranalyse", "zisterne": "wasseranalyse"}),
-          Q_LEITUNGEN, Q_ZUSTAND, Q_ZUGANG],
+          Q_LEITUNGEN],
       operations=[
           Op("planung", "Verlegeplan und Einmessen", "m2", (0.006, 0.014)),
           Op("graben", "Gräben ziehen und schließen", "m2", (0.030, 0.060),
@@ -351,7 +336,7 @@ GARTEN_DEEP = [
             default="pkw", note_if={"lkw": "unterbau_tragfaehig"}),
           Q("entwaesserung_vorhanden", "Entwässerung vorhanden", "bool",
             affects="note", default=False, note_if={"False": "entwaesserung"}),
-          Q_LEITUNGEN, Q_ZUSTAND, Q_ZUGANG],
+          Q_LEITUNGEN],
       operations=[
           Op("aushub", "Aushub und Abtransport (Minibagger)", "m2", (0.09, 0.17),
              debris_kg_per_unit=(500, 750), debris_type="aushub"),
@@ -378,8 +363,7 @@ GARTEN_DEEP = [
             options=[("splitt", "Auf Splitt und Platten"),
                      ("stelzlager", "Stelzlager"),
                      ("punktfundamente", "Punktfundamente")],
-            default="stelzlager"),
-          Q_ZUSTAND, Q_ZUGANG],
+            default="stelzlager")],
       operations=[
           Op("unterbau", "Untergrund herstellen", "m2", (0.20, 0.40),
              material_per_unit=(8.00, 18.00),
@@ -402,7 +386,7 @@ GARTEN_DEEP = [
             default="150"),
           Q("tor", "Mit Tor oder Türe", "bool", affects="note", default=True,
             note_if={"True": "tor_separat"}),
-          Q_LEITUNGEN, Q_ZUSTAND, Q_ZUGANG],
+          Q_LEITUNGEN],
       operations=[
           Op("fundamente", "Pfosten setzen und betonieren", "lfm", (0.30, 0.55),
              material_per_unit=(8, 16),
@@ -424,7 +408,7 @@ GARTEN_DEEP = [
           Q("hoehe", "Höhe", "choice", affects="variant",
             options=[("150", "150 cm"), ("180", "180 cm"), ("200", "200 cm")],
             default="180", note_if={"200": "grenzabstand"}),
-          Q_LEITUNGEN, Q_ZUSTAND, Q_ZUGANG],
+          Q_LEITUNGEN],
       operations=[
           Op("fundamente", "Punktfundamente setzen", "lfm", (0.45, 0.85),
              material_per_unit=(12, 24),
@@ -444,7 +428,7 @@ GARTEN_DEEP = [
             options=[("gestaltung", "Gestaltung, frei stehend"),
                      ("stuetz", "Stützmauer, Geländesprung")],
             default="gestaltung", note_if={"stuetz": "statik_pflicht"}),
-          Q_LEITUNGEN, Q_ZUSTAND, Q_ZUGANG],
+          Q_LEITUNGEN],
       operations=[
           Op("fundament", "Fundament herstellen", "m2", (0.55, 1.00),
              material_per_unit=(22, 45),
@@ -470,7 +454,7 @@ GARTEN_DEEP = [
             options=[("sickerschacht", "Sickerschacht"), ("kanal", "Kanalanschluss"),
                      ("gelaende", "Freies Gefälle")],
             default="sickerschacht", note_if={"kanal": "kanalanschluss_genehmigung"}),
-          Q_LEITUNGEN, Q_ZUSTAND, Q_ZUGANG],
+          Q_LEITUNGEN],
       operations=[
           Op("graben", "Graben ausheben", "lfm", (0.35, 0.70),
              debris_kg_per_unit=(450, 950), debris_type="aushub"),
@@ -491,8 +475,7 @@ GARTEN_DEEP = [
                      ("blockstufen", "Blockstufen")],
             default="blockstufen"),
           Q("gelaender", "Mit Geländer", "bool", affects="note", default=False,
-            note_if={"True": "gelaender_separat"}),
-          Q_ZUSTAND, Q_ZUGANG],
+            note_if={"True": "gelaender_separat"})],
       operations=[
           Op("aushub", "Aushub und Planum", "Stufe", (0.55, 1.10),
              debris_kg_per_unit=(320, 700), debris_type="aushub"),
@@ -521,7 +504,7 @@ GARTEN_DEEP = [
             options=[("abtransport", "Wird abtransportiert"),
                      ("verbleibt", "Verbleibt am Grundstück")],
             default="abtransport", note_if={"verbleibt": "aushub_verbleibt"}),
-          Q_LEITUNGEN, Q_ZUGANG],
+          Q_LEITUNGEN],
       operations=[
           Op("aushub", "Aushub und Abtransport", "Stk", (14, 26),
              debris_kg_per_unit=(40000, 70000), debris_type="aushub"),

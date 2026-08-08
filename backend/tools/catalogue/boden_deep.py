@@ -34,16 +34,6 @@ SRC_FL = ["fixbuddy.at/was-kostet-fliesen-verlegen", "fliesenlegung.de",
           "daibau.at/baukostenrechner/fliesenlegerarbeiten"]
 SRC_BO = ["daibau.at/baukostenrechner/bodenbelaege", "my-hammer.at/bodenleger"]
 
-Q_ZUGANG = Q("access", "Zugang", "choice", affects="access",
-             options=[("eg_oder_lift", "Erdgeschoss oder Lift"),
-                      ("og_ohne_lift", "Obergeschoss ohne Lift"),
-                      ("enge_treppe", "Enge Treppe")], default="eg_oder_lift")
-Q_ZUSTAND = Q("condition", "Zustand", "choice", affects="condition",
-              options=[("neubau", "Neubau, besenrein"),
-                       ("renovierung_leer", "Renovierung, leerstehend"),
-                       ("renovierung_bewohnt", "Renovierung, bewohnt"),
-                       ("altbau_bewohnt", "Altbau, bewohnt")],
-              default="renovierung_leer")
 # The single most valuable question in the group: it decides whether anything
 # has to happen before the first plank or tile goes down.
 Q_UNTERGRUND = Q("untergrund", "Untergrund", "choice", affects="variant",
@@ -88,7 +78,7 @@ BODEN_DEEP = [
       market_band_at=(15, 30), market_band_de=(15, 32),
       confidence="medium", sources=SRC_FL,
       note_keys=["asbest_vor_1990", "staub"],
-      guided_form=[Q_BAUJAHR, Q_FBH, Q_ZUSTAND, Q_ZUGANG],
+      guided_form=[Q_BAUJAHR, Q_FBH],
       operations=[
           Op("abschlagen", "Fliesen abschlagen", "m2", (0.16, 0.27),
              debris_kg_per_unit=(20, 26)),
@@ -108,7 +98,7 @@ BODEN_DEEP = [
                      ("unbekannt", "Unbekannt")],
             default="unbekannt", note_if={"unbekannt": "dickbett_mehraufwand"},
             help_de="An einer Fliesenkante ablesbar — die wertvollste Frage im Formular"),
-          Q_BAUJAHR, Q_FBH, Q_ZUSTAND, Q_ZUGANG],
+          Q_BAUJAHR, Q_FBH],
       operations=[
           # 15-40 mm cement bed. Breaker work, not chisel work.
           Op("abschlagen", "Fliesen und Mörtelbett abschlagen", "m2", (0.34, 0.58),
@@ -124,7 +114,7 @@ BODEN_DEEP = [
       confidence="high", sources=SRC_FL,
       note_keys=["untergrund_eben", "verschnitt_muster", "belag_nicht_enthalten"],
       guided_form=[Q_UNTERGRUND, Q_VERLEGEART, Q_RAUM, Q_FBH, Q_TUEREN,
-                   Q_BELAG_BAUSEITS, Q_ZUSTAND, Q_ZUGANG],
+                   Q_BELAG_BAUSEITS],
       operations=[
           Op("grundierung", "Grundierung", "m2", (0.03, 0.05)),
           Op("verlegen", "Fliesen verlegen", "m2", (0.35, 0.55)),
@@ -138,8 +128,7 @@ BODEN_DEEP = [
       market_band_at=(40, 70), market_band_de=(40, 75),
       confidence="high", sources=SRC_FL,
       note_keys=["abdichtung_nassbereich", "belag_nicht_enthalten"],
-      guided_form=[Q_UNTERGRUND, Q_VERLEGEART, Q_RAUM, Q_BELAG_BAUSEITS,
-                   Q_ZUSTAND, Q_ZUGANG],
+      guided_form=[Q_UNTERGRUND, Q_VERLEGEART, Q_RAUM, Q_BELAG_BAUSEITS],
       operations=[
           Op("abdichtung", "Verbundabdichtung Nassbereich", "m2", (0.10, 0.18),
              material_per_unit=(3.00, 5.50)),
@@ -163,7 +152,7 @@ BODEN_DEEP = [
             options=[("60x120", "60 x 120"), ("100x100", "100 x 100"),
                      ("120x240", "120 x 240 oder größer")],
             default="60x120", note_if={"120x240": "grossformat_zweiter_mann"}),
-          Q_UNTERGRUND, Q_RAUM, Q_FBH, Q_BELAG_BAUSEITS, Q_ZUSTAND, Q_ZUGANG],
+          Q_UNTERGRUND, Q_RAUM, Q_FBH, Q_BELAG_BAUSEITS],
       operations=[
           Op("nivellieren", "Untergrund prüfen und nivellieren", "m2", (0.10, 0.18),
              material_per_unit=(2.00, 4.50)),
@@ -180,7 +169,7 @@ BODEN_DEEP = [
       market_band_at=(70, 140), market_band_de=(70, 150),
       confidence="low", sources=SRC_FL,
       note_keys=["verschnitt_muster", "belag_nicht_enthalten"],
-      guided_form=[Q_UNTERGRUND, Q_RAUM, Q_BELAG_BAUSEITS, Q_ZUSTAND, Q_ZUGANG],
+      guided_form=[Q_UNTERGRUND, Q_RAUM, Q_BELAG_BAUSEITS],
       operations=[
           Op("grundierung", "Grundierung", "m2", (0.04, 0.07)),
           # Net-mounted sheets, not loose tesserae — the coefficient for
@@ -204,7 +193,7 @@ BODEN_DEEP = [
       guided_form=[
           Q("stufen", "Anzahl Stufen", "number", unit="Stufe", affects="qty", default=14),
           Q("setzstufe", "Mit Setzstufe", "bool", affects="variant", default=True),
-          Q_UNTERGRUND, Q_BELAG_BAUSEITS, Q_ZUSTAND, Q_ZUGANG],
+          Q_UNTERGRUND, Q_BELAG_BAUSEITS],
       operations=[
           Op("zuschnitt", "Zuschnitt Tritt- und Setzstufe", "Stufe", (0.35, 0.60)),
           Op("setzen", "Stufen setzen", "Stufe", (0.55, 0.95)),
@@ -227,7 +216,7 @@ BODEN_DEEP = [
             default="drainmoertel"),
           Q("gefaelle_vorhanden", "Gefälle vorhanden", "bool", affects="note",
             default=True, note_if={"False": "gefaelle"}),
-          Q_UNTERGRUND, Q_BELAG_BAUSEITS, Q_ZUSTAND],
+          Q_UNTERGRUND, Q_BELAG_BAUSEITS],
       operations=[
           Op("pruefen", "Untergrund und Gefälle prüfen", "m2", (0.08, 0.15)),
           Op("abdichten", "Abdichtung und Drainage", "m2", (0.15, 0.28),
@@ -252,7 +241,7 @@ BODEN_DEEP = [
                      ("w2", "W2-I, bodengleiche Dusche"),
                      ("w3", "W3-I, öffentlich oder Dampfbad")],
             default="w2"),
-          Q_UNTERGRUND, Q_ZUSTAND, Q_ZUGANG],
+          Q_UNTERGRUND],
       operations=[
           Op("vorbereiten", "Untergrund vorbereiten und grundieren", "m2", (0.05, 0.09)),
           Op("dichtband", "Dichtbänder, Ecken und Manschetten", "m2", (0.08, 0.15),
@@ -273,7 +262,7 @@ BODEN_DEEP = [
                      ("teilweise", "Schadhafte Fugen"),
                      ("komplett", "Alle Fugen ausfräsen")],
             default="komplett"),
-          Q_RAUM, Q_ZUSTAND, Q_ZUGANG],
+          Q_RAUM],
       operations=[
           Op("ausfraesen", "Fugen ausfräsen", "m2", (0.15, 0.30),
              debris_kg_per_unit=(1.5, 3.5)),
@@ -295,7 +284,7 @@ BODEN_DEEP = [
           Q("laenge", "Fugenlänge", "number", unit="lfm", affects="qty", default=8),
           Q("schimmel", "Schimmel in der Fuge", "bool", affects="note",
             default=False, note_if={"True": "schimmel_ursache_extra"}),
-          Q_RAUM, Q_ZUGANG],
+          Q_RAUM],
       operations=[
           Op("entfernen", "Altfuge entfernen", "lfm", (0.06, 0.12)),
           Op("reinigen", "Reinigen und entfetten", "lfm", (0.03, 0.06)),
@@ -316,7 +305,7 @@ BODEN_DEEP = [
           Q("anzahl", "Anzahl Fliesen", "number", unit="Stk", affects="qty", default=1),
           Q("ersatz_vorhanden", "Ersatzfliesen vorhanden", "bool", affects="note",
             default=False, note_if={"False": "fliesen_ersatz_farbton"}),
-          Q_BAUJAHR, Q_ZUGANG],
+          Q_BAUJAHR],
       operations=[
           Op("entfernen", "Fliese und Kleberbett entfernen", "Stk", (0.25, 0.50),
              debris_kg_per_unit=(3, 6)),
@@ -333,7 +322,7 @@ BODEN_DEEP = [
       note_keys=["belag_nicht_enthalten"],
       guided_form=[
           Q("laenge", "Länge", "number", unit="lfm", affects="qty", default=20),
-          Q_BELAG_BAUSEITS, Q_ZUSTAND, Q_ZUGANG],
+          Q_BELAG_BAUSEITS],
       operations=[
           Op("zuschnitt", "Zuschnitt und Ansetzen", "lfm", (0.08, 0.15)),
           Op("verfugen", "Verfugen und Silikon", "lfm", (0.04, 0.08)),
@@ -355,7 +344,7 @@ BODEN_DEEP = [
                      ("parkett_geklebt", "Parkett, geklebt")],
             default="laminat_klick",
             note_if={"pvc_geklebt": "asbest_vor_1990"}),
-          Q_BAUJAHR, Q_ZUSTAND, Q_ZUGANG],
+          Q_BAUJAHR],
       operations=[
           Op("entfernen", "Belag aufnehmen", "m2", (0.06, 0.13),
              debris_kg_per_unit=(3, 8), debris_type="sperrmuell"),
@@ -373,7 +362,7 @@ BODEN_DEEP = [
             options=[("bis_5", "Bis 5 mm"), ("bis_15", "5 bis 15 mm"),
                      ("ueber_15", "Über 15 mm")],
             default="bis_5", note_if={"ueber_15": "aufbauhoehe"}),
-          Q_UNTERGRUND, Q_FBH, Q_ZUSTAND, Q_ZUGANG],
+          Q_UNTERGRUND, Q_FBH],
       operations=[
           Op("grundierung", "Grundierung", "m2", (0.03, 0.06),
              material_per_unit=(1.00, 2.00)),
@@ -387,7 +376,7 @@ BODEN_DEEP = [
       confidence="high", sources=SRC_BO,
       note_keys=["untergrund_eben", "dehnungsfuge", "belag_nicht_enthalten"],
       guided_form=[Q_UNTERGRUND, Q_VERLEGEART, Q_FBH, Q_TUEREN,
-                   Q_BELAG_BAUSEITS, Q_ZUSTAND, Q_ZUGANG],
+                   Q_BELAG_BAUSEITS],
       operations=[
           Op("unterlage", "Trittschalldämmung verlegen", "m2", (0.03, 0.06),
              material_per_unit=(2.00, 4.00)),
@@ -406,7 +395,7 @@ BODEN_DEEP = [
             options=[("klick", "Klick, schwimmend"),
                      ("vollflaechig", "Vollflächig verklebt")],
             default="klick", note_if={"vollflaechig": "trocknung_nutzung"}),
-          Q_UNTERGRUND, Q_FBH, Q_TUEREN, Q_BELAG_BAUSEITS, Q_ZUSTAND, Q_ZUGANG],
+          Q_UNTERGRUND, Q_FBH, Q_TUEREN, Q_BELAG_BAUSEITS],
       operations=[
           Op("spachteln", "Untergrund spachteln", "m2", (0.08, 0.14),
              material_per_unit=(2.00, 3.50)),
@@ -421,7 +410,7 @@ BODEN_DEEP = [
       confidence="high", sources=SRC_BO,
       note_keys=["untergrund_eben", "raumklima", "belag_nicht_enthalten"],
       guided_form=[Q_UNTERGRUND, Q_VERLEGEART, Q_FBH, Q_TUEREN,
-                   Q_BELAG_BAUSEITS, Q_ZUSTAND, Q_ZUGANG],
+                   Q_BELAG_BAUSEITS],
       operations=[
           Op("spachteln", "Untergrund spachteln", "m2", (0.08, 0.14),
              material_per_unit=(2.00, 3.50)),
@@ -445,7 +434,7 @@ BODEN_DEEP = [
           Q("oberflaeche", "Neue Oberfläche", "choice", affects="variant",
             options=[("versiegelung", "Versiegelung"), ("oel", "Öl oder Hartwachs")],
             default="versiegelung", note_if={"oel": "holzschutz_intervall"}),
-          Q_BAUJAHR, Q_ZUSTAND, Q_ZUGANG],
+          Q_BAUJAHR],
       operations=[
           Op("vorbereiten", "Nägel versenken, Fugen kitten", "m2", (0.05, 0.10)),
           Op("grobschliff", "Grobschliff", "m2", (0.10, 0.18),
@@ -464,7 +453,7 @@ BODEN_DEEP = [
           Q("verlegung", "Verlegung", "choice", affects="variant",
             options=[("lose", "Lose verlegt"), ("geklebt", "Vollflächig geklebt")],
             default="geklebt"),
-          Q_UNTERGRUND, Q_TUEREN, Q_BELAG_BAUSEITS, Q_ZUSTAND, Q_ZUGANG],
+          Q_UNTERGRUND, Q_TUEREN, Q_BELAG_BAUSEITS],
       operations=[
           Op("vorbereiten", "Untergrund reinigen und grundieren", "m2", (0.05, 0.10),
              material_per_unit=(0.80, 1.60)),

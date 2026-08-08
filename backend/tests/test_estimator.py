@@ -204,8 +204,16 @@ for j in JOBS:
     keys = [q["key"] for q in s["form"]]
     if len(keys) != len(set(keys)):
         form_fails.append(f"{j['key']}: duplicate question keys {keys}")
-    if "condition" not in keys or "access" not in keys:
-        form_fails.append(f"{j['key']}: missing a shared question")
+    # A shared question is present exactly when the job declares an axis for
+    # it. "none" is a claim the catalogue makes on purpose — the question does
+    # not apply to this job — so asserting the question is always there would
+    # forbid the catalogue from ever saying so.
+    for shared in ("condition", "access"):
+        declared = j.get(f"{shared}_axis", "gebaeude") != "none"
+        if declared != (shared in keys):
+            form_fails.append(
+                f"{j['key']}: {shared}_axis says {j.get(f'{shared}_axis')!r} "
+                f"but the form {'has' if shared in keys else 'lacks'} it")
     for q in s["form"]:
         if q["type"] == "choice" and not q["options"]:
             form_fails.append(f"{j['key']}/{q['key']}: choice with no options")
@@ -213,6 +221,81 @@ check(not form_fails, f"every survey renders ({len(form_fails)} problem(s)): {fo
 check(all(any(q["affects"] == "qty" for q in E.survey(j["key"])["form"])
           for j in JOBS if j["band_basis"] == "per_unit"),
       "every per-unit job asks for a quantity")
+
+print("\n── the shared questions are asked in the job's own vocabulary ──")
+# The bug this replaced: 89 of 149 job types were asked "Zustand des Objekts —
+# Neubau, besenrein / Renovierung, leerstehend" and 80 were asked "Zugang —
+# Erdgeschoss oder Lift", whatever the job was. Mowing a lawn asked about a
+# broom-clean building; a tyre change asked about a lift. Both answers move the
+# price by up to 75 % and 30 %, so an unanswerable question was setting it.
+#
+# Checked two ways. Structurally, because that is exact: a trade that never
+# works inside a dwelling must not be on the `gebaeude` axis. And by wording,
+# because the structure would still pass if a new axis were written in the old
+# words — only phrases with no other reading are listed, so "Nur über Treppe
+# oder Durchgang" (a real way into a garden) does not trip it.
+INDOOR_WORDS = ("besenrein", "leerstehend", "Erdgeschoss", "Obergeschoss",
+                "Lift", "Enge Treppe", "Wohnung leer")
+NO_BUILDING = {"garten", "dach", "solar", "kfz", "fahrrad", "geruest", "polster"}
+wording = []
+for j in JOBS:
+    if j["trade"] not in NO_BUILDING:
+        continue
+    for kind in ("condition", "access"):
+        if j.get(f"{kind}_axis") == "gebaeude":
+            wording.append(f"{j['key']}: {kind} still on the building axis")
+    for q in E.survey(j["key"])["form"]:
+        if q["key"] not in ("condition", "access"):
+            continue
+        for _v, label in q["options"]:
+            if any(w in label for w in INDOOR_WORDS):
+                wording.append(f"{j['key']}/{q['key']}: {label!r}")
+check(not wording,
+      f"no job without a building is asked about one ({len(wording)}): {wording[:3]}")
+
+# The screenshot that started this: a lawn asked whether the building was
+# broom-clean, and the answer was worth up to +64 % of a €75 quote.
+mow = E.survey("garten.rasenmaehen")["form"]
+mow_cond = next(q for q in mow if q["key"] == "condition")
+check(mow_cond["label_de"] == "Zustand der Fläche",
+      f"mowing asks about the lawn, not the building ({mow_cond['label_de']!r})")
+check([lbl for _v, lbl in mow_cond["options"]][0] == "Neuanlage, frei",
+      "and offers ground conditions as its cheapest case")
+
+# Every axis must offer the whole uplift vocabulary, or a pro would be unable
+# to reach a level the estimator can price.
+axis_fails = []
+for kind, table in (("condition", "condition_uplift"), ("access", "access_uplift")):
+    for name, axis in cat["modifiers"][f"{kind}_axes"].items():
+        if set(axis["options"]) != set(cat["modifiers"][table]):
+            axis_fails.append(f"{kind}/{name}: options {sorted(axis['options'])}")
+        if axis["default"] not in axis["options"]:
+            axis_fails.append(f"{kind}/{name}: default {axis['default']!r} not offered")
+check(not axis_fails, f"every axis covers the full uplift vocabulary: {axis_fails}")
+
+print("\n── relabelling the question did not reprice the work ──")
+# An axis is wording. Every one of them keeps the default the bands were
+# validated at, so the estimate for an unanswered form must be the number it
+# has always been — otherwise 149 market bands quietly stopped holding.
+DEFAULTS = {"condition": "renovierung_leer", "access": "eg_oder_lift"}
+drift = []
+for j in JOBS:
+    for kind in ("condition", "access"):
+        axis = j.get(f"{kind}_axis")
+        if axis == "none":
+            continue
+        if cat["modifiers"][f"{kind}_axes"][axis]["default"] != DEFAULTS[kind]:
+            drift.append(f"{j['key']}/{kind}: axis {axis} defaults elsewhere")
+check(not drift, f"every axis default is the calibration point: {drift[:3]}")
+
+# And where a job declares "none", posting the field anyway must not price it.
+noaxis = [j for j in JOBS if j.get("condition_axis") == "none"]
+check(bool(noaxis), f"the catalogue does declare 'none' somewhere ({len(noaxis)})")
+for j in noaxis[:3]:
+    plain = E.estimate(j["key"], {})["total_net"]
+    forced = E.estimate(j["key"], {"condition": "altbau_bewohnt"})["total_net"]
+    check(plain == forced,
+          f"{j['key']}: a condition it never asks for cannot be posted in")
 
 print("\n── answering the shared questions actually changes the estimate ──")
 for j in JOBS[:20]:

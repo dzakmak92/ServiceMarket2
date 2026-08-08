@@ -259,9 +259,9 @@ def sections_for(trade: str, job_keys: list[str]) -> list[dict] | None:
 # not a gap to be filled with something vague.
 
 FIELD_HELP: dict[str, str] = {
-    # The two that change the number.
-    "access": "Ohne Lift kommt Tragzeit dazu — bei enger Treppe deutlich mehr.",
-    "condition": "Bewohnt kostet mehr als leerstehend: abdecken, täglich aufräumen.",
+    # `condition` and `access` are not here. They carry their own German help
+    # from the axis that supplies their labels, so the sentence and the options
+    # it explains cannot drift apart — see AXIS_HELP_I18N below.
 
     # Quantity, the largest lever of all.
     "flaeche": "Der größte Hebel im Preis. Grob geschätzt ist besser als leer.",
@@ -305,16 +305,6 @@ FIELD_HELP: dict[str, str] = {
 
 # The same lines in the other three languages. Keyed identically.
 FIELD_HELP_I18N: dict[str, dict[str, str]] = {
-    "access": {
-        "en": "Without a lift, carrying time is added — a narrow staircase, considerably more.",
-        "tr": "Asansör yoksa taşıma süresi eklenir — dar merdivende çok daha fazla.",
-        "es": "Sin ascensor se añade tiempo de acarreo; por escalera estrecha, bastante más.",
-    },
-    "condition": {
-        "en": "Occupied costs more than empty: covering up, tidying every day.",
-        "tr": "Oturulan yer boş olandan pahalıdır: örtme, her gün toplama.",
-        "es": "Ocupado cuesta más que vacío: cubrir y recoger cada día.",
-    },
     "flaeche": {
         "en": "The biggest lever on the price. A rough figure beats an empty field.",
         "tr": "Fiyattaki en büyük etken. Kaba bir tahmin boş bırakmaktan iyidir.",
@@ -487,10 +477,82 @@ QTY_HELP: dict[str, dict[str, str]] = {
 }
 
 
+# ── Axis help ───────────────────────────────────────────────────────────
+#
+# `condition` and `access` no longer have one help line between them. They are
+# asked in whichever vocabulary the job's trade uses — see
+# `tools/catalogue/axes.py` — and the sentence under the field has to describe
+# that vocabulary, not the building one. Keyed `question.axis`, which is what
+# `survey()` stamps on the question.
+#
+# German lives in the axis itself, next to the option labels it explains, so
+# the two cannot drift apart. Only the translations are here.
+
+AXIS_HELP_I18N: dict[str, dict[str, str]] = {
+    "condition.gebaeude": {
+        "en": "Occupied costs more than empty: covering up, tidying every day.",
+        "tr": "Oturulan yer boş olandan pahalıdır: örtme, her gün toplama.",
+        "es": "Ocupado cuesta más que vacío: cubrir y recoger cada día.",
+    },
+    "condition.wohnung": {
+        "en": "Occupied means coordinating, covering up, and shutting the water off only briefly.",
+        "tr": "Oturulan yer: koordinasyon, örtme ve suyu yalnızca kısa süre kapatma.",
+        "es": "Ocupado implica coordinar, cubrir y cortar el agua solo un momento.",
+    },
+    "condition.flaeche": {
+        "en": "Whatever is standing on the ground has to come off first — that is the time.",
+        "tr": "Zeminde ne varsa önce kaldırılmalı — zaman oradan gider.",
+        "es": "Lo que haya sobre el terreno hay que quitarlo primero: ahí está el tiempo.",
+    },
+    "condition.umfeld": {
+        "en": "What has to be protected around the work costs time before and after it.",
+        "tr": "Çevrede korunması gerekenler, işten önce ve sonra zaman ister.",
+        "es": "Lo que hay que proteger alrededor cuesta tiempo antes y después.",
+    },
+    "condition.fahrzeug": {
+        "en": "Seized bolts and corrosion are what eat the hours.",
+        "tr": "Sıkışmış cıvatalar ve korozyon saatleri yer.",
+        "es": "Los tornillos agarrotados y la corrosión son los que comen horas.",
+    },
+    "condition.verschmutzung": {
+        "en": "The biggest lever in cleaning: one pass or three.",
+        "tr": "Temizlikteki en büyük etken: bir kez mi, üç kez mi.",
+        "es": "La mayor palanca en limpieza: una pasada o tres.",
+    },
+    "condition.moebel": {
+        "en": "What has to be renewed under the cover decides the hours.",
+        "tr": "Kılıfın altında nelerin yenileneceği saatleri belirler.",
+        "es": "Lo que haya que renovar bajo la tapicería decide las horas.",
+    },
+    "access.gebaeude": {
+        "en": "Without a lift, carrying time is added — a narrow staircase, considerably more.",
+        "tr": "Asansör yoksa taşıma süresi eklenir — dar merdivende çok daha fazla.",
+        "es": "Sin ascensor se añade tiempo de acarreo; por escalera estrecha, bastante más.",
+    },
+    "access.grundstueck": {
+        "en": "Whether the machine reaches the area decides the hours.",
+        "tr": "Makinenin alana ulaşıp ulaşmaması saatleri belirler.",
+        "es": "Que la máquina llegue a la zona decide las horas.",
+    },
+    "access.hoehe": {
+        "en": "How the working height is reached. Scaffold and platform are quoted separately.",
+        "tr": "Çalışma yüksekliğine nasıl çıkılacağı. İskele ve platform ayrı teklif edilir.",
+        "es": "Cómo se alcanza la altura de trabajo. Andamio y plataforma se ofertan aparte.",
+    },
+    "access.werkstatt": {
+        "en": "On site there is no lift and no tool wall — that costs time.",
+        "tr": "Sahada lift ve alet duvarı yoktur — bu zaman demektir.",
+        "es": "A domicilio no hay elevador ni panel de herramientas: eso cuesta tiempo.",
+    },
+}
+
+
 def decorate_question(q: dict, lang: str = "de") -> dict:
     """Add the help line and the price-effect class to one question."""
     out = dict(q)
     key = q.get("key")
+    if q.get("axis"):
+        key = f"{key}.{q['axis']}"
     fmt = q.get("help_fmt")
     if fmt and fmt.get("id") in QTY_HELP:
         table = QTY_HELP[fmt["id"]]
@@ -503,7 +565,8 @@ def decorate_question(q: dict, lang: str = "de") -> dict:
         if not out.get("help_de"):
             out["help_de"] = FIELD_HELP.get(key, "")
         if lang != "de":
-            out["help"] = (FIELD_HELP_I18N.get(key) or {}).get(lang) or out.get("help_de") or ""
+            table = AXIS_HELP_I18N.get(key) or FIELD_HELP_I18N.get(key) or {}
+            out["help"] = table.get(lang) or out.get("help_de") or ""
         else:
             out["help"] = out.get("help_de") or ""
     out["price_effect"] = PRICE_EFFECT.get(q.get("affects"), "note")

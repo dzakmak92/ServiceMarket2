@@ -1,4 +1,5 @@
 import sys; sys.path.insert(0, '.')
+import axes
 from maler_deep import MALER_DEEP
 from boden_deep import BODEN_DEEP
 from garten_deep import GARTEN_DEEP
@@ -27,3 +28,20 @@ for j in CORE:
 ALL_JOBS = (MALER_DEEP + BODEN_DEEP + GARTEN_DEEP + CORE + SANITAER_DEEP + ELEKTRIK_DEEP + BAUEN + TISCHLER + KUECHE + FENSTER +
             DACH + HEIZUNG + UMZUG + REINIGUNG + POLSTER + SOLAR + MONTAGE +
             GUTACHTER + FAHRZEUGE)
+
+# Condition and access are not written into the job definitions. They are the
+# two questions every job is asked, so they are assigned in one place — see
+# `axes.py` for what an axis is and why the wording had to stop being the same
+# for a lawn and a bathroom. `validate` fails the build on a typo rather than
+# letting a job quietly keep the building wording.
+axes.validate(ALL_JOBS)
+for j in ALL_JOBS:
+    j.condition_axis, j.access_axis = axes.axes_for(j)
+
+# No job may carry its own condition or access question any more: the survey
+# builds both from the axis, and a hand-written one would render twice — which
+# is how `boden.parkett_schleifen` came to show two consecutive steps both
+# headed "Zustand", meaning different things.
+_own = [(j.key, q.key) for j in ALL_JOBS for q in j.guided_form
+        if q.key in ("condition", "access") or q.affects in ("condition", "access")]
+assert not _own, f"condition/access belong to the axis, not the job: {_own}"

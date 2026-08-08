@@ -14,16 +14,6 @@ G, S = "Elektrik", "Elektriker"
 SRC = ["fixbuddy.at/was-kostet-elektriker", "werkflow.at/elektriker-kosten",
        "daibau.at/baukostenrechner/elektroinstallationen"]
 
-Q_ZUGANG = Q("access", "Zugang", "choice", affects="access",
-             options=[("eg_oder_lift", "Erdgeschoss oder Lift"),
-                      ("og_ohne_lift", "Obergeschoss ohne Lift"),
-                      ("enge_treppe", "Enge Treppe")], default="eg_oder_lift")
-Q_BEWOHNT = Q("condition", "Zustand", "choice", affects="condition",
-              options=[("neubau", "Neubau, leer"),
-                       ("renovierung_leer", "Renovierung, leer"),
-                       ("renovierung_bewohnt", "Renovierung, bewohnt"),
-                       ("altbau_bewohnt", "Altbau, bewohnt")],
-              default="renovierung_leer")
 Q_BAUJAHR = Q("baujahr", "Baujahr", "number", unit="Jahr", affects="note",
               help_de="Vor 1965: oft ohne Schutzleiter. Vor 1990: kein FI.")
 Q_ALTANLAGE = Q("altanlage", "Zustand der Bestandsanlage", "choice", affects="note",
@@ -165,8 +155,7 @@ ELEKTRIK_DEEP = [
       guided_form=[Q("anzahl", "Anzahl Dosen", "number", unit="Stk", default=2,
                      affects="qty"),
                    Q("laenge", "Durchschnittliche Leitungslänge", "number", unit="lfm",
-                     default=12, affects="qty"),
-                   Q_BEWOHNT],
+                     default=12, affects="qty")],
       operations=[Op("leitung", "Datenleitung verlegen", "Stk", (0.45, 0.85),
                      material_per_unit=(14, 35)),
                   Op("dose", "Dose setzen und auflegen", "Stk", (0.28, 0.50),
@@ -223,7 +212,7 @@ ELEKTRIK_DEEP = [
                               "abschaltung"],
       guided_form=[
           Q("wohnflaeche", "Wohnfläche", "number", unit="m2", default=75, affects="qty"),
-          Q_BEWOHNT, Q_BAUJAHR, Q_ALTANLAGE,
+          Q_BAUJAHR, Q_ALTANLAGE,
           Q("ausstattung", "Ausstattungsgrad", "choice", affects="variant",
             options=[("basic", "Standard"), ("standard", "Gehoben"),
                      ("premium", "Smart Home")], default="standard")],

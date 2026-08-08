@@ -74,6 +74,14 @@ DISPOSAL_LABEL = "Entsorgung inkl. Container"
 # same service with a surcharge.
 OUT_OF_HOURS = {"nacht_sonntag"}
 
+# What an unanswered form is priced at, and — deliberately the same thing —
+# what the market bands were validated at. Anything absent falls back to the
+# middle of the road rather than the cheapest case: defaulting to a clean empty
+# new-build would produce an estimate that is only right for the job nobody
+# rings about. Every axis in the catalogue keeps these as its own default, so
+# switching a job's wording cannot move its price.
+DEFAULT_ANSWER = {"condition": "renovierung_leer", "access": "eg_oder_lift"}
+
 
 @lru_cache(maxsize=1)
 def catalogue() -> dict:
@@ -359,16 +367,17 @@ def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT
     tier = tier if tier in TIER_ORDER else "standard"
     want_tier = TIER_ORDER[tier]
 
-    # Anything absent falls back to the middle of the road rather than the
-    # cheapest case. Defaulting to a clean empty new-build would produce an
-    # estimate that is only right for the job nobody rings about.
     mods = cat["modifiers"]
-    condition = answers.get("condition")
+    # A job whose axis is "none" is never asked the question, so an answer for
+    # it can only have come from a stale form or a hand-built request. It is
+    # discarded rather than applied: a caller must not be able to add 75 % to a
+    # job by posting a field the screen does not show.
+    condition = answers.get("condition") if axis_for(job, "condition") else None
     if condition not in mods["condition_uplift"]:
-        condition = "renovierung_leer"
-    access = answers.get("access")
+        condition = DEFAULT_ANSWER["condition"]
+    access = answers.get("access") if axis_for(job, "access") else None
     if access not in mods["access_uplift"]:
-        access = "eg_oder_lift"
+        access = DEFAULT_ANSWER["access"]
     qty, qty_source = resolve_qty_detail(job, answers)
 
     cond_up = _rng(mods["condition_uplift"][condition])
@@ -725,9 +734,19 @@ def assumptions_text(notes: list[dict]) -> str:
 def survey(job_key: str) -> dict:
     """Everything the UI needs to render the guided form for one job.
 
-    The shared condition and access questions are appended when the job does
-    not already ask them, because they move the number on every job type and a
-    form that omits them silently assumes the middle case.
+    The shared condition and access questions are appended in the wording the
+    job's trade uses — its *axis* — because they move the number on every job
+    type and a form that omits them silently assumes the middle case.
+
+    They used to be appended in one wording, the wording of an interior
+    renovation, to all 89 job types that did not hand-write their own. So a
+    lawn was asked whether the building was broom-clean and a tyre change was
+    asked whether the flat had a lift, and because both answers are worth up to
+    +75 % and +30 % the pro's guess at an unanswerable question set the price.
+    `condition_axis` and `access_axis` name which vocabulary this job uses, or
+    "none" where the question does not apply to it at all. The uplift keys
+    behind the labels are the same in every axis, so this is wording, not
+    arithmetic — see `tools/catalogue/axes.py`.
 
     Exactly one question is flagged `is_quantity`, wherever it comes from. The
     UI needs to know which field is the quantity and it cannot tell from the
@@ -778,21 +797,12 @@ def survey(job_key: str) -> dict:
                 + (f", typisch {lo}–{hi}" if hi > lo else "")
                 if whole else f"Typisch {lo}–{hi} {job['unit']}"),
         })
-    if "condition" not in asked:
-        form.append(_shared_choice(
-            "condition", "Zustand des Objekts", cat["modifiers"]["condition_uplift"],
-            {"neubau": "Neubau, besenrein",
-             "renovierung_leer": "Renovierung, leerstehend",
-             "renovierung_bewohnt": "Renovierung, bewohnt",
-             "altbau_bewohnt": "Altbau, bewohnt"},
-            "renovierung_leer"))
-    if "access" not in asked:
-        form.append(_shared_choice(
-            "access", "Zugang", cat["modifiers"]["access_uplift"],
-            {"eg_oder_lift": "Erdgeschoss oder Lift",
-             "og_ohne_lift": "Obergeschoss ohne Lift",
-             "enge_treppe": "Enge Treppe"},
-            "eg_oder_lift"))
+    for key in ("condition", "access"):
+        if key in asked:
+            continue
+        axis = axis_for(job, key)
+        if axis:
+            form.append(_shared_choice(key, job.get(f"{key}_axis") or "gebaeude", axis))
     if job.get("messy", True) is False and job.get("emergency_capable"):
         form.append({
             "key": "emergency", "label_de": "Notdienst", "type": "bool",
@@ -828,12 +838,31 @@ def survey(job_key: str) -> dict:
     }
 
 
-def _shared_choice(key: str, label: str, source: dict, labels: dict,
-                   default: str) -> dict:
+def axis_for(job: dict, key: str) -> Optional[dict]:
+    """The condition or access axis this job is asked in, or None for "none".
+
+    None is not a fallback. It is the catalogue saying the question does not
+    apply — a sewer camera survey has no building condition to report, because
+    establishing the condition is what the job produces. Where that is so the
+    question is not asked and the uplift stays at `DEFAULT_ANSWER[key]`, the
+    same value an unanswered form has always produced and the value each job's
+    market band was calibrated against. Dropping an unanswerable question must
+    not reprice the work.
+    """
+    axes = catalogue()["modifiers"].get(f"{key}_axes") or {}
+    return axes.get(job.get(f"{key}_axis") or "gebaeude")
+
+
+def _shared_choice(key: str, name: str, axis: dict) -> dict:
+    # `axis` is carried on the question so the translation layer can localise
+    # the help line for the vocabulary actually shown. Without it a Turkish pro
+    # mowing a lawn read the German ground-conditions labels above an English
+    # sentence about covering furniture in an occupied flat.
     return {
-        "key": key, "label_de": label, "type": "choice", "unit": "",
-        "options": [[v, labels.get(v, v)] for v in source],
-        "affects": key, "default": default, "note_if": {}, "help_de": "",
+        "key": key, "label_de": axis["label_de"], "type": "choice", "unit": "",
+        "options": [[v, label] for v, label in axis["options"].items()],
+        "affects": key, "default": axis["default"], "note_if": {},
+        "help_de": axis.get("help_de") or "", "axis": name,
     }
 
 

@@ -1,16 +1,6 @@
 from schema import JobType, Operation as Op, Question as Q
 
 # Shared answers, same vocabulary as the deep trade files.
-Q_ZUGANG = Q("access", "Zugang", "choice", affects="access",
-             options=[("eg_oder_lift", "Erdgeschoss oder Lift"),
-                      ("og_ohne_lift", "Obergeschoss ohne Lift"),
-                      ("enge_treppe", "Enge Treppe")], default="eg_oder_lift")
-Q_ZUSTAND = Q("condition", "Zustand", "choice", affects="condition",
-              options=[("neubau", "Neubau, leer"),
-                       ("renovierung_leer", "Renovierung, leer"),
-                       ("renovierung_bewohnt", "Renovierung, bewohnt"),
-                       ("altbau_bewohnt", "Altbau, bewohnt")],
-              default="renovierung_leer")
 Q_BAUJAHR = Q("baujahr", "Baujahr", "number", unit="Jahr", affects="note")
 Q_ABSPERR = Q("absperrventil", "Absperrventil vorhanden und dicht", "bool",
               affects="note", default=True, note_if={"False": "kein_absperrventil"})
@@ -56,7 +46,7 @@ SANITAER = [
                        ("aufputz", "Aufputz")],
               default="unterputz_bleibt",
               note_if={"unterputz_neu": "oeffnung_wand"}),
-            Q_ABSPERR, Q_BAUJAHR, Q_ZUGANG],
+            Q_ABSPERR, Q_BAUJAHR],
         operations=[
             Op("demontage", "Altgerät demontieren", "Stk", (0.5, 0.9),
                debris_kg_per_unit=(20, 35)),
@@ -86,7 +76,7 @@ SANITAER = [
                        ("neu", "Neu herzustellen")],
               default="passend",
               note_if={"versetzen": "oeffnung_wand", "neu": "oeffnung_wand"}),
-            Q_ABSPERR, Q_BAUJAHR, Q_ZUGANG],
+            Q_ABSPERR, Q_BAUJAHR],
         operations=[
             Op("demontage", "Altgerät demontieren", "Stk", (0.4, 0.7),
                debris_kg_per_unit=(15, 30)),
@@ -118,8 +108,7 @@ SANITAER = [
               affects="note",
               help_de="Über 20 Jahre: Ersatzteile oft nicht mehr verfügbar"),
             Q("umstellung", "Wechsel des Energieträgers geplant", "bool",
-              affects="note", default=False, note_if={"True": "foerderung"}),
-            Q_ZUGANG],
+              affects="note", default=False, note_if={"True": "foerderung"})],
         operations=[
             Op("demontage", "Altgerät demontieren, Anlage entleeren", "Stk", (1.5, 2.5),
                debris_kg_per_unit=(35, 60)),
@@ -153,7 +142,7 @@ SANITAER = [
               default="regulaer", note_if={"nacht_sonntag": "nacht_zuschlag"}),
             Q("folgeschaden", "Bereits Wasserschaden sichtbar", "bool",
               affects="note", default=True, note_if={"True": "folgeschaeden"}),
-            Q_BAUJAHR, Q_ZUGANG],
+            Q_BAUJAHR],
         operations=[
             Op("ortung", "Leckortung", "psch", (1.0, 2.5)),
             Op("oeffnen", "Wand/Boden öffnen", "psch", (1.0, 2.5),
@@ -185,7 +174,7 @@ ELEKTRIK = [
                        ("neue_zuleitung", "Neue Zuleitung erforderlich")],
               default="vorhanden",
               note_if={"neue_zuleitung": "neue_zuleitung_noetig"}),
-            Q_ALTANLAGE, Q_BAUJAHR, Q_ZUSTAND, Q_ZUGANG],
+            Q_ALTANLAGE, Q_BAUJAHR],
         operations=[
             Op("dose", "Dose setzen (Dosenfräse)", "Stk", (0.28, 0.50),
                debris_kg_per_unit=(2, 6)),
@@ -214,7 +203,7 @@ ELEKTRIK = [
               default="ziegel", note_if={"beton": "staub"}),
             Q("durchbruch", "Wand- oder Deckendurchbrüche nötig", "bool",
               affects="note", default=False, note_if={"True": "mauerdurchbruch"}),
-            Q_ALTANLAGE, Q_ZUSTAND, Q_ZUGANG],
+            Q_ALTANLAGE],
         operations=[
             # Mauernutfräse, 3-5 lfm/h. The first pass assumed hand chiselling
             # and produced 42 EUR/lfm against a 15-35 market band.
@@ -240,7 +229,7 @@ ELEKTRIK = [
               default=False, note_if={"False": "fi_nachruesten"}),
             Q("platz", "Platz im Verteilerfeld ausreichend", "bool", affects="note",
               default=True, note_if={"False": "verteiler_erweiterung"}),
-            Q_ALTANLAGE, Q_BAUJAHR, Q_ZUSTAND, Q_ZUGANG],
+            Q_ALTANLAGE, Q_BAUJAHR],
         operations=[
             Op("demontage", "Altverteiler demontieren", "Stk", (1.0, 1.8),
                debris_kg_per_unit=(8, 18)),

@@ -69,6 +69,30 @@ class Question:
 
 
 @dataclass
+class Axis:
+    """One domain's wording for a shared uplift.
+
+    Condition and access are the only two questions the estimator applies to
+    every job, and for a long time every job was therefore asked them in the
+    same words: whether the *building* was "Neubau, besenrein" and whether it
+    had a lift. On a lawn, a roof and a tyre change that is not a hard
+    question — it is a question about something that is not there, and the pro
+    still has to answer it, because the answer moves the price by up to 75 %.
+
+    An axis keeps the arithmetic and replaces the words. `options` maps the
+    same uplift keys the estimator already knows onto labels that describe the
+    thing actually being worked on. Nothing about the calculation changes when
+    a job switches axis: same keys, same uplifts, same default. Only the
+    sentence the tradesperson reads changes, from one that is about a building
+    to one that is about their job.
+    """
+    label_de: str
+    options: dict           # uplift key -> German label, cheapest first
+    default: str
+    help_de: str = ""
+
+
+@dataclass
 class JobType:
     key: str
     trade: str
@@ -98,6 +122,12 @@ class JobType:
     # band. Repairs, inspections and maintenance set this False.
     messy: bool = True
     emergency_capable: bool = False   # can be sold as a Notdienst call-out
+    # Which wording the two shared questions use for this job, or "none" where
+    # the axis genuinely does not apply. Assigned in `axes.py`, not here, so
+    # the whole mapping can be read on one screen instead of being scattered
+    # across seven files. See `Axis` above for why this is wording only.
+    condition_axis: str = "gebaeude"
+    access_axis: str = "gebaeude"
 
 
 # Condition and access are shared across trades: a painter and a tiler are

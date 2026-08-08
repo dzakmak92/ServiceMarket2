@@ -54,6 +54,127 @@
         0.15,
         0.3
       ]
+    },
+    "condition_axes": {
+      "gebaeude": {
+        "label_de": "Zustand des Objekts",
+        "options": {
+          "neubau": "Neubau, besenrein",
+          "renovierung_leer": "Renovierung, leerstehend",
+          "renovierung_bewohnt": "Renovierung, bewohnt",
+          "altbau_bewohnt": "Altbau, bewohnt"
+        },
+        "default": "renovierung_leer",
+        "help_de": "Bewohnt kostet mehr als leerstehend: abdecken, täglich aufräumen."
+      },
+      "wohnung": {
+        "label_de": "Zustand der Wohnung",
+        "options": {
+          "neubau": "Neubau, leer",
+          "renovierung_leer": "Renovierung, Wohnung leer",
+          "renovierung_bewohnt": "Renovierung, bewohnt",
+          "altbau_bewohnt": "Altbau, bewohnt"
+        },
+        "default": "renovierung_leer",
+        "help_de": "Bewohnt heißt: abstimmen, abdecken, Wasser nur kurz abstellen."
+      },
+      "flaeche": {
+        "label_de": "Zustand der Fläche",
+        "options": {
+          "neubau": "Neuanlage, frei",
+          "renovierung_leer": "Bestand, gepflegt",
+          "renovierung_bewohnt": "Bestand, verwildert",
+          "altbau_bewohnt": "Stark verwildert, Wurzelwerk"
+        },
+        "default": "renovierung_leer",
+        "help_de": "Was auf der Fläche steht, muss zuerst weg — das ist die Zeit."
+      },
+      "umfeld": {
+        "label_de": "Umfeld am Gebäude",
+        "options": {
+          "neubau": "Baustelle, frei",
+          "renovierung_leer": "Bestand, frei zugänglich",
+          "renovierung_bewohnt": "Bewohnt, Balkone und Fenster in Nutzung",
+          "altbau_bewohnt": "Altbestand, empfindliches Umfeld"
+        },
+        "default": "renovierung_leer",
+        "help_de": "Was rundherum geschützt werden muss, kostet Zeit vor und nach der Arbeit."
+      },
+      "fahrzeug": {
+        "label_de": "Zustand des Fahrzeugs",
+        "options": {
+          "neubau": "Neuwertig",
+          "renovierung_leer": "Gepflegt, normaler Zustand",
+          "renovierung_bewohnt": "Ältere Ausführung, Verschleiß sichtbar",
+          "altbau_bewohnt": "Stark korrodiert oder festgefahren"
+        },
+        "default": "renovierung_leer",
+        "help_de": "Festsitzende Schrauben und Korrosion sind der Zeitfresser."
+      },
+      "verschmutzung": {
+        "label_de": "Verschmutzungsgrad",
+        "options": {
+          "neubau": "Leicht, regelmäßig gepflegt",
+          "renovierung_leer": "Normal, üblicher Gebrauch",
+          "renovierung_bewohnt": "Stark verschmutzt",
+          "altbau_bewohnt": "Extrem, Verkrustung, Ruß oder Fett"
+        },
+        "default": "renovierung_leer",
+        "help_de": "Der größte Hebel in der Reinigung: einmal wischen oder dreimal."
+      },
+      "moebel": {
+        "label_de": "Zustand des Möbels",
+        "options": {
+          "neubau": "Neuwertig, nur neuer Bezug",
+          "renovierung_leer": "Gebraucht, Polsterung intakt",
+          "renovierung_bewohnt": "Stark abgenutzt, Polsterung ergänzen",
+          "altbau_bewohnt": "Antik oder Gestell locker"
+        },
+        "default": "renovierung_leer",
+        "help_de": "Was unter dem Bezug erneuert werden muss, entscheidet über die Stunden."
+      }
+    },
+    "access_axes": {
+      "gebaeude": {
+        "label_de": "Zugang",
+        "options": {
+          "eg_oder_lift": "Erdgeschoss oder Lift",
+          "og_ohne_lift": "Obergeschoss ohne Lift",
+          "enge_treppe": "Enge Treppe"
+        },
+        "default": "eg_oder_lift",
+        "help_de": "Ohne Lift kommt Tragzeit dazu — bei enger Treppe deutlich mehr."
+      },
+      "grundstueck": {
+        "label_de": "Zugang zum Grundstück",
+        "options": {
+          "eg_oder_lift": "Direkt befahrbar",
+          "og_ohne_lift": "Nur über Gehweg oder Tor",
+          "enge_treppe": "Nur über Treppe oder Durchgang"
+        },
+        "default": "eg_oder_lift",
+        "help_de": "Ob die Maschine bis zur Fläche kommt, entscheidet über Stunden."
+      },
+      "hoehe": {
+        "label_de": "Zugang zur Arbeitsfläche",
+        "options": {
+          "eg_oder_lift": "Vom Boden oder von der Leiter erreichbar",
+          "og_ohne_lift": "Anleiterung oder Hubsteiger nötig",
+          "enge_treppe": "Nur über Gerüst erreichbar"
+        },
+        "default": "eg_oder_lift",
+        "help_de": "Wie die Arbeitshöhe erreicht wird. Gerüst und Bühne werden gesondert angeboten."
+      },
+      "werkstatt": {
+        "label_de": "Wo wird gearbeitet",
+        "options": {
+          "eg_oder_lift": "In der Werkstatt",
+          "og_ohne_lift": "Beim Kunden vor Ort",
+          "enge_treppe": "Vor Ort und beengt (Tiefgarage, Hof)"
+        },
+        "default": "eg_oder_lift",
+        "help_de": "Vor Ort fehlen Hebebühne und Werkzeugwand — das kostet Zeit."
+      }
     }
   },
   "hourly_rates": {
@@ -1059,6 +1180,8 @@
       "segment": "Maler & Lackierer",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "untergrund",
@@ -1146,58 +1269,6 @@
             "voll": "moebel_bauseits",
             "teilweise": "moebel_bauseits"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -1313,6 +1384,8 @@
       "segment": "Maler & Lackierer",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "untergrund",
@@ -1387,58 +1460,6 @@
             "voll": "moebel_bauseits",
             "teilweise": "moebel_bauseits"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -1553,6 +1574,8 @@
       "segment": "Maler & Lackierer",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "wohnflaeche",
@@ -1651,58 +1674,6 @@
             "voll": "moebel_bauseits",
             "teilweise": "moebel_bauseits"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -1865,6 +1836,8 @@
       "segment": "Maler & Lackierer",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "untergrund",
@@ -1926,58 +1899,6 @@
             "voll": "moebel_bauseits",
             "teilweise": "moebel_bauseits"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -2116,6 +2037,8 @@
       "segment": "Maler & Lackierer",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "untergrund",
@@ -2177,58 +2100,6 @@
             "voll": "moebel_bauseits",
             "teilweise": "moebel_bauseits"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -2391,6 +2262,8 @@
       "segment": "Maler & Lackierer",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "tapetenart",
@@ -2448,58 +2321,6 @@
             "voll": "moebel_bauseits",
             "teilweise": "moebel_bauseits"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -2592,6 +2413,8 @@
       "segment": "Maler & Lackierer",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "untergrund",
@@ -2653,58 +2476,6 @@
             "voll": "moebel_bauseits",
             "teilweise": "moebel_bauseits"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -2843,6 +2614,8 @@
       "segment": "Maler & Lackierer",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "ansatz",
@@ -2943,58 +2716,6 @@
             "voll": "moebel_bauseits",
             "teilweise": "moebel_bauseits"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -3111,6 +2832,8 @@
       "segment": "Maler & Lackierer",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "anzahl",
@@ -3159,58 +2882,6 @@
           "default": null,
           "note_if": {},
           "help_de": "Vor 1960 kann der Altanstrich Blei enthalten."
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": ""
         }
       ],
       "note_keys": [
@@ -3371,6 +3042,8 @@
       "segment": "Maler & Lackierer",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "anzahl",
@@ -3404,58 +3077,6 @@
           ],
           "affects": "variant",
           "default": "flach",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
           "note_if": {},
           "help_de": ""
         }
@@ -3595,6 +3216,8 @@
       "segment": "Maler & Lackierer",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "umfeld",
+      "access_axis": "hoehe",
       "guided_form": [
         {
           "key": "anzahl",
@@ -3668,58 +3291,6 @@
           "note_if": {
             "noetig": "geruest_nicht_enthalten"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -3882,6 +3453,8 @@
       "segment": "Maler & Lackierer",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "flaeche",
@@ -3963,58 +3536,6 @@
             "voll": "moebel_bauseits",
             "teilweise": "moebel_bauseits"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -4177,6 +3698,8 @@
       "segment": "Maler & Lackierer",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "art",
@@ -4264,58 +3787,6 @@
             "voll": "moebel_bauseits",
             "teilweise": "moebel_bauseits"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -4432,6 +3903,8 @@
       "segment": "Maler & Lackierer",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "laenge",
@@ -4468,58 +3941,6 @@
           "note_if": {
             "setzriss": "statik_nicht_tragend"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -4657,6 +4078,8 @@
       "segment": "Maler & Lackierer",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "umfeld",
+      "access_axis": "hoehe",
       "guided_form": [
         {
           "key": "untergrund_aussen",
@@ -4738,34 +4161,6 @@
           "note_if": {
             "noetig": "geruest_nicht_enthalten"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -4904,6 +4299,8 @@
       "segment": "Maler & Lackierer",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "umfeld",
+      "access_axis": "hoehe",
       "guided_form": [
         {
           "key": "verschmutzung",
@@ -4955,34 +4352,6 @@
           "note_if": {
             "noetig": "geruest_nicht_enthalten"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -5097,6 +4466,8 @@
       "segment": "Maler & Lackierer",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "umfeld",
+      "access_axis": "hoehe",
       "guided_form": [
         {
           "key": "daemmstoff",
@@ -5170,34 +4541,6 @@
           "note_if": {
             "noetig": "geruest_nicht_enthalten"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -5383,6 +4726,8 @@
       "segment": "Maler & Lackierer",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "umfeld",
+      "access_axis": "hoehe",
       "guided_form": [
         {
           "key": "zustand_holz",
@@ -5408,58 +4753,6 @@
           "note_if": {
             "vergraut": "untergrund_tragfaehig"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -5575,6 +4868,8 @@
       "segment": "Maler & Lackierer",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "untergrund_boden",
@@ -5617,58 +4912,6 @@
           "note_if": {
             "True": "folgeschaeden"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -5808,6 +5051,8 @@
       "segment": "Fliesenleger",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "baujahr",
@@ -5831,58 +5076,6 @@
           "note_if": {
             "True": "fbh_aufheizprotokoll"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -5998,6 +5191,8 @@
       "segment": "Fliesenleger",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "bett",
@@ -6047,58 +5242,6 @@
           "note_if": {
             "True": "fbh_aufheizprotokoll"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -6215,6 +5358,8 @@
       "segment": "Fliesenleger",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "untergrund",
@@ -6349,58 +5494,6 @@
             "True": "belag_nicht_enthalten",
             "False": "belag_nicht_enthalten"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -6540,6 +5633,8 @@
       "segment": "Fliesenleger",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "untergrund",
@@ -6648,58 +5743,6 @@
             "True": "belag_nicht_enthalten",
             "False": "belag_nicht_enthalten"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -6838,6 +5881,8 @@
       "segment": "Fliesenleger",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "format",
@@ -6958,58 +6003,6 @@
             "True": "belag_nicht_enthalten",
             "False": "belag_nicht_enthalten"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -7172,6 +6165,8 @@
       "segment": "Fliesenleger",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "untergrund",
@@ -7253,58 +6248,6 @@
             "True": "belag_nicht_enthalten",
             "False": "belag_nicht_enthalten"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -7443,6 +6386,8 @@
       "segment": "Fliesenleger",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "stufen",
@@ -7515,58 +6460,6 @@
             "True": "belag_nicht_enthalten",
             "False": "belag_nicht_enthalten"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -7705,6 +6598,8 @@
       "segment": "Fliesenleger",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "flaeche",
+      "access_axis": "grundstueck",
       "guided_form": [
         {
           "key": "aufbau",
@@ -7792,34 +6687,6 @@
             "True": "belag_nicht_enthalten",
             "False": "belag_nicht_enthalten"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -7983,6 +6850,8 @@
       "segment": "Fliesenleger",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "beanspruchung",
@@ -8043,58 +6912,6 @@
             "holzdielen": "untergrund_eben",
             "unbekannt": "untergrund_eben"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -8233,6 +7050,8 @@
       "segment": "Fliesenleger",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "umfang",
@@ -8287,58 +7106,6 @@
             "bad": "abdichtung_nassbereich",
             "aussen": "frostsicher_aussen"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -8477,6 +7244,8 @@
       "segment": "Fliesenleger",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "laenge",
@@ -8531,30 +7300,6 @@
             "bad": "abdichtung_nassbereich",
             "aussen": "frostsicher_aussen"
           },
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -8692,6 +7437,8 @@
       "segment": "Fliesenleger",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "anzahl",
@@ -8727,30 +7474,6 @@
           "default": null,
           "note_if": {},
           "help_de": "Vor 1990 kann der Kleber Asbest enthalten."
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": ""
         }
       ],
       "note_keys": [
@@ -8887,6 +7610,8 @@
       "segment": "Fliesenleger",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "laenge",
@@ -8911,58 +7636,6 @@
             "True": "belag_nicht_enthalten",
             "False": "belag_nicht_enthalten"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -9076,6 +7749,8 @@
       "segment": "Bodenleger",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "belagsart",
@@ -9117,58 +7792,6 @@
           "default": null,
           "note_if": {},
           "help_de": "Vor 1990 kann der Kleber Asbest enthalten."
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": ""
         }
       ],
       "note_keys": [
@@ -9282,6 +7905,8 @@
       "segment": "Bodenleger",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "hoehe",
@@ -9357,58 +7982,6 @@
           "note_if": {
             "True": "fbh_aufheizprotokoll"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -9500,6 +8073,8 @@
       "segment": "Bodenleger",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "untergrund",
@@ -9603,58 +8178,6 @@
             "True": "belag_nicht_enthalten",
             "False": "belag_nicht_enthalten"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -9770,6 +8293,8 @@
       "segment": "Bodenleger",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "verlegung",
@@ -9868,58 +8393,6 @@
             "True": "belag_nicht_enthalten",
             "False": "belag_nicht_enthalten"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -10035,6 +8508,8 @@
       "segment": "Bodenleger",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "untergrund",
@@ -10138,58 +8613,6 @@
             "True": "belag_nicht_enthalten",
             "False": "belag_nicht_enthalten"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -10305,6 +8728,8 @@
       "segment": "Bodenleger",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "zustand_belag",
@@ -10362,58 +8787,6 @@
           "default": null,
           "note_if": {},
           "help_de": "Vor 1990 kann der Kleber Asbest enthalten."
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": ""
         }
       ],
       "note_keys": [
@@ -10551,6 +8924,8 @@
       "segment": "Bodenleger",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "verlegung",
@@ -10634,58 +9009,6 @@
             "True": "belag_nicht_enthalten",
             "False": "belag_nicht_enthalten"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, besenrein"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leerstehend"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -10801,6 +9124,8 @@
       "segment": "Garten- & Landschaftsbau",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "flaeche",
+      "access_axis": "grundstueck",
       "guided_form": [
         {
           "key": "flaeche",
@@ -10861,30 +9186,6 @@
             "verbleibt": "gruenschnitt_verbleibt"
           },
           "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang zum Grundstück",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Direkt befahrbar"
-            ],
-            [
-              "og_ohne_lift",
-              "Nur über Gehweg oder Tor"
-            ],
-            [
-              "enge_treppe",
-              "Nur über Treppe oder Durchgang"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": "Ob die Maschine bis zur Fläche kommt, entscheidet über Stunden."
         }
       ],
       "note_keys": [
@@ -10999,6 +9300,8 @@
       "segment": "Garten- & Landschaftsbau",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "flaeche",
+      "access_axis": "grundstueck",
       "guided_form": [
         {
           "key": "flaeche",
@@ -11043,30 +9346,6 @@
             "verbleibt": "gruenschnitt_verbleibt"
           },
           "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang zum Grundstück",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Direkt befahrbar"
-            ],
-            [
-              "og_ohne_lift",
-              "Nur über Gehweg oder Tor"
-            ],
-            [
-              "enge_treppe",
-              "Nur über Treppe oder Durchgang"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": "Ob die Maschine bis zur Fläche kommt, entscheidet über Stunden."
         }
       ],
       "note_keys": [
@@ -11204,6 +9483,8 @@
       "segment": "Garten- & Landschaftsbau",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "flaeche",
+      "access_axis": "grundstueck",
       "guided_form": [
         {
           "key": "flaeche",
@@ -11257,30 +9538,6 @@
             "verbleibt": "gruenschnitt_verbleibt"
           },
           "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang zum Grundstück",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Direkt befahrbar"
-            ],
-            [
-              "og_ohne_lift",
-              "Nur über Gehweg oder Tor"
-            ],
-            [
-              "enge_treppe",
-              "Nur über Treppe oder Durchgang"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": "Ob die Maschine bis zur Fläche kommt, entscheidet über Stunden."
         }
       ],
       "note_keys": [
@@ -11372,6 +9629,8 @@
       "segment": "Garten- & Landschaftsbau",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "flaeche",
+      "access_axis": "grundstueck",
       "guided_form": [
         {
           "key": "laenge",
@@ -11451,30 +9710,6 @@
             "verbleibt": "gruenschnitt_verbleibt"
           },
           "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang zum Grundstück",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Direkt befahrbar"
-            ],
-            [
-              "og_ohne_lift",
-              "Nur über Gehweg oder Tor"
-            ],
-            [
-              "enge_treppe",
-              "Nur über Treppe oder Durchgang"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": "Ob die Maschine bis zur Fläche kommt, entscheidet über Stunden."
         }
       ],
       "note_keys": [
@@ -11566,6 +9801,8 @@
       "segment": "Baumpflege",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "flaeche",
+      "access_axis": "grundstueck",
       "guided_form": [
         {
           "key": "anzahl",
@@ -11625,30 +9862,6 @@
             "verbleibt": "gruenschnitt_verbleibt"
           },
           "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang zum Grundstück",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Direkt befahrbar"
-            ],
-            [
-              "og_ohne_lift",
-              "Nur über Gehweg oder Tor"
-            ],
-            [
-              "enge_treppe",
-              "Nur über Treppe oder Durchgang"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": "Ob die Maschine bis zur Fläche kommt, entscheidet über Stunden."
         }
       ],
       "note_keys": [
@@ -11740,6 +9953,8 @@
       "segment": "Baumpflege",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "flaeche",
+      "access_axis": "grundstueck",
       "guided_form": [
         {
           "key": "anzahl",
@@ -11825,30 +10040,6 @@
             "offen": "baumschutz_satzung"
           },
           "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang zum Grundstück",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Direkt befahrbar"
-            ],
-            [
-              "og_ohne_lift",
-              "Nur über Gehweg oder Tor"
-            ],
-            [
-              "enge_treppe",
-              "Nur über Treppe oder Durchgang"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": "Ob die Maschine bis zur Fläche kommt, entscheidet über Stunden."
         }
       ],
       "note_keys": [
@@ -11964,6 +10155,8 @@
       "segment": "Garten- & Landschaftsbau",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "flaeche",
+      "access_axis": "grundstueck",
       "guided_form": [
         {
           "key": "flaeche",
@@ -12023,30 +10216,6 @@
             "salz": "streumittel_vorgabe"
           },
           "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang zum Grundstück",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Direkt befahrbar"
-            ],
-            [
-              "og_ohne_lift",
-              "Nur über Gehweg oder Tor"
-            ],
-            [
-              "enge_treppe",
-              "Nur über Treppe oder Durchgang"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": "Ob die Maschine bis zur Fläche kommt, entscheidet über Stunden."
         }
       ],
       "note_keys": [
@@ -12139,6 +10308,8 @@
       "segment": "Garten- & Landschaftsbau",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "flaeche",
+      "access_axis": "grundstueck",
       "guided_form": [
         {
           "key": "flaeche",
@@ -12203,58 +10374,6 @@
             "bekannt": "leitungen_im_boden"
           },
           "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand der Fläche",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neuanlage, frei"
-            ],
-            [
-              "renovierung_leer",
-              "Bestand, gepflegt"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Bestand, verwildert"
-            ],
-            [
-              "altbau_bewohnt",
-              "Stark verwildert, Wurzelwerk"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang zum Grundstück",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Direkt befahrbar"
-            ],
-            [
-              "og_ohne_lift",
-              "Nur über Gehweg oder Tor"
-            ],
-            [
-              "enge_treppe",
-              "Nur über Treppe oder Durchgang"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": "Ob die Maschine bis zur Fläche kommt, entscheidet über Stunden."
         }
       ],
       "note_keys": [
@@ -12369,6 +10488,8 @@
       "segment": "Garten- & Landschaftsbau",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "flaeche",
+      "access_axis": "grundstueck",
       "guided_form": [
         {
           "key": "flaeche",
@@ -12433,58 +10554,6 @@
             "bekannt": "leitungen_im_boden"
           },
           "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand der Fläche",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neuanlage, frei"
-            ],
-            [
-              "renovierung_leer",
-              "Bestand, gepflegt"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Bestand, verwildert"
-            ],
-            [
-              "altbau_bewohnt",
-              "Stark verwildert, Wurzelwerk"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang zum Grundstück",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Direkt befahrbar"
-            ],
-            [
-              "og_ohne_lift",
-              "Nur über Gehweg oder Tor"
-            ],
-            [
-              "enge_treppe",
-              "Nur über Treppe oder Durchgang"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": "Ob die Maschine bis zur Fläche kommt, entscheidet über Stunden."
         }
       ],
       "note_keys": [
@@ -12576,6 +10645,8 @@
       "segment": "Garten- & Landschaftsbau",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "flaeche",
+      "access_axis": "grundstueck",
       "guided_form": [
         {
           "key": "flaeche",
@@ -12622,58 +10693,6 @@
           "default": true,
           "note_if": {},
           "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand der Fläche",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neuanlage, frei"
-            ],
-            [
-              "renovierung_leer",
-              "Bestand, gepflegt"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Bestand, verwildert"
-            ],
-            [
-              "altbau_bewohnt",
-              "Stark verwildert, Wurzelwerk"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang zum Grundstück",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Direkt befahrbar"
-            ],
-            [
-              "og_ohne_lift",
-              "Nur über Gehweg oder Tor"
-            ],
-            [
-              "enge_treppe",
-              "Nur über Treppe oder Durchgang"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": "Ob die Maschine bis zur Fläche kommt, entscheidet über Stunden."
         }
       ],
       "note_keys": [
@@ -12811,6 +10830,8 @@
       "segment": "Garten- & Landschaftsbau",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "flaeche",
+      "access_axis": "grundstueck",
       "guided_form": [
         {
           "key": "laenge",
@@ -12873,58 +10894,6 @@
             "bekannt": "leitungen_im_boden"
           },
           "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand der Fläche",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neuanlage, frei"
-            ],
-            [
-              "renovierung_leer",
-              "Bestand, gepflegt"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Bestand, verwildert"
-            ],
-            [
-              "altbau_bewohnt",
-              "Stark verwildert, Wurzelwerk"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang zum Grundstück",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Direkt befahrbar"
-            ],
-            [
-              "og_ohne_lift",
-              "Nur über Gehweg oder Tor"
-            ],
-            [
-              "enge_treppe",
-              "Nur über Treppe oder Durchgang"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": "Ob die Maschine bis zur Fläche kommt, entscheidet über Stunden."
         }
       ],
       "note_keys": [
@@ -13040,6 +11009,8 @@
       "segment": "Garten- & Landschaftsbau",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "flaeche",
+      "access_axis": "grundstueck",
       "guided_form": [
         {
           "key": "flaeche",
@@ -13129,58 +11100,6 @@
             "bekannt": "leitungen_im_boden"
           },
           "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand der Fläche",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neuanlage, frei"
-            ],
-            [
-              "renovierung_leer",
-              "Bestand, gepflegt"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Bestand, verwildert"
-            ],
-            [
-              "altbau_bewohnt",
-              "Stark verwildert, Wurzelwerk"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang zum Grundstück",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Direkt befahrbar"
-            ],
-            [
-              "og_ohne_lift",
-              "Nur über Gehweg oder Tor"
-            ],
-            [
-              "enge_treppe",
-              "Nur über Treppe oder Durchgang"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": "Ob die Maschine bis zur Fläche kommt, entscheidet über Stunden."
         }
       ],
       "note_keys": [
@@ -13319,6 +11238,8 @@
       "segment": "Pflaster- & Straßenbau",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "flaeche",
+      "access_axis": "grundstueck",
       "guided_form": [
         {
           "key": "flaeche",
@@ -13396,58 +11317,6 @@
             "bekannt": "leitungen_im_boden"
           },
           "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand der Fläche",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neuanlage, frei"
-            ],
-            [
-              "renovierung_leer",
-              "Bestand, gepflegt"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Bestand, verwildert"
-            ],
-            [
-              "altbau_bewohnt",
-              "Stark verwildert, Wurzelwerk"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang zum Grundstück",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Direkt befahrbar"
-            ],
-            [
-              "og_ohne_lift",
-              "Nur über Gehweg oder Tor"
-            ],
-            [
-              "enge_treppe",
-              "Nur über Treppe oder Durchgang"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": "Ob die Maschine bis zur Fläche kommt, entscheidet über Stunden."
         }
       ],
       "note_keys": [
@@ -13586,6 +11455,8 @@
       "segment": "Garten- & Landschaftsbau",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "flaeche",
+      "access_axis": "grundstueck",
       "guided_form": [
         {
           "key": "flaeche",
@@ -13645,58 +11516,6 @@
           "default": "stelzlager",
           "note_if": {},
           "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand der Fläche",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neuanlage, frei"
-            ],
-            [
-              "renovierung_leer",
-              "Bestand, gepflegt"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Bestand, verwildert"
-            ],
-            [
-              "altbau_bewohnt",
-              "Stark verwildert, Wurzelwerk"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang zum Grundstück",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Direkt befahrbar"
-            ],
-            [
-              "og_ohne_lift",
-              "Nur über Gehweg oder Tor"
-            ],
-            [
-              "enge_treppe",
-              "Nur über Treppe oder Durchgang"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": "Ob die Maschine bis zur Fläche kommt, entscheidet über Stunden."
         }
       ],
       "note_keys": [
@@ -13812,6 +11631,8 @@
       "segment": "Garten- & Landschaftsbau",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "flaeche",
+      "access_axis": "grundstueck",
       "guided_form": [
         {
           "key": "laenge",
@@ -13887,58 +11708,6 @@
             "bekannt": "leitungen_im_boden"
           },
           "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand der Fläche",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neuanlage, frei"
-            ],
-            [
-              "renovierung_leer",
-              "Bestand, gepflegt"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Bestand, verwildert"
-            ],
-            [
-              "altbau_bewohnt",
-              "Stark verwildert, Wurzelwerk"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang zum Grundstück",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Direkt befahrbar"
-            ],
-            [
-              "og_ohne_lift",
-              "Nur über Gehweg oder Tor"
-            ],
-            [
-              "enge_treppe",
-              "Nur über Treppe oder Durchgang"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": "Ob die Maschine bis zur Fläche kommt, entscheidet über Stunden."
         }
       ],
       "note_keys": [
@@ -14030,6 +11799,8 @@
       "segment": "Garten- & Landschaftsbau",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "flaeche",
+      "access_axis": "grundstueck",
       "guided_form": [
         {
           "key": "laenge",
@@ -14118,58 +11889,6 @@
             "bekannt": "leitungen_im_boden"
           },
           "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand der Fläche",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neuanlage, frei"
-            ],
-            [
-              "renovierung_leer",
-              "Bestand, gepflegt"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Bestand, verwildert"
-            ],
-            [
-              "altbau_bewohnt",
-              "Stark verwildert, Wurzelwerk"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang zum Grundstück",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Direkt befahrbar"
-            ],
-            [
-              "og_ohne_lift",
-              "Nur über Gehweg oder Tor"
-            ],
-            [
-              "enge_treppe",
-              "Nur über Treppe oder Durchgang"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": "Ob die Maschine bis zur Fläche kommt, entscheidet über Stunden."
         }
       ],
       "note_keys": [
@@ -14262,6 +11981,8 @@
       "segment": "Garten- & Landschaftsbau",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "flaeche",
+      "access_axis": "grundstueck",
       "guided_form": [
         {
           "key": "flaeche",
@@ -14322,58 +12043,6 @@
             "bekannt": "leitungen_im_boden"
           },
           "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand der Fläche",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neuanlage, frei"
-            ],
-            [
-              "renovierung_leer",
-              "Bestand, gepflegt"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Bestand, verwildert"
-            ],
-            [
-              "altbau_bewohnt",
-              "Stark verwildert, Wurzelwerk"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang zum Grundstück",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Direkt befahrbar"
-            ],
-            [
-              "og_ohne_lift",
-              "Nur über Gehweg oder Tor"
-            ],
-            [
-              "enge_treppe",
-              "Nur über Treppe oder Durchgang"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": "Ob die Maschine bis zur Fläche kommt, entscheidet über Stunden."
         }
       ],
       "note_keys": [
@@ -14489,6 +12158,8 @@
       "segment": "Garten- & Landschaftsbau",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "flaeche",
+      "access_axis": "grundstueck",
       "guided_form": [
         {
           "key": "laenge",
@@ -14577,58 +12248,6 @@
             "bekannt": "leitungen_im_boden"
           },
           "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand der Fläche",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neuanlage, frei"
-            ],
-            [
-              "renovierung_leer",
-              "Bestand, gepflegt"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Bestand, verwildert"
-            ],
-            [
-              "altbau_bewohnt",
-              "Stark verwildert, Wurzelwerk"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang zum Grundstück",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Direkt befahrbar"
-            ],
-            [
-              "og_ohne_lift",
-              "Nur über Gehweg oder Tor"
-            ],
-            [
-              "enge_treppe",
-              "Nur über Treppe oder Durchgang"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": "Ob die Maschine bis zur Fläche kommt, entscheidet über Stunden."
         }
       ],
       "note_keys": [
@@ -14744,6 +12363,8 @@
       "segment": "Pflaster- & Straßenbau",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "flaeche",
+      "access_axis": "grundstueck",
       "guided_form": [
         {
           "key": "stufen",
@@ -14792,58 +12413,6 @@
             "True": "gelaender_separat"
           },
           "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand der Fläche",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neuanlage, frei"
-            ],
-            [
-              "renovierung_leer",
-              "Bestand, gepflegt"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Bestand, verwildert"
-            ],
-            [
-              "altbau_bewohnt",
-              "Stark verwildert, Wurzelwerk"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang zum Grundstück",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Direkt befahrbar"
-            ],
-            [
-              "og_ohne_lift",
-              "Nur über Gehweg oder Tor"
-            ],
-            [
-              "enge_treppe",
-              "Nur über Treppe oder Durchgang"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": "Ob die Maschine bis zur Fläche kommt, entscheidet über Stunden."
         }
       ],
       "note_keys": [
@@ -14959,6 +12528,8 @@
       "segment": "Poolbau",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "flaeche",
+      "access_axis": "grundstueck",
       "guided_form": [
         {
           "key": "groesse",
@@ -15056,30 +12627,6 @@
             "bekannt": "leitungen_im_boden"
           },
           "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang zum Grundstück",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Direkt befahrbar"
-            ],
-            [
-              "og_ohne_lift",
-              "Nur über Gehweg oder Tor"
-            ],
-            [
-              "enge_treppe",
-              "Nur über Treppe oder Durchgang"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": "Ob die Maschine bis zur Fläche kommt, entscheidet über Stunden."
         }
       ],
       "note_keys": [
@@ -15214,6 +12761,8 @@
       "segment": "Sanitär- / Klempner",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "anzahl",
@@ -15299,30 +12848,6 @@
           "options": [],
           "affects": "note",
           "default": null,
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
           "note_if": {},
           "help_de": ""
         }
@@ -15458,6 +12983,8 @@
       "segment": "Sanitär- / Klempner",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "anzahl",
@@ -15542,30 +13069,6 @@
           "options": [],
           "affects": "note",
           "default": null,
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
           "note_if": {},
           "help_de": ""
         }
@@ -15677,6 +13180,8 @@
       "segment": "Sanitär- / Klempner",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "abgas",
@@ -15751,30 +13256,6 @@
           "note_if": {
             "True": "foerderung"
           },
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -15910,6 +13391,8 @@
       "segment": "Sanitär- / Klempner",
       "messy": true,
       "emergency_capable": true,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "ort",
@@ -15998,30 +13481,6 @@
           "options": [],
           "affects": "note",
           "default": null,
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
           "note_if": {},
           "help_de": ""
         }
@@ -16157,6 +13616,8 @@
       "segment": "Elektriker",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "anzahl",
@@ -16256,58 +13717,6 @@
           "options": [],
           "affects": "note",
           "default": null,
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, leer"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leer"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
           "note_if": {},
           "help_de": ""
         }
@@ -16420,6 +13829,8 @@
       "segment": "Elektriker",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "laenge",
@@ -16526,58 +13937,6 @@
             "klassisch_null": "klassische_nullung",
             "unbekannt": "altanlage_unbekannt"
           },
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, leer"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leer"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -16712,6 +14071,8 @@
       "segment": "Elektriker",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "stromkreise",
@@ -16789,58 +14150,6 @@
           "options": [],
           "affects": "note",
           "default": null,
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, leer"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leer"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
           "note_if": {},
           "help_de": ""
         }
@@ -16976,6 +14285,8 @@
       "segment": "Trockenbauer",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "statik_nicht_tragend"
@@ -17107,6 +14418,8 @@
       "segment": "Abrissunternehmen",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "asbest_vor_1990",
@@ -17194,6 +14507,8 @@
       "segment": "Abrissunternehmen",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "statik_nicht_tragend",
@@ -17285,6 +14600,8 @@
       "segment": "Sanitär- / Klempner",
       "messy": false,
       "emergency_capable": true,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "zeit",
@@ -17310,30 +14627,6 @@
           "note_if": {
             "nacht_sonntag": "nacht_zuschlag"
           },
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -17426,6 +14719,8 @@
       "segment": "Rohrreinigung",
       "messy": false,
       "emergency_capable": true,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "art",
@@ -17562,6 +14857,8 @@
       "segment": "Rohrreinigung",
       "messy": false,
       "emergency_capable": true,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "umfang",
@@ -17583,30 +14880,6 @@
           "note_if": {
             "mehrere": "fallstrang_verdacht"
           },
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
           "help_de": ""
         }
       ],
@@ -17699,6 +14972,8 @@
       "segment": "Rohrreinigung",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "none",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "laenge",
@@ -17800,6 +15075,8 @@
       "segment": "Sanitär- / Klempner",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "absperrventil",
@@ -17937,6 +15214,8 @@
       "segment": "Sanitär- / Klempner",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "typ",
@@ -18083,59 +15362,9 @@
       "segment": "Sanitär- / Klempner",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, leer"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, Wohnung leer"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": ""
-        },
         {
           "key": "fliesen",
           "label_de": "Fliesen im Anschlussbereich erhalten?",
@@ -18262,59 +15491,9 @@
       "segment": "Sanitär- / Klempner",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, leer"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, Wohnung leer"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": ""
-        },
         {
           "key": "baujahr",
           "label_de": "Baujahr des Gebäudes",
@@ -18522,6 +15701,8 @@
       "segment": "Sanitär- / Klempner",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "wand",
@@ -18626,6 +15807,8 @@
       "segment": "Sanitär- / Klempner",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "liter",
@@ -18635,30 +15818,6 @@
           "options": [],
           "affects": "variant",
           "default": 120,
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
           "note_if": {},
           "help_de": ""
         },
@@ -18788,6 +15947,8 @@
       "segment": "Sanitär- / Klempner",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "baujahr",
@@ -18799,34 +15960,6 @@
           "default": null,
           "note_if": {},
           "help_de": "Vor 1990: Asbest- und Bleiprüfung nötig."
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, leer"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, Wohnung leer"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
         },
         {
           "key": "verlegung",
@@ -19039,6 +16172,8 @@
       "segment": "Sanitär- / Klempner",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "entfernung",
@@ -19048,34 +16183,6 @@
           "options": [],
           "affects": "qty",
           "default": 3,
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, leer"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, Wohnung leer"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
           "note_if": {},
           "help_de": ""
         }
@@ -19168,6 +16275,8 @@
       "segment": "Sanitär- / Klempner",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "typ",
@@ -19301,6 +16410,8 @@
       "segment": "Sanitär- / Klempner",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "umfang",
@@ -19411,59 +16522,9 @@
       "segment": "Sanitär- / Klempner",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, leer"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, Wohnung leer"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": ""
-        },
         {
           "key": "baujahr",
           "label_de": "Baujahr des Gebäudes",
@@ -19658,59 +16719,9 @@
       "segment": "Sanitär- / Klempner",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, leer"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, Wohnung leer"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "access",
-          "label_de": "Zugang",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "eg_oder_lift",
-              "Erdgeschoss oder Lift"
-            ],
-            [
-              "og_ohne_lift",
-              "Obergeschoss ohne Lift"
-            ],
-            [
-              "enge_treppe",
-              "Enge Treppe"
-            ]
-          ],
-          "affects": "access",
-          "default": "eg_oder_lift",
-          "note_if": {},
-          "help_de": ""
-        },
         {
           "key": "baujahr",
           "label_de": "Baujahr des Gebäudes",
@@ -19956,6 +16967,8 @@
       "segment": "Elektriker",
       "messy": false,
       "emergency_capable": true,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "symptom",
@@ -20151,6 +17164,8 @@
       "segment": "Elektriker",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "objekt",
@@ -20326,6 +17341,8 @@
       "segment": "Elektriker",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "anzahl",
@@ -20428,6 +17445,8 @@
       "segment": "Elektriker",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "anzahl",
@@ -20560,6 +17579,8 @@
       "segment": "Elektriker",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "art",
@@ -20698,6 +17719,8 @@
       "segment": "Elektriker",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "anzahl",
@@ -20810,6 +17833,8 @@
       "segment": "Elektriker",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "umfeld",
+      "access_axis": "grundstueck",
       "guided_form": [
         {
           "key": "durchbruch",
@@ -20946,6 +17971,8 @@
       "segment": "Elektriker",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "vorhanden",
@@ -21027,6 +18054,8 @@
       "segment": "Elektriker",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "anzahl",
@@ -21047,34 +18076,6 @@
           "options": [],
           "affects": "qty",
           "default": 12,
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, leer"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leer"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
           "note_if": {},
           "help_de": ""
         }
@@ -21188,6 +18189,8 @@
       "segment": "Elektriker",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "umfeld",
+      "access_axis": "grundstueck",
       "guided_form": [
         {
           "key": "entfernung",
@@ -21390,6 +18393,8 @@
       "segment": "Elektriker",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "stromkreise",
@@ -21505,6 +18510,8 @@
       "segment": "Elektriker",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "wohnflaeche",
@@ -21514,34 +18521,6 @@
           "options": [],
           "affects": "qty",
           "default": 75,
-          "note_if": {},
-          "help_de": ""
-        },
-        {
-          "key": "condition",
-          "label_de": "Zustand",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "neubau",
-              "Neubau, leer"
-            ],
-            [
-              "renovierung_leer",
-              "Renovierung, leer"
-            ],
-            [
-              "renovierung_bewohnt",
-              "Renovierung, bewohnt"
-            ],
-            [
-              "altbau_bewohnt",
-              "Altbau, bewohnt"
-            ]
-          ],
-          "affects": "condition",
-          "default": "renovierung_leer",
           "note_if": {},
           "help_de": ""
         },
@@ -21795,6 +18774,8 @@
       "segment": "Elektriker",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "anzahl",
@@ -21947,6 +18928,8 @@
       "segment": "Elektriker",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [
         {
           "key": "parteien",
@@ -22094,6 +19077,8 @@
       "segment": "Maurer & Betonbau",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "statik_pflicht",
@@ -22227,6 +19212,8 @@
       "segment": "Maurer & Betonbau",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "statik_nicht_tragend"
@@ -22312,6 +19299,8 @@
       "segment": "Metallbau",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "aufmass_vor_fertigung",
@@ -22421,6 +19410,8 @@
       "segment": "Gerüstbau",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "umfeld",
+      "access_axis": "hoehe",
       "guided_form": [],
       "note_keys": [
         "standzeit",
@@ -22530,6 +19521,8 @@
       "segment": "Schlüsseldienst",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "identitaetsnachweis",
@@ -22616,6 +19609,8 @@
       "segment": "Steinmetz",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "aufmass_vor_fertigung"
@@ -22724,6 +19719,8 @@
       "segment": "Tischler & Schreiner",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "aufmass_vor_fertigung",
@@ -22856,6 +19853,8 @@
       "segment": "Tischler & Schreiner",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "aufmass_vor_fertigung",
@@ -22988,6 +19987,8 @@
       "segment": "Tischler & Schreiner",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "montageanleitung_bauseits"
@@ -23050,6 +20051,8 @@
       "segment": "Küchenbau",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "anschluesse_vorhanden",
@@ -23182,6 +20185,8 @@
       "segment": "Küchenbau",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "abtransport",
@@ -23268,6 +20273,8 @@
       "segment": "Türen- & Fensterbau",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "aufmass_vor_fertigung",
@@ -23401,6 +20408,8 @@
       "segment": "Rolladenbau",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "stromanschluss_bauseits"
@@ -23509,6 +20518,8 @@
       "segment": "Sonnenschutz & Markisen",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "umfeld",
+      "access_axis": "hoehe",
       "guided_form": [],
       "note_keys": [
         "untergrund_tragfaehig",
@@ -23618,6 +20629,8 @@
       "segment": "Glaser",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "aufmass_vor_fertigung"
@@ -23726,6 +20739,8 @@
       "segment": "Dachdecker",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "umfeld",
+      "access_axis": "hoehe",
       "guided_form": [],
       "note_keys": [
         "geruest_erforderlich",
@@ -23860,6 +20875,8 @@
       "segment": "Spengler / Klempner",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "umfeld",
+      "access_axis": "hoehe",
       "guided_form": [],
       "note_keys": [
         "geruest_erforderlich",
@@ -23969,6 +20986,8 @@
       "segment": "Dachdecker",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "umfeld",
+      "access_axis": "hoehe",
       "guided_form": [],
       "note_keys": [
         "gefaelle",
@@ -24079,6 +21098,8 @@
       "segment": "Schornsteinfeger",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "umfeld",
+      "access_axis": "hoehe",
       "guided_form": [],
       "note_keys": [
         "behoerdlich_vorgeschrieben"
@@ -24141,6 +21162,8 @@
       "segment": "Heizungsinstallateur",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "anlage_entleeren",
@@ -24274,6 +21297,8 @@
       "segment": "Heizungsinstallateur",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "estrich_folgt",
@@ -24383,6 +21408,8 @@
       "segment": "Heizungsinstallateur",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "foerderung",
@@ -24517,6 +21544,8 @@
       "segment": "Kaminbau",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "wohnung",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "rauchfangkehrer",
@@ -24603,6 +21632,8 @@
       "segment": "Umzugsunternehmen",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "halteverbot",
@@ -24713,6 +21744,8 @@
       "segment": "Transportunternehmen",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "abtransport",
@@ -24799,6 +21832,8 @@
       "segment": "Gebäudereiniger",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "verschmutzung",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "schluessel_uebergabe"
@@ -24861,6 +21896,8 @@
       "segment": "Gebäudereiniger",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "verschmutzung",
+      "access_axis": "hoehe",
       "guided_form": [],
       "note_keys": [
         "erreichbarkeit"
@@ -24923,6 +21960,8 @@
       "segment": "Hausmeisterservice",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "verschmutzung",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "schluessel_uebergabe"
@@ -24985,6 +22024,8 @@
       "segment": "Schädlingsbekämpfung",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "verschmutzung",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "nachkontrolle",
@@ -25071,6 +22112,8 @@
       "segment": "Reinigungsdienst",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "verschmutzung",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [],
       "labour_variance": 3.64,
@@ -25154,6 +22197,8 @@
       "segment": "Reinigungsdienst",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "verschmutzung",
+      "access_axis": "hoehe",
       "guided_form": [],
       "note_keys": [],
       "labour_variance": 4.28,
@@ -25214,6 +22259,8 @@
       "segment": "Reinigungsdienst",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "verschmutzung",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [],
       "labour_variance": 3.76,
@@ -25274,6 +22321,8 @@
       "segment": "Reinigungsdienst",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "verschmutzung",
+      "access_axis": "grundstueck",
       "guided_form": [],
       "note_keys": [],
       "labour_variance": 4.13,
@@ -25334,6 +22383,8 @@
       "segment": "Reinigungsdienst",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "verschmutzung",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [],
       "labour_variance": 4.38,
@@ -25394,6 +22445,8 @@
       "segment": "Polsterei",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "moebel",
+      "access_axis": "werkstatt",
       "guided_form": [],
       "note_keys": [
         "stoff_bauseits_moeglich",
@@ -25503,6 +22556,8 @@
       "segment": "Solarteur",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "umfeld",
+      "access_axis": "hoehe",
       "guided_form": [],
       "note_keys": [
         "netzanmeldung",
@@ -25637,6 +22692,8 @@
       "segment": "Montageservice & Allroundhandwerker",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "regie_abrechnung"
@@ -25699,6 +22756,8 @@
       "segment": "Montageservice & Allroundhandwerker",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [],
       "labour_variance": 3.43,
@@ -25782,6 +22841,8 @@
       "segment": "Montageservice & Allroundhandwerker",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [],
       "labour_variance": 3.77,
@@ -25842,6 +22903,8 @@
       "segment": "Montageservice & Allroundhandwerker",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [],
       "labour_variance": 3.44,
@@ -25925,6 +22988,8 @@
       "segment": "Montageservice & Allroundhandwerker",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "umfeld",
+      "access_axis": "hoehe",
       "guided_form": [],
       "note_keys": [],
       "labour_variance": 3.8,
@@ -25985,6 +23050,8 @@
       "segment": "Montageservice & Allroundhandwerker",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [],
       "labour_variance": 4.52,
@@ -26045,6 +23112,8 @@
       "segment": "Montageservice & Allroundhandwerker",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [],
       "labour_variance": 5.03,
@@ -26105,6 +23174,8 @@
       "segment": "Montageservice & Allroundhandwerker",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [],
       "labour_variance": 4.84,
@@ -26165,6 +23236,8 @@
       "segment": "Montageservice & Allroundhandwerker",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [],
       "labour_variance": 3.72,
@@ -26225,6 +23298,8 @@
       "segment": "Montageservice & Allroundhandwerker",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "untergrund_tragfaehig",
@@ -26288,6 +23363,8 @@
       "segment": "Bausachverständiger / Gutachter",
       "messy": true,
       "emergency_capable": false,
+      "condition_axis": "gebaeude",
+      "access_axis": "gebaeude",
       "guided_form": [],
       "note_keys": [
         "unabhaengigkeit",
@@ -26374,6 +23451,8 @@
       "segment": "KFZ-Werkstatt",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "fahrzeug",
+      "access_axis": "werkstatt",
       "guided_form": [],
       "note_keys": [
         "aw_modellabhaengig",
@@ -26460,6 +23539,8 @@
       "segment": "KFZ-Werkstatt",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "fahrzeug",
+      "access_axis": "werkstatt",
       "guided_form": [],
       "note_keys": [
         "rdks_sensoren"
@@ -26522,6 +23603,8 @@
       "segment": "Fahrradwerkstatt",
       "messy": false,
       "emergency_capable": false,
+      "condition_axis": "fahrzeug",
+      "access_axis": "werkstatt",
       "guided_form": [],
       "note_keys": [
         "verschleissteile_extra"

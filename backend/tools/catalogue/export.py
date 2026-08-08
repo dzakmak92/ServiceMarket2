@@ -1,6 +1,7 @@
 import sys, json; sys.path.insert(0,'.')
 from dataclasses import asdict
 from alljobs import ALL_JOBS
+from axes import CONDITION_AXES, ACCESS_AXES
 from engine import estimate
 from schema import (COND_UPLIFT, COND_SETUP_ADD, ACCESS_UPLIFT, HOURLY,
                     HOURLY_NOTDIENST, DISPOSAL_PER_T)
@@ -245,7 +246,11 @@ NOTES = {
 
 out = {"version": 1, "countries": ["AT","DE"],
        "modifiers": {"condition_uplift": COND_UPLIFT, "condition_setup_add": COND_SETUP_ADD,
-                     "access_uplift": ACCESS_UPLIFT},
+                     "access_uplift": ACCESS_UPLIFT,
+                     # The wording each trade uses for those two uplifts. Same
+                     # keys, same order, same default — see axes.py.
+                     "condition_axes": {k: asdict(a) for k, a in CONDITION_AXES.items()},
+                     "access_axes": {k: asdict(a) for k, a in ACCESS_AXES.items()}},
        "hourly_rates": HOURLY, "hourly_notdienst": HOURLY_NOTDIENST,
        "disposal_per_tonne": DISPOSAL_PER_T,
        "site_visit_required": sorted(SITE_VISIT),
@@ -267,6 +272,7 @@ for j in JOBS:
         "band_basis": j.band_basis, "sources": j.sources,
         "confidence": j.confidence, "group": j.group, "segment": j.segment,
         "messy": j.messy, "emergency_capable": j.emergency_capable,
+        "condition_axis": j.condition_axis, "access_axis": j.access_axis,
         "guided_form": [{
             "key": q.key, "label_de": q.label_de, "type": q.type, "unit": q.unit,
             "options": q.options, "affects": q.affects, "default": q.default,
