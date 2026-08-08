@@ -129,14 +129,19 @@ HOURLY = {
            "fenster": (45, 70), "dach": (45, 70), "heizung": (68, 110),
            "umzug": (30, 48), "kueche": (45, 70), "montage": (35, 58),
            "reinigung": (25, 42), "polster": (40, 62), "solar": (55, 85),
-           "metallbau": (48, 72), "geruest": (38, 58)},
+           "metallbau": (48, 72), "geruest": (38, 58),
+           # Split out of `montage` once they got their own guided forms: a
+           # workshop's labour rate is not an allrounder's, and lumping them
+           # together meant a trade could never be repriced on its own.
+           "kfz": (35, 58), "fahrrad": (35, 58), "gutachter": (35, 58)},
     "DE": {"maler": (35, 60), "fliesen": (40, 65), "boden": (36, 60), "sanitaer": (68, 115),
            "elektrik": (62, 112), "trockenbau": (38, 62), "abriss": (35, 58),
            "maurer": (40, 68), "tischler": (45, 75), "garten": (35, 58),
            "fenster": (45, 72), "dach": (45, 75), "heizung": (68, 112),
            "umzug": (30, 50), "kueche": (45, 72), "montage": (35, 60),
            "reinigung": (25, 45), "polster": (40, 65), "solar": (55, 90),
-           "metallbau": (48, 75), "geruest": (38, 60)},
+           "metallbau": (48, 75), "geruest": (38, 60),
+           "kfz": (35, 60), "fahrrad": (35, 60), "gutachter": (35, 60)},
 }
 
 # EUR per tonne, by material. Bauschutt is the reference; the others differ by

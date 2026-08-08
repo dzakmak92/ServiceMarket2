@@ -54,6 +54,12 @@ SITE_VISIT = {
     "polster.sofa",                                                # Gestellzustand
     "gutachter.bauschaden",                                        # the visit IS the job
     "umzug.wohnung", "umzug.entruempelung",                        # volume, access
+    # The Montage/Reinigung templates that were added straight to the JSON
+    # carried this flag by hand. It belongs here, where the reason is written
+    # down: a kitchen and an awning are both Aufmaß work — the fabricated part
+    # has to fit an opening nobody has measured — and what graffiti sits on
+    # decides whether the paint comes off at all.
+    "montage.kueche", "montage.markise", "reinigung.graffiti",
 }
 
 # Kept as a separate signal with an honest name: how much of the price is
@@ -285,8 +291,15 @@ for j in JOBS:
     })
 
 import pathlib
-pathlib.Path("catalogue.json").write_text(json.dumps(out, indent=2, ensure_ascii=False))
-print("jobs:", len(out["jobs"]), "| notes:", len(NOTES))
+# Written straight to the file the app loads, not to a copy beside the
+# generator. The copy is how the two drifted: 13 job types and three trades
+# were edited into `backend/data/estimation_catalogue.json` by hand and the
+# generator went on emitting a catalogue that no longer described the product.
+# One destination means a regeneration either reproduces what ships or fails
+# the harness — it cannot quietly disagree with it.
+DEST = pathlib.Path(__file__).resolve().parents[2] / "data" / "estimation_catalogue.json"
+DEST.write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n")
+print("jobs:", len(out["jobs"]), "| notes:", len(NOTES), "->", DEST)
 regie=[j for j in out["jobs"] if j["site_visit_required"]]
 conf={}
 for j in out["jobs"]: conf[j["confidence"]]=conf.get(j["confidence"],0)+1
