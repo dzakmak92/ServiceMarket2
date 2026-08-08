@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
@@ -78,6 +78,11 @@ export default function EstimatePage() {
   // individual positions. Both empty by default: an untouched estimate is the
   // catalogue's, and the screen says so.
   const [hourlyRate, setHourlyRate] = useState('');
+  // Whether the full price card has scrolled out of view. An observer rather
+  // than a scroll handler: the browser reports the crossing once instead of
+  // this recomputing a rectangle on every frame of a flick.
+  const headRef = useRef(null);
+  const [headGone, setHeadGone] = useState(false);
   const [qtyOverrides, setQtyOverrides] = useState({});
   // What the last answer did to the total, shown for a moment beside it. The
   // estimate has always recalculated on its own; nothing said so.
@@ -238,6 +243,18 @@ export default function EstimatePage() {
     api.get('/api/jobs', { params: { status: 'open', limit: 100 } })
       .then(({ data }) => setMyJobs(data.jobs || []))
       .catch(() => setMyJobs([]));
+  }, [selected]);
+
+  useEffect(() => {
+    const el = headRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return undefined;
+    // rootMargin pulls the trigger line down past the app bar, so the strip
+    // appears as the card slides under it rather than after it is long gone.
+    const io = new IntersectionObserver(
+      ([e]) => setHeadGone(!e.isIntersecting),
+      { rootMargin: '-68px 0px 0px 0px', threshold: 0 });
+    io.observe(el);
+    return () => io.disconnect();
   }, [selected]);
 
   const set = (k, v) => {
@@ -410,7 +427,16 @@ export default function EstimatePage() {
                 field to see what it does to the number; with the number
                 underneath a five-field form they had to scroll to find out,
                 every time. */}
-            <PriceHeader result={result} calculating={calculating} delta={delta} />
+            {/* Full card at rest, 46 px strip once it has scrolled away. The
+                strip is what stays pinned; the card is not, because pinned at
+                its full height it would be 224 px of permanent chrome with the
+                app bar on a 390 x 664 phone. */}
+            <div ref={headRef}>
+              <PriceHeader result={result} calculating={calculating} delta={delta} />
+            </div>
+            {headGone && (
+              <PriceHeader result={result} calculating={calculating} delta={delta} compact />
+            )}
             <RateBar value={hourlyRate} onChange={setHourlyRate} result={result} />
             <SurveyForm survey={selected} answers={answers} set={set}
                         tier={tier} setTier={setTier} result={result}
@@ -598,98 +624,171 @@ function Chip({ active, onClick, children }) {
  * past five fields, read, and scroll back — so most people changed one thing,
  * looked, and never tried the second.
  *
- * It also used to be 146 px tall and pinned, which on a 390 x 664 phone meant
- * 218 px of permanent chrome with the app bar — a third of the screen — and
- * at mid-scroll it covered 146 px of the 328 px card underneath it. Measured,
- * both. So the tall card is gone and what stays is a band: the figure, and
- * what the last answer did to it.
+ * **Which number.** A range is honest and nobody sends a range to a customer.
+ * The figure that leads is the sum of the positions, because that is what
+ * would actually appear on the quote — the same lines the customer reads. The
+ * midpoint of the range (EUR 586 against EUR 558 here) is arithmetic with no
+ * referent: it is not what anything costs, it is the average of two guesses.
+ * The range stays, underneath, as the statement of how sure that figure is.
  *
- * The bar that used to live here is gone too. It was filled to 100 % always,
- * so it said nothing the two figures beside it did not, and it cost 30 px.
+ * **Where it sits.** A point on the span rather than a percentage alone: at
+ * 44 % this estimate is below the middle of its own range, which is a real
+ * thing to know before quoting and is exactly what a midpoint would hide.
  *
- * Keeps the last figure while the next one is in flight rather than blanking:
- * a number that disappears every time you touch a field reads as an error,
- * not as loading. The delta pill is the point of the redesign — the estimate
- * has always recalculated on its own (measured at 431 ms), but the number
- * changed silently, so nothing on screen said "that tap cost you EUR 181".
+ * **What it is made of.** Labour and material as two rows with names and
+ * amounts, reading like a quote rather than a chart, because that is the
+ * document this becomes.
+ *
+ * **Two states.** At rest it is all of the above. Once it has scrolled away
+ * it becomes a 46 px strip carrying the figure and what the last answer did
+ * to it. That is not decoration: measured on a 390 x 664 phone, the full card
+ * pinned would be 224 px of permanent chrome with the app bar — a third of
+ * the screen, and at mid-scroll it covered 146 px of the card underneath.
+ * The detail is worth having while you look at the price and worth nothing
+ * while you are answering a question.
+ *
+ * The delta pill is the point of the redesign — the estimate has always
+ * recalculated on its own (measured at 431 ms), but the number changed
+ * silently, so nothing said "that tap cost you EUR 181".
  */
-function PriceHeader({ result, calculating, delta }) {
-  const { t } = useLang();
-  const body = !result ? (
-    <Loader2 className="animate-spin" size={18} />
-  ) : (
-    <>
-      <span className="text-[11px] font-bold uppercase tracking-wider text-teal-tint shrink-0">
-        {t('est_net_short')}
-      </span>
-      <span className="font-headings font-bold text-[20px] leading-none tracking-[-.03em]
-                       tabular-nums flex-1 text-center"
-            data-testid="estimate-price-value">
-        {fmtEur(result.total_net[0])} – {fmtEur(result.total_net[1])}
-      </span>
-      {delta ? (
-        <span className="text-[12.5px] font-bold tabular-nums rounded-full bg-paper/22 px-2.5 py-1
-                         shrink-0 whitespace-nowrap" data-testid="estimate-price-delta">
-          {t(delta.key, { amount: delta.amount })}
-        </span>
-      ) : (
-        <span className="w-[18px] shrink-0 grid place-items-center">
-          {calculating && <Loader2 className="animate-spin" size={13} />}
-        </span>
-      )}
-    </>
-  );
-  /* top-[4rem]: the app bar is `sticky top-0` and 4 rem tall, so a band pinned
-     to the viewport top slid underneath it. z-20 keeps it below that bar
-     rather than fighting it. Full-bleed by negative margin so the band spans
-     the screen the way a toolbar does, instead of floating as a third card. */
-  return (
-    <div className={`sticky top-[4rem] z-20 -mx-4 px-4 py-2.5 bg-teal text-paper mb-3
-                     flex items-center gap-3 min-h-[46px]
-                     shadow-[0_4px_14px_rgba(26,58,82,.2)] transition-opacity
-                     ${calculating ? 'opacity-90' : ''}`}
-         data-testid="estimate-price-header">
-      {body}
-      {result && (
-        <p className="sr-only">
-          {t('est_range_sr', { lo: fmtEur(result.total_net[0]), hi: fmtEur(result.total_net[1]) })}
-        </p>
-      )}
-    </div>
-  );
+
+/** What the positions come to, split by what kind of work they are.
+ *
+ *  Summed from the lines rather than read from `labour`/`material`, which are
+ *  ranges over the whole model: these have to add up to the figure printed
+ *  above them, and a range cannot.
+ */
+function partsOf(result) {
+  const out = [];
+  const by = new Map();
+  for (const l of result?.lines || []) {
+    const v = l.qty * (1 + (l.waste_factor || 0)) * l.unit_price;
+    by.set(l.kind, (by.get(l.kind) || 0) + v);
+  }
+  for (const [kind, key] of [['labor', 'est_kind_labor'], ['material', 'est_kind_material'],
+                             ['other', 'est_kind_other']]) {
+    const v = by.get(kind);
+    if (v > 0.5) out.push({ kind, key, value: v });
+  }
+  return out;
 }
 
-/* What each answer did to the number — measured, not declared.
- *
- * The first version of this read `affects` from the catalogue and badged
- * anything marked `variant` as a price driver. It is not one. The estimator
- * says so in its own docstring: "Questions declared affects='variant' … are
- * recorded and attach notes, but nothing in the arithmetic reads them yet."
- * Measured on maler.innenanstrich: all five Untergrund options, Farbwechsel,
- * Nikotin and Möblierung move the total by exactly € 0, while Zustand moves
- * it by up to €307 and Zugang by up to €128. A pro told that "Rissig oder
- * abblätternd" is priced would quote a crumbling wall at the intact price.
- *
- * So the badge now comes from `answers_applied`, which is the estimator
- * reporting what it actually used, rather than from a declaration that has
- * drifted from the arithmetic. `zeit` is the case that proves the point: it
- * is declared `variant`, but it can set the Notdienst flag, and when it does
- * the estimator lists it — so it gets the price badge exactly when it earns
- * one.
- */
-const EFFECT = {
-  price: { key: 'est_effect_price', cls: 'bg-teal-tint text-teal-deep' },
-  note: { key: 'est_effect_note', cls: 'bg-cream-deep text-ink-muted' },
-};
+function PriceHeader({ result, calculating, delta, compact }) {
+  const { t } = useLang();
+  if (!result) {
+    return (
+      <div className="rounded-2xl bg-teal text-paper p-4 mb-3 min-h-[92px]
+                      flex items-center justify-center" data-testid="estimate-price-header">
+        <Loader2 className="animate-spin" size={20} />
+      </div>
+    );
+  }
+  const [lo, hi] = result.total_net;
+  const offer = result.lines_net;
+  const span = hi - lo;
+  const frac = span > 0 ? (offer - lo) / span : 0;
+  // Outside its own range is a real state, not an error: once the business's
+  // own rates price the positions, `lines_net` and `total_net` are measuring
+  // different things and the estimator says so with `rates_applied`. Pinning
+  // the marker to an end it is not at would be a small lie on the one element
+  // whose whole job is to locate the figure, so it is dropped instead.
+  const inRange = frac >= 0 && frac <= 1;
+  const pct = Math.min(100, Math.max(0, frac * 100));
+  const parts = partsOf(result);
+  const biggest = Math.max(...parts.map((p) => p.value), 1);
 
-/** Did this answer reach the total on the last calculation? */
-function effectOf(result, key) {
-  if (!result) return null;                       // nothing measured yet
-  const applied = result.answers_applied || [];
-  if (applied.includes(key)) return EFFECT.price;
-  // `zeit` is reported as `emergency` once it trips the callout tariff.
-  if (key === 'zeit' && applied.includes('emergency')) return EFFECT.price;
-  return EFFECT.note;
+  if (compact) {
+    return (
+      <div className={`sticky top-[4rem] z-20 -mx-4 px-4 py-2.5 bg-teal text-paper mb-3
+                       flex items-center gap-3 min-h-[46px]
+                       shadow-[0_4px_14px_rgba(26,58,82,.2)] transition-opacity
+                       ${calculating ? 'opacity-90' : ''}`}
+           data-testid="estimate-price-strip">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-teal-tint shrink-0">
+          {t('est_offer_price_short')}
+        </span>
+        <span className="font-headings font-bold text-[20px] leading-none tracking-[-.03em]
+                         tabular-nums flex-1 text-center">
+          {fmtEur(offer)}
+        </span>
+        {delta ? (
+          <span className="text-[12.5px] font-bold tabular-nums rounded-full bg-paper/22 px-2.5 py-1
+                           shrink-0 whitespace-nowrap" data-testid="estimate-price-delta-strip">
+            {t(delta.key, { amount: delta.amount })}
+          </span>
+        ) : (
+          <span className="w-[18px] shrink-0 grid place-items-center">
+            {calculating && <Loader2 className="animate-spin" size={13} />}
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className={`rounded-2xl bg-teal text-paper px-4 py-3.5 mb-3
+                     shadow-[0_5px_18px_rgba(26,58,82,.18)] transition-opacity
+                     ${calculating ? 'opacity-90' : ''}`}
+         data-testid="estimate-price-header">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-teal-tint">
+          {t('est_offer_price')}
+        </span>
+        {inRange ? (
+          <span className="text-[11px] font-bold tabular-nums rounded-md bg-paper/20 px-2 py-0.5
+                           shrink-0 whitespace-nowrap" data-testid="estimate-price-position">
+            {t('est_of_range', { pct: fmtNum(pct, 0) })}
+          </span>
+        ) : (
+          <span className="text-[11px] font-bold rounded-md bg-paper/20 px-2 py-0.5 shrink-0">
+            {t('est_own_rates_short')}
+          </span>
+        )}
+        {delta && (
+          <span className="text-[12.5px] font-bold tabular-nums rounded-full bg-paper/22 px-2.5 py-1
+                           shrink-0 whitespace-nowrap" data-testid="estimate-price-delta">
+            {t(delta.key, { amount: delta.amount })}
+          </span>
+        )}
+      </div>
+
+      <p className="font-headings font-bold text-[28px] leading-[1.05] tracking-[-.035em]
+                    tabular-nums mt-0.5" data-testid="estimate-price-value">
+        {fmtEur(offer)}
+      </p>
+
+      {/* The span, with the figure's place on it. */}
+      <div className="relative h-[22px] mt-2" aria-hidden="true">
+        <span className="absolute left-0 right-0 top-[8px] h-[5px] rounded-full bg-paper/25" />
+        {inRange && (
+          <span className="absolute top-[1px] w-5 h-5 rounded-full bg-paper border-[5px] border-teal
+                           shadow-[0_0_0_2px_theme(colors.paper)] -translate-x-1/2"
+                style={{ left: `${pct}%` }} data-testid="estimate-price-dot" />
+        )}
+      </div>
+      <div className="flex justify-between text-[11px] text-teal-tint tabular-nums -mt-0.5">
+        <span>{fmtEur(lo)}</span><span>{fmtEur(hi)}</span>
+      </div>
+
+      {/* What it is made of, as rows rather than a split bar. */}
+      <div className="mt-2.5 space-y-1" data-testid="estimate-price-parts">
+        {parts.map((p) => (
+          <div key={p.kind} className="flex items-center gap-2.5">
+            <span className="text-[11px] font-bold text-teal-tint w-[62px] shrink-0">{t(p.key)}</span>
+            <span className="h-[7px] rounded-full bg-paper/85 min-w-[6px]"
+                  style={{ width: `${(p.value / biggest) * 62}%` }} aria-hidden="true" />
+            <span className="ml-auto text-[11.5px] font-semibold tabular-nums text-teal-tint">
+              {fmtEur(p.value)}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <p className="sr-only">
+        {t('est_range_sr', { lo: fmtEur(lo), hi: fmtEur(hi) })}
+      </p>
+    </div>
+  );
 }
 
 /** The pro's own hourly rate, at the top, feeding the calculation.
@@ -1141,6 +1240,24 @@ function Tally({ result, t }) {
         <span className="text-[12px] font-bold text-ink">{t('est_net_estimated')}</span>
         <span className="font-headings font-bold text-[16px] tabular-nums">
           {fmtEur(lo)} – {fmtEur(hi)}
+        </span>
+      </div>
+      {/* The header leads with the positions total and this list ends on the
+          range, and without a line joining them the screen shows two different
+          figures for one job and never says how they relate.
+          They are different measurements, deliberately: the rows above sum to
+          the range exactly — that is what makes this list worth printing — and
+          the positions are priced at their own unit prices. The midpoint of a
+          range is not the range of midpoints. So both are stated, and named. */}
+      <div className="flex justify-between items-baseline gap-3 mt-1.5 pt-1.5
+                      border-t border-dashed border-sm-border">
+        <span className="text-[12px] text-ink-soft">
+          {t('est_offer_price')}
+          <small className="block text-[10.5px] text-ink-faint">{t('est_offer_price_sub')}</small>
+        </span>
+        <span className="font-headings font-bold text-[16px] tabular-nums text-teal-deep"
+              data-testid="estimate-tally-offer">
+          {fmtEur(result.lines_net)}
         </span>
       </div>
     </div>
