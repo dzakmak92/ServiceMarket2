@@ -19,6 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from services import estimator as E  # noqa: E402
+from services import catalogue_ui as U  # noqa: E402
 
 fails = []
 
@@ -222,6 +223,42 @@ HONEST = {"abdichtung_nassbereich", "verschnitt_muster", "altgeraet_entsorgung",
 overclaim = [k for k, n in cat["notes"].items()
              if INCLUSION.search(n["de"]) and k not in HONEST]
 check(not overclaim, f"no note promises unpriced work: {overclaim}")
+
+print("\n── the help line agrees with the arithmetic ──")
+# The whole point of a help line is that a pro can tell which taps matter. Ten
+# of them said "der Preis rechnet das noch nicht mit" and were right when they
+# were written; the moment those answers were priced, the same sentence became
+# the opposite of the truth — and a sentence that lies about the price is worse
+# than none, which is the documented fallback.
+DENIES = ("noch nicht", "ändert sich nicht", "not yet", "does not change",
+          "henüz", "aún no", "no cambia", "değişmez")
+stale = []
+for j in JOBS:
+    for q in E.survey(j["key"])["form"]:
+        priced = bool(q.get("uplift") or q.get("material_uplift")
+                      or q.get("drops") or q.get("drops_disposal"))
+        if not priced:
+            continue
+        for lang in ("de", "en", "tr", "es"):
+            txt = U.decorate_question(q, lang).get("help") or ""
+            if any(w in txt for w in DENIES):
+                stale.append(f"{j['key']}/{q['key']} [{lang}]: {txt[:60]}")
+check(not stale,
+      f"no priced question's help denies it ({len(stale)}): {stale[:3]}")
+
+# And the classification the screen renders has to follow the money too.
+mislabelled = []
+for j in JOBS:
+    for q in E.survey(j["key"])["form"]:
+        priced = bool(q.get("uplift") or q.get("material_uplift")
+                      or q.get("drops") or q.get("drops_disposal"))
+        effect = U.decorate_question(q)["price_effect"]
+        if priced and effect == "note":
+            mislabelled.append(f"{j['key']}/{q['key']}: priced but labelled a note")
+        if not priced and effect == "scope" and q["affects"] == "variant":
+            mislabelled.append(f"{j['key']}/{q['key']}: free but labelled scope")
+check(not mislabelled,
+      f"price_effect follows the money ({len(mislabelled)}): {mislabelled[:3]}")
 
 print("\n── the pro's own rate wins ──")
 own = E.estimate(key, {"qty": 60}, rates={"maler.anstrich2": 9.5})

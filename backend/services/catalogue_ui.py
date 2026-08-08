@@ -26,16 +26,24 @@ containing everything. Only the seven trades with enough templates to need
 chunking have sections; below about ten a flat list is faster to read than a
 list with headings in it.
 
-**FIELD_HELP** — one line under a form field saying what it is for. The
-guided forms already have a `help_de` slot on every question and it is empty
-on 407 of the 417 questions in the catalogue, which is why the survey reads
-as an interrogation: five questions, no indication which of them moves the
-money and which is only recorded. `affects` already answers that — it is
-just never shown.
+**FIELD_HELP** — one line under a form field saying what it is for, so the
+survey does not read as an interrogation: five questions with no indication
+which of them moves the money.
 
 The wording is mine, not sourced. It describes what the estimator does with
 each answer, which is checkable against the code; it does not make claims
 about trade practice that a practising pro has not confirmed.
+
+Checkable, and checked. Ten of these lines used to end "der Preis rechnet das
+noch nicht mit", which was true when they were written and became the exact
+opposite of the truth the moment those answers were priced. A help line that
+lies about the price is worse than no help line, and no help line is the
+documented fallback — so `test_estimator.py` fails if any priced question's
+help still denies it, in any of the four languages.
+
+**AXIS_HELP_I18N** — the same, for the two questions whose wording depends on
+the trade. Their German lives in `tools/catalogue/axes.py` beside the option
+labels it explains, so the sentence and the options cannot drift apart.
 """
 from __future__ import annotations
 
@@ -274,30 +282,30 @@ FIELD_HELP: dict[str, str] = {
     "entfernung": "Je weiter, desto mehr Leitung und Grabarbeit.",
 
     # Common variant questions: they pick different work, not a surcharge.
-    "untergrund": "Wird im Angebot vermerkt. Der Preis rechnet den Untergrund noch nicht mit — bei rissigem oder abblätterndem Bestand Aufschlag selbst ansetzen.",
-    "untergrund_boden": "Wird vermerkt. Alter Beton braucht meist einen Schleifgang mehr — den rechnet die Schätzung noch nicht mit.",
-    "untergrund_aussen": "Wird im Angebot vermerkt. In den Preis fließt der Untergrund noch nicht ein.",
-    "verlegung": "Wird vermerkt. Diagonal oder im Verband heißt mehr Verschnitt — noch nicht eingerechnet.",
-    "verlegeart": "Wird vermerkt. Mehr Verschnitt ist noch nicht eingerechnet.",
-    "material": "Wird im Angebot vermerkt. Der Materialpreis in der Schätzung ist ein Mittelwert für diese Arbeit.",
-    "typ": "Wird im Angebot vermerkt.",
-    "umfang": "Wird im Angebot vermerkt.",
+    "untergrund": "Der größte Hebel nach der Menge. Leimfarbe, altes Holz oder Bestandsfliesen kosten eine Vorarbeit, die jetzt im Preis steht.",
+    "untergrund_boden": "Alter Beton braucht einen Schleifgang mehr, eine Altbeschichtung muss ganz herunter — beides ist eingerechnet.",
+    "untergrund_aussen": "Kreidender Putz braucht eine festigende Grundierung. Der Aufschlag steckt im Preis.",
+    "verlegung": "Vollflächig verklebt ist deutlich mehr Arbeit und mehr Material als lose verlegt. Beides ist eingerechnet.",
+    "verlegeart": "Diagonal und Muster heißen mehr Schnitte und mehr Verschnitt. Beides ist eingerechnet.",
+    "material": "Ändert den Materialanteil der Schätzung — Naturstein und Glas liegen deutlich über der Standardausführung.",
+    "typ": "Ändert die Arbeitszeit: ein Rippenheizkörper hat ein Vielfaches der Fläche eines Flachheizkörpers.",
+    "umfang": "Bestimmt, wie viel der Fläche wirklich angefasst wird.",
     "groesse": "Der größte Hebel im Preis.",
-    "hoehe": "Wird vermerkt. Mehr Höhe heißt mehr Material und Trocknungszeit — noch nicht eingerechnet.",
-    "raum": "Wird im Angebot vermerkt.",
+    "hoehe": "Mehr Höhe heißt mehr Material, mehr Zeit und ein anderer Zugang. Eingerechnet.",
+    "raum": "Bad und Außenbereich brauchen Abdichtung bzw. Frostsicherheit und mehr Zuschnitt um Einbauten.",
     "zeit": "Abends, nachts und am Wochenende gilt der Notdiensttarif.",
-    "leitungen": "Wird vermerkt. Stemmen und Verputzen sind in der Schätzung noch nicht enthalten.",
+    "leitungen": "Unbekannte Erdleitungen heißen vorsichtiger graben. Der Zuschlag ist enthalten; Stemmen und Verputzen sind es nicht.",
 
     # Recorded only: these produce a note on the quote, not a surcharge.
     "baujahr": "Vor 1990 kann Asbest im Spiel sein — dann kommt ein Hinweis ins Angebot.",
     "belag_bauseits": "Beigestelltes Material wird nicht berechnet, aber auch nicht gewährleistet.",
-    "moebel": "Wird im Angebot vermerkt, damit der Kunde weiß, was er räumen muss.",
+    "moebel": "Voll möbliert heißt räumen, abdecken und täglich wieder aufräumen — jetzt im Preis, und im Angebot vermerkt.",
     "fussbodenheizung": "Erzeugt einen Hinweis im Angebot — der Preis ändert sich nicht.",
     "geruest": "Wird vermerkt. Ein Gerüst wird gesondert angeboten.",
-    "altanlage": "Wird im Angebot vermerkt.",
+    "altanlage": "Eine klassische Nullung ohne Schutzleiter bedeutet Mehrarbeit an jedem Punkt. Eingerechnet.",
     "tueren_kuerzen": "Erzeugt einen Hinweis im Angebot — der Preis ändert sich nicht.",
     "absperrventil": "Ohne funktionierendes Ventil kommt das Abstellen des Strangs dazu.",
-    "feuchte": "Erzeugt einen Hinweis im Angebot — der Preis ändert sich nicht.",
+    "feuchte": "Aufsteigende Feuchte verlangt eine Sperrgrundierung — Arbeit und Material sind enthalten.",
     "fi_vorhanden": "Ohne FI entspricht die Anlage nicht dem Stand der Technik. Kommt als Hinweis ins Angebot.",
     "platz": "Ohne Platz im Verteiler wird ein größerer nötig — das wird gesondert angeboten.",
     "verteiler_platz": "Ohne Platz im Verteiler wird ein größerer nötig — das wird gesondert angeboten.",
@@ -327,91 +335,80 @@ FIELD_HELP_I18N: dict[str, dict[str, str]] = {
                    "tr": "Mesafe arttıkça kablo ve kazı artar.",
                    "es": "Cuanto más lejos, más cable y más zanja."},
     "untergrund": {
-        "en": 'Noted on the quote. The price does not yet account for the substrate — add for cracked or flaking work yourself.',
-        "tr": 'Teklife not edilir. Fiyat zemini henüz hesaba katmıyor — çatlak veya dökülen yüzey için kendiniz ekleyin.',
-        "es": 'Se anota. El precio aún no tiene en cuenta el soporte: añade tú el recargo si está agrietado o descascarillado.',
+        "en": "The biggest lever after quantity. Distemper, old timber or existing tiles each cost preparation, and that is now in the price.",
+        "tr": "Miktardan sonraki en büyük etken. Tutkal boya, eski ahşap veya mevcut fayans hazırlık gerektirir; artık fiyatta.",
+        "es": "La mayor palanca tras la cantidad. La pintura al temple, la madera vieja o el alicatado existente exigen preparación, y ahora está en el precio.",
     },
     "untergrund_boden": {
-        "en": 'Noted. Old concrete usually needs one more grinding pass — not yet in the price.',
-        "tr": 'Not edilir. Eski beton genelde bir tur daha zımpara ister — fiyata henüz dahil değil.',
-        "es": 'Se anota. El hormigón viejo suele necesitar un lijado más, aún no incluido en el precio.',
+        "en": "Old concrete needs another grinding pass and an existing coating has to come off entirely. Both are priced.",
+        "tr": "Eski beton bir tur daha zımpara, mevcut kaplama ise tamamen sökülmek ister. İkisi de hesapta.",
+        "es": "El hormigón viejo pide otra pasada de lijado y un revestimiento existente hay que retirarlo entero. Ambos están calculados.",
     },
     "untergrund_aussen": {
-        "en": 'Noted on the quote. The substrate does not yet feed into the price.',
-        "tr": 'Teklife not edilir. Zemin henüz fiyata yansımıyor.',
-        "es": 'Se anota. El soporte todavía no influye en el precio.',
+        "en": "Chalking render needs a consolidating primer. The surcharge is in the price.",
+        "tr": "Tebeşirlenen sıva sağlamlaştırıcı astar ister. Farkı fiyatta.",
+        "es": "El revoco pulverulento necesita una imprimación consolidante. El recargo está en el precio.",
     },
     "verlegung": {
-        "en": 'Noted. Diagonal or bonded means more waste — not yet counted.',
-        "tr": 'Not edilir. Çapraz veya şaşırtmalı daha çok fire demek — henüz sayılmıyor.',
-        "es": 'Se anota. En diagonal o a matajunta hay más desperdicio, aún no contabilizado.',
+        "en": "Fully bonded is considerably more work and more material than loose-laid. Both are priced.",
+        "tr": "Tam yapıştırma, serbest sermeye göre belirgin biçimde daha fazla işçilik ve malzeme. İkisi de hesapta.",
+        "es": "Encolado a toda superficie es bastante más trabajo y material que colocado suelto. Ambos están calculados.",
     },
     "verlegeart": {
-        "en": 'Noted. The extra waste is not yet counted.',
-        "tr": 'Not edilir. Ek fire henüz sayılmıyor.',
-        "es": 'Se anota. El desperdicio extra aún no se cuenta.',
+        "en": "Diagonal and patterned laying mean more cuts and more waste. Both are priced.",
+        "tr": "Diyagonal ve desenli döşeme daha çok kesim ve fire demek. İkisi de hesapta.",
+        "es": "En diagonal y con dibujo hay más cortes y más merma. Ambos están calculados.",
     },
-    "material": {
-        "en": 'Noted on the quote. The material figure is an average for this work.',
-        "tr": 'Teklife not edilir. Malzeme tutarı bu iş için ortalamadır.',
-        "es": 'Se anota. El importe de material es un promedio para este trabajo.',
-    },
-    "typ": {
-        "en": 'Noted on the quote.',
-        "tr": 'Teklife not edilir.',
-        "es": 'Se anota en el presupuesto.',
-    },
-    "umfang": {
-        "en": 'Noted on the quote.',
-        "tr": 'Teklife not edilir.',
-        "es": 'Se anota en el presupuesto.',
-    },
+    "material": {"en": "Changes the material share — natural stone and glass sit well above the standard option.",
+                "tr": "Malzeme payını değiştirir — doğal taş ve cam standardın belirgin üstünde.",
+                "es": "Cambia la parte de material: la piedra natural y el vidrio están muy por encima del estándar."},
+    "typ": {"en": "Changes the labour: a ribbed radiator has several times the surface of a flat panel.",
+           "tr": "İşçiliği değiştirir: dilimli radyatörün yüzeyi panelin kat kat fazlası.",
+           "es": "Cambia la mano de obra: un radiador de elementos tiene varias veces la superficie de uno de panel."},
+    "umfang": {"en": "Decides how much of the area is actually touched.",
+              "tr": "Alanın ne kadarına gerçekten dokunulduğunu belirler.",
+              "es": "Decide cuánta superficie se toca realmente."},
     "groesse": {"en": "The biggest lever on the price.", "tr": "Fiyattaki en büyük etken.",
                 "es": "La mayor palanca del precio."},
-    "hoehe": {
-        "en": 'Noted. More height means more material and drying time — not yet in the price.',
-        "tr": 'Not edilir. Yükseklik malzeme ve kuruma süresi demek — fiyata henüz dahil değil.',
-        "es": 'Se anota. Más altura implica más material y secado, aún no en el precio.',
-    },
-    "raum": {
-        "en": 'Noted on the quote.',
-        "tr": 'Teklife not edilir.',
-        "es": 'Se anota en el presupuesto.',
-    },
+    "hoehe": {"en": "More height means more material, more time and a different way up. Priced.",
+             "tr": "Daha fazla yükseklik: daha çok malzeme, daha çok süre, farklı erişim. Hesapta.",
+             "es": "Más altura significa más material, más tiempo y otro acceso. Calculado."},
+    "raum": {"en": "Bathrooms and outdoor areas need sealing or frost detailing and more cutting around fittings.",
+            "tr": "Banyo ve dış alan yalıtım ya da dona dayanıklılık ve daha çok kesim ister.",
+            "es": "Baños y exteriores exigen impermeabilización o resistencia a heladas y más cortes alrededor de los aparatos."},
     "zeit": {"en": "Evenings, nights and weekends are charged at the callout rate.",
              "tr": "Akşam, gece ve hafta sonu acil tarifesi geçerlidir.",
              "es": "Tardes, noches y fines de semana van a tarifa de urgencia."},
-    "leitungen": {
-        "en": 'Noted. Chasing and plastering are not yet included in the estimate.',
-        "tr": 'Not edilir. Kırım ve sıva tahmine henüz dahil değil.',
-        "es": 'Se anota. Las rozas y el enlucido aún no están incluidos.',
-    },
+    "leitungen": {"en": "Unknown buried services mean digging carefully. That is priced; chasing and making good are not.",
+                 "tr": "Bilinmeyen yeraltı hatları dikkatli kazı demek. Bu hesapta; kırım ve sıva değil.",
+                 "es": "Conducciones enterradas desconocidas obligan a excavar con cuidado. Eso está calculado; rozar y repasar no."},
     "baujahr": {"en": "Before 1990 asbestos is possible — that puts a note on the quote.",
                 "tr": "1990 öncesinde asbest olabilir — teklife bir not eklenir.",
                 "es": "Antes de 1990 puede haber amianto: se añade un aviso al presupuesto."},
     "belag_bauseits": {"en": "Supplied material is not charged — and not warranted either.",
                        "tr": "Müşterinin verdiği malzeme ücretlendirilmez, garanti de edilmez.",
                        "es": "El material aportado no se cobra — ni se garantiza."},
-    "moebel": {"en": "Noted on the quote so the customer knows what to clear.",
-               "tr": "Müşterinin neyi boşaltacağını bilmesi için teklife not düşülür.",
-               "es": "Se anota en el presupuesto para que el cliente sepa qué retirar."},
+    "moebel": {"en": "Fully furnished means clearing, covering and tidying again every day — now in the price, and noted on the quote.",
+              "tr": "Tam eşyalı: boşaltma, örtme ve her gün yeniden toplama — artık fiyatta ve teklifte belirtiliyor.",
+              "es": "Totalmente amueblado significa despejar, cubrir y volver a recoger cada día: ahora en el precio y anotado en la oferta."},
     "fussbodenheizung": {"en": "Adds a note to the quote — the price does not change.",
                          "tr": "Teklife not ekler — fiyat değişmez.",
                          "es": "Añade un aviso al presupuesto; el precio no cambia."},
     "geruest": {"en": "Noted. Scaffolding is quoted separately.",
                 "tr": "Not edilir. İskele ayrıca teklif edilir.",
                 "es": "Se anota. El andamio se presupuesta aparte."},
-    "altanlage": {"en": "Noted on the quote.", "tr": "Teklife not edilir.",
-                  "es": "Se anota en el presupuesto."},
+    "altanlage": {"en": "A classic unearthed installation means extra work at every point. Priced.",
+                 "tr": "Topraklamasız klasik tesisat her noktada ek iş demek. Hesapta.",
+                 "es": "Una instalación clásica sin toma de tierra da trabajo extra en cada punto. Calculado."},
     "tueren_kuerzen": {"en": "Adds a note to the quote — the price does not change.",
                        "tr": "Teklife not ekler — fiyat değişmez.",
                        "es": "Añade un aviso al presupuesto; el precio no cambia."},
     "absperrventil": {"en": "Without a working valve, shutting off the riser is added.",
                       "tr": "Çalışan vana yoksa kolonun kapatılması eklenir.",
                       "es": "Sin llave de corte funcional se añade cerrar el montante."},
-    "feuchte": {"en": "Adds a note to the quote — the price does not change.",
-                "tr": "Teklife not ekler — fiyat değişmez.",
-                "es": "Añade un aviso al presupuesto; el precio no cambia."},
+    "feuchte": {"en": "Rising damp calls for a barrier primer — labour and material are included.",
+               "tr": "Yükselen nem bariyer astarı ister — işçilik ve malzeme dahil.",
+               "es": "La humedad por capilaridad exige una imprimación barrera: mano de obra y material incluidos."},
     "fi_vorhanden": {"en": "Without an RCD the installation is not to current standard. Noted on the quote.",
                      "tr": "Kaçak akım rölesi yoksa tesisat güncel standarda uygun değildir. Teklife not edilir.",
                      "es": "Sin diferencial la instalación no cumple la norma actual. Se anota."},
@@ -458,9 +455,9 @@ FIELD_HELP_NOT_QTY: dict[str, str] = {
 QTY_HELP: dict[str, dict[str, str]] = {
     "typical": {
         "de": "Typisch {lo}–{hi} {unit}",
-        "en": "Typically {lo}–{hi} {unit}",
-        "tr": "Tipik olarak {lo}–{hi} {unit}",
-        "es": "Normalmente {lo}–{hi} {unit}",
+        "en": "Unknown buried services mean digging carefully. That is priced; chasing and making good are not.",
+        "tr": "Bilinmeyen yeraltı hatları dikkatli kazı demek. Bu hesapta; kırım ve sıva değil.",
+        "es": "Conducciones enterradas desconocidas obligan a excavar con cuidado. Eso está calculado; rozar y repasar no.",
     },
     "whole": {
         "de": "Preis gilt je {unit}",
