@@ -32,6 +32,15 @@ const KEY = {
 
 const round = (v) => (typeof v === 'number' ? Math.round(v) : null);
 
+/* A local calendar day as the forecast names it. `toISOString()` would be
+   wrong here: it converts to UTC, and east of Greenwich local midnight is the
+   previous day — the card would show Tuesday's weather all Wednesday
+   morning. */
+const keyOf = (v) => {
+  const d = v instanceof Date ? v : new Date(v);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 /* Every second hour across the working day: eight columns, which is what
    stays legible at 390 px without the labels touching. */
 const HOUR_STEP = 2;
@@ -144,10 +153,13 @@ function HourStrip({ hours, t }) {
  */
 export default function WeatherCard({
   weather, status = 'ok', t, compact = false, lang = 'de-AT',
-  outlook = false, hours = false,
+  outlook = false, hours = false, date = null,
 }) {
   /* Today, always, on every arrival. The pro opens the calendar to work out
-     today; looking ahead is the deliberate second act. */
+     today; looking ahead is the deliberate second act.
+     Ignored entirely when `date` is given: the calendar's own selection then
+     drives the card, and a second picker inside it could disagree with the
+     grid behind it. */
   const [sel, setSel] = useState(0);
   const dayCount = weather?.days?.length || 0;
   useEffect(() => { setSel(0); }, [weather?.place, dayCount]);
@@ -186,12 +198,46 @@ export default function WeatherCard({
   }
 
   const list = weather.days || [];
+
+  /* Which day the card is showing.
+   *
+   * When the calendar passes a date, that is the answer and there is nothing
+   * to negotiate: the card is a read-out of the day the pro selected, not a
+   * separate control. When it does not, the card keeps its own selection, as
+   * it always has.
+   *
+   * A date past the end of the forecast is its own state, not the nearest
+   * day. Falling back to the last one would put Thursday's temperature under
+   * a heading that says the 20th, which is worse than saying nothing —
+   * a pro plans an outdoor job on that number. */
+  const wanted = date ? keyOf(date) : null;
+  const found = wanted ? list.findIndex((d) => d.date === wanted) : -1;
+  const beyond = !!wanted && found < 0;
   /* A selection can outlive the forecast it was made against — a refresh
      that comes back with fewer days must not leave the card reading an
      index that no longer exists. */
-  const idx = Math.min(sel, Math.max(0, list.length - 1));
+  const idx = wanted ? found : Math.min(sel, Math.max(0, list.length - 1));
   const day = list[idx];
-  const isToday = idx === 0;
+  const isToday = !beyond && day?.date === keyOf(new Date());
+
+  if (beyond) {
+    const last = list[list.length - 1];
+    return (
+      <div className={`rounded-[14px] border border-sky-tint bg-sky-pale flex items-center gap-2.5
+                       ${compact ? 'px-3 py-2 mb-2.5' : 'px-3.5 py-2.5 mb-3'}`}
+           data-testid="wx-beyond" data-day={wanted}>
+        <CloudOff size={16} className="text-sky-deep flex-none" />
+        <p className="flex-1 font-bold text-[0.71875rem] text-ink-muted leading-snug">
+          {t('wx_beyond', {
+            date: last?.date
+              ? new Date(`${last.date}T12:00:00`).toLocaleDateString(lang,
+                  { weekday: 'long', day: 'numeric', month: 'long' })
+              : '',
+          })}
+        </p>
+      </div>
+    );
+  }
 
   /* "Now" only means anything today. On Thursday the honest headline number
      is Thursday's high, not this minute's temperature. */

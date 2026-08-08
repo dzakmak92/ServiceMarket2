@@ -118,7 +118,13 @@ export default function WeekScheduleView({
           below: "will it rain on Thursday" is a question you ask while
           looking at Monday's work, and forcing the two to move together
           would mean losing your place in the week to find out. */}
-      <WeatherCard weather={weather} status={wxStatus} t={t} lang={lang} outlook />
+      {/* The same card as the day view, showing the day that is selected in
+          the grid. Not the seven-day picker it used to be: with the calendar
+          already choosing a day, a second selector inside the card is a
+          second answer to the same question, and the two can disagree in
+          front of the pro. */}
+      <WeatherCard weather={weather} status={wxStatus} t={t} lang={lang}
+                   hours date={selected} />
 
       {/* Wraps rather than squeezing: three tiles across 390 px is fine at
           normal text and impossible at 200%, where each one needs more than

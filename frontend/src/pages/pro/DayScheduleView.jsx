@@ -570,8 +570,11 @@ export default function DayScheduleView({ date, onDateChange, proName }) {
           screen — which is worse than showing nothing. */}
       {/* The hourly strip, not the seven-day row: this view is one day, and
           it already has a date navigator directly above the card. */}
-      {isToday && <WeatherCard weather={weather} status={wxStatus} t={t}
-                               lang={dateLocale(lang)} hours />}
+      {/* Every day, not only today. The card was gated on `isToday`, so
+          stepping to tomorrow made the weather vanish rather than follow —
+          which is the one direction a pro looks when planning outdoor work. */}
+      <WeatherCard weather={weather} status={wxStatus} t={t}
+                   lang={dateLocale(lang)} hours date={date} />
       {/* Before the rail, not after: a failed load draws a single empty
           08:00–20:00 slot that reads as a completely free day, and that is
           the thing a pro would act on. */}

@@ -148,10 +148,12 @@ export default function MonthScheduleView({
   return (
     <div data-testid="month-view">
       {failed && <LoadFailed onRetry={load} t={t} />}
-      {/* The week and the month look ahead, so the card does too. The
-          day view does not — it has a date navigator of its own, and two
-          ways to change the day inside one screen can disagree. */}
-      <WeatherCard weather={weather} status={wxStatus} t={t} lang={lang} outlook />
+      {/* One card in all three views, showing the day the grid has selected.
+          It used to be a seven-day picker here and an hourly read-out on the
+          day view — two different cards for the same information, and neither
+          followed the date the pro had just tapped. */}
+      <WeatherCard weather={weather} status={wxStatus} t={t} lang={lang}
+                   hours date={selected} />
 
       {/* Wraps rather than squeezing: three tiles across 390 px is fine at
           normal text and impossible at 200%, where each one needs more than
