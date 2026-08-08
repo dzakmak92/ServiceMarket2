@@ -24,28 +24,28 @@ export const STAGES = [
   {
     key: 'kalkulation', to: '/estimate', icon: Calculator,
     labelKey: 'stage_kalkulation', unitKey: 'stage_kalkulation_unit',
-    fill: 'bg-amber-tint text-on-amber',
+    fill: 'bg-stage-w1 text-on-amber',
   },
   {
     key: 'angebot', to: '/quotes', icon: FileText,
     labelKey: 'stage_angebot', unitKey: 'stage_angebot_unit',
-    fill: 'bg-amber text-on-amber',
+    fill: 'bg-stage-w2 text-on-amber',
   },
   {
     key: 'auftrag', to: '/projects', icon: Handshake,
     labelKey: 'stage_auftrag', unitKey: 'stage_auftrag_unit',
-    fill: 'bg-amber-deep text-on-amber',
+    fill: 'bg-stage-w3 text-on-amber',
   },
   // ── rechts: den Auftrag liefern ──────────────────────────────────
   {
     key: 'projekt', to: '/projects?mode=project', icon: Building2,
     labelKey: 'stage_projekt', unitKey: 'stage_projekt_unit',
-    fill: 'bg-teal-deep text-paper',
+    fill: 'bg-stage-c1 text-ink',
   },
   {
     key: 'wartung', to: '/recurring', icon: Wrench,
     labelKey: 'stage_wartung', unitKey: 'stage_wartung_unit',
-    fill: 'bg-teal text-paper',
+    fill: 'bg-stage-c2 text-ink',
   },
   {
     // Getting paid is the end of the chain, so it closes the right column.
@@ -54,6 +54,6 @@ export const STAGES = [
     // and the count is money issued and not yet in the bank.
     key: 'rechnung', to: '/my-invoices', icon: Receipt,
     labelKey: 'stage_rechnung', unitKey: 'stage_rechnung_unit',
-    fill: 'bg-teal-tint text-ink',
+    fill: 'bg-stage-c3 text-ink',
   },
 ];

@@ -124,8 +124,8 @@ export default function ProHomePage() {
         {/* ── Als Nächstes ───────────────────────────────────────── */}
         <Link
           to={focus.to}
-          className="block bg-teal text-paper rounded-[18px] p-5 mt-1
-                     focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+          className="block bg-focus text-paper rounded-[18px] p-5 mt-1
+                     focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus/40"
           data-testid="home-focus"
         >
           <p className="text-[10.5px] uppercase tracking-[.13em] font-bold text-paper/70">
@@ -135,7 +135,7 @@ export default function ProHomePage() {
             {focus.title}
           </p>
           {focus.sub && <p className="text-sm text-paper/80 mt-1">{focus.sub}</p>}
-          <span className="mt-3 flex items-center justify-center gap-1.5 bg-amber text-on-amber
+          <span className="mt-3 flex items-center justify-center gap-1.5 bg-focus-cta text-on-amber
                            rounded-xl py-3 font-headings font-bold text-sm">
             {focus.cta} <ArrowRight size={15} />
           </span>

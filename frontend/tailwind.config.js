@@ -49,6 +49,28 @@ module.exports = {
         // blue navy and goes muddy on orange; this is the same hue family as
         // the amber itself, darkened. Named for its job, not its colour.
         'on-amber': '#3a2a08',
+        // The home screen's six workflow tiles and the focus card above them.
+        //
+        // Their own family, not `amber` and `teal`, because those two are the
+        // brand: they colour every button, the calendar, the weather card and
+        // the quote header. The tiles were drawn straight from them at full
+        // saturation, so six saturated blocks sat directly under a saturated
+        // focus card and nothing on the screen led. Desaturating the brand to
+        // fix that would have repainted the whole app.
+        //
+        // So the ramps below are the brand's two hues at roughly 40% of their
+        // chroma — still recognisably warm-left and cool-right, still running
+        // light to dark down each column, but reading as card stock rather
+        // than as signal. `warm` takes `on-amber` for text and `cool` takes
+        // `ink`; both were checked at 4.87:1 or better on their own fill,
+        // which is why no new text colour was needed.
+        stage: {
+          w1: '#f5ecdc', w2: '#e9d8ba', w3: '#d9c39c',
+          c1: '#93aab0', c2: '#b8cacd', c3: '#dde6e7',
+        },
+        // The focus card. Deeper than `teal` so it outranks every tile
+        // beneath it, and its own token so the brand teal is left alone.
+        focus: { DEFAULT: '#24525f', cta: '#dfa042' },
         'green-pos': '#4a8b3f',
         'red-warn': '#c14655',
         'sm-border': '#f0e3c8',
