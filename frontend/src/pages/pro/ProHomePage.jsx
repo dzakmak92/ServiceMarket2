@@ -158,7 +158,7 @@ export default function ProHomePage() {
               <>
                 <Icon
                   size={50} strokeWidth={1.7} aria-hidden="true"
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 opacity-[.22]
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 opacity-[.40]
                              pointer-events-none"
                 />
                 <span className="relative font-headings font-bold text-[14.5px]
