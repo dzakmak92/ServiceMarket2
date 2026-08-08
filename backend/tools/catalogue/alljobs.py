@@ -1,6 +1,7 @@
 import sys; sys.path.insert(0, '.')
 import axes
 import pricing
+from extra_forms import EXTRA_FORMS
 from schema import validate_questions
 from maler_deep import MALER_DEEP
 from boden_deep import BODEN_DEEP
@@ -61,6 +62,19 @@ for j in ALL_JOBS:
         j.guided_form = list(_FORMS[j.key])
 _unplaced = sorted(set(_FORMS) - {j.key for j in ALL_JOBS})
 assert not _unplaced, f"forms written for jobs that do not exist: {_unplaced}"
+
+# The questions the thin templates were missing — appended rather than
+# replacing, because what those forms had was right, there was just not enough
+# of it. See `extra_forms.py` for the pattern they all shared.
+for j in ALL_JOBS:
+    extra = EXTRA_FORMS.get(j.key)
+    if extra:
+        have = {q.key for q in j.guided_form}
+        clash = have & {q.key for q in extra}
+        assert not clash, f"{j.key}: extra form re-asks {sorted(clash)}"
+        j.guided_form = list(j.guided_form) + list(extra)
+_unplaced = sorted(set(EXTRA_FORMS) - {j.key for j in ALL_JOBS})
+assert not _unplaced, f"extra forms for jobs that do not exist: {_unplaced}"
 
 # What each answer costs. Assigned centrally for the same reason the axes are:
 # the tables are worth more when the whole trade can be read down one column

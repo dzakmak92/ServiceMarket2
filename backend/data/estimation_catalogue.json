@@ -3585,6 +3585,26 @@
           "material_uplift": {},
           "drops": {},
           "drops_disposal": {}
+        },
+        {
+          "key": "demontage",
+          "label_de": "Heizkörper abnehmen",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": false,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "True": [
+              0.3,
+              0.6
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -4594,6 +4614,52 @@
           "material_uplift": {},
           "drops": {},
           "drops_disposal": {}
+        },
+        {
+          "key": "breite",
+          "label_de": "Rissbreite",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "bis_1",
+              "Bis 1 mm"
+            ],
+            [
+              "bis_3",
+              "1 bis 3 mm"
+            ],
+            [
+              "ueber_3",
+              "Über 3 mm"
+            ]
+          ],
+          "affects": "variant",
+          "default": "bis_1",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "bis_3": [
+              0.25,
+              0.5
+            ],
+            "ueber_3": [
+              0.6,
+              1.2
+            ]
+          },
+          "material_uplift": {
+            "bis_3": [
+              0.2,
+              0.45
+            ],
+            "ueber_3": [
+              0.5,
+              1.1
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -5070,6 +5136,68 @@
           "material_uplift": {},
           "drops": {},
           "drops_disposal": {}
+        },
+        {
+          "key": "verfahren",
+          "label_de": "Verfahren",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "niederdruck",
+              "Niederdruck mit Reiniger"
+            ],
+            [
+              "hochdruck",
+              "Hochdruck"
+            ],
+            [
+              "heisswasser",
+              "Heißwasser oder Dampf"
+            ]
+          ],
+          "affects": "variant",
+          "default": "niederdruck",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "hochdruck": [
+              -0.1,
+              -0.05
+            ],
+            "heisswasser": [
+              0.25,
+              0.5
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "impraegnierung",
+          "label_de": "Imprägnierung im Anschluss",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": true,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "False": [
+              -0.25,
+              -0.15
+            ]
+          },
+          "material_uplift": {
+            "False": [
+              -0.45,
+              -0.3
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -5523,6 +5651,77 @@
           "material_uplift": {},
           "drops": {},
           "drops_disposal": {}
+        },
+        {
+          "key": "bauteil",
+          "label_de": "Bauteil",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "zaun",
+              "Zaun oder Sichtschutz"
+            ],
+            [
+              "fassade",
+              "Holzfassade"
+            ],
+            [
+              "carport",
+              "Carport oder Gartenhaus"
+            ]
+          ],
+          "affects": "variant",
+          "default": "fassade",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "zaun": [
+              0.15,
+              0.35
+            ],
+            "carport": [
+              0.1,
+              0.25
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "anstriche",
+          "label_de": "Anstriche",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "einmal",
+              "Einmal"
+            ],
+            [
+              "zweimal",
+              "Zweimal"
+            ]
+          ],
+          "affects": "variant",
+          "default": "zweimal",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "einmal": [
+              -0.35,
+              -0.25
+            ]
+          },
+          "material_uplift": {
+            "einmal": [
+              -0.4,
+              -0.3
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -5882,6 +6081,43 @@
           },
           "help_de": "",
           "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "wand_boden",
+          "label_de": "Fläche",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "boden",
+              "Boden"
+            ],
+            [
+              "wand",
+              "Wand"
+            ],
+            [
+              "beides",
+              "Wand und Boden"
+            ]
+          ],
+          "affects": "variant",
+          "default": "boden",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "wand": [
+              0.15,
+              0.35
+            ],
+            "beides": [
+              0.1,
+              0.25
+            ]
+          },
           "material_uplift": {},
           "drops": {},
           "drops_disposal": {}
@@ -8313,6 +8549,35 @@
           "material_uplift": {},
           "drops": {},
           "drops_disposal": {}
+        },
+        {
+          "key": "fugenbreite",
+          "label_de": "Fugenbreite",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "schmal",
+              "Bis 3 mm"
+            ],
+            [
+              "breit",
+              "Über 3 mm"
+            ]
+          ],
+          "affects": "variant",
+          "default": "schmal",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "breit": [
+              0.1,
+              0.25
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -8886,6 +9151,52 @@
           "help_de": "",
           "uplift": {},
           "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "art",
+          "label_de": "Ausführung",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "geschnitten",
+              "Aus der Fliese geschnitten"
+            ],
+            [
+              "fertig",
+              "Fertigsockel"
+            ],
+            [
+              "hohlkehle",
+              "Mit Hohlkehle"
+            ]
+          ],
+          "affects": "variant",
+          "default": "geschnitten",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "fertig": [
+              -0.25,
+              -0.15
+            ],
+            "hohlkehle": [
+              0.2,
+              0.45
+            ]
+          },
+          "material_uplift": {
+            "fertig": [
+              0.15,
+              0.4
+            ],
+            "hohlkehle": [
+              0.1,
+              0.3
+            ]
+          },
           "drops": {},
           "drops_disposal": {}
         }
@@ -17092,6 +17403,49 @@
           "material_uplift": {},
           "drops": {},
           "drops_disposal": {}
+        },
+        {
+          "key": "problem",
+          "label_de": "Was ist passiert",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "wasseraustritt",
+              "Wasser tritt aus"
+            ],
+            [
+              "verstopfung",
+              "Verstopfung"
+            ],
+            [
+              "kein_warmwasser",
+              "Kein Warmwasser oder Heizung aus"
+            ],
+            [
+              "unklar",
+              "Noch unklar"
+            ]
+          ],
+          "affects": "variant",
+          "default": "unklar",
+          "note_if": {
+            "wasseraustritt": "folgeschaeden"
+          },
+          "help_de": "",
+          "uplift": {
+            "wasseraustritt": [
+              0.15,
+              0.35
+            ],
+            "kein_warmwasser": [
+              0.1,
+              0.25
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -17244,6 +17598,48 @@
           "material_uplift": {},
           "drops": {},
           "drops_disposal": {}
+        },
+        {
+          "key": "verfahren",
+          "label_de": "Verfahren",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "siphon",
+              "Siphon öffnen und reinigen"
+            ],
+            [
+              "spirale",
+              "Rohrreinigungsspirale"
+            ],
+            [
+              "hochdruck",
+              "Hochdruckspülung"
+            ]
+          ],
+          "affects": "variant",
+          "default": "siphon",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "spirale": [
+              0.25,
+              0.5
+            ],
+            "hochdruck": [
+              0.55,
+              1.1
+            ]
+          },
+          "material_uplift": {
+            "hochdruck": [
+              0.25,
+              0.55
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -17367,6 +17763,73 @@
           "material_uplift": {},
           "drops": {},
           "drops_disposal": {}
+        },
+        {
+          "key": "verfahren",
+          "label_de": "Verfahren",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "spirale",
+              "Rohrreinigungsspirale"
+            ],
+            [
+              "hochdruck",
+              "Hochdruckspülung"
+            ]
+          ],
+          "affects": "variant",
+          "default": "spirale",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "hochdruck": [
+              0.35,
+              0.7
+            ]
+          },
+          "material_uplift": {
+            "hochdruck": [
+              0.25,
+              0.55
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "zeit",
+          "label_de": "Einsatzzeit",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "regulaer",
+              "Werktag 7-17 Uhr"
+            ],
+            [
+              "abend",
+              "Abend oder Samstag"
+            ],
+            [
+              "nacht_sonntag",
+              "Nacht oder Sonn-/Feiertag"
+            ]
+          ],
+          "affects": "variant",
+          "default": "regulaer",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "abend": [
+              0.2,
+              0.4
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -17472,6 +17935,63 @@
           "note_if": {},
           "help_de": "",
           "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "zugang_kanal",
+          "label_de": "Zugang zum Kanal",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "schacht",
+              "Revisionsschacht vorhanden"
+            ],
+            [
+              "wc",
+              "Über WC oder Ablauf"
+            ],
+            [
+              "oeffnen",
+              "Muss erst geöffnet werden"
+            ]
+          ],
+          "affects": "variant",
+          "default": "schacht",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "wc": [
+              0.15,
+              0.3
+            ],
+            "oeffnen": [
+              0.55,
+              1.1
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "spuelen",
+          "label_de": "Vorher spülen erforderlich",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": false,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "True": [
+              0.3,
+              0.6
+            ]
+          },
           "material_uplift": {},
           "drops": {},
           "drops_disposal": {}
@@ -17602,6 +18122,68 @@
           "help_de": "Vor 1990: Asbest- und Bleiprüfung nötig.",
           "uplift": {},
           "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "art",
+          "label_de": "Art der Armatur",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "waschtisch",
+              "Waschtisch"
+            ],
+            [
+              "kueche",
+              "Küchenarmatur"
+            ],
+            [
+              "dusche_ap",
+              "Dusche oder Wanne, Aufputz"
+            ],
+            [
+              "dusche_up",
+              "Dusche oder Wanne, Unterputz"
+            ],
+            [
+              "thermostat",
+              "Thermostatarmatur"
+            ]
+          ],
+          "affects": "variant",
+          "default": "waschtisch",
+          "note_if": {},
+          "help_de": "Unterputz heißt Wand öffnen — das ist eine andere Arbeit als ein Wechsel am Waschtisch.",
+          "uplift": {
+            "kueche": [
+              0.1,
+              0.25
+            ],
+            "dusche_ap": [
+              0.15,
+              0.35
+            ],
+            "dusche_up": [
+              0.8,
+              1.6
+            ],
+            "thermostat": [
+              0.2,
+              0.45
+            ]
+          },
+          "material_uplift": {
+            "dusche_up": [
+              0.3,
+              0.7
+            ],
+            "thermostat": [
+              0.35,
+              0.8
+            ]
+          },
           "drops": {},
           "drops_disposal": {}
         }
@@ -17765,6 +18347,56 @@
           "material_uplift": {},
           "drops": {},
           "drops_disposal": {}
+        },
+        {
+          "key": "defekt",
+          "label_de": "Was ist defekt",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "fuellventil",
+              "Füllventil"
+            ],
+            [
+              "spuelventil",
+              "Spülventil"
+            ],
+            [
+              "undicht",
+              "Undicht, Wasser läuft nach"
+            ],
+            [
+              "druckerplatte",
+              "Drückerplatte oder Gestänge"
+            ]
+          ],
+          "affects": "variant",
+          "default": "fuellventil",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "spuelventil": [
+              0.1,
+              0.25
+            ],
+            "undicht": [
+              0.15,
+              0.35
+            ],
+            "druckerplatte": [
+              -0.15,
+              -0.08
+            ]
+          },
+          "material_uplift": {
+            "druckerplatte": [
+              0.2,
+              0.5
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -17895,6 +18527,98 @@
           "help_de": "",
           "uplift": {},
           "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "wanne_typ",
+          "label_de": "Bauart der neuen Wanne",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "stahl",
+              "Stahl-Email, Standardmaß"
+            ],
+            [
+              "acryl",
+              "Acryl mit Wannenträger"
+            ],
+            [
+              "freistehend",
+              "Freistehend"
+            ]
+          ],
+          "affects": "variant",
+          "default": "stahl",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "acryl": [
+              -0.1,
+              -0.05
+            ],
+            "freistehend": [
+              0.25,
+              0.55
+            ]
+          },
+          "material_uplift": {
+            "acryl": [
+              -0.15,
+              -0.08
+            ],
+            "freistehend": [
+              0.5,
+              1.2
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "verkleidung",
+          "label_de": "Wannenschürze",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "bestand",
+              "Bestand bleibt"
+            ],
+            [
+              "fertigelement",
+              "Neues Fertigelement"
+            ],
+            [
+              "gemauert",
+              "Neu gemauert und gefliest"
+            ]
+          ],
+          "affects": "variant",
+          "default": "fertigelement",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "bestand": [
+              -0.25,
+              -0.15
+            ],
+            "gemauert": [
+              0.45,
+              0.9
+            ]
+          },
+          "material_uplift": {
+            "bestand": [
+              -0.3,
+              -0.18
+            ],
+            "gemauert": [
+              0.35,
+              0.75
+            ]
+          },
           "drops": {},
           "drops_disposal": {}
         }
@@ -18267,6 +18991,96 @@
           "material_uplift": {},
           "drops": {},
           "drops_disposal": {}
+        },
+        {
+          "key": "bauart",
+          "label_de": "Bauart",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "nische",
+              "Nischentür"
+            ],
+            [
+              "eckeinstieg",
+              "Eckeinstieg"
+            ],
+            [
+              "walk_in",
+              "Walk-in"
+            ],
+            [
+              "rund",
+              "Runddusche"
+            ]
+          ],
+          "affects": "variant",
+          "default": "nische",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "eckeinstieg": [
+              0.1,
+              0.25
+            ],
+            "walk_in": [
+              0.15,
+              0.35
+            ],
+            "rund": [
+              0.25,
+              0.55
+            ]
+          },
+          "material_uplift": {
+            "walk_in": [
+              0.2,
+              0.5
+            ],
+            "rund": [
+              0.3,
+              0.65
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "glas",
+          "label_de": "Maß",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "standard",
+              "Standardmaß ab Lager"
+            ],
+            [
+              "sondermass",
+              "Sondermaß, Zuschnitt nötig"
+            ]
+          ],
+          "affects": "variant",
+          "default": "standard",
+          "note_if": {
+            "sondermass": "aufmass_vor_fertigung"
+          },
+          "help_de": "",
+          "uplift": {
+            "sondermass": [
+              0.2,
+              0.45
+            ]
+          },
+          "material_uplift": {
+            "sondermass": [
+              0.4,
+              0.9
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -18390,6 +19204,86 @@
           "help_de": "",
           "uplift": {},
           "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "montage",
+          "label_de": "Aufstellung",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "wand",
+              "Wandmontage"
+            ],
+            [
+              "stand",
+              "Standspeicher"
+            ]
+          ],
+          "affects": "variant",
+          "default": "wand",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "stand": [
+              0.15,
+              0.35
+            ]
+          },
+          "material_uplift": {
+            "stand": [
+              0.2,
+              0.5
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "energie",
+          "label_de": "Beheizung",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "elektro",
+              "Elektrisch"
+            ],
+            [
+              "indirekt",
+              "Indirekt über Heizung"
+            ],
+            [
+              "waermepumpe",
+              "Warmwasser-Wärmepumpe"
+            ]
+          ],
+          "affects": "variant",
+          "default": "elektro",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "indirekt": [
+              0.2,
+              0.45
+            ],
+            "waermepumpe": [
+              0.35,
+              0.75
+            ]
+          },
+          "material_uplift": {
+            "indirekt": [
+              0.15,
+              0.4
+            ],
+            "waermepumpe": [
+              0.9,
+              1.9
+            ]
+          },
           "drops": {},
           "drops_disposal": {}
         }
@@ -18770,6 +19664,83 @@
           "material_uplift": {},
           "drops": {},
           "drops_disposal": {}
+        },
+        {
+          "key": "abfluss",
+          "label_de": "Abfluss",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "vorhanden",
+              "Vorhanden und nutzbar"
+            ],
+            [
+              "anschluss_neu",
+              "Neu an bestehende Leitung"
+            ],
+            [
+              "hebeanlage",
+              "Hebeanlage erforderlich"
+            ]
+          ],
+          "affects": "variant",
+          "default": "anschluss_neu",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "vorhanden": [
+              -0.25,
+              -0.15
+            ],
+            "hebeanlage": [
+              0.6,
+              1.2
+            ]
+          },
+          "material_uplift": {
+            "vorhanden": [
+              -0.2,
+              -0.12
+            ],
+            "hebeanlage": [
+              0.9,
+              1.9
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "montage",
+          "label_de": "Montageart",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "aufputz",
+              "Aufputz"
+            ],
+            [
+              "unterputz",
+              "Unterputz, Wand aufstemmen"
+            ]
+          ],
+          "affects": "variant",
+          "default": "unterputz",
+          "note_if": {
+            "unterputz": "oeffnung_wand"
+          },
+          "help_de": "",
+          "uplift": {
+            "aufputz": [
+              -0.3,
+              -0.2
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -18917,6 +19888,26 @@
           "material_uplift": {},
           "drops": {},
           "drops_disposal": {}
+        },
+        {
+          "key": "abgasmessung",
+          "label_de": "Abgasmessung mit Protokoll",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": true,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "False": [
+              -0.2,
+              -0.12
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -19037,6 +20028,48 @@
             ]
           },
           "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "medium",
+          "label_de": "Prüfmedium",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "wasser",
+              "Wasser"
+            ],
+            [
+              "luft",
+              "Luft"
+            ],
+            [
+              "kanal",
+              "Kanal, mit Absperrblase"
+            ]
+          ],
+          "affects": "variant",
+          "default": "wasser",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "luft": [
+              -0.15,
+              -0.08
+            ],
+            "kanal": [
+              0.35,
+              0.7
+            ]
+          },
+          "material_uplift": {
+            "kanal": [
+              0.2,
+              0.45
+            ]
+          },
           "drops": {},
           "drops_disposal": {}
         }
@@ -20067,6 +21100,74 @@
           "material_uplift": {},
           "drops": {},
           "drops_disposal": {}
+        },
+        {
+          "key": "geraeteart",
+          "label_de": "Art der Geräte",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "buero",
+              "Bürogeräte"
+            ],
+            [
+              "werkstatt",
+              "Werkstatt und Maschinen"
+            ],
+            [
+              "baustelle",
+              "Baustellengeräte"
+            ]
+          ],
+          "affects": "variant",
+          "default": "buero",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "werkstatt": [
+              0.25,
+              0.5
+            ],
+            "baustelle": [
+              0.35,
+              0.7
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "protokoll",
+          "label_de": "Dokumentation",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "liste",
+              "Prüfliste"
+            ],
+            [
+              "datenbank",
+              "Datenbank mit Historie"
+            ]
+          ],
+          "affects": "variant",
+          "default": "liste",
+          "note_if": {
+            "datenbank": "pruefplakette"
+          },
+          "help_de": "",
+          "uplift": {
+            "datenbank": [
+              0.15,
+              0.35
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -20221,6 +21322,64 @@
             ]
           },
           "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "typ_schalter",
+          "label_de": "Ausführung",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "standard",
+              "Standardschalter oder Steckdose"
+            ],
+            [
+              "dimmer",
+              "Dimmer"
+            ],
+            [
+              "jalousie",
+              "Jalousieschalter"
+            ],
+            [
+              "bewegungsmelder",
+              "Bewegungsmelder"
+            ]
+          ],
+          "affects": "variant",
+          "default": "standard",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "dimmer": [
+              0.1,
+              0.25
+            ],
+            "jalousie": [
+              0.2,
+              0.45
+            ],
+            "bewegungsmelder": [
+              0.15,
+              0.35
+            ]
+          },
+          "material_uplift": {
+            "dimmer": [
+              0.4,
+              0.9
+            ],
+            "jalousie": [
+              0.35,
+              0.8
+            ],
+            "bewegungsmelder": [
+              0.5,
+              1.1
+            ]
+          },
           "drops": {},
           "drops_disposal": {}
         }
@@ -20516,6 +21675,35 @@
           },
           "drops": {},
           "drops_disposal": {}
+        },
+        {
+          "key": "decke",
+          "label_de": "Deckenaufbau",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "gipskarton",
+              "Gipskarton oder Holz"
+            ],
+            [
+              "beton",
+              "Beton"
+            ]
+          ],
+          "affects": "variant",
+          "default": "gipskarton",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "beton": [
+              0.2,
+              0.45
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -20641,6 +21829,40 @@
           "help_de": "",
           "uplift": {},
           "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "montageort",
+          "label_de": "Montageort",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "fassade",
+              "An der Fassade"
+            ],
+            [
+              "standsaeule",
+              "Standsäule im Garten"
+            ]
+          ],
+          "affects": "variant",
+          "default": "fassade",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "standsaeule": [
+              0.6,
+              1.2
+            ]
+          },
+          "material_uplift": {
+            "standsaeule": [
+              0.7,
+              1.5
+            ]
+          },
           "drops": {},
           "drops_disposal": {}
         }
@@ -20776,6 +21998,48 @@
           "material_uplift": {},
           "drops": {},
           "drops_disposal": {}
+        },
+        {
+          "key": "geraet",
+          "label_de": "Gerät",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "herd",
+              "Herd mit Kochfeld"
+            ],
+            [
+              "autark",
+              "Autarkes Kochfeld"
+            ],
+            [
+              "induktion_stark",
+              "Induktion, mehrphasig"
+            ]
+          ],
+          "affects": "variant",
+          "default": "herd",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "autark": [
+              0.1,
+              0.25
+            ],
+            "induktion_stark": [
+              0.35,
+              0.7
+            ]
+          },
+          "material_uplift": {
+            "induktion_stark": [
+              0.25,
+              0.6
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -20874,6 +22138,68 @@
           "help_de": "",
           "uplift": {},
           "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "verlegung",
+          "label_de": "Verlegung",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "unterputz",
+              "Unterputz, Schlitz fräsen"
+            ],
+            [
+              "kanal",
+              "Kabelkanal"
+            ],
+            [
+              "aufputz",
+              "Aufputz"
+            ]
+          ],
+          "affects": "variant",
+          "default": "unterputz",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "kanal": [
+              -0.25,
+              -0.15
+            ],
+            "aufputz": [
+              -0.3,
+              -0.2
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "patchfeld",
+          "label_de": "Patchfeld vorhanden",
+          "type": "bool",
+          "unit": "",
+          "options": [],
+          "affects": "variant",
+          "default": true,
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "False": [
+              0.35,
+              0.7
+            ]
+          },
+          "material_uplift": {
+            "False": [
+              0.6,
+              1.3
+            ]
+          },
           "drops": {},
           "drops_disposal": {}
         }
@@ -21253,6 +22579,55 @@
           "help_de": "",
           "uplift": {},
           "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "fi",
+          "label_de": "FI-Schutzschalter vorhanden",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "vorhanden",
+              "Ja"
+            ],
+            [
+              "nachruesten",
+              "Nein, muss nachgerüstet werden"
+            ],
+            [
+              "unbekannt",
+              "Unbekannt"
+            ]
+          ],
+          "affects": "variant",
+          "default": "unbekannt",
+          "note_if": {
+            "nachruesten": "fi_nachruesten",
+            "unbekannt": "fi_nachruesten"
+          },
+          "help_de": "",
+          "uplift": {
+            "vorhanden": [
+              -0.25,
+              -0.15
+            ],
+            "nachruesten": [
+              0.35,
+              0.7
+            ]
+          },
+          "material_uplift": {
+            "vorhanden": [
+              -0.3,
+              -0.18
+            ],
+            "nachruesten": [
+              0.45,
+              0.95
+            ]
+          },
           "drops": {},
           "drops_disposal": {}
         }
@@ -21705,6 +23080,51 @@
           "material_uplift": {},
           "drops": {},
           "drops_disposal": {}
+        },
+        {
+          "key": "system",
+          "label_de": "System",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "funk",
+              "Funk, herstellergebunden"
+            ],
+            [
+              "wlan",
+              "WLAN"
+            ],
+            [
+              "bus",
+              "Bussystem, verdrahtet"
+            ]
+          ],
+          "affects": "variant",
+          "default": "funk",
+          "note_if": {
+            "funk": "system_bindung",
+            "bus": "neue_leitung_noetig"
+          },
+          "help_de": "",
+          "uplift": {
+            "wlan": [
+              -0.1,
+              -0.05
+            ],
+            "bus": [
+              0.55,
+              1.1
+            ]
+          },
+          "material_uplift": {
+            "bus": [
+              0.35,
+              0.8
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -21873,6 +23293,40 @@
             "nein": [
               0.25,
               0.55
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
+          "key": "video",
+          "label_de": "Ausführung",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "audio",
+              "Nur Audio"
+            ],
+            [
+              "video",
+              "Mit Video"
+            ]
+          ],
+          "affects": "variant",
+          "default": "audio",
+          "note_if": {},
+          "help_de": "",
+          "uplift": {
+            "video": [
+              0.15,
+              0.35
+            ]
+          },
+          "material_uplift": {
+            "video": [
+              0.45,
+              1.0
             ]
           },
           "drops": {},

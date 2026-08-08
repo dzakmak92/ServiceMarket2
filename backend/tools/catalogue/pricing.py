@@ -361,8 +361,9 @@ PRICING: dict[str, dict] = {
                   material={"keine": (-0.20, -0.12), "stark": (0.30, 0.60)}),
     "impraegnierung": _u(uplift={"True": (0.15, 0.30)},
                          material={"True": (0.35, 0.70)}),
-    "verfahren": _u(uplift={"nass": (0.45, 0.85), "hochdruck": (0.90, 1.60)},
-                    material={"nass": (0.30, 0.70), "hochdruck": (0.60, 1.20)}),
+    "reinigung.tiefgarage/verfahren": _u(
+        uplift={"nass": (0.45, 0.85), "hochdruck": (0.90, 1.60)},
+        material={"nass": (0.30, 0.70), "hochdruck": (0.60, 1.20)}),
     "oel": _u(uplift={"False": (-0.12, -0.06)}, material={"False": (-0.15, -0.08)}),
     "belegung": _u(uplift={"leer": (-0.20, -0.12), "belegt": (0.30, 0.60)}),
     # More often is cheaper per visit: less has accumulated since the last one.
@@ -432,6 +433,92 @@ PRICING: dict[str, dict] = {
     # Notdienst hourly rate, and an uplift on top would charge the night twice.
     "schluessel.tueroeffnung/zeit": _u(uplift={"abend": (0.20, 0.40)}),
     "beschaedigung": _u(uplift={"False": (-0.20, -0.12)}),
+
+    # ══ The questions the thin templates were missing ═══════════════════
+    #
+    # See `extra_forms.py`. Priced here with everything else, so a trade's
+    # numbers still read down one column.
+
+    # Sanitär
+    "sanitaer.armatur/art": _u(
+        uplift={"kueche": (0.10, 0.25), "dusche_ap": (0.15, 0.35),
+                "dusche_up": (0.80, 1.60), "thermostat": (0.20, 0.45)},
+        material={"dusche_up": (0.30, 0.70), "thermostat": (0.35, 0.80)}),
+    "wanne_typ": _u(uplift={"acryl": (-0.10, -0.05), "freistehend": (0.25, 0.55)},
+                    material={"acryl": (-0.15, -0.08), "freistehend": (0.50, 1.20)}),
+    "verkleidung": _u(uplift={"bestand": (-0.25, -0.15), "gemauert": (0.45, 0.90)},
+                      material={"bestand": (-0.30, -0.18), "gemauert": (0.35, 0.75)}),
+    "sanitaer.duschkabine/bauart": _u(
+        uplift={"eckeinstieg": (0.10, 0.25), "walk_in": (0.15, 0.35),
+                "rund": (0.25, 0.55)},
+        material={"walk_in": (0.20, 0.50), "rund": (0.30, 0.65)}),
+    "glas": _u(uplift={"sondermass": (0.20, 0.45)},
+               material={"sondermass": (0.40, 0.90)}),
+    "abfluss": _u(uplift={"vorhanden": (-0.25, -0.15), "hebeanlage": (0.60, 1.20)},
+                  material={"vorhanden": (-0.20, -0.12), "hebeanlage": (0.90, 1.90)}),
+    "sanitaer.waschmaschinenanschluss/montage": _u(
+        uplift={"aufputz": (-0.30, -0.20)}),
+    "medium": _u(uplift={"luft": (-0.15, -0.08), "kanal": (0.35, 0.70)},
+                 material={"kanal": (0.20, 0.45)}),
+    "zugang_kanal": _u(uplift={"wc": (0.15, 0.30), "oeffnen": (0.55, 1.10)}),
+    "spuelen": _u(uplift={"True": (0.30, 0.60)}),
+    "problem": _u(uplift={"wasseraustritt": (0.15, 0.35),
+                          "kein_warmwasser": (0.10, 0.25)}),
+    "sanitaer.rohrreinigung_wc/verfahren": _u(
+        uplift={"hochdruck": (0.35, 0.70)}, material={"hochdruck": (0.25, 0.55)}),
+    "sanitaer.rohrreinigung_wc/zeit": _u(uplift={"abend": (0.20, 0.40)}),
+    "sanitaer.rohrreinigung_waschbecken/verfahren": _u(
+        uplift={"spirale": (0.25, 0.50), "hochdruck": (0.55, 1.10)},
+        material={"hochdruck": (0.25, 0.55)}),
+    "sanitaer.boiler/montage": _u(uplift={"stand": (0.15, 0.35)},
+                                  material={"stand": (0.20, 0.50)}),
+    "energie": _u(uplift={"indirekt": (0.20, 0.45), "waermepumpe": (0.35, 0.75)},
+                  material={"indirekt": (0.15, 0.40), "waermepumpe": (0.90, 1.90)}),
+    "defekt": _u(uplift={"spuelventil": (0.10, 0.25), "undicht": (0.15, 0.35),
+                         "druckerplatte": (-0.15, -0.08)},
+                 material={"druckerplatte": (0.20, 0.50)}),
+    "abgasmessung": _u(uplift={"False": (-0.20, -0.12)}),
+
+    # Elektrik
+    "geraeteart": _u(uplift={"werkstatt": (0.25, 0.50), "baustelle": (0.35, 0.70)}),
+    "protokoll": _u(uplift={"datenbank": (0.15, 0.35)}),
+    "geraet": _u(uplift={"autark": (0.10, 0.25), "induktion_stark": (0.35, 0.70)},
+                 material={"induktion_stark": (0.25, 0.60)}),
+    "typ_schalter": _u(uplift={"dimmer": (0.10, 0.25), "jalousie": (0.20, 0.45),
+                               "bewegungsmelder": (0.15, 0.35)},
+                       material={"dimmer": (0.40, 0.90), "jalousie": (0.35, 0.80),
+                                 "bewegungsmelder": (0.50, 1.10)}),
+    "decke": _u(uplift={"beton": (0.20, 0.45)}),
+    "montageort": _u(uplift={"standsaeule": (0.60, 1.20)},
+                     material={"standsaeule": (0.70, 1.50)}),
+    "elektrik.datendose/verlegung": _u(
+        uplift={"kanal": (-0.25, -0.15), "aufputz": (-0.30, -0.20)}),
+    "patchfeld": _u(uplift={"False": (0.35, 0.70)},
+                    material={"False": (0.60, 1.30)}),
+    # Retrofitting an RCD is the difference between two hours and half a day.
+    "fi": _u(uplift={"vorhanden": (-0.25, -0.15), "nachruesten": (0.35, 0.70)},
+             material={"vorhanden": (-0.30, -0.18), "nachruesten": (0.45, 0.95)}),
+    "system": _u(uplift={"wlan": (-0.10, -0.05), "bus": (0.55, 1.10)},
+                 material={"bus": (0.35, 0.80)}),
+    "video": _u(uplift={"video": (0.15, 0.35)}, material={"video": (0.45, 1.00)}),
+
+    # Maler und Fliesen
+    "bauteil": _u(uplift={"zaun": (0.15, 0.35), "carport": (0.10, 0.25)}),
+    "anstriche": _u(uplift={"einmal": (-0.35, -0.25)},
+                    material={"einmal": (-0.40, -0.30)}),
+    "maler.fassade_reinigen/verfahren": _u(
+        uplift={"hochdruck": (-0.10, -0.05), "heisswasser": (0.25, 0.50)}),
+    "maler.fassade_reinigen/impraegnierung": _u(
+        uplift={"False": (-0.25, -0.15)}, material={"False": (-0.45, -0.30)}),
+    "demontage": _u(uplift={"True": (0.30, 0.60)}),
+    "maler.risse_sanieren/breite": _u(
+        uplift={"bis_3": (0.25, 0.50), "ueber_3": (0.60, 1.20)},
+        material={"bis_3": (0.20, 0.45), "ueber_3": (0.50, 1.10)}),
+    "fliesen.sockelleisten/art": _u(
+        uplift={"fertig": (-0.25, -0.15), "hohlkehle": (0.20, 0.45)},
+        material={"fertig": (0.15, 0.40), "hohlkehle": (0.10, 0.30)}),
+    "fugenbreite": _u(uplift={"breit": (0.10, 0.25)}),
+    "wand_boden": _u(uplift={"wand": (0.15, 0.35), "beides": (0.10, 0.25)}),
 }
 
 
