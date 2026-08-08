@@ -1,5 +1,7 @@
 import sys; sys.path.insert(0, '.')
 import axes
+import pricing
+from schema import validate_questions
 from maler_deep import MALER_DEEP
 from boden_deep import BODEN_DEEP
 from garten_deep import GARTEN_DEEP
@@ -45,3 +47,16 @@ for j in ALL_JOBS:
 _own = [(j.key, q.key) for j in ALL_JOBS for q in j.guided_form
         if q.key in ("condition", "access") or q.affects in ("condition", "access")]
 assert not _own, f"condition/access belong to the axis, not the job: {_own}"
+
+# What each answer costs. Assigned centrally for the same reason the axes are:
+# the tables are worth more when the whole trade can be read down one column
+# than when each number sits beside the job it happens to belong to.
+_unused = pricing.apply(ALL_JOBS)
+assert not _unused, (
+    "pricing entries that matched no question — a renamed question stops being "
+    f"priced silently: {_unused}")
+
+# What each answer is allowed to do to the price. See `Question` in schema.py:
+# the rule that matters is that the default answer costs nothing, because every
+# market band in the catalogue was validated with no answers given.
+validate_questions(ALL_JOBS)

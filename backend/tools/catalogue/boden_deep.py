@@ -47,6 +47,34 @@ Q_UNTERGRUND = Q("untergrund", "Untergrund", "choice", affects="variant",
                           "fliesen_bestand": "aufbauhoehe",
                           "holzdielen": "untergrund_eben",
                           "unbekannt": "untergrund_eben"})
+# A wall is not a floor, and neither is a staircase. `Q_UNTERGRUND` above lists
+# floor build-ups — screed, floorboards — and it had been handed to the wall,
+# mosaic, waterproofing and stair templates as well, so a tiler being asked
+# what the *wall* was made of could choose "Estrich, neu" or "Holzdielen" and
+# nothing else. The wet-area template was the clearest case: its own first
+# question is "W1-I, Wand mit Spritzwasser" and the substrate list underneath
+# it had no wall in it.
+Q_UNTERGRUND_WAND = Q("untergrund", "Untergrund", "choice", affects="variant",
+                      options=[("putz", "Putz oder Mauerwerk, tragfähig"),
+                               ("gipskarton", "Gipskarton oder Gipsfaser"),
+                               ("estrich", "Estrich oder Betonboden"),
+                               ("fliesen_bestand", "Bestehende Fliesen"),
+                               ("unbekannt", "Unbekannt")],
+                      default="putz",
+                      note_if={"gipskarton": "untergrund_tragfaehig",
+                               "fliesen_bestand": "aufbauhoehe",
+                               "unbekannt": "untergrund_tragfaehig"})
+Q_UNTERGRUND_TREPPE = Q("untergrund", "Untergrund der Stufen", "choice",
+                        affects="variant",
+                        options=[("beton", "Betontreppe, roh"),
+                                 ("estrich_stufen", "Stufen bereits ausgeglichen"),
+                                 ("fliesen_bestand", "Bestehende Fliesen"),
+                                 ("holz", "Holztreppe"),
+                                 ("unbekannt", "Unbekannt")],
+                        default="beton",
+                        note_if={"fliesen_bestand": "aufbauhoehe",
+                                 "holz": "untergrund_eben",
+                                 "unbekannt": "untergrund_eben"})
 Q_FBH = Q("fussbodenheizung", "Fußbodenheizung vorhanden", "bool", affects="note",
           default=False, note_if={"True": "fbh_aufheizprotokoll"})
 Q_BAUJAHR = Q("baujahr", "Baujahr", "number", unit="Jahr", affects="note",
@@ -128,7 +156,7 @@ BODEN_DEEP = [
       market_band_at=(40, 70), market_band_de=(40, 75),
       confidence="high", sources=SRC_FL,
       note_keys=["abdichtung_nassbereich", "belag_nicht_enthalten"],
-      guided_form=[Q_UNTERGRUND, Q_VERLEGEART, Q_RAUM, Q_BELAG_BAUSEITS],
+      guided_form=[Q_UNTERGRUND_WAND, Q_VERLEGEART, Q_RAUM, Q_BELAG_BAUSEITS],
       operations=[
           Op("abdichtung", "Verbundabdichtung Nassbereich", "m2", (0.10, 0.18),
              material_per_unit=(3.00, 5.50)),
@@ -169,7 +197,7 @@ BODEN_DEEP = [
       market_band_at=(70, 140), market_band_de=(70, 150),
       confidence="low", sources=SRC_FL,
       note_keys=["verschnitt_muster", "belag_nicht_enthalten"],
-      guided_form=[Q_UNTERGRUND, Q_RAUM, Q_BELAG_BAUSEITS],
+      guided_form=[Q_UNTERGRUND_WAND, Q_RAUM, Q_BELAG_BAUSEITS],
       operations=[
           Op("grundierung", "Grundierung", "m2", (0.04, 0.07)),
           # Net-mounted sheets, not loose tesserae — the coefficient for
@@ -193,7 +221,7 @@ BODEN_DEEP = [
       guided_form=[
           Q("stufen", "Anzahl Stufen", "number", unit="Stufe", affects="qty", default=14),
           Q("setzstufe", "Mit Setzstufe", "bool", affects="variant", default=True),
-          Q_UNTERGRUND, Q_BELAG_BAUSEITS],
+          Q_UNTERGRUND_TREPPE, Q_BELAG_BAUSEITS],
       operations=[
           Op("zuschnitt", "Zuschnitt Tritt- und Setzstufe", "Stufe", (0.35, 0.60)),
           Op("setzen", "Stufen setzen", "Stufe", (0.55, 0.95)),
@@ -216,7 +244,12 @@ BODEN_DEEP = [
             default="drainmoertel"),
           Q("gefaelle_vorhanden", "Gefälle vorhanden", "bool", affects="note",
             default=True, note_if={"False": "gefaelle"}),
-          Q_UNTERGRUND, Q_BELAG_BAUSEITS],
+          # No `Q_UNTERGRUND` here. `aufbau` above already asks what the
+          # terrace is built on, and the floor list underneath it was offering
+          # "Estrich, neu" and "Holzdielen" as the base of a frost-proof
+          # outdoor surface — two answers that are wrong and one question too
+          # many.
+          Q_BELAG_BAUSEITS],
       operations=[
           Op("pruefen", "Untergrund und Gefälle prüfen", "m2", (0.08, 0.15)),
           Op("abdichten", "Abdichtung und Drainage", "m2", (0.15, 0.28),
@@ -241,7 +274,7 @@ BODEN_DEEP = [
                      ("w2", "W2-I, bodengleiche Dusche"),
                      ("w3", "W3-I, öffentlich oder Dampfbad")],
             default="w2"),
-          Q_UNTERGRUND],
+          Q_UNTERGRUND_WAND],
       operations=[
           Op("vorbereiten", "Untergrund vorbereiten und grundieren", "m2", (0.05, 0.09)),
           Op("dichtband", "Dichtbänder, Ecken und Manschetten", "m2", (0.08, 0.15),

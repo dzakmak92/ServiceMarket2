@@ -153,12 +153,53 @@ prov = E.estimate("maler.wohnung_komplett",
                   {"wohnflaeche": 85, "untergrund": "altbau_leimfarbe",
                    "farbwechsel": True, "condition": "altbau_bewohnt",
                    "access": "enge_treppe", "moebel": "voll"})
-check(set(prov["answers_applied"]) == {"wohnflaeche", "condition", "access"},
+check(set(prov["answers_applied"]) ==
+      {"wohnflaeche", "condition", "access", "untergrund", "farbwechsel", "moebel"},
       f"priced answers reported: {prov['answers_applied']}")
-check("farbwechsel" in prov["answers_recorded"],
-      "a variant answer is reported as recorded, not as priced")
 check(not (set(prov["answers_applied"]) & set(prov["answers_recorded"])),
       "no answer is claimed both ways")
+
+# The three that used to be free. Each is checked against the same job with
+# that one answer at its default, so what is measured is the answer and not
+# the job — and `applied` has to agree with the money, because a form that
+# says an answer counted and then does not count it is the original bug.
+BASE = {"wohnflaeche": 85}
+for field, value in (("untergrund", "altbau_leimfarbe"),
+                     ("farbwechsel", True), ("moebel", "voll")):
+    flat = E.estimate("maler.wohnung_komplett", BASE)["total_net"]
+    moved = E.estimate("maler.wohnung_komplett", {**BASE, field: value})
+    check(moved["total_net"][1] > flat[1],
+          f"{field}={value!r} costs money "
+          f"(€{flat[1]:.0f} → €{moved['total_net'][1]:.0f})")
+    check(field in moved["answers_applied"], f"and {field} is reported as applied")
+
+# It goes the other way too, or the form is only ever a ratchet. Stripping
+# wallpaper off fleece is genuinely faster than off painted-over woodchip.
+easy = E.estimate("maler.tapete_entfernen", {"qty": 40, "tapetenart": "vlies"})
+hard = E.estimate("maler.tapete_entfernen", {"qty": 40, "tapetenart": "papier_alt"})
+check(easy["total_net"][1] < hard["total_net"][1],
+      f"an easier answer costs less (€{easy['total_net'][1]:.0f} < "
+      f"€{hard['total_net'][1]:.0f})")
+
+# Green waste that stays on site: the note has always said the disposal share
+# is dropped. Now the total says it too.
+away = E.estimate("garten.hecke_schnitt", {"laenge": 30, "gruenschnitt": "abtransport"})
+stays = E.estimate("garten.hecke_schnitt", {"laenge": 30, "gruenschnitt": "verbleibt"})
+check(stays["disposal"][1] == 0 and away["disposal"][1] > 0,
+      f"clippings left on site cost no tip fee "
+      f"(€{away['disposal'][1]:.0f} → €{stays['disposal'][1]:.0f})")
+check(stays["hours"][1] == away["hours"][1],
+      "but somebody still cuts the hedge and rakes it up")
+
+# The ceiling holds even when every answer is the worst one.
+worst = E.estimate("maler.wohnung_komplett",
+                   {"wohnflaeche": 85, "condition": "altbau_bewohnt",
+                    "access": "enge_treppe", "untergrund": "altbau_leimfarbe",
+                    "farbwechsel": True, "nikotin": True, "moebel": "voll"})
+plain = E.estimate("maler.wohnung_komplett", {"wohnflaeche": 85, "condition": "neubau"})
+ratio = worst["hours"][1] / plain["hours"][1]
+check(ratio <= E.MAX_UPLIFT + 0.01,
+      f"the worst answerable job is {ratio:.2f}x the easiest, not v0's 5.7x")
 emerg = E.estimate("sanitaer.rohrbruch",
                    {"zeit": "nacht_sonntag", "ort": "boden", "wasser_ab": False})
 check("zeit" in emerg["answers_applied"] and emerg["rate_basis"] == "notdienst",

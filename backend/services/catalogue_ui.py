@@ -569,5 +569,18 @@ def decorate_question(q: dict, lang: str = "de") -> dict:
             out["help"] = table.get(lang) or out.get("help_de") or ""
         else:
             out["help"] = out.get("help_de") or ""
-    out["price_effect"] = PRICE_EFFECT.get(q.get("affects"), "note")
+    # Derived from what the question *does*, not from what it is declared to
+    # be. `affects` says which kind of thing an answer is — a quantity, a
+    # variant of the work, a note — and for a long time "variant" and "note"
+    # both meant "changes nothing". Now most of them carry an uplift or remove
+    # an operation, and a screen that went on labelling those as notes would
+    # be making exactly the old promise in reverse: telling a pro that the tap
+    # which just added 40 % to the quote was only for the record.
+    effect = PRICE_EFFECT.get(q.get("affects"), "note")
+    if effect in ("note", "scope") and (q.get("uplift") or q.get("material_uplift")
+                                        or q.get("drops") or q.get("drops_disposal")):
+        effect = "scope"
+    elif effect == "scope":
+        effect = "note"
+    out["price_effect"] = effect
     return out

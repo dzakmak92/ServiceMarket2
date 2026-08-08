@@ -2,15 +2,46 @@
 from schema import (COND_UPLIFT, COND_SETUP_ADD, ACCESS_UPLIFT, HOURLY,
                     DISPOSAL_PER_T, BAUSCHUTT_KG_PER_M3)
 
+MAX_UPLIFT = 3.0   # keep in step with services/estimator.py
+
+
+def _variant(job, answers):
+    """The additive effect of the answered form. Mirrors `_variant_effects`.
+
+    Both files have to agree or the band check stops describing what the app
+    quotes — that is the whole reason this module exists as a separate copy of
+    the same arithmetic. `validate` passes no answers, so the bands are checked
+    where every question sits at its default and contributes nothing.
+    """
+    up = [0.0, 0.0]
+    mat = [0.0, 0.0]
+    dropped, no_disposal = set(), set()
+    for q in job.guided_form:
+        if q.key not in (answers or {}):
+            continue
+        given = answers[q.key]
+        for table, sink in ((q.uplift, up), (q.material_uplift, mat)):
+            rng = table.get(given)
+            if rng:
+                sink[0] += rng[0]
+                sink[1] += rng[1]
+        dropped.update(q.drops.get(given) or ())
+        no_disposal.update(q.drops_disposal.get(given) or ())
+    return up, mat, dropped, no_disposal
+
+
 def estimate(job, qty, *, country="AT", condition="renovierung_leer",
-             access="eg_oder_lift", tier="standard", hourly=None):
+             access="eg_oder_lift", tier="standard", hourly=None, answers=None):
     order = {"basic": 0, "standard": 1, "premium": 2}
     want = order[tier]
     h_lo, h_hi = hourly or HOURLY[country][job.trade]
     cu_lo, cu_hi = COND_UPLIFT[condition]
     au_lo, au_hi = ACCESS_UPLIFT[access]
     su_lo, su_hi = COND_SETUP_ADD[condition] if getattr(job, "messy", True) else (0.0, 0.0)
-    up_lo, up_hi = 1 + cu_lo + au_lo, 1 + cu_hi + au_hi
+    vu, vm, dropped, no_disposal = _variant(job, answers)
+    up_lo = min(1 + cu_lo + au_lo + vu[0], MAX_UPLIFT)
+    up_hi = min(1 + cu_hi + au_hi + vu[1], MAX_UPLIFT)
+    mf_lo, mf_hi = max(1 + vm[0], 0.0), max(1 + vm[1], 0.0)
 
     work_lo = work_hi = 0.0
     mat_lo = mat_hi = 0.0
@@ -18,15 +49,16 @@ def estimate(job, qty, *, country="AT", condition="renovierung_leer",
     disp_lo = disp_hi = 0.0
     lines = []
     for op in job.operations:
-        if order[op.tier_min] > want or op.optional:
+        if order[op.tier_min] > want or op.optional or op.key in dropped:
             continue
         wl = qty * op.hours_per_unit[0] * up_lo
         wh = qty * op.hours_per_unit[1] * up_hi
-        ml = qty * op.material_per_unit[0] * (1 + op.waste_factor)
-        mh = qty * op.material_per_unit[1] * (1 + op.waste_factor)
+        ml = qty * op.material_per_unit[0] * (1 + op.waste_factor) * mf_lo
+        mh = qty * op.material_per_unit[1] * (1 + op.waste_factor) * mf_hi
         work_lo += wl; work_hi += wh; mat_lo += ml; mat_hi += mh
-        d_lo = qty * op.debris_kg_per_unit[0]
-        d_hi = qty * op.debris_kg_per_unit[1]
+        d_lo, d_hi = ((0.0, 0.0) if op.key in no_disposal
+                      else (qty * op.debris_kg_per_unit[0],
+                            qty * op.debris_kg_per_unit[1]))
         debris_lo += d_lo; debris_hi += d_hi
         rate = DISPOSAL_PER_T[country].get(op.debris_type,
                                            DISPOSAL_PER_T[country]["bauschutt"])

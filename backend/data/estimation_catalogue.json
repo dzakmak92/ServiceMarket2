@@ -1216,7 +1216,41 @@
             "altbau_leimfarbe": "leimfarbe_altanstrich",
             "schadhaft": "untergrund_tragfaehig"
           },
-          "help_de": "Was schon an der Wand ist, entscheidet über den Aufwand davor."
+          "help_de": "Was schon an der Wand ist, entscheidet über den Aufwand davor.",
+          "uplift": {
+            "gipskarton_neu": [
+              0.0,
+              0.05
+            ],
+            "raufaser": [
+              0.0,
+              0.03
+            ],
+            "altbau_leimfarbe": [
+              0.35,
+              0.6
+            ],
+            "schadhaft": [
+              0.2,
+              0.4
+            ]
+          },
+          "material_uplift": {
+            "gipskarton_neu": [
+              0.05,
+              0.15
+            ],
+            "altbau_leimfarbe": [
+              0.15,
+              0.3
+            ],
+            "schadhaft": [
+              0.1,
+              0.25
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "farbwechsel",
@@ -1229,7 +1263,21 @@
           "note_if": {
             "True": "deckkraft_farbwechsel"
           },
-          "help_de": "Dunkel auf hell braucht einen dritten Anstrich"
+          "help_de": "Dunkel auf hell braucht einen dritten Anstrich",
+          "uplift": {
+            "True": [
+              0.28,
+              0.4
+            ]
+          },
+          "material_uplift": {
+            "True": [
+              0.3,
+              0.45
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "nikotin",
@@ -1242,7 +1290,21 @@
           "note_if": {
             "True": "nikotin_sperrgrund"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "True": [
+              0.1,
+              0.18
+            ]
+          },
+          "material_uplift": {
+            "True": [
+              0.2,
+              0.4
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "moebel",
@@ -1269,7 +1331,20 @@
             "voll": "moebel_bauseits",
             "teilweise": "moebel_bauseits"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "teilweise": [
+              0.06,
+              0.12
+            ],
+            "voll": [
+              0.15,
+              0.28
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -1420,7 +1495,41 @@
             "altbau_leimfarbe": "leimfarbe_altanstrich",
             "schadhaft": "untergrund_tragfaehig"
           },
-          "help_de": "Was schon an der Wand ist, entscheidet über den Aufwand davor."
+          "help_de": "Was schon an der Wand ist, entscheidet über den Aufwand davor.",
+          "uplift": {
+            "gipskarton_neu": [
+              0.0,
+              0.05
+            ],
+            "raufaser": [
+              0.0,
+              0.03
+            ],
+            "altbau_leimfarbe": [
+              0.35,
+              0.6
+            ],
+            "schadhaft": [
+              0.2,
+              0.4
+            ]
+          },
+          "material_uplift": {
+            "gipskarton_neu": [
+              0.05,
+              0.15
+            ],
+            "altbau_leimfarbe": [
+              0.15,
+              0.3
+            ],
+            "schadhaft": [
+              0.1,
+              0.25
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "nikotin",
@@ -1433,7 +1542,21 @@
           "note_if": {
             "True": "nikotin_sperrgrund"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "True": [
+              0.1,
+              0.18
+            ]
+          },
+          "material_uplift": {
+            "True": [
+              0.2,
+              0.4
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "moebel",
@@ -1460,7 +1583,20 @@
             "voll": "moebel_bauseits",
             "teilweise": "moebel_bauseits"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "teilweise": [
+              0.06,
+              0.12
+            ],
+            "voll": [
+              0.15,
+              0.28
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -1586,7 +1722,11 @@
           "affects": "qty",
           "default": 70,
           "note_if": {},
-          "help_de": "Wand- und Deckenfläche werden daraus gerechnet"
+          "help_de": "Wand- und Deckenfläche werden daraus gerechnet",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "untergrund",
@@ -1621,7 +1761,41 @@
             "altbau_leimfarbe": "leimfarbe_altanstrich",
             "schadhaft": "untergrund_tragfaehig"
           },
-          "help_de": "Was schon an der Wand ist, entscheidet über den Aufwand davor."
+          "help_de": "Was schon an der Wand ist, entscheidet über den Aufwand davor.",
+          "uplift": {
+            "gipskarton_neu": [
+              0.0,
+              0.05
+            ],
+            "raufaser": [
+              0.0,
+              0.03
+            ],
+            "altbau_leimfarbe": [
+              0.35,
+              0.6
+            ],
+            "schadhaft": [
+              0.2,
+              0.4
+            ]
+          },
+          "material_uplift": {
+            "gipskarton_neu": [
+              0.05,
+              0.15
+            ],
+            "altbau_leimfarbe": [
+              0.15,
+              0.3
+            ],
+            "schadhaft": [
+              0.1,
+              0.25
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "farbwechsel",
@@ -1634,7 +1808,21 @@
           "note_if": {
             "True": "deckkraft_farbwechsel"
           },
-          "help_de": "Dunkel auf hell braucht einen dritten Anstrich"
+          "help_de": "Dunkel auf hell braucht einen dritten Anstrich",
+          "uplift": {
+            "True": [
+              0.28,
+              0.4
+            ]
+          },
+          "material_uplift": {
+            "True": [
+              0.3,
+              0.45
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "nikotin",
@@ -1647,7 +1835,21 @@
           "note_if": {
             "True": "nikotin_sperrgrund"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "True": [
+              0.1,
+              0.18
+            ]
+          },
+          "material_uplift": {
+            "True": [
+              0.2,
+              0.4
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "moebel",
@@ -1674,7 +1876,20 @@
             "voll": "moebel_bauseits",
             "teilweise": "moebel_bauseits"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "teilweise": [
+              0.06,
+              0.12
+            ],
+            "voll": [
+              0.15,
+              0.28
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -1872,7 +2087,41 @@
             "altbau_leimfarbe": "leimfarbe_altanstrich",
             "schadhaft": "untergrund_tragfaehig"
           },
-          "help_de": "Was schon an der Wand ist, entscheidet über den Aufwand davor."
+          "help_de": "Was schon an der Wand ist, entscheidet über den Aufwand davor.",
+          "uplift": {
+            "gipskarton_neu": [
+              0.0,
+              0.05
+            ],
+            "raufaser": [
+              0.0,
+              0.03
+            ],
+            "altbau_leimfarbe": [
+              0.35,
+              0.6
+            ],
+            "schadhaft": [
+              0.2,
+              0.4
+            ]
+          },
+          "material_uplift": {
+            "gipskarton_neu": [
+              0.05,
+              0.15
+            ],
+            "altbau_leimfarbe": [
+              0.15,
+              0.3
+            ],
+            "schadhaft": [
+              0.1,
+              0.25
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "moebel",
@@ -1899,7 +2148,20 @@
             "voll": "moebel_bauseits",
             "teilweise": "moebel_bauseits"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "teilweise": [
+              0.06,
+              0.12
+            ],
+            "voll": [
+              0.15,
+              0.28
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -2073,7 +2335,41 @@
             "altbau_leimfarbe": "leimfarbe_altanstrich",
             "schadhaft": "untergrund_tragfaehig"
           },
-          "help_de": "Was schon an der Wand ist, entscheidet über den Aufwand davor."
+          "help_de": "Was schon an der Wand ist, entscheidet über den Aufwand davor.",
+          "uplift": {
+            "gipskarton_neu": [
+              0.0,
+              0.05
+            ],
+            "raufaser": [
+              0.0,
+              0.03
+            ],
+            "altbau_leimfarbe": [
+              0.35,
+              0.6
+            ],
+            "schadhaft": [
+              0.2,
+              0.4
+            ]
+          },
+          "material_uplift": {
+            "gipskarton_neu": [
+              0.05,
+              0.15
+            ],
+            "altbau_leimfarbe": [
+              0.15,
+              0.3
+            ],
+            "schadhaft": [
+              0.1,
+              0.25
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "moebel",
@@ -2100,7 +2396,20 @@
             "voll": "moebel_bauseits",
             "teilweise": "moebel_bauseits"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "teilweise": [
+              0.06,
+              0.12
+            ],
+            "voll": [
+              0.15,
+              0.28
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -2294,7 +2603,24 @@
             "raufaser_mehrfach": "untergrund_tragfaehig",
             "papier_alt": "altbau_untergrund"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "raufaser_mehrfach": [
+              0.3,
+              0.55
+            ],
+            "vlies": [
+              -0.35,
+              -0.2
+            ],
+            "papier_alt": [
+              0.45,
+              0.8
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "moebel",
@@ -2321,7 +2647,20 @@
             "voll": "moebel_bauseits",
             "teilweise": "moebel_bauseits"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "teilweise": [
+              0.06,
+              0.12
+            ],
+            "voll": [
+              0.15,
+              0.28
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -2449,7 +2788,41 @@
             "altbau_leimfarbe": "leimfarbe_altanstrich",
             "schadhaft": "untergrund_tragfaehig"
           },
-          "help_de": "Was schon an der Wand ist, entscheidet über den Aufwand davor."
+          "help_de": "Was schon an der Wand ist, entscheidet über den Aufwand davor.",
+          "uplift": {
+            "gipskarton_neu": [
+              0.0,
+              0.05
+            ],
+            "raufaser": [
+              0.0,
+              0.03
+            ],
+            "altbau_leimfarbe": [
+              0.35,
+              0.6
+            ],
+            "schadhaft": [
+              0.2,
+              0.4
+            ]
+          },
+          "material_uplift": {
+            "gipskarton_neu": [
+              0.05,
+              0.15
+            ],
+            "altbau_leimfarbe": [
+              0.15,
+              0.3
+            ],
+            "schadhaft": [
+              0.1,
+              0.25
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "moebel",
@@ -2476,7 +2849,20 @@
             "voll": "moebel_bauseits",
             "teilweise": "moebel_bauseits"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "teilweise": [
+              0.06,
+              0.12
+            ],
+            "voll": [
+              0.15,
+              0.28
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -2641,7 +3027,29 @@
           "note_if": {
             "versetzt": "verschnitt_muster"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "ohne": [
+              -0.08,
+              -0.04
+            ],
+            "versetzt": [
+              0.1,
+              0.18
+            ]
+          },
+          "material_uplift": {
+            "ohne": [
+              -0.05,
+              -0.02
+            ],
+            "versetzt": [
+              0.1,
+              0.2
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "material_bauseits",
@@ -2654,7 +3062,15 @@
           "note_if": {
             "True": "stoff_bauseits_moeglich"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {
+            "True": [
+              "mat"
+            ]
+          },
+          "drops_disposal": {}
         },
         {
           "key": "untergrund",
@@ -2689,7 +3105,41 @@
             "altbau_leimfarbe": "leimfarbe_altanstrich",
             "schadhaft": "untergrund_tragfaehig"
           },
-          "help_de": "Was schon an der Wand ist, entscheidet über den Aufwand davor."
+          "help_de": "Was schon an der Wand ist, entscheidet über den Aufwand davor.",
+          "uplift": {
+            "gipskarton_neu": [
+              0.0,
+              0.05
+            ],
+            "raufaser": [
+              0.0,
+              0.03
+            ],
+            "altbau_leimfarbe": [
+              0.35,
+              0.6
+            ],
+            "schadhaft": [
+              0.2,
+              0.4
+            ]
+          },
+          "material_uplift": {
+            "gipskarton_neu": [
+              0.05,
+              0.15
+            ],
+            "altbau_leimfarbe": [
+              0.15,
+              0.3
+            ],
+            "schadhaft": [
+              0.1,
+              0.25
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "moebel",
@@ -2716,7 +3166,20 @@
             "voll": "moebel_bauseits",
             "teilweise": "moebel_bauseits"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "teilweise": [
+              0.06,
+              0.12
+            ],
+            "voll": [
+              0.15,
+              0.28
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -2844,7 +3307,11 @@
           "affects": "qty",
           "default": 1,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "altlack",
@@ -2870,7 +3337,25 @@
           "note_if": {
             "abblaetternd": "untergrund_tragfaehig"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "abblaetternd": [
+              0.35,
+              0.6
+            ],
+            "furnier_roh": [
+              0.15,
+              0.3
+            ]
+          },
+          "material_uplift": {
+            "furnier_roh": [
+              0.1,
+              0.2
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "baujahr",
@@ -2881,7 +3366,11 @@
           "affects": "note",
           "default": null,
           "note_if": {},
-          "help_de": "Vor 1960 kann der Altanstrich Blei enthalten."
+          "help_de": "Vor 1960 kann der Altanstrich Blei enthalten.",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -3054,7 +3543,11 @@
           "affects": "qty",
           "default": 1,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "typ",
@@ -3078,7 +3571,20 @@
           "affects": "variant",
           "default": "flach",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "rippen": [
+              0.35,
+              0.6
+            ],
+            "guss_alt": [
+              0.5,
+              0.85
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -3228,7 +3734,11 @@
           "affects": "qty",
           "default": 2,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "zustand_holz",
@@ -3254,7 +3764,20 @@
           "note_if": {
             "schaeden": "untergrund_tragfaehig"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "gut": [
+              -0.2,
+              -0.12
+            ],
+            "schaeden": [
+              0.3,
+              0.55
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "baujahr",
@@ -3265,7 +3788,11 @@
           "affects": "note",
           "default": null,
           "note_if": {},
-          "help_de": "Vor 1960 kann der Altanstrich Blei enthalten."
+          "help_de": "Vor 1960 kann der Altanstrich Blei enthalten.",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "geruest",
@@ -3291,7 +3818,11 @@
           "note_if": {
             "noetig": "geruest_nicht_enthalten"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -3465,7 +3996,11 @@
           "affects": "qty",
           "default": 4,
           "note_if": {},
-          "help_de": "Ab 0,5 m² ist es nach Umweltbundesamt ein Fall für Fachfirmen"
+          "help_de": "Ab 0,5 m² ist es nach Umweltbundesamt ein Fall für Fachfirmen",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "ursache",
@@ -3496,7 +4031,11 @@
             "unbekannt": "schimmel_ursache_extra",
             "wasserschaden": "folgeschaeden"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "umfang_gross",
@@ -3509,7 +4048,21 @@
           "note_if": {
             "True": "schimmel_grossflaechig"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "False": [
+              -0.3,
+              -0.18
+            ]
+          },
+          "material_uplift": {
+            "False": [
+              -0.35,
+              -0.2
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "moebel",
@@ -3536,7 +4089,20 @@
             "voll": "moebel_bauseits",
             "teilweise": "moebel_bauseits"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "teilweise": [
+              0.06,
+              0.12
+            ],
+            "voll": [
+              0.15,
+              0.28
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -3725,7 +4291,29 @@
           "note_if": {
             "spachtel_dekor": "musteranstrich"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "rollputz": [
+              -0.15,
+              -0.1
+            ],
+            "spachtel_dekor": [
+              0.35,
+              0.65
+            ]
+          },
+          "material_uplift": {
+            "rollputz": [
+              -0.1,
+              -0.05
+            ],
+            "spachtel_dekor": [
+              0.2,
+              0.45
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "untergrund",
@@ -3760,7 +4348,41 @@
             "altbau_leimfarbe": "leimfarbe_altanstrich",
             "schadhaft": "untergrund_tragfaehig"
           },
-          "help_de": "Was schon an der Wand ist, entscheidet über den Aufwand davor."
+          "help_de": "Was schon an der Wand ist, entscheidet über den Aufwand davor.",
+          "uplift": {
+            "gipskarton_neu": [
+              0.0,
+              0.05
+            ],
+            "raufaser": [
+              0.0,
+              0.03
+            ],
+            "altbau_leimfarbe": [
+              0.35,
+              0.6
+            ],
+            "schadhaft": [
+              0.2,
+              0.4
+            ]
+          },
+          "material_uplift": {
+            "gipskarton_neu": [
+              0.05,
+              0.15
+            ],
+            "altbau_leimfarbe": [
+              0.15,
+              0.3
+            ],
+            "schadhaft": [
+              0.1,
+              0.25
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "moebel",
@@ -3787,7 +4409,20 @@
             "voll": "moebel_bauseits",
             "teilweise": "moebel_bauseits"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "teilweise": [
+              0.06,
+              0.12
+            ],
+            "voll": [
+              0.15,
+              0.28
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -3915,7 +4550,11 @@
           "affects": "qty",
           "default": 8,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "art",
@@ -3941,7 +4580,20 @@
           "note_if": {
             "setzriss": "statik_nicht_tragend"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "setzriss": [
+              0.4,
+              0.8
+            ],
+            "anschlussfuge": [
+              0.1,
+              0.25
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -4109,7 +4761,33 @@
           "note_if": {
             "putz_kreidend": "fassade_haftung"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "putz_kreidend": [
+              0.15,
+              0.3
+            ],
+            "wdvs_bestand": [
+              0.05,
+              0.12
+            ],
+            "sichtbeton": [
+              0.1,
+              0.25
+            ]
+          },
+          "material_uplift": {
+            "putz_kreidend": [
+              0.15,
+              0.3
+            ],
+            "sichtbeton": [
+              0.1,
+              0.2
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "hoehe",
@@ -4135,7 +4813,20 @@
           "note_if": {
             "ueber_4": "absturzsicherung_norm"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "bis_4": [
+              0.08,
+              0.15
+            ],
+            "ueber_4": [
+              0.18,
+              0.32
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "geruest",
@@ -4161,7 +4852,11 @@
           "note_if": {
             "noetig": "geruest_nicht_enthalten"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -4326,7 +5021,25 @@
           "note_if": {
             "graffiti": "regie_abrechnung"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "staub": [
+              -0.25,
+              -0.15
+            ],
+            "graffiti": [
+              0.4,
+              0.9
+            ]
+          },
+          "material_uplift": {
+            "graffiti": [
+              0.5,
+              1.2
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "geruest",
@@ -4352,7 +5065,11 @@
           "note_if": {
             "noetig": "geruest_nicht_enthalten"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -4491,7 +5208,29 @@
           "affects": "variant",
           "default": "eps",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "mineralwolle": [
+              0.1,
+              0.18
+            ],
+            "holzfaser": [
+              0.12,
+              0.22
+            ]
+          },
+          "material_uplift": {
+            "mineralwolle": [
+              0.25,
+              0.45
+            ],
+            "holzfaser": [
+              0.35,
+              0.7
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "staerke",
@@ -4515,7 +5254,20 @@
           "affects": "variant",
           "default": "16",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {
+            "12": [
+              -0.1,
+              -0.06
+            ],
+            "20": [
+              0.12,
+              0.2
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "geruest",
@@ -4541,7 +5293,11 @@
           "note_if": {
             "noetig": "geruest_nicht_enthalten"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -4753,7 +5509,20 @@
           "note_if": {
             "vergraut": "untergrund_tragfaehig"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "neu": [
+              -0.15,
+              -0.08
+            ],
+            "lasiert_intakt": [
+              -0.12,
+              -0.06
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -4899,7 +5668,24 @@
           "note_if": {
             "beschichtet": "untergrund_tragfaehig"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "beton_neu": [
+              -0.1,
+              -0.05
+            ],
+            "estrich": [
+              0.0,
+              0.08
+            ],
+            "beschichtet": [
+              0.35,
+              0.7
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "feuchte",
@@ -4912,7 +5698,21 @@
           "note_if": {
             "True": "folgeschaeden"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "True": [
+              0.15,
+              0.3
+            ]
+          },
+          "material_uplift": {
+            "True": [
+              0.25,
+              0.5
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -5063,7 +5863,11 @@
           "affects": "note",
           "default": null,
           "note_if": {},
-          "help_de": "Vor 1990 kann der Kleber Asbest enthalten."
+          "help_de": "Vor 1990 kann der Kleber Asbest enthalten.",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "fussbodenheizung",
@@ -5076,7 +5880,11 @@
           "note_if": {
             "True": "fbh_aufheizprotokoll"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -5218,7 +6026,20 @@
           "note_if": {
             "unbekannt": "dickbett_mehraufwand"
           },
-          "help_de": "An einer Fliesenkante ablesbar — die wertvollste Frage im Formular"
+          "help_de": "An einer Fliesenkante ablesbar — die wertvollste Frage im Formular",
+          "uplift": {
+            "dickbett": [
+              0.3,
+              0.55
+            ],
+            "duennbett": [
+              -0.2,
+              -0.12
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "baujahr",
@@ -5229,7 +6050,11 @@
           "affects": "note",
           "default": null,
           "note_if": {},
-          "help_de": "Vor 1990 kann der Kleber Asbest enthalten."
+          "help_de": "Vor 1990 kann der Kleber Asbest enthalten.",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "fussbodenheizung",
@@ -5242,7 +6067,11 @@
           "note_if": {
             "True": "fbh_aufheizprotokoll"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -5396,7 +6225,37 @@
             "holzdielen": "untergrund_eben",
             "unbekannt": "untergrund_eben"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "estrich_neu": [
+              0.0,
+              0.05
+            ],
+            "fliesen_bestand": [
+              0.1,
+              0.2
+            ],
+            "holzdielen": [
+              0.25,
+              0.45
+            ],
+            "unbekannt": [
+              0.05,
+              0.15
+            ]
+          },
+          "material_uplift": {
+            "fliesen_bestand": [
+              0.05,
+              0.15
+            ],
+            "holzdielen": [
+              0.15,
+              0.35
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "verlegeart",
@@ -5423,7 +6282,29 @@
             "diagonal": "verschnitt_muster",
             "muster": "verschnitt_muster"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "diagonal": [
+              0.1,
+              0.18
+            ],
+            "muster": [
+              0.2,
+              0.35
+            ]
+          },
+          "material_uplift": {
+            "diagonal": [
+              0.06,
+              0.12
+            ],
+            "muster": [
+              0.1,
+              0.2
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "raum",
@@ -5454,7 +6335,24 @@
             "bad": "abdichtung_nassbereich",
             "aussen": "frostsicher_aussen"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "kueche": [
+              0.05,
+              0.1
+            ],
+            "bad": [
+              0.1,
+              0.2
+            ],
+            "aussen": [
+              0.12,
+              0.25
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "fussbodenheizung",
@@ -5467,7 +6365,11 @@
           "note_if": {
             "True": "fbh_aufheizprotokoll"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "tueren_kuerzen",
@@ -5480,7 +6382,11 @@
           "note_if": {
             "True": "tuerblatt_kuerzen"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "belag_bauseits",
@@ -5494,7 +6400,11 @@
             "True": "belag_nicht_enthalten",
             "False": "belag_nicht_enthalten"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -5643,20 +6553,20 @@
           "unit": "",
           "options": [
             [
-              "estrich_neu",
-              "Estrich, neu"
+              "putz",
+              "Putz oder Mauerwerk, tragfähig"
             ],
             [
-              "estrich_alt",
-              "Estrich, alt aber eben"
+              "gipskarton",
+              "Gipskarton oder Gipsfaser"
+            ],
+            [
+              "estrich",
+              "Estrich oder Betonboden"
             ],
             [
               "fliesen_bestand",
               "Bestehende Fliesen"
-            ],
-            [
-              "holzdielen",
-              "Holzdielen"
             ],
             [
               "unbekannt",
@@ -5664,14 +6574,39 @@
             ]
           ],
           "affects": "variant",
-          "default": "estrich_alt",
+          "default": "putz",
           "note_if": {
-            "estrich_neu": "restfeuchte_messung",
+            "gipskarton": "untergrund_tragfaehig",
             "fliesen_bestand": "aufbauhoehe",
-            "holzdielen": "untergrund_eben",
-            "unbekannt": "untergrund_eben"
+            "unbekannt": "untergrund_tragfaehig"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "gipskarton": [
+              0.05,
+              0.15
+            ],
+            "fliesen_bestand": [
+              0.12,
+              0.22
+            ],
+            "unbekannt": [
+              0.05,
+              0.15
+            ]
+          },
+          "material_uplift": {
+            "gipskarton": [
+              0.05,
+              0.2
+            ],
+            "fliesen_bestand": [
+              0.05,
+              0.15
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "verlegeart",
@@ -5698,7 +6633,29 @@
             "diagonal": "verschnitt_muster",
             "muster": "verschnitt_muster"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "diagonal": [
+              0.1,
+              0.18
+            ],
+            "muster": [
+              0.2,
+              0.35
+            ]
+          },
+          "material_uplift": {
+            "diagonal": [
+              0.06,
+              0.12
+            ],
+            "muster": [
+              0.1,
+              0.2
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "raum",
@@ -5729,7 +6686,24 @@
             "bad": "abdichtung_nassbereich",
             "aussen": "frostsicher_aussen"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "kueche": [
+              0.05,
+              0.1
+            ],
+            "bad": [
+              0.1,
+              0.2
+            ],
+            "aussen": [
+              0.12,
+              0.25
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "belag_bauseits",
@@ -5743,7 +6717,11 @@
             "True": "belag_nicht_enthalten",
             "False": "belag_nicht_enthalten"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -5908,7 +6886,25 @@
           "note_if": {
             "120x240": "grossformat_zweiter_mann"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "100x100": [
+              0.05,
+              0.12
+            ],
+            "120x240": [
+              0.25,
+              0.45
+            ]
+          },
+          "material_uplift": {
+            "120x240": [
+              0.1,
+              0.2
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "untergrund",
@@ -5945,7 +6941,37 @@
             "holzdielen": "untergrund_eben",
             "unbekannt": "untergrund_eben"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "estrich_neu": [
+              0.0,
+              0.05
+            ],
+            "fliesen_bestand": [
+              0.1,
+              0.2
+            ],
+            "holzdielen": [
+              0.25,
+              0.45
+            ],
+            "unbekannt": [
+              0.05,
+              0.15
+            ]
+          },
+          "material_uplift": {
+            "fliesen_bestand": [
+              0.05,
+              0.15
+            ],
+            "holzdielen": [
+              0.15,
+              0.35
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "raum",
@@ -5976,7 +7002,24 @@
             "bad": "abdichtung_nassbereich",
             "aussen": "frostsicher_aussen"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "kueche": [
+              0.05,
+              0.1
+            ],
+            "bad": [
+              0.1,
+              0.2
+            ],
+            "aussen": [
+              0.12,
+              0.25
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "fussbodenheizung",
@@ -5989,7 +7032,11 @@
           "note_if": {
             "True": "fbh_aufheizprotokoll"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "belag_bauseits",
@@ -6003,7 +7050,11 @@
             "True": "belag_nicht_enthalten",
             "False": "belag_nicht_enthalten"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -6175,20 +7226,20 @@
           "unit": "",
           "options": [
             [
-              "estrich_neu",
-              "Estrich, neu"
+              "putz",
+              "Putz oder Mauerwerk, tragfähig"
             ],
             [
-              "estrich_alt",
-              "Estrich, alt aber eben"
+              "gipskarton",
+              "Gipskarton oder Gipsfaser"
+            ],
+            [
+              "estrich",
+              "Estrich oder Betonboden"
             ],
             [
               "fliesen_bestand",
               "Bestehende Fliesen"
-            ],
-            [
-              "holzdielen",
-              "Holzdielen"
             ],
             [
               "unbekannt",
@@ -6196,14 +7247,39 @@
             ]
           ],
           "affects": "variant",
-          "default": "estrich_alt",
+          "default": "putz",
           "note_if": {
-            "estrich_neu": "restfeuchte_messung",
+            "gipskarton": "untergrund_tragfaehig",
             "fliesen_bestand": "aufbauhoehe",
-            "holzdielen": "untergrund_eben",
-            "unbekannt": "untergrund_eben"
+            "unbekannt": "untergrund_tragfaehig"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "gipskarton": [
+              0.05,
+              0.15
+            ],
+            "fliesen_bestand": [
+              0.12,
+              0.22
+            ],
+            "unbekannt": [
+              0.05,
+              0.15
+            ]
+          },
+          "material_uplift": {
+            "gipskarton": [
+              0.05,
+              0.2
+            ],
+            "fliesen_bestand": [
+              0.05,
+              0.15
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "raum",
@@ -6234,7 +7310,24 @@
             "bad": "abdichtung_nassbereich",
             "aussen": "frostsicher_aussen"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "kueche": [
+              0.05,
+              0.1
+            ],
+            "bad": [
+              0.1,
+              0.2
+            ],
+            "aussen": [
+              0.12,
+              0.25
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "belag_bauseits",
@@ -6248,7 +7341,11 @@
             "True": "belag_nicht_enthalten",
             "False": "belag_nicht_enthalten"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -6398,7 +7495,11 @@
           "affects": "qty",
           "default": 14,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "setzstufe",
@@ -6409,29 +7510,43 @@
           "affects": "variant",
           "default": true,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "False": [
+              -0.3,
+              -0.2
+            ]
+          },
+          "material_uplift": {
+            "False": [
+              -0.25,
+              -0.15
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "untergrund",
-          "label_de": "Untergrund",
+          "label_de": "Untergrund der Stufen",
           "type": "choice",
           "unit": "",
           "options": [
             [
-              "estrich_neu",
-              "Estrich, neu"
+              "beton",
+              "Betontreppe, roh"
             ],
             [
-              "estrich_alt",
-              "Estrich, alt aber eben"
+              "estrich_stufen",
+              "Stufen bereits ausgeglichen"
             ],
             [
               "fliesen_bestand",
               "Bestehende Fliesen"
             ],
             [
-              "holzdielen",
-              "Holzdielen"
+              "holz",
+              "Holztreppe"
             ],
             [
               "unbekannt",
@@ -6439,14 +7554,39 @@
             ]
           ],
           "affects": "variant",
-          "default": "estrich_alt",
+          "default": "beton",
           "note_if": {
-            "estrich_neu": "restfeuchte_messung",
             "fliesen_bestand": "aufbauhoehe",
-            "holzdielen": "untergrund_eben",
+            "holz": "untergrund_eben",
             "unbekannt": "untergrund_eben"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "estrich_stufen": [
+              -0.1,
+              -0.05
+            ],
+            "fliesen_bestand": [
+              0.15,
+              0.3
+            ],
+            "holz": [
+              0.3,
+              0.55
+            ],
+            "unbekannt": [
+              0.05,
+              0.15
+            ]
+          },
+          "material_uplift": {
+            "holz": [
+              0.15,
+              0.35
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "belag_bauseits",
@@ -6460,7 +7600,11 @@
             "True": "belag_nicht_enthalten",
             "False": "belag_nicht_enthalten"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -6623,7 +7767,25 @@
           "affects": "variant",
           "default": "drainmoertel",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "stelzlager": [
+              -0.15,
+              -0.08
+            ],
+            "splitt": [
+              -0.05,
+              0.0
+            ]
+          },
+          "material_uplift": {
+            "stelzlager": [
+              0.1,
+              0.25
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "gefaelle_vorhanden",
@@ -6636,44 +7798,11 @@
           "note_if": {
             "False": "gefaelle"
           },
-          "help_de": ""
-        },
-        {
-          "key": "untergrund",
-          "label_de": "Untergrund",
-          "type": "choice",
-          "unit": "",
-          "options": [
-            [
-              "estrich_neu",
-              "Estrich, neu"
-            ],
-            [
-              "estrich_alt",
-              "Estrich, alt aber eben"
-            ],
-            [
-              "fliesen_bestand",
-              "Bestehende Fliesen"
-            ],
-            [
-              "holzdielen",
-              "Holzdielen"
-            ],
-            [
-              "unbekannt",
-              "Unbekannt"
-            ]
-          ],
-          "affects": "variant",
-          "default": "estrich_alt",
-          "note_if": {
-            "estrich_neu": "restfeuchte_messung",
-            "fliesen_bestand": "aufbauhoehe",
-            "holzdielen": "untergrund_eben",
-            "unbekannt": "untergrund_eben"
-          },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "belag_bauseits",
@@ -6687,7 +7816,11 @@
             "True": "belag_nicht_enthalten",
             "False": "belag_nicht_enthalten"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -6875,7 +8008,29 @@
           "affects": "variant",
           "default": "w2",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "w1": [
+              -0.15,
+              -0.08
+            ],
+            "w3": [
+              0.25,
+              0.45
+            ]
+          },
+          "material_uplift": {
+            "w1": [
+              -0.15,
+              -0.08
+            ],
+            "w3": [
+              0.2,
+              0.4
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "untergrund",
@@ -6884,20 +8039,20 @@
           "unit": "",
           "options": [
             [
-              "estrich_neu",
-              "Estrich, neu"
+              "putz",
+              "Putz oder Mauerwerk, tragfähig"
             ],
             [
-              "estrich_alt",
-              "Estrich, alt aber eben"
+              "gipskarton",
+              "Gipskarton oder Gipsfaser"
+            ],
+            [
+              "estrich",
+              "Estrich oder Betonboden"
             ],
             [
               "fliesen_bestand",
               "Bestehende Fliesen"
-            ],
-            [
-              "holzdielen",
-              "Holzdielen"
             ],
             [
               "unbekannt",
@@ -6905,14 +8060,35 @@
             ]
           ],
           "affects": "variant",
-          "default": "estrich_alt",
+          "default": "putz",
           "note_if": {
-            "estrich_neu": "restfeuchte_messung",
+            "gipskarton": "untergrund_tragfaehig",
             "fliesen_bestand": "aufbauhoehe",
-            "holzdielen": "untergrund_eben",
-            "unbekannt": "untergrund_eben"
+            "unbekannt": "untergrund_tragfaehig"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "gipskarton": [
+              0.08,
+              0.18
+            ],
+            "fliesen_bestand": [
+              0.1,
+              0.2
+            ],
+            "unbekannt": [
+              0.05,
+              0.15
+            ]
+          },
+          "material_uplift": {
+            "gipskarton": [
+              0.1,
+              0.25
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -7075,7 +8251,20 @@
           "affects": "variant",
           "default": "komplett",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "nur_silikon": [
+              -0.45,
+              -0.3
+            ],
+            "teilweise": [
+              -0.25,
+              -0.15
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "raum",
@@ -7106,7 +8295,24 @@
             "bad": "abdichtung_nassbereich",
             "aussen": "frostsicher_aussen"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "kueche": [
+              0.05,
+              0.1
+            ],
+            "bad": [
+              0.1,
+              0.2
+            ],
+            "aussen": [
+              0.12,
+              0.25
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -7256,7 +8462,11 @@
           "affects": "qty",
           "default": 8,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "schimmel",
@@ -7269,7 +8479,11 @@
           "note_if": {
             "True": "schimmel_ursache_extra"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "raum",
@@ -7300,7 +8514,24 @@
             "bad": "abdichtung_nassbereich",
             "aussen": "frostsicher_aussen"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "kueche": [
+              0.05,
+              0.1
+            ],
+            "bad": [
+              0.1,
+              0.2
+            ],
+            "aussen": [
+              0.12,
+              0.25
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -7449,7 +8680,11 @@
           "affects": "qty",
           "default": 1,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "ersatz_vorhanden",
@@ -7462,7 +8697,11 @@
           "note_if": {
             "False": "fliesen_ersatz_farbton"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "baujahr",
@@ -7473,7 +8712,11 @@
           "affects": "note",
           "default": null,
           "note_if": {},
-          "help_de": "Vor 1990 kann der Kleber Asbest enthalten."
+          "help_de": "Vor 1990 kann der Kleber Asbest enthalten.",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -7622,7 +8865,11 @@
           "affects": "qty",
           "default": 20,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "belag_bauseits",
@@ -7636,7 +8883,11 @@
             "True": "belag_nicht_enthalten",
             "False": "belag_nicht_enthalten"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -7780,7 +9031,11 @@
           "note_if": {
             "pvc_geklebt": "asbest_vor_1990"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "baujahr",
@@ -7791,7 +9046,11 @@
           "affects": "note",
           "default": null,
           "note_if": {},
-          "help_de": "Vor 1990 kann der Kleber Asbest enthalten."
+          "help_de": "Vor 1990 kann der Kleber Asbest enthalten.",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -7932,7 +9191,29 @@
           "note_if": {
             "ueber_15": "aufbauhoehe"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "bis_15": [
+              0.15,
+              0.3
+            ],
+            "ueber_15": [
+              0.4,
+              0.75
+            ]
+          },
+          "material_uplift": {
+            "bis_15": [
+              0.35,
+              0.7
+            ],
+            "ueber_15": [
+              0.9,
+              1.8
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "untergrund",
@@ -7969,7 +9250,24 @@
             "holzdielen": "untergrund_eben",
             "unbekannt": "untergrund_eben"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "fliesen_bestand": [
+              0.08,
+              0.18
+            ],
+            "holzdielen": [
+              0.2,
+              0.4
+            ],
+            "unbekannt": [
+              0.08,
+              0.2
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "fussbodenheizung",
@@ -7982,7 +9280,11 @@
           "note_if": {
             "True": "fbh_aufheizprotokoll"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -8111,7 +9413,24 @@
             "holzdielen": "untergrund_eben",
             "unbekannt": "untergrund_eben"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "fliesen_bestand": [
+              0.05,
+              0.12
+            ],
+            "holzdielen": [
+              0.15,
+              0.3
+            ],
+            "unbekannt": [
+              0.05,
+              0.15
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "verlegeart",
@@ -8138,7 +9457,29 @@
             "diagonal": "verschnitt_muster",
             "muster": "verschnitt_muster"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "diagonal": [
+              0.1,
+              0.18
+            ],
+            "muster": [
+              0.2,
+              0.35
+            ]
+          },
+          "material_uplift": {
+            "diagonal": [
+              0.06,
+              0.12
+            ],
+            "muster": [
+              0.1,
+              0.2
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "fussbodenheizung",
@@ -8151,7 +9492,11 @@
           "note_if": {
             "True": "fbh_aufheizprotokoll"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "tueren_kuerzen",
@@ -8164,7 +9509,11 @@
           "note_if": {
             "True": "tuerblatt_kuerzen"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "belag_bauseits",
@@ -8178,7 +9527,11 @@
             "True": "belag_nicht_enthalten",
             "False": "belag_nicht_enthalten"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -8316,7 +9669,21 @@
           "note_if": {
             "vollflaechig": "trocknung_nutzung"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "vollflaechig": [
+              0.15,
+              0.3
+            ]
+          },
+          "material_uplift": {
+            "vollflaechig": [
+              0.15,
+              0.3
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "untergrund",
@@ -8353,7 +9720,24 @@
             "holzdielen": "untergrund_eben",
             "unbekannt": "untergrund_eben"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "fliesen_bestand": [
+              0.08,
+              0.18
+            ],
+            "holzdielen": [
+              0.2,
+              0.4
+            ],
+            "unbekannt": [
+              0.05,
+              0.15
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "fussbodenheizung",
@@ -8366,7 +9750,11 @@
           "note_if": {
             "True": "fbh_aufheizprotokoll"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "tueren_kuerzen",
@@ -8379,7 +9767,11 @@
           "note_if": {
             "True": "tuerblatt_kuerzen"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "belag_bauseits",
@@ -8393,7 +9785,11 @@
             "True": "belag_nicht_enthalten",
             "False": "belag_nicht_enthalten"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -8546,7 +9942,24 @@
             "holzdielen": "untergrund_eben",
             "unbekannt": "untergrund_eben"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "fliesen_bestand": [
+              0.1,
+              0.22
+            ],
+            "holzdielen": [
+              0.2,
+              0.4
+            ],
+            "unbekannt": [
+              0.05,
+              0.15
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "verlegeart",
@@ -8573,7 +9986,29 @@
             "diagonal": "verschnitt_muster",
             "muster": "verschnitt_muster"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "diagonal": [
+              0.1,
+              0.18
+            ],
+            "muster": [
+              0.2,
+              0.35
+            ]
+          },
+          "material_uplift": {
+            "diagonal": [
+              0.06,
+              0.12
+            ],
+            "muster": [
+              0.1,
+              0.2
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "fussbodenheizung",
@@ -8586,7 +10021,11 @@
           "note_if": {
             "True": "fbh_aufheizprotokoll"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "tueren_kuerzen",
@@ -8599,7 +10038,11 @@
           "note_if": {
             "True": "tuerblatt_kuerzen"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "belag_bauseits",
@@ -8613,7 +10056,11 @@
             "True": "belag_nicht_enthalten",
             "False": "belag_nicht_enthalten"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -8753,7 +10200,20 @@
           "affects": "variant",
           "default": "stark",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "leicht": [
+              -0.18,
+              -0.1
+            ],
+            "lack_alt": [
+              0.2,
+              0.4
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "oberflaeche",
@@ -8775,7 +10235,21 @@
           "note_if": {
             "oel": "holzschutz_intervall"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "oel": [
+              0.08,
+              0.18
+            ]
+          },
+          "material_uplift": {
+            "oel": [
+              0.1,
+              0.25
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "baujahr",
@@ -8786,7 +10260,11 @@
           "affects": "note",
           "default": null,
           "note_if": {},
-          "help_de": "Vor 1990 kann der Kleber Asbest enthalten."
+          "help_de": "Vor 1990 kann der Kleber Asbest enthalten.",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -8945,7 +10423,21 @@
           "affects": "variant",
           "default": "geklebt",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "lose": [
+              -0.25,
+              -0.15
+            ]
+          },
+          "material_uplift": {
+            "lose": [
+              -0.25,
+              -0.15
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "untergrund",
@@ -8982,7 +10474,24 @@
             "holzdielen": "untergrund_eben",
             "unbekannt": "untergrund_eben"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "fliesen_bestand": [
+              0.05,
+              0.12
+            ],
+            "holzdielen": [
+              0.12,
+              0.25
+            ],
+            "unbekannt": [
+              0.05,
+              0.15
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "tueren_kuerzen",
@@ -8995,7 +10504,11 @@
           "note_if": {
             "True": "tuerblatt_kuerzen"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "belag_bauseits",
@@ -9009,7 +10522,11 @@
             "True": "belag_nicht_enthalten",
             "False": "belag_nicht_enthalten"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -9136,7 +10653,11 @@
           "affects": "qty",
           "default": 400,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "haeufigkeit",
@@ -9163,7 +10684,20 @@
             "14_taegig": "wartungsvertrag",
             "woechentlich": "wartungsvertrag"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "einmalig": [
+              0.15,
+              0.3
+            ],
+            "woechentlich": [
+              -0.15,
+              -0.08
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "gruenschnitt",
@@ -9185,7 +10719,15 @@
           "note_if": {
             "verbleibt": "gruenschnitt_verbleibt"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {
+            "verbleibt": [
+              "schnittgut"
+            ]
+          }
         }
       ],
       "note_keys": [
@@ -9312,7 +10854,11 @@
           "affects": "qty",
           "default": 300,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "moos",
@@ -9323,7 +10869,16 @@
           "affects": "variant",
           "default": true,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "False": [
+              -0.15,
+              -0.08
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "gruenschnitt",
@@ -9345,7 +10900,15 @@
           "note_if": {
             "verbleibt": "gruenschnitt_verbleibt"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {
+            "verbleibt": [
+              "abrechen"
+            ]
+          }
         }
       ],
       "note_keys": [
@@ -9495,7 +11058,11 @@
           "affects": "qty",
           "default": 400,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "menge",
@@ -9515,7 +11082,16 @@
           "affects": "variant",
           "default": "stark",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "leicht": [
+              -0.3,
+              -0.2
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "gruenschnitt",
@@ -9537,7 +11113,15 @@
           "note_if": {
             "verbleibt": "gruenschnitt_verbleibt"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {
+            "verbleibt": [
+              "zusammen"
+            ]
+          }
         }
       ],
       "note_keys": [
@@ -9641,7 +11225,11 @@
           "affects": "qty",
           "default": 40,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "hoehe",
@@ -9667,7 +11255,20 @@
           "note_if": {
             "ueber_250": "absturzsicherung_norm"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "bis_150": [
+              -0.2,
+              -0.12
+            ],
+            "ueber_250": [
+              0.25,
+              0.5
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "seiten",
@@ -9687,7 +11288,16 @@
           "affects": "variant",
           "default": "beidseitig",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "einseitig": [
+              -0.35,
+              -0.25
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "gruenschnitt",
@@ -9709,7 +11319,15 @@
           "note_if": {
             "verbleibt": "gruenschnitt_verbleibt"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {
+            "verbleibt": [
+              "gruenschnitt"
+            ]
+          }
         }
       ],
       "note_keys": [
@@ -9813,7 +11431,11 @@
           "affects": "qty",
           "default": 1,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "groesse",
@@ -9839,7 +11461,20 @@
           "note_if": {
             "gross": "skt_erforderlich"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "obstbaum": [
+              -0.35,
+              -0.25
+            ],
+            "gross": [
+              0.45,
+              0.85
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "gruenschnitt",
@@ -9861,7 +11496,15 @@
           "note_if": {
             "verbleibt": "gruenschnitt_verbleibt"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {
+            "verbleibt": [
+              "haeckseln"
+            ]
+          }
         }
       ],
       "note_keys": [
@@ -9965,7 +11608,11 @@
           "affects": "qty",
           "default": 1,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "groesse",
@@ -9991,7 +11638,20 @@
           "note_if": {
             "ueber_15": "skt_erforderlich"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "bis_8": [
+              -0.3,
+              -0.2
+            ],
+            "ueber_15": [
+              0.4,
+              0.75
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "umfeld",
@@ -10013,7 +11673,16 @@
           "note_if": {
             "beengt": "stueckfaellung"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "frei": [
+              -0.3,
+              -0.2
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "genehmigung",
@@ -10039,7 +11708,11 @@
           "note_if": {
             "offen": "baumschutz_satzung"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -10167,7 +11840,11 @@
           "affects": "qty",
           "default": 150,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "bereitschaft",
@@ -10193,7 +11870,20 @@
           "note_if": {
             "bereitschaft_24": "bereitschaft_pauschale"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "werktags": [
+              -0.25,
+              -0.15
+            ],
+            "bereitschaft_24": [
+              0.3,
+              0.6
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "streumittel",
@@ -10215,7 +11905,16 @@
           "note_if": {
             "salz": "streumittel_vorgabe"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {
+            "salz": [
+              -0.15,
+              0.0
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -10320,7 +12019,11 @@
           "affects": "qty",
           "default": 250,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "vorbereitung",
@@ -10346,7 +12049,20 @@
           "note_if": {
             "bauland": "bodenaustausch_moeglich"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "erdplanum": [
+              -0.2,
+              -0.12
+            ],
+            "bauland": [
+              0.25,
+              0.5
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "leitungen",
@@ -10373,7 +12089,11 @@
             "unbekannt": "leitungen_im_boden",
             "bekannt": "leitungen_im_boden"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -10500,7 +12220,11 @@
           "affects": "qty",
           "default": 180,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "vorbereitung",
@@ -10526,7 +12250,20 @@
           "note_if": {
             "bauland": "bodenaustausch_moeglich"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "erdplanum": [
+              -0.2,
+              -0.12
+            ],
+            "bauland": [
+              0.25,
+              0.5
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "leitungen",
@@ -10553,7 +12290,11 @@
             "unbekannt": "leitungen_im_boden",
             "bekannt": "leitungen_im_boden"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -10657,7 +12398,11 @@
           "affects": "qty",
           "default": 15,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "bepflanzung",
@@ -10681,7 +12426,29 @@
           "affects": "variant",
           "default": "stauden",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "bodendecker": [
+              -0.15,
+              -0.1
+            ],
+            "gehoelze": [
+              0.15,
+              0.3
+            ]
+          },
+          "material_uplift": {
+            "bodendecker": [
+              -0.25,
+              -0.15
+            ],
+            "gehoelze": [
+              0.3,
+              0.6
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "vlies",
@@ -10692,7 +12459,21 @@
           "affects": "variant",
           "default": true,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "False": [
+              -0.12,
+              -0.08
+            ]
+          },
+          "material_uplift": {
+            "False": [
+              -0.2,
+              -0.12
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -10842,7 +12623,11 @@
           "affects": "qty",
           "default": 25,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "hoehe",
@@ -10866,7 +12651,29 @@
           "affects": "variant",
           "default": "bis_175",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "bis_100": [
+              -0.15,
+              -0.1
+            ],
+            "ueber_175": [
+              0.2,
+              0.4
+            ]
+          },
+          "material_uplift": {
+            "bis_100": [
+              -0.25,
+              -0.15
+            ],
+            "ueber_175": [
+              0.35,
+              0.7
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "leitungen",
@@ -10893,7 +12700,11 @@
             "unbekannt": "leitungen_im_boden",
             "bekannt": "leitungen_im_boden"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -11021,7 +12832,11 @@
           "affects": "qty",
           "default": 250,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "steuerung",
@@ -11045,7 +12860,29 @@
           "affects": "variant",
           "default": "automatik",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "manuell": [
+              -0.15,
+              -0.1
+            ],
+            "smart": [
+              0.1,
+              0.2
+            ]
+          },
+          "material_uplift": {
+            "manuell": [
+              -0.25,
+              -0.15
+            ],
+            "smart": [
+              0.25,
+              0.5
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "wasserquelle",
@@ -11072,7 +12909,11 @@
             "brunnen": "wasseranalyse",
             "zisterne": "wasseranalyse"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "leitungen",
@@ -11099,7 +12940,11 @@
             "unbekannt": "leitungen_im_boden",
             "bekannt": "leitungen_im_boden"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -11250,7 +13095,11 @@
           "affects": "qty",
           "default": 60,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "belastung",
@@ -11276,7 +13125,29 @@
           "note_if": {
             "lkw": "unterbau_tragfaehig"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "fussweg": [
+              -0.2,
+              -0.12
+            ],
+            "lkw": [
+              0.3,
+              0.55
+            ]
+          },
+          "material_uplift": {
+            "fussweg": [
+              -0.15,
+              -0.1
+            ],
+            "lkw": [
+              0.25,
+              0.5
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "entwaesserung_vorhanden",
@@ -11289,7 +13160,11 @@
           "note_if": {
             "False": "entwaesserung"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "leitungen",
@@ -11316,7 +13191,11 @@
             "unbekannt": "leitungen_im_boden",
             "bekannt": "leitungen_im_boden"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -11467,7 +13346,11 @@
           "affects": "qty",
           "default": 25,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "material",
@@ -11491,7 +13374,20 @@
           "affects": "variant",
           "default": "wpc",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {
+            "laerche": [
+              -0.2,
+              -0.1
+            ],
+            "bangkirai": [
+              0.15,
+              0.4
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "unterkonstruktion",
@@ -11515,7 +13411,25 @@
           "affects": "variant",
           "default": "stelzlager",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "splitt": [
+              0.1,
+              0.2
+            ],
+            "punktfundamente": [
+              0.25,
+              0.45
+            ]
+          },
+          "material_uplift": {
+            "punktfundamente": [
+              0.1,
+              0.25
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -11643,7 +13557,11 @@
           "affects": "qty",
           "default": 50,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "hoehe",
@@ -11667,7 +13585,29 @@
           "affects": "variant",
           "default": "150",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "100": [
+              -0.1,
+              -0.06
+            ],
+            "200": [
+              0.12,
+              0.22
+            ]
+          },
+          "material_uplift": {
+            "100": [
+              -0.15,
+              -0.1
+            ],
+            "200": [
+              0.18,
+              0.3
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "tor",
@@ -11680,7 +13620,11 @@
           "note_if": {
             "True": "tor_separat"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "leitungen",
@@ -11707,7 +13651,11 @@
             "unbekannt": "leitungen_im_boden",
             "bekannt": "leitungen_im_boden"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -11811,7 +13759,11 @@
           "affects": "qty",
           "default": 12,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "material",
@@ -11835,7 +13787,29 @@
           "affects": "variant",
           "default": "wpc",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "holz": [
+              -0.05,
+              0.0
+            ],
+            "glas_alu": [
+              0.15,
+              0.3
+            ]
+          },
+          "material_uplift": {
+            "holz": [
+              -0.2,
+              -0.1
+            ],
+            "glas_alu": [
+              0.4,
+              0.9
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "hoehe",
@@ -11861,7 +13835,29 @@
           "note_if": {
             "200": "grenzabstand"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "150": [
+              -0.08,
+              -0.04
+            ],
+            "200": [
+              0.1,
+              0.18
+            ]
+          },
+          "material_uplift": {
+            "150": [
+              -0.12,
+              -0.08
+            ],
+            "200": [
+              0.12,
+              0.22
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "leitungen",
@@ -11888,7 +13884,11 @@
             "unbekannt": "leitungen_im_boden",
             "bekannt": "leitungen_im_boden"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -11993,7 +13993,11 @@
           "affects": "qty",
           "default": 15,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "funktion",
@@ -12015,7 +14019,21 @@
           "note_if": {
             "stuetz": "statik_pflicht"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "stuetz": [
+              0.25,
+              0.5
+            ]
+          },
+          "material_uplift": {
+            "stuetz": [
+              0.2,
+              0.4
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "leitungen",
@@ -12042,7 +14060,11 @@
             "unbekannt": "leitungen_im_boden",
             "bekannt": "leitungen_im_boden"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -12170,7 +14192,11 @@
           "affects": "qty",
           "default": 25,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "tiefe",
@@ -12194,7 +14220,20 @@
           "affects": "variant",
           "default": "bis_100",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "bis_60": [
+              -0.2,
+              -0.12
+            ],
+            "ueber_100": [
+              0.3,
+              0.55
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "ableitung",
@@ -12220,7 +14259,11 @@
           "note_if": {
             "kanal": "kanalanschluss_genehmigung"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "leitungen",
@@ -12247,7 +14290,11 @@
             "unbekannt": "leitungen_im_boden",
             "bekannt": "leitungen_im_boden"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -12375,7 +14422,11 @@
           "affects": "qty",
           "default": 5,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "material",
@@ -12399,7 +14450,29 @@
           "affects": "variant",
           "default": "blockstufen",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "betonstein": [
+              -0.1,
+              -0.05
+            ],
+            "naturstein": [
+              0.2,
+              0.4
+            ]
+          },
+          "material_uplift": {
+            "betonstein": [
+              -0.2,
+              -0.1
+            ],
+            "naturstein": [
+              0.35,
+              0.8
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "gelaender",
@@ -12412,7 +14485,11 @@
           "note_if": {
             "True": "gelaender_separat"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -12553,7 +14630,29 @@
           "affects": "variant",
           "default": "mittel",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "klein": [
+              -0.25,
+              -0.15
+            ],
+            "gross": [
+              0.3,
+              0.55
+            ]
+          },
+          "material_uplift": {
+            "klein": [
+              -0.25,
+              -0.15
+            ],
+            "gross": [
+              0.35,
+              0.7
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "technik",
@@ -12577,7 +14676,29 @@
           "affects": "variant",
           "default": "komfort",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "basis": [
+              -0.15,
+              -0.1
+            ],
+            "premium": [
+              0.2,
+              0.4
+            ]
+          },
+          "material_uplift": {
+            "basis": [
+              -0.25,
+              -0.15
+            ],
+            "premium": [
+              0.4,
+              0.8
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "aushub_abtransport",
@@ -12599,7 +14720,15 @@
           "note_if": {
             "verbleibt": "aushub_verbleibt"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {
+            "verbleibt": [
+              "aushub"
+            ]
+          }
         },
         {
           "key": "leitungen",
@@ -12626,7 +14755,11 @@
             "unbekannt": "leitungen_im_boden",
             "bekannt": "leitungen_im_boden"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -12773,7 +14906,11 @@
           "affects": "qty",
           "default": 1,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "montageart",
@@ -12799,7 +14936,25 @@
           "note_if": {
             "umbau_wandhaengend": "vorwand_erforderlich"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "stand": [
+              -0.15,
+              -0.08
+            ],
+            "umbau_wandhaengend": [
+              0.6,
+              1.1
+            ]
+          },
+          "material_uplift": {
+            "umbau_wandhaengend": [
+              0.5,
+              1.0
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "spuelkasten",
@@ -12825,7 +14980,25 @@
           "note_if": {
             "unterputz_neu": "oeffnung_wand"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "unterputz_neu": [
+              0.35,
+              0.65
+            ],
+            "aufputz": [
+              -0.1,
+              -0.05
+            ]
+          },
+          "material_uplift": {
+            "unterputz_neu": [
+              0.4,
+              0.8
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "absperrventil",
@@ -12838,7 +15011,16 @@
           "note_if": {
             "False": "kein_absperrventil"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "False": [
+              0.15,
+              0.35
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "baujahr",
@@ -12849,7 +15031,11 @@
           "affects": "note",
           "default": null,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -12995,7 +15181,11 @@
           "affects": "qty",
           "default": 1,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "typ",
@@ -13019,7 +15209,29 @@
           "affects": "variant",
           "default": "standard",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "moebel": [
+              0.15,
+              0.3
+            ],
+            "aufsatz": [
+              0.1,
+              0.25
+            ]
+          },
+          "material_uplift": {
+            "moebel": [
+              0.3,
+              0.6
+            ],
+            "aufsatz": [
+              0.15,
+              0.35
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "anschluesse",
@@ -13046,7 +15258,29 @@
             "versetzen": "oeffnung_wand",
             "neu": "oeffnung_wand"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "versetzen": [
+              0.35,
+              0.65
+            ],
+            "neu": [
+              0.55,
+              1.0
+            ]
+          },
+          "material_uplift": {
+            "versetzen": [
+              0.1,
+              0.25
+            ],
+            "neu": [
+              0.2,
+              0.45
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "absperrventil",
@@ -13059,7 +15293,16 @@
           "note_if": {
             "False": "kein_absperrventil"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "False": [
+              0.15,
+              0.35
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "baujahr",
@@ -13070,7 +15313,11 @@
           "affects": "note",
           "default": null,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -13208,7 +15455,25 @@
             "neu_erforderlich": "rauchfangkehrer",
             "ungeklaert": "rauchfangkehrer"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "neu_erforderlich": [
+              0.25,
+              0.5
+            ],
+            "ungeklaert": [
+              0.1,
+              0.25
+            ]
+          },
+          "material_uplift": {
+            "neu_erforderlich": [
+              0.2,
+              0.45
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "standort",
@@ -13232,7 +15497,20 @@
           "affects": "variant",
           "default": "bad_kueche",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "keller": [
+              0.05,
+              0.12
+            ],
+            "dachboden": [
+              0.12,
+              0.28
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "baujahr_anlage",
@@ -13243,7 +15521,11 @@
           "affects": "note",
           "default": null,
           "note_if": {},
-          "help_de": "Über 20 Jahre: Ersatzteile oft nicht mehr verfügbar"
+          "help_de": "Über 20 Jahre: Ersatzteile oft nicht mehr verfügbar",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "umstellung",
@@ -13256,7 +15538,11 @@
           "note_if": {
             "True": "foerderung"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -13423,7 +15709,24 @@
             "boden": "leitungsortung",
             "unbekannt": "leitungsortung"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "sichtbar": [
+              -0.35,
+              -0.25
+            ],
+            "wand": [
+              0.15,
+              0.3
+            ],
+            "boden": [
+              0.3,
+              0.6
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "wasser_ab",
@@ -13436,7 +15739,11 @@
           "note_if": {
             "False": "kein_absperrventil"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "zeit",
@@ -13458,7 +15765,11 @@
           "note_if": {
             "nacht_sonntag": "nacht_zuschlag"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "folgeschaden",
@@ -13471,7 +15782,11 @@
           "note_if": {
             "True": "folgeschaeden"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "baujahr",
@@ -13482,7 +15797,11 @@
           "affects": "note",
           "default": null,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -13628,7 +15947,11 @@
           "affects": "qty",
           "default": 1,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "wand",
@@ -13654,7 +15977,20 @@
           "note_if": {
             "beton": "staub"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "beton": [
+              0.25,
+              0.5
+            ],
+            "hohlwand": [
+              -0.15,
+              -0.08
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "leitung",
@@ -13676,7 +16012,21 @@
           "note_if": {
             "neue_zuleitung": "neue_zuleitung_noetig"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "neue_zuleitung": [
+              0.45,
+              0.9
+            ]
+          },
+          "material_uplift": {
+            "neue_zuleitung": [
+              0.3,
+              0.7
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "altanlage",
@@ -13707,7 +16057,24 @@
             "klassisch_null": "klassische_nullung",
             "unbekannt": "altanlage_unbekannt"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "modern": [
+              -0.12,
+              -0.06
+            ],
+            "mit_pe": [
+              -0.06,
+              0.0
+            ],
+            "klassisch_null": [
+              0.2,
+              0.4
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "baujahr",
@@ -13718,7 +16085,11 @@
           "affects": "note",
           "default": null,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -13841,7 +16212,11 @@
           "affects": "qty",
           "default": 25,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "verlegung",
@@ -13867,7 +16242,20 @@
           "note_if": {
             "unterputz": "staub"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "hohlraum": [
+              -0.3,
+              -0.2
+            ],
+            "aufputz": [
+              -0.35,
+              -0.25
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "untergrund",
@@ -13893,7 +16281,20 @@
           "note_if": {
             "beton": "staub"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "gipskarton": [
+              -0.25,
+              -0.15
+            ],
+            "beton": [
+              0.35,
+              0.7
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "durchbruch",
@@ -13906,7 +16307,16 @@
           "note_if": {
             "True": "mauerdurchbruch"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "True": [
+              0.2,
+              0.45
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "altanlage",
@@ -13937,7 +16347,24 @@
             "klassisch_null": "klassische_nullung",
             "unbekannt": "altanlage_unbekannt"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "modern": [
+              -0.12,
+              -0.06
+            ],
+            "mit_pe": [
+              -0.06,
+              0.0
+            ],
+            "klassisch_null": [
+              0.2,
+              0.4
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -14083,7 +16510,11 @@
           "affects": "note",
           "default": 12,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "fi_vorhanden",
@@ -14096,7 +16527,11 @@
           "note_if": {
             "False": "fi_nachruesten"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "platz",
@@ -14109,7 +16544,11 @@
           "note_if": {
             "False": "verteiler_erweiterung"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "altanlage",
@@ -14140,7 +16579,24 @@
             "klassisch_null": "klassische_nullung",
             "unbekannt": "altanlage_unbekannt"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "modern": [
+              -0.12,
+              -0.06
+            ],
+            "mit_pe": [
+              -0.06,
+              0.0
+            ],
+            "klassisch_null": [
+              0.2,
+              0.4
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "baujahr",
@@ -14151,7 +16607,11 @@
           "affects": "note",
           "default": null,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -14627,7 +17087,11 @@
           "note_if": {
             "nacht_sonntag": "nacht_zuschlag"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -14744,7 +17208,16 @@
           "affects": "variant",
           "default": "waschbecken",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "kueche": [
+              0.1,
+              0.25
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "dauer",
@@ -14766,7 +17239,11 @@
           "note_if": {
             "wiederkehrend": "kamera_empfohlen"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -14880,7 +17357,16 @@
           "note_if": {
             "mehrere": "fallstrang_verdacht"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "mehrere": [
+              0.45,
+              0.9
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -14984,7 +17470,11 @@
           "affects": "note",
           "default": 15,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -15089,7 +17579,16 @@
           "note_if": {
             "False": "kein_absperrventil"
           },
-          "help_de": "Ohne Absperrventil muss der Steigstrang abgesperrt werden."
+          "help_de": "Ohne Absperrventil muss der Steigstrang abgesperrt werden.",
+          "uplift": {
+            "False": [
+              0.15,
+              0.35
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "baujahr",
@@ -15100,7 +17599,11 @@
           "affects": "note",
           "default": null,
           "note_if": {},
-          "help_de": "Vor 1990: Asbest- und Bleiprüfung nötig."
+          "help_de": "Vor 1990: Asbest- und Bleiprüfung nötig.",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -15235,7 +17738,16 @@
           "affects": "variant",
           "default": "up",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "ap": [
+              -0.25,
+              -0.15
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "hersteller",
@@ -15248,7 +17760,11 @@
           "note_if": {
             "False": "ersatzteil_verfuegbarkeit"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -15376,7 +17892,11 @@
           "note_if": {
             "True": "fliesen_anschluss"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -15503,7 +18023,11 @@
           "affects": "note",
           "default": null,
           "note_if": {},
-          "help_de": "Vor 1990: Asbest- und Bleiprüfung nötig."
+          "help_de": "Vor 1990: Asbest- und Bleiprüfung nötig.",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "aufbauhoehe",
@@ -15525,7 +18049,21 @@
           "note_if": {
             "nein": "aufbauhoehe_kritisch"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "ja": [
+              -0.35,
+              -0.2
+            ]
+          },
+          "material_uplift": {
+            "ja": [
+              -0.25,
+              -0.12
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "barrierefrei",
@@ -15538,7 +18076,11 @@
           "note_if": {
             "True": "foerderung_barrierefrei"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -15715,7 +18257,16 @@
           "note_if": {
             "False": "wand_lot"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "False": [
+              0.2,
+              0.45
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -15819,7 +18370,11 @@
           "affects": "variant",
           "default": 120,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "anschluss",
@@ -15832,7 +18387,11 @@
           "note_if": {
             "False": "elektro_anschluss"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -15959,7 +18518,11 @@
           "affects": "note",
           "default": null,
           "note_if": {},
-          "help_de": "Vor 1990: Asbest- und Bleiprüfung nötig."
+          "help_de": "Vor 1990: Asbest- und Bleiprüfung nötig.",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "verlegung",
@@ -15979,7 +18542,21 @@
           "affects": "variant",
           "default": "unterputz",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "aufputz": [
+              -0.25,
+              -0.15
+            ]
+          },
+          "material_uplift": {
+            "aufputz": [
+              0.05,
+              0.15
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "material_alt",
@@ -16009,7 +18586,11 @@
           "note_if": {
             "blei": "bleirohre_vor_1970"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -16184,7 +18765,11 @@
           "affects": "qty",
           "default": 3,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -16296,7 +18881,16 @@
           "affects": "variant",
           "default": "gas",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "brennwert": [
+              0.1,
+              0.2
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "letzte",
@@ -16318,7 +18912,11 @@
           "note_if": {
             "ueber_2j": "wartungsstau"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -16431,7 +19029,16 @@
           "affects": "variant",
           "default": "wohnung",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "haus": [
+              0.5,
+              1.0
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -16534,7 +19141,11 @@
           "affects": "note",
           "default": null,
           "note_if": {},
-          "help_de": "Vor 1990: Asbest- und Bleiprüfung nötig."
+          "help_de": "Vor 1990: Asbest- und Bleiprüfung nötig.",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "groesse",
@@ -16545,7 +19156,11 @@
           "affects": "variant",
           "default": 6,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "leitungen",
@@ -16558,7 +19173,21 @@
           "note_if": {
             "True": "steigleitung_zusatz"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "True": [
+              0.35,
+              0.7
+            ]
+          },
+          "material_uplift": {
+            "True": [
+              0.2,
+              0.45
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -16731,7 +19360,11 @@
           "affects": "note",
           "default": null,
           "note_if": {},
-          "help_de": "Vor 1990: Asbest- und Bleiprüfung nötig."
+          "help_de": "Vor 1990: Asbest- und Bleiprüfung nötig.",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "groesse",
@@ -16742,7 +19375,11 @@
           "affects": "qty",
           "default": 7,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "fliesen_alt",
@@ -16768,7 +19405,20 @@
           "note_if": {
             "unbekannt": "dickbett_mehraufwand"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "dickbett": [
+              0.15,
+              0.3
+            ],
+            "duennbett": [
+              -0.1,
+              -0.05
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "zweitbad",
@@ -16781,7 +19431,11 @@
           "note_if": {
             "False": "bad_nicht_nutzbar"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -16996,7 +19650,20 @@
           "affects": "variant",
           "default": "fi_faellt",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "teilausfall": [
+              0.15,
+              0.3
+            ],
+            "flackern": [
+              0.2,
+              0.4
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "zeit",
@@ -17018,7 +19685,11 @@
           "note_if": {
             "nacht_sonntag": "nacht_zuschlag"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "altanlage",
@@ -17049,7 +19720,24 @@
             "klassisch_null": "klassische_nullung",
             "unbekannt": "altanlage_unbekannt"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "modern": [
+              -0.12,
+              -0.06
+            ],
+            "mit_pe": [
+              -0.06,
+              0.0
+            ],
+            "klassisch_null": [
+              0.2,
+              0.4
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -17189,7 +19877,20 @@
           "affects": "variant",
           "default": "wohnung",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "haus": [
+              0.25,
+              0.5
+            ],
+            "gewerbe": [
+              0.55,
+              1.1
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "stromkreise",
@@ -17200,7 +19901,11 @@
           "affects": "qty",
           "default": 12,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "anlass",
@@ -17226,7 +19931,11 @@
           "note_if": {
             "verkauf": "befund_uebergabe"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -17353,7 +20062,11 @@
           "affects": "qty",
           "default": 25,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -17457,7 +20170,11 @@
           "affects": "qty",
           "default": 1,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "altanlage",
@@ -17488,7 +20205,24 @@
             "klassisch_null": "klassische_nullung",
             "unbekannt": "altanlage_unbekannt"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "modern": [
+              -0.12,
+              -0.06
+            ],
+            "mit_pe": [
+              -0.06,
+              0.0
+            ],
+            "klassisch_null": [
+              0.2,
+              0.4
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -17604,7 +20338,20 @@
           "affects": "variant",
           "default": "deckenleuchte",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "haengeleuchte": [
+              0.1,
+              0.2
+            ],
+            "spots": [
+              0.35,
+              0.7
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "anzahl",
@@ -17615,7 +20362,11 @@
           "affects": "qty",
           "default": 1,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "hoehe",
@@ -17628,7 +20379,11 @@
           "note_if": {
             "True": "arbeitsbuehne"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -17731,7 +20486,11 @@
           "affects": "qty",
           "default": 3,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "vernetzt",
@@ -17742,7 +20501,21 @@
           "affects": "variant",
           "default": false,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "True": [
+              0.1,
+              0.25
+            ]
+          },
+          "material_uplift": {
+            "True": [
+              0.3,
+              0.6
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -17845,7 +20618,16 @@
           "affects": "variant",
           "default": true,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "True": [
+              0.2,
+              0.45
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "entfernung",
@@ -17856,7 +20638,11 @@
           "affects": "qty",
           "default": 6,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -17985,7 +20771,11 @@
           "note_if": {
             "False": "neue_zuleitung_noetig"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -18066,7 +20856,11 @@
           "affects": "qty",
           "default": 2,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "laenge",
@@ -18077,7 +20871,11 @@
           "affects": "qty",
           "default": 12,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -18201,7 +20999,11 @@
           "affects": "qty",
           "default": 10,
           "note_if": {},
-          "help_de": "Der größte Kostentreiber. Über 20 m wird die Zuleitung teuer."
+          "help_de": "Der größte Kostentreiber. Über 20 m wird die Zuleitung teuer.",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "verlegung",
@@ -18227,7 +21029,25 @@
           "note_if": {
             "erdverlegt": "erdarbeiten_extra"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "unterputz": [
+              0.2,
+              0.4
+            ],
+            "erdverlegt": [
+              0.55,
+              1.1
+            ]
+          },
+          "material_uplift": {
+            "erdverlegt": [
+              0.25,
+              0.55
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "verteiler_platz",
@@ -18240,7 +21060,11 @@
           "note_if": {
             "False": "verteiler_erweiterung"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "fi_vorhanden",
@@ -18253,7 +21077,11 @@
           "note_if": {
             "False": "fi_typ_b"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -18405,7 +21233,11 @@
           "affects": "qty",
           "default": 2,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "platz",
@@ -18418,7 +21250,11 @@
           "note_if": {
             "False": "verteiler_erweiterung"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -18522,7 +21358,11 @@
           "affects": "qty",
           "default": 75,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "baujahr",
@@ -18533,7 +21373,11 @@
           "affects": "note",
           "default": null,
           "note_if": {},
-          "help_de": "Vor 1965: oft ohne Schutzleiter. Vor 1990: kein FI."
+          "help_de": "Vor 1965: oft ohne Schutzleiter. Vor 1990: kein FI.",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "altanlage",
@@ -18564,7 +21408,24 @@
             "klassisch_null": "klassische_nullung",
             "unbekannt": "altanlage_unbekannt"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "modern": [
+              -0.12,
+              -0.06
+            ],
+            "mit_pe": [
+              -0.06,
+              0.0
+            ],
+            "klassisch_null": [
+              0.2,
+              0.4
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "ausstattung",
@@ -18588,7 +21449,29 @@
           "affects": "variant",
           "default": "standard",
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "basic": [
+              -0.15,
+              -0.08
+            ],
+            "premium": [
+              0.35,
+              0.7
+            ]
+          },
+          "material_uplift": {
+            "basic": [
+              -0.2,
+              -0.12
+            ],
+            "premium": [
+              0.6,
+              1.2
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -18786,7 +21669,11 @@
           "affects": "qty",
           "default": 6,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "neutral",
@@ -18813,7 +21700,11 @@
             "nein": "neutralleiter_noetig",
             "unbekannt": "neutralleiter_noetig"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [
@@ -18940,7 +21831,11 @@
           "affects": "qty",
           "default": 1,
           "note_if": {},
-          "help_de": ""
+          "help_de": "",
+          "uplift": {},
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
         },
         {
           "key": "leitung",
@@ -18967,7 +21862,21 @@
             "nein": "neue_leitung_noetig",
             "unbekannt": "bestandsleitung_nutzbar"
           },
-          "help_de": ""
+          "help_de": "",
+          "uplift": {
+            "nein": [
+              0.35,
+              0.7
+            ]
+          },
+          "material_uplift": {
+            "nein": [
+              0.25,
+              0.55
+            ]
+          },
+          "drops": {},
+          "drops_disposal": {}
         }
       ],
       "note_keys": [

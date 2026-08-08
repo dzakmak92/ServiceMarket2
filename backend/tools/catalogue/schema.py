@@ -56,6 +56,39 @@ class Question:
     variant, or only which notes are attached. Keeping that explicit is what
     stops the form asking things that do not change the number — the fastest
     way to make a tradesperson stop using it.
+
+    For a long time `affects="variant"` was a promise the arithmetic did not
+    keep. The estimator read quantity, condition, access and the Notdienst flag
+    and nothing else, so all five Untergrund options on an Innenanstrich moved
+    the price by exactly €0 while Zustand moved it by €307 — and the pro had no
+    way to tell which was which. Tile format, laying pattern, tree size, wall
+    build-up, how filthy the carpet was: recorded, printed on the quote as an
+    assumption, and absent from the number underneath it.
+
+    The three fields below are how a question says what its answers cost.
+
+    `uplift` and `material_uplift` are ADDITIVE, in the same pool as condition
+    and access, never multiplicative — stacking multipliers produced a 5.7x
+    worst case in v0 that no customer would have signed. `{"diagonal": (0.10,
+    0.18)}` means diagonal laying costs 10–18 % more labour than the default
+    answer does, on top of whatever else is true of the job.
+
+    `drops` removes operations outright, and `drops_disposal` removes only
+    what an operation costs to get rid of while keeping its hours. Those are
+    not surcharges in reverse — the work genuinely is not happening — and
+    expressing them as a negative uplift would spread the saving across
+    positions that never had the cost in them.
+
+    The second one exists because "Grünschnitt verbleibt vor Ort" already
+    printed *"der Entsorgungsanteil entfällt"* on the quote while the total
+    went on containing the tip fee, and dropping the whole operation would
+    have been just as wrong in the other direction: somebody still rakes the
+    clippings up, they just do not drive them anywhere.
+
+    **The default answer always costs nothing.** Every market band in the
+    catalogue was validated with no answers given, so an option that moved the
+    price from the default would silently invalidate the band it was checked
+    against. `validate_questions` fails the build on it.
     """
     key: str
     label_de: str
@@ -66,6 +99,68 @@ class Question:
     default: object = None
     note_if: dict = field(default_factory=dict)   # {answer: note_key}
     help_de: str = ""
+    uplift: dict = field(default_factory=dict)          # {answer: Range} labour
+    material_uplift: dict = field(default_factory=dict)  # {answer: Range}
+    drops: dict = field(default_factory=dict)            # {answer: [op key]}
+    drops_disposal: dict = field(default_factory=dict)   # {answer: [op key]}
+
+
+def validate_questions(jobs) -> None:
+    """The guardrails on what a question is allowed to do to a price.
+
+    Four of them, each because the alternative is a wrong quote rather than an
+    untidy file:
+
+     1. The default answer costs nothing, or the job's market band — checked
+        with no answers given — stops describing what the app quotes.
+     2. An uplift names an answer the question actually offers, so a typo
+        cannot become an option that is silently free.
+     3. A dropped operation exists on the job, so `belag_bauseits` cannot go on
+        quietly failing to remove the material it promises to remove.
+     4. Ranges run low-to-high and never below -1.0, which would price labour
+        as a credit.
+    """
+    problems: list[str] = []
+    for j in jobs:
+        ops = {o.key for o in j.operations}
+        for q in j.guided_form:
+            offered = {v for v, _ in q.options} or {True, False}
+            for name, table in (("uplift", q.uplift),
+                                ("material_uplift", q.material_uplift)):
+                for answer, rng in table.items():
+                    if answer not in offered and str(answer) not in {str(o) for o in offered}:
+                        problems.append(f"{j.key}/{q.key}: {name} for unoffered {answer!r}")
+                    if not (isinstance(rng, tuple) and len(rng) == 2):
+                        problems.append(f"{j.key}/{q.key}: {name}[{answer!r}] is not a range")
+                        continue
+                    if rng[0] > rng[1]:
+                        problems.append(f"{j.key}/{q.key}: {name}[{answer!r}] runs backwards")
+                    if rng[0] <= -1.0:
+                        problems.append(f"{j.key}/{q.key}: {name}[{answer!r}] would invert the price")
+                if q.default is not None and table.get(q.default, (0.0, 0.0)) != (0.0, 0.0):
+                    problems.append(
+                        f"{j.key}/{q.key}: the default answer {q.default!r} carries a "
+                        f"{name} — the market band was validated without it")
+            for name, table in (("drops", q.drops),
+                                ("drops_disposal", q.drops_disposal)):
+                for answer, keys in table.items():
+                    if answer not in offered and str(answer) not in {str(o) for o in offered}:
+                        problems.append(f"{j.key}/{q.key}: {name} for unoffered {answer!r}")
+                    for k in keys:
+                        if k not in ops:
+                            problems.append(
+                                f"{j.key}/{q.key}: {name} names {k!r}, which the job has not got")
+                if q.default is not None and table.get(q.default):
+                    problems.append(f"{j.key}/{q.key}: the default answer {name}")
+            # Removing a disposal cost that is not there reads as a saving on
+            # the quote and is not one.
+            for answer, keys in q.drops_disposal.items():
+                for k in keys:
+                    op = next((o for o in j.operations if o.key == k), None)
+                    if op is not None and not any(op.debris_kg_per_unit):
+                        problems.append(
+                            f"{j.key}/{q.key}: drops_disposal names {k!r}, which produces no debris")
+    assert not problems, "question guardrails:\n  " + "\n  ".join(problems)
 
 
 @dataclass

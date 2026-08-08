@@ -39,14 +39,14 @@ So setup hours and disposal get their own lines, uplifts are carried in the
 labour unit prices, and `lines_net` reports what the positions actually come
 to.
 
-**Answers that did not move the number say so.** The catalogue has one
-quantity axis per job plus condition, access and Notdienst. Questions declared
-`affects="variant"` — tile format, wallpaper pattern match, felling in a
-confined space — are recorded and attach notes, but nothing in the arithmetic
-reads them yet. `answers_applied` and `answers_recorded` come back separately
-rather than letting the caller assume every question was priced, because the
-alternative is a quote whose assumptions promise work the total does not
-contain.
+**Answers that did not move the number say so.** Most of the form now does
+move it: the catalogue states what each answer costs, additively, and this
+reads it. What remains recorded-only is the set of questions that genuinely
+change nothing about the hours — which trade a note is for, whether a permit
+has been applied for. `answers_applied` and `answers_recorded` come back
+separately, built from the arithmetic that actually ran rather than from the
+question's declared `affects`, because the alternative is a quote whose
+assumptions promise work the total does not contain.
 """
 from __future__ import annotations
 
@@ -81,6 +81,59 @@ OUT_OF_HOURS = {"nacht_sonntag"}
 # rings about. Every axis in the catalogue keeps these as its own default, so
 # switching a job's wording cannot move its price.
 DEFAULT_ANSWER = {"condition": "renovierung_leer", "access": "eg_oder_lift"}
+
+# The ceiling on everything additive put together. The honest worst case is an
+# occupied Altbau reached up a narrow stair with the worst substrate the
+# question offers, which comes to roughly 3x — and v0's lesson was that a
+# number above that is not a hard job, it is a modelling error that nobody
+# would have signed. Reported through `uplift_clamped` rather than applied
+# silently, because a quote that hit the ceiling is one to look at by hand.
+MAX_UPLIFT = 3.0
+
+
+def _variant_effects(job: dict, answers: dict) -> tuple:
+    """What the answered form does to hours, material and scope.
+
+    Returns the additive labour uplift, the additive material uplift, the
+    operations the answers removed, the operations that keep their hours but
+    lose their tip fee, and the questions that carried any of it — the last so
+    that `answers_applied` can name them instead of the pro having to guess
+    which of five taps was the one that mattered.
+    """
+    up = [0.0, 0.0]
+    mat = [0.0, 0.0]
+    dropped: set[str] = set()
+    no_disposal: set[str] = set()
+    priced: list[str] = []
+
+    for q in job.get("guided_form") or []:
+        if q["key"] not in answers:
+            continue
+        given = answers[q["key"]]
+        # JSON keys are strings, and a bool answer arrives as True/False. Both
+        # spellings are accepted so a checkbox can carry an uplift.
+        moved = False
+        for field, sink in (("uplift", up), ("material_uplift", mat)):
+            table = q.get(field) or {}
+            rng = table.get(given)
+            if rng is None:
+                rng = table.get(str(given))
+            if rng:
+                sink[0] += float(rng[0])
+                sink[1] += float(rng[1])
+                moved = True
+        for field, sink in (("drops", dropped), ("drops_disposal", no_disposal)):
+            table = q.get(field) or {}
+            keys = table.get(given)
+            if keys is None:
+                keys = table.get(str(given))
+            if keys:
+                sink.update(keys)
+                moved = True
+        if moved:
+            priced.append(q["key"])
+
+    return tuple(up), tuple(mat), dropped, no_disposal, priced
 
 
 @lru_cache(maxsize=1)
@@ -388,10 +441,24 @@ def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT
     setup_add = (_rng(mods["condition_setup_add"][condition])
                  if job.get("messy", True) else (0.0, 0.0))
 
+    # What the rest of the form costs. Until now the answer was "nothing": the
+    # estimator read quantity, condition, access and the Notdienst flag, so a
+    # pro picking "Altbau, Leim- oder Kalkfarbe" as the substrate — which means
+    # washing the whole wall down before a brush is lifted — was quoted the
+    # price for an intact one. The catalogue now says what each answer costs
+    # and this reads it. `variant_up` is the sum of what was answered.
+    (variant_up, variant_mat, dropped, no_disposal,
+     priced_answers) = _variant_effects(job, answers)
+
     # Additive, never multiplicative. Stacking multipliers produced a 5.7x
-    # worst case in v0 that no customer would have signed.
-    up_lo = 1 + cond_up[0] + acc_up[0]
-    up_hi = 1 + cond_up[1] + acc_up[1]
+    # worst case in v0 that no customer would have signed. The variant uplifts
+    # join the same pool for the same reason, and the sum is clamped: the
+    # honest worst case is an occupied Altbau up a narrow stair with the worst
+    # substrate, and that is roughly 3x, not 6x.
+    up_lo = min(1 + cond_up[0] + acc_up[0] + variant_up[0], MAX_UPLIFT)
+    up_hi = min(1 + cond_up[1] + acc_up[1] + variant_up[1], MAX_UPLIFT)
+    mat_lo = max(1 + variant_mat[0], 0.0)
+    mat_hi = max(1 + variant_mat[1], 0.0)
 
     out_of_hours = _norm_choice(answers.get("zeit")) in OUT_OF_HOURS
     emergency = bool(
@@ -447,6 +514,13 @@ def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT
         # why the drift was invisible.
         if op.get("optional"):
             continue
+        # An answer can remove an operation outright. "Belag wird beigestellt"
+        # means the customer is buying the tiles, "Grünschnitt verbleibt vor
+        # Ort" means nobody is paying a tip fee. Both were already printed on
+        # the quote as assumptions while the total went on containing the cost
+        # they said was not there.
+        if op["key"] in dropped:
+            continue
 
         hpu = _rng(op["hours_per_unit"])
         mpu = _rng(op["material_per_unit"])
@@ -457,10 +531,15 @@ def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT
         work[0] += w_lo
         work[1] += w_hi
         # Waste applies to material only. Nobody buys 8% more labour.
-        material[0] += qty * mpu[0] * (1 + waste)
-        material[1] += qty * mpu[1] * (1 + waste)
+        material[0] += qty * mpu[0] * (1 + waste) * mat_lo
+        material[1] += qty * mpu[1] * (1 + waste) * mat_hi
 
-        d_lo, d_hi = qty * dpu[0], qty * dpu[1]
+        # Green waste that stays on site, spoil that stays on the plot: the
+        # work of gathering it still happens, the tip fee does not. The note
+        # attached to these answers has always said "der Entsorgungsanteil
+        # entfällt"; until now only the note said it.
+        d_lo, d_hi = ((0.0, 0.0) if op["key"] in no_disposal
+                      else (qty * dpu[0], qty * dpu[1]))
         debris_kg[0] += d_lo
         debris_kg[1] += d_hi
         # Not all debris costs the same to be rid of: excavated soil is a
@@ -503,7 +582,11 @@ def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT
                   description=op["label_de"] if not has_labour
                   else f"{op['label_de']} — Material",
                   qty=qty, unit=op["unit"],
-                  unit_price=own if own is not None else _mid(mpu),
+                  # Same rule as labour: the uplift rides in the unit price, so
+                  # the positions the pro sends add up to the total the app
+                  # showed them.
+                  unit_price=(own if own is not None
+                              else _mid(mpu) * ((mat_lo + mat_hi) / 2)),
                   waste_factor=waste, rate_key=mat_rk,
                   rate_source="pro" if own is not None else "catalogue")
 
@@ -585,7 +668,10 @@ def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT
         # the same — so a fallback to the typical size was indistinguishable
         # from the pro's own figure.
         "qty_source": qty_source,
-        **_answer_provenance(job, answers, emergency),
+        **_answer_provenance(job, answers, emergency, priced_answers),
+        # A quote that hit the ceiling is one for a human to look at.
+        "uplift_clamped": (1 + cond_up[1] + acc_up[1] + variant_up[1]) > MAX_UPLIFT,
+        "dropped_operations": sorted(dropped),
         # Echoed so the stored estimate keeps the inputs that produced it.
         # When a coefficient turns out wrong, the answer that should have
         # caught it is almost always in here.
@@ -631,21 +717,30 @@ def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT
     }
 
 
-def _answer_provenance(job: dict, answers: dict, emergency: bool) -> dict:
+def _answer_provenance(job: dict, answers: dict, emergency: bool,
+                       priced: Optional[list] = None) -> dict:
     """Which answers changed the total, and which were only recorded.
 
     Stated rather than implied. A pro reading an estimate is entitled to know
     that picking 120x240 tiles attached a note and did not add an hour — that
     is a limit of the model, and hiding it turns the guided form into theatre.
+
+    `priced` is the list of questions whose answer carried an uplift or removed
+    an operation. It is passed in rather than re-derived so that this cannot
+    disagree with the arithmetic that actually ran: the whole value of the
+    split is that a question in `answers_applied` really did move the money.
     """
     applied: list[str] = []
     recorded: list[str] = []
     q_key = (qty_question(job) or {}).get("key")
+    priced_set = set(priced or ())
 
     for q in job.get("guided_form") or []:
         if q["key"] not in answers:
             continue
         if q["key"] == q_key or q["affects"] in ("condition", "access"):
+            applied.append(q["key"])
+        elif q["key"] in priced_set:
             applied.append(q["key"])
         elif q["key"] == "zeit" and emergency:
             applied.append(q["key"])

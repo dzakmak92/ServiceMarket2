@@ -278,6 +278,13 @@ for j in JOBS:
             "options": q.options, "affects": q.affects, "default": q.default,
             "note_if": {str(k): v for k, v in q.note_if.items()},
             "help_de": q.help_de,
+            # What this answer does to the number. Empty on a question that
+            # only attaches a note — which the UI shows as such rather than
+            # letting the pro guess which taps matter.
+            "uplift": {str(k): v for k, v in q.uplift.items()},
+            "material_uplift": {str(k): v for k, v in q.material_uplift.items()},
+            "drops": {str(k): v for k, v in q.drops.items()},
+            "drops_disposal": {str(k): v for k, v in q.drops_disposal.items()},
         } for q in j.guided_form],
         "note_keys": j.note_keys,
         "labour_variance": round(spread, 2),

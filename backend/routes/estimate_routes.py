@@ -219,10 +219,11 @@ async def job_survey(job_key: str, lang: str = Query(default="de", pattern="^(de
                      user: dict = Depends(get_current_user)):
     """The guided form for one job, ready to render.
 
-    Each question gains a help line and a `price_effect`. The estimator has
-    always classified answers into the ones that reach the total and the ones
-    that only reach the wording, and the form has never said which is which —
-    so five questions looked like five levers when two of them were.
+    Each question gains a help line and a `price_effect`. There was a time when
+    five questions looked like five levers and two of them were; most of the
+    form now reaches the total, and `price_effect` is derived from what each
+    question actually does to it rather than from how it is declared, so the
+    label cannot go stale the next time a question is priced or unpriced.
     """
     await require_pro_id(user)
     try:
