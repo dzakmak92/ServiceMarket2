@@ -47,6 +47,8 @@ labels it explains, so the sentence and the options cannot drift apart.
 """
 from __future__ import annotations
 
+from services import catalogue_i18n
+
 # ── Sections ────────────────────────────────────────────────────────────
 #
 # Ordered. The order is "what most people came for" first, not alphabetical:
@@ -545,11 +547,20 @@ AXIS_HELP_I18N: dict[str, dict[str, str]] = {
 
 
 def decorate_question(q: dict, lang: str = "de") -> dict:
-    """Add the help line and the price-effect class to one question."""
+    """Add the help line, the price-effect class and the label in `lang`.
+
+    `label_de` and the option labels stay on the response untouched. The
+    translated forms are added beside them as `label` and `options_labels`,
+    because a quote already sent quotes the German and a screen re-rendering it
+    in another language must still be able to show what was agreed.
+    """
     out = dict(q)
     key = q.get("key")
     if q.get("axis"):
         key = f"{key}.{q['axis']}"
+    out["label"] = catalogue_i18n.translate(q.get("label_de") or "", lang)
+    out["options"] = [[v, catalogue_i18n.translate(lbl, lang)]
+                      for v, lbl in (q.get("options") or [])]
     fmt = q.get("help_fmt")
     if fmt and fmt.get("id") in QTY_HELP:
         table = QTY_HELP[fmt["id"]]

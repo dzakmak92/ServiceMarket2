@@ -38,6 +38,7 @@ from repositories import quotes as quotes_repo
 from routes._pro import require_pro_id
 from services import calibration as calib
 from services import catalogue_ui
+from services import catalogue_i18n
 from services import estimate_breakdown
 from services import estimator
 
@@ -186,15 +187,20 @@ async def get_catalogue(user: dict = Depends(get_current_user)):
 @router.get("/jobs")
 async def list_jobs(trade: Optional[str] = None, group: Optional[str] = None,
                     q: Optional[str] = Query(default=None, description="Search label or key"),
+                    lang: str = Query(default="de", pattern="^(de|en|tr|es)$"),
                     user: dict = Depends(get_current_user)):
     await require_pro_id(user)
     found = estimator.jobs(trade=trade, group=group)
     if q:
+        # Searched against both languages: a Turkish-speaking pro types what
+        # the screen showed them, and the screen showed them the translation.
         needle = q.strip().lower()
         found = [j for j in found
-                 if needle in j["label_de"].lower() or needle in j["key"].lower()]
+                 if needle in j["label_de"].lower() or needle in j["key"].lower()
+                 or needle in catalogue_i18n.translate(j["label_de"], lang).lower()]
     rows = [{
         "key": j["key"], "trade": j["trade"], "label_de": j["label_de"],
+        "label": catalogue_i18n.translate(j["label_de"], lang),
         "unit": j["unit"], "group": j["group"], "segment": j["segment"],
         "typical_size": j["typical_size"], "confidence": j["confidence"],
         "site_visit_required": j["site_visit_required"],
