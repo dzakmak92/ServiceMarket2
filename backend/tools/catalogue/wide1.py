@@ -76,10 +76,13 @@ BAUEN = [
 # ══ Möbel & Einrichtung — Tischler (839) ══════════════════════════════
 TISCHLER = [
     J(key="tischler.innentuer", trade="tischler", group="Möbel & Einrichtung",
-      segment="Tischler & Schreiner", label_de="Innentür inkl. Zarge tauschen",
+      segment="Tischler & Schreiner",
+      label_de="Innentür liefern und montieren (inkl. Zarge)",
       unit="Stk", setup_hours=(0.6, 1.2), typical_size=(1, 5),
       market_band_at=(380, 850), market_band_de=(400, 900), band_basis="total",
-      confidence="medium", note_keys=["aufmass_vor_fertigung", "altgeraet_entsorgung"],
+      confidence="medium",
+      note_keys=["aufmass_vor_fertigung", "altgeraet_entsorgung",
+                 "element_enthalten"],
       operations=[
           Op("demontage", "Alte Tür und Zarge ausbauen", "Stk", (0.8, 1.5),
              debris_kg_per_unit=(30, 55)),
@@ -112,10 +115,10 @@ TISCHLER = [
 # ══ Küche (139) ═══════════════════════════════════════════════════════
 KUECHE = [
     J(key="kueche.montage", trade="kueche", group="Küche", segment="Küchenbau",
-      label_de="Küchenmontage (Standardküche)", unit="lfm",
+      label_de="Küche montieren inkl. Arbeitsplatte (Möbel bauseits)", unit="lfm",
       setup_hours=(1.5, 3.0), typical_size=(3, 8),
       market_band_at=(190, 420), market_band_de=(200, 450), confidence="medium",
-      note_keys=["anschluesse_vorhanden", "wand_lot"],
+      note_keys=["anschluesse_vorhanden", "wand_lot", "element_bauseits"],
       operations=[
           Op("unterschraenke", "Unterschränke stellen und ausrichten", "lfm", (0.75, 1.30)),
           Op("oberschraenke", "Oberschränke montieren", "lfm", (0.55, 1.00)),

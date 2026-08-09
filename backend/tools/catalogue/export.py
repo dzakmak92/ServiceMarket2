@@ -292,6 +292,20 @@ NOTES = {
   # Levelling compound has no coats.
   "ausgleich_trocknung": {"severity":"medium","de":"Die Ausgleichsmasse muss vor dem Belag durchtrocknen — je nach Schichtdicke und Produkt 1 bis 7 Tage. Der Raum ist in dieser Zeit nicht begehbar und nicht belegreif."},
 
+  # ── whether the thing being fitted is in the price ───────────────────
+  #
+  # The catalogue holds three pairs of templates for the same work at very
+  # different prices, because one of each pair supplies the item and the other
+  # only fits it. Nothing said so. The worst was the door: "Innentür inkl.
+  # Zarge tauschen" at 397-1093 EUR against "Innentür tauschen (Blatt und
+  # Zarge)" at 129-440 EUR — the second names the leaf and the frame in its own
+  # label while excluding both from its price.
+  #
+  # `belag_nicht_enthalten` has said this for floors and tiles since the first
+  # build. These are the same sentence for everything else.
+  "element_bauseits": {"severity":"medium","de":"Das zu montierende Element wird bauseits beigestellt und ist nicht im Preis enthalten. Der Preis umfasst Montage sowie Befestigungs- und Dichtmaterial."},
+  "element_enthalten": {"severity":"low","de":"Das Element ist im Preis enthalten. Die Spanne entspricht der angegebenen Ausführung; eine höherwertige Ausführung wird gesondert verrechnet."},
+
   # `asbest_vor_1990` is about the adhesive under a covering that is being
   # taken up. A tradesperson chasing a wall for a socket or opening a floor to
   # get at a burst pipe is exposed to a different set of materials, and telling

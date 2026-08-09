@@ -1204,6 +1204,14 @@
       "severity": "medium",
       "de": "Die Ausgleichsmasse muss vor dem Belag durchtrocknen — je nach Schichtdicke und Produkt 1 bis 7 Tage. Der Raum ist in dieser Zeit nicht begehbar und nicht belegreif."
     },
+    "element_bauseits": {
+      "severity": "medium",
+      "de": "Das zu montierende Element wird bauseits beigestellt und ist nicht im Preis enthalten. Der Preis umfasst Montage sowie Befestigungs- und Dichtmaterial."
+    },
+    "element_enthalten": {
+      "severity": "low",
+      "de": "Das Element ist im Preis enthalten. Die Spanne entspricht der angegebenen Ausführung; eine höherwertige Ausführung wird gesondert verrechnet."
+    },
     "asbest_bauteile_vor_1990": {
       "severity": "critical",
       "de": "In Gebäuden vor 1990 können Wand- und Deckenaufbauten, Rohrisolierungen, Schächte und Brandabschottungen asbesthaltig sein. Wird beim Öffnen Verdachtsmaterial angetroffen, werden die Arbeiten unterbrochen und eine Materialanalyse veranlasst. Analyse und Arbeiten nach TRGS 519 sind nicht im Angebot enthalten."
@@ -24209,7 +24217,7 @@
     {
       "key": "tischler.innentuer",
       "trade": "tischler",
-      "label_de": "Innentür inkl. Zarge tauschen",
+      "label_de": "Innentür liefern und montieren (inkl. Zarge)",
       "unit": "Stk",
       "setup_hours": [
         0.6,
@@ -24239,7 +24247,8 @@
       "guided_form": [],
       "note_keys": [
         "aufmass_vor_fertigung",
-        "altgeraet_entsorgung"
+        "altgeraet_entsorgung",
+        "element_enthalten"
       ],
       "labour_variance": 2.73,
       "site_visit_required": true,
@@ -24541,7 +24550,7 @@
     {
       "key": "kueche.montage",
       "trade": "kueche",
-      "label_de": "Küchenmontage (Standardküche)",
+      "label_de": "Küche montieren inkl. Arbeitsplatte (Möbel bauseits)",
       "unit": "lfm",
       "setup_hours": [
         1.5,
@@ -24571,7 +24580,8 @@
       "guided_form": [],
       "note_keys": [
         "anschluesse_vorhanden",
-        "wand_lot"
+        "wand_lot",
+        "element_bauseits"
       ],
       "labour_variance": 3.04,
       "site_visit_required": true,
@@ -25008,7 +25018,7 @@
     {
       "key": "fenster.markise",
       "trade": "fenster",
-      "label_de": "Gelenkarmmarkise montieren",
+      "label_de": "Gelenkarmmarkise liefern und montieren",
       "unit": "Stk",
       "setup_hours": [
         1.0,
@@ -25038,7 +25048,8 @@
       "guided_form": [],
       "note_keys": [
         "untergrund_tragfaehig",
-        "windklasse"
+        "windklasse",
+        "element_enthalten"
       ],
       "labour_variance": 2.94,
       "site_visit_required": true,
@@ -28381,7 +28392,7 @@
     {
       "key": "montage.kueche",
       "trade": "montage",
-      "label_de": "Einbauküche montieren",
+      "label_de": "Einbauküche montieren (Möbel und Arbeitsplatte bauseits)",
       "unit": "lfm",
       "setup_hours": [
         0.5,
@@ -28580,7 +28591,9 @@
           "drops_disposal": {}
         }
       ],
-      "note_keys": [],
+      "note_keys": [
+        "element_bauseits"
+      ],
       "labour_variance": 3.43,
       "site_visit_required": true,
       "quote_mode": "regie",
@@ -28797,7 +28810,7 @@
     {
       "key": "montage.innentuer",
       "trade": "montage",
-      "label_de": "Innentür tauschen (Blatt und Zarge)",
+      "label_de": "Innentür montieren (Tür wird beigestellt)",
       "unit": "Stk",
       "setup_hours": [
         0.3,
@@ -28948,7 +28961,9 @@
           "drops_disposal": {}
         }
       ],
-      "note_keys": [],
+      "note_keys": [
+        "element_bauseits"
+      ],
       "labour_variance": 3.44,
       "site_visit_required": false,
       "quote_mode": "fixed",
@@ -29005,7 +29020,7 @@
     {
       "key": "montage.markise",
       "trade": "montage",
-      "label_de": "Markise montieren",
+      "label_de": "Markise montieren (Markise wird beigestellt)",
       "unit": "Stk",
       "setup_hours": [
         0.4,
@@ -29195,7 +29210,9 @@
           "drops_disposal": {}
         }
       ],
-      "note_keys": [],
+      "note_keys": [
+        "element_bauseits"
+      ],
       "labour_variance": 3.8,
       "site_visit_required": true,
       "quote_mode": "regie",

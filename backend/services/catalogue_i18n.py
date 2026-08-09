@@ -242,6 +242,24 @@ AXES: dict[str, dict[str, str]] = {
 # What the picker shows, and what a customer reads at the top of the quote.
 
 JOB_TITLES: dict[str, dict[str, str]] = {
+    'Einbauküche montieren (Möbel und Arbeitsplatte bauseits)': {
+        "en": 'Fit a fitted kitchen (units and worktop supplied by the client)', "tr": 'Ankastre mutfak montajı (dolaplar ve tezgâh müşteriden)',
+        "es": 'Montar una cocina integrada (muebles y encimera los aporta el cliente)'},
+    'Küche montieren inkl. Arbeitsplatte (Möbel bauseits)': {
+        "en": 'Fit a kitchen including the worktop (units supplied by the client)', "tr": 'Tezgâh dahil mutfak montajı (dolaplar müşteriden)',
+        "es": 'Montar una cocina con encimera incluida (muebles a cargo del cliente)'},
+    'Innentür montieren (Tür wird beigestellt)': {
+        "en": 'Hang an internal door (door supplied by the client)', "tr": 'İç kapı montajı (kapı müşteriden)',
+        "es": 'Colocar una puerta interior (puerta aportada por el cliente)'},
+    'Innentür liefern und montieren (inkl. Zarge)': {
+        "en": 'Supply and hang an internal door (frame included)', "tr": 'İç kapı temini ve montajı (kasa dahil)',
+        "es": 'Suministrar e instalar una puerta interior (marco incluido)'},
+    'Markise montieren (Markise wird beigestellt)': {
+        "en": 'Fit an awning (awning supplied by the client)', "tr": 'Tente montajı (tente müşteriden)',
+        "es": 'Montar un toldo (toldo aportado por el cliente)'},
+    'Gelenkarmmarkise liefern und montieren': {
+        "en": 'Supply and fit a folding-arm awning', "tr": 'Mafsallı kol tenteyi temin et ve mont et',
+        "es": 'Suministrar e instalar un toldo de brazos articulados'},
     'Steckdose setzen (Unterputz, Bestand)': {
         "en": 'Fit a socket (flush, existing circuit)', "tr": 'Priz montajı (sıva altı, mevcut hat)',
         "es": 'Instalar un enchufe (empotrado, circuito existente)'},
@@ -455,18 +473,9 @@ JOB_TITLES: dict[str, dict[str, str]] = {
     'Allround-Handwerker (Regiestunde)': {
         "en": 'General handyman (by the hour)', "tr": 'Çok yönlü usta (saat başı)',
         "es": 'Manitas general (por horas)'},
-    'Einbauküche montieren': {
-        "en": 'Fit a fitted kitchen', "tr": 'Ankastre mutfak montajı',
-        "es": 'Montar cocina a medida'},
     'Fliegengitter montieren': {
         "en": 'Fit insect screens', "tr": 'Sineklik montajı',
         "es": 'Instalar mosquiteras'},
-    'Innentür tauschen (Blatt und Zarge)': {
-        "en": 'Replace an internal door (leaf and frame)', "tr": 'İç kapı değişimi (kanat ve kasa)',
-        "es": 'Sustituir puerta interior (hoja y marco)'},
-    'Markise montieren': {
-        "en": 'Fit an awning', "tr": 'Tente montajı',
-        "es": 'Instalar toldo'},
     'Möbel montieren (Schrank, Kommode)': {
         "en": 'Assemble furniture (wardrobe, chest)', "tr": 'Mobilya kurulumu (dolap, komodin)',
         "es": 'Montar muebles (armario, cómoda)'},
@@ -617,9 +626,6 @@ JOB_TITLES: dict[str, dict[str, str]] = {
     'Rollladen nachrüsten (Aufsatz, elektrisch)': {
         "en": 'Retrofit a roller shutter (surface, electric)', "tr": 'Panjur ekleme (üstten, elektrikli)',
         "es": 'Añadir persiana (superpuesta, eléctrica)'},
-    'Gelenkarmmarkise montieren': {
-        "en": 'Fit a folding-arm awning', "tr": 'Mafsallı kol tente montajı',
-        "es": 'Instalar toldo de brazos articulados'},
     'Isolierglasscheibe tauschen': {
         "en": 'Replace a double-glazed unit', "tr": 'Isıcam değişimi',
         "es": 'Sustituir vidrio aislante'},
@@ -647,9 +653,6 @@ JOB_TITLES: dict[str, dict[str, str]] = {
     'Reifenwechsel (4 Räder, mit Wuchten)': {
         "en": 'Tyre change (four wheels, balanced)', "tr": 'Lastik değişimi (4 tekerlek, balanslı)',
         "es": 'Cambio de neumáticos (4 ruedas, equilibrado)'},
-    'Küchenmontage (Standardküche)': {
-        "en": 'Kitchen fitting (standard kitchen)', "tr": 'Mutfak montajı (standart mutfak)',
-        "es": 'Montaje de cocina (cocina estándar)'},
     'Alte Küche demontieren und entsorgen': {
         "en": 'Strip out and dispose of an old kitchen', "tr": 'Eski mutfak sökümü ve bertarafı',
         "es": 'Desmontar y retirar cocina antigua'},
@@ -671,9 +674,6 @@ JOB_TITLES: dict[str, dict[str, str]] = {
     'PV-Anlage Schrägdach': {
         "en": 'PV system, pitched roof', "tr": 'Eğimli çatı GES',
         "es": 'Instalación fotovoltaica en cubierta inclinada'},
-    'Innentür inkl. Zarge tauschen': {
-        "en": 'Replace an internal door and frame', "tr": 'İç kapı ve kasa değişimi',
-        "es": 'Sustituir puerta interior con marco'},
     'Einbauschrank nach Maß': {
         "en": 'Made-to-measure fitted wardrobe', "tr": 'Ölçüye göre gömme dolap',
         "es": 'Armario empotrado a medida'},
@@ -3985,6 +3985,12 @@ QUOTE_LINES: dict[str, dict[str, str]] = {
 # What the pro forwards to a customer as the terms of the quote.
 
 NOTES: dict[str, dict[str, str]] = {
+    'Das zu montierende Element wird bauseits beigestellt und ist nicht im Preis enthalten. Der Preis umfasst Montage sowie Befestigungs- und Dichtmaterial.': {
+        "en": 'The item to be fitted is supplied by the client and is not included in the price. The price covers the fitting plus fixings and sealant.', "tr": 'Monte edilecek eleman müşteri tarafından temin edilir ve fiyata dahil değildir. Fiyat, montaj ile bağlantı ve sızdırmazlık malzemesini kapsar.',
+        "es": 'El elemento a montar lo aporta el cliente y no está incluido en el precio. El precio cubre el montaje y el material de fijación y sellado.'},
+    'Das Element ist im Preis enthalten. Die Spanne entspricht der angegebenen Ausführung; eine höherwertige Ausführung wird gesondert verrechnet.': {
+        "en": 'The item is included in the price. The range corresponds to the specification stated; a higher specification is charged separately.', "tr": 'Eleman fiyata dahildir. Aralık, belirtilen donanıma karşılık gelir; daha üst donanım ayrıca faturalandırılır.',
+        "es": 'El elemento está incluido en el precio. La horquilla corresponde a la calidad indicada; una calidad superior se factura aparte.'},
     'Ab dieser Arbeitshöhe ist eine Absturzsicherung erforderlich. Ob Leiter, Hubarbeitsbühne oder Gerüst hängt von Standfläche und Dauer ab; Hubarbeitsbühne und Gerüst sind nicht im Angebot enthalten.': {
         "en": 'Above this working height, fall protection is required. Whether that means a ladder, a mobile platform or a scaffold depends on the standing ground and the duration; a mobile platform and a scaffold are not included in the quote.', "tr": 'Bu çalışma yüksekliğinin üzerinde düşmeye karşı koruma gereklidir. Merdiven, hidrolik platform veya iskeleden hangisinin kullanılacağı zeminin durumuna ve süreye bağlıdır; hidrolik platform ve iskele teklife dahil değildir.',
         "es": 'A partir de esta altura de trabajo se requiere protección anticaídas. Que sea escalera, plataforma elevadora o andamio depende de la superficie de apoyo y de la duración; la plataforma elevadora y el andamio no están incluidos en la oferta.'},
