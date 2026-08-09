@@ -81,6 +81,32 @@
 }
 
 @layer components {
+  /* Long-form legal prose.
+     The legal pages carried `prose prose-sm sm:prose-base prose-headings:…`
+     from @tailwindcss/typography, which is not installed and not in the
+     plugins list — so every one of those classes was inert and a numbered
+     section heading rendered at body size in bold. On a document whose whole
+     navigation is a sidebar of anchors that is not cosmetic: the reader
+     cannot see where one clause ends and the next begins.
+     Written out here rather than adding the plugin, because this is the only
+     place in the app that needs it and four rules are cheaper than a
+     dependency. */
+  .legal-prose > h2 {
+    @apply font-headings font-bold text-ink text-xl sm:text-2xl mt-8 mb-3 scroll-mt-24;
+  }
+  .legal-prose > p {
+    @apply text-ink-soft leading-relaxed mb-3;
+  }
+  .legal-prose > p.lead {
+    @apply text-[15px] sm:text-base text-ink mb-5;
+  }
+  .legal-prose > ul {
+    @apply list-disc pl-5 space-y-1.5 mb-4 text-ink-soft leading-relaxed marker:text-ink-faint;
+  }
+  .legal-prose strong { @apply text-ink font-semibold; }
+  .legal-prose a { @apply text-teal underline underline-offset-2 hover:text-teal-deep; }
+  .legal-prose > hr { @apply border-sm-border; }
+
   /* Hide horizontal scrollbar (used by ScrollSnapTabStrip) */
   .scrollbar-hide {
     -ms-overflow-style: none;

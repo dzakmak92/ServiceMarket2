@@ -7,7 +7,7 @@ import Footer from '../../components/Footer';
  * Long-form prose, narrow column, sticky table of contents on the side at lg+.
  */
 export default function LegalPageLayout({ title, version, lastUpdated, children, toc = [] }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   return (
     <div className="min-h-screen bg-cream flex flex-col" data-testid="legal-page-layout">
       <div className="flex-1">
@@ -15,13 +15,19 @@ export default function LegalPageLayout({ title, version, lastUpdated, children,
           <header className="mb-8">
             <h1 className="text-3xl sm:text-4xl font-headings font-bold text-ink">{title}</h1>
             <p className="text-xs text-ink-muted mt-2 font-mono">
-              {t('legal_version')} {version} · {t('legal_updated')} {lastUpdated}
+              {t('legal_version')} {version} · {t('legal_updated')}{' '}
+              {/* Formatted for the reader, not written out in English. The date
+                  read "28 February 2026" under a Turkish heading, which is the
+                  same half-translated seam the rest of this work removed. */}
+              {new Date(lastUpdated).toLocaleDateString(lang, {
+                year: 'numeric', month: 'long', day: 'numeric',
+              })}
             </p>
           </header>
 
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-8">
             {/* Main content */}
-            <article className="card-lg prose prose-sm sm:prose-base max-w-none prose-headings:font-headings prose-headings:font-bold prose-headings:text-ink prose-p:text-ink-soft prose-li:text-ink-soft prose-strong:text-ink">
+            <article className="card-lg legal-prose max-w-none">
               {children}
             </article>
 

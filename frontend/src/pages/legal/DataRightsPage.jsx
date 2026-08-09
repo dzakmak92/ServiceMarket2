@@ -37,7 +37,7 @@ export default function DataRightsPage() {
   };
 
   return (
-    <LegalPageLayout title={t('dsr_title')} version="1.0" lastUpdated="28 February 2026">
+    <LegalPageLayout title={t('dsr_title')} version="1.0" lastUpdated="2026-02-28">
       <p className="lead">
         {t('dsr_lead', { mail: 'contact@servicemarket.at' })}
       </p>

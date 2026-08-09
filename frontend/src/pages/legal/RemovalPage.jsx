@@ -25,7 +25,7 @@ export default function RemovalPage() {
   };
 
   return (
-    <LegalPageLayout title={t('rem_title')} version="1.0" lastUpdated="28 February 2026">
+    <LegalPageLayout title={t('rem_title')} version="1.0" lastUpdated="2026-02-28">
       <p className="lead">
         {t('rem_lead')}
       </p>

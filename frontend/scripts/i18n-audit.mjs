@@ -122,12 +122,16 @@ const rel = (f) => path.relative(ROOT, f);
    is read by the operator, and a privacy policy is a legal instrument whose
    translation is a lawyer's call, not a developer's. The tradesperson- and
    customer-facing screens are the ones that must be complete. */
-/* `legal` is only the three files that ARE the legal instrument — the privacy
-   policy, the terms and the imprint. The forms that sit alongside them are not
-   legal text: they are a name field, an email field and a submit button that a
-   person uses to exercise an Art. 15–22 right, and somebody who cannot read
-   English cannot be asked to file that request in English. Those count as
-   `app` and must be zero like everything else. */
+/* `legal` is the three files that ARE the legal instrument — the privacy
+   policy, the terms and the imprint. They are now thin: each picks a language
+   and hands a document from `content/` to `LegalDoc`, so there is no prose in
+   them for this to find. What the four language versions of those documents
+   have to agree about — same clauses, same links, same unfilled statutory
+   fields — is a different question, and `legal-parity.mjs` asks it.
+
+   The forms alongside them were never legal text: a name field, an email field
+   and a submit button used to exercise an Art. 15–22 right. They count as
+   `app` and are held to zero like every other screen. */
 const LEGAL_INSTRUMENTS = /\/pages\/legal\/(PrivacyPolicyPage|TermsPage|ImprintPage)\.jsx$/;
 const audience = (f) => (/\/(pages|components)\/admin\//.test(f) ? 'admin'
   : LEGAL_INSTRUMENTS.test(f) ? 'legal'
@@ -165,10 +169,44 @@ const topLevelKeys = (block) => {
 };
 const declared = Object.fromEntries(LANGS.map((l) => [l, topLevelKeys(blocks[l])]));
 
-const used = new Map();                       // key -> [files]
+/* Parsed once, reused. The two scans below both need the AST, and a regex
+   over the raw source reads comments as code: a doc comment mentioning
+   `t('key')` as an example was reported as a key used nowhere and declared
+   nowhere, which is a failure the build would have stopped on. */
+const asts = new Map();
+const parseFailures = [];
 for (const f of files) {
-  const src = fs.readFileSync(f, 'utf8');
-  for (const m of src.matchAll(/\bt\(\s*['"`]([a-z][a-z0-9_]*)['"`]/g)) {
+  try {
+    asts.set(f, parse(fs.readFileSync(f, 'utf8'), {
+      sourceType: 'module',
+      plugins: ['jsx', 'classProperties', 'optionalChaining', 'nullishCoalescingOperator'],
+    }));
+  } catch (e) {
+    console.error(`could not parse ${rel(f)}: ${e.message}`);
+    parseFailures.push(rel(f));
+  }
+}
+
+const walkAst = (node, fn) => {
+  if (!node || typeof node !== 'object') return;
+  if (Array.isArray(node)) { node.forEach((n) => walkAst(n, fn)); return; }
+  fn(node);
+  for (const k in node) {
+    if (k === 'loc' || k === 'leadingComments' || k === 'trailingComments') continue;
+    walkAst(node[k], fn);
+  }
+};
+
+const used = new Map();                       // key -> [files]
+for (const [f, ast] of asts) {
+  const hits = [];
+  walkAst(ast.program, (n) => {
+    if (n.type !== 'CallExpression') return;
+    if (n.callee?.name !== 't') return;
+    const arg = n.arguments?.[0];
+    if (arg?.type === 'StringLiteral' && /^[a-z][a-z0-9_]*$/.test(arg.value)) hits.push(arg.value);
+  });
+  for (const m of hits.map((v) => [null, v])) {
     if (!used.has(m[1])) used.set(m[1], new Set());
     used.get(m[1]).add(rel(f));
   }
@@ -201,7 +239,6 @@ const isProse = (s) => {
 };
 
 const hardcoded = [];
-const parseFailures = [];
 for (const f of files) {
   const src = fs.readFileSync(f, 'utf8');
   const lines = src.split('\n');
@@ -235,17 +272,8 @@ for (const f of files) {
      the tradesperson's screens, including whole sentences, while the audit
      reported none. A parser has no such blind spot: a JSXText node is a
      JSXText node whatever the line breaks look like. */
-  let ast;
-  try {
-    ast = parse(src, {
-      sourceType: 'module',
-      plugins: ['jsx', 'classProperties', 'optionalChaining', 'nullishCoalescingOperator'],
-    });
-  } catch (e) {
-    console.error(`could not parse ${rel(f)}: ${e.message}`);
-    parseFailures.push(rel(f));
-    continue;
-  }
+  const ast = asts.get(f);
+  if (!ast) continue;
   (function visit(n) {
     if (!n || typeof n !== 'object') return;
     if (Array.isArray(n)) { n.forEach(visit); return; }
@@ -295,14 +323,6 @@ if (json) {
     list.forEach((h) => { (byFile[h.file] ||= []).push(h); });
     const ranked = Object.entries(byFile).sort((a, z) => z[1].length - a[1].length);
     console.log(`\n── hardcoded [${aud}]: ${list.length} in ${ranked.length} files ──`);
-    if (aud === 'legal' && list.length) {
-      console.log('  (not a backlog. These three files are the legal instrument itself:');
-      console.log('   both the policy and the terms are marked "1.0-draft" pending counsel and');
-      console.log('   already promise a binding German version that does not exist, and the');
-      console.log('   imprint carries [to be filled] where §5 ECG requires the operator name,');
-      console.log('   address and trade authority. Translating an unreviewed instrument into');
-      console.log('   four languages multiplies it by four. Counsel first, then translate.)');
-    }
     ranked.slice(0, 20).forEach(([f, l]) => {
       console.log(`  ${f}  (${l.length})`);
       if (aud === 'app') l.slice(0, 5).forEach((h) =>
