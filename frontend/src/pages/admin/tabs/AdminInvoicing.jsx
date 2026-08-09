@@ -624,7 +624,7 @@ function InvoiceDataTab({ flash, t }) {
               className="admin-input text-xs h-8 py-0"
               data-testid="invoice-data-filter-year"
             >
-              <option value="">All years</option>
+              <option value="">{t('adm_all_years')}</option>
               {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => (
                 <option key={y} value={y}>{y}</option>
               ))}
@@ -636,7 +636,7 @@ function InvoiceDataTab({ flash, t }) {
                 className="admin-input text-xs h-8 py-0"
                 data-testid="invoice-data-filter-month"
               >
-                <option value="">All months</option>
+                <option value="">{t('adm_all_months')}</option>
                 {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m, i) => (
                   <option key={i + 1} value={i + 1}>{m}</option>
                 ))}
@@ -679,10 +679,10 @@ function InvoiceDataTab({ flash, t }) {
         {openTpl && (
           <div className="mt-4 bg-cream-soft rounded-lg p-3" data-testid={`invoice-template-pros-${openTpl}`}>
             <p className="text-xs font-bold uppercase tracking-wider text-ink-muted mb-2">
-              Pros using <span className="text-teal">{(data.templates.find(t2 => t2.key === openTpl) || {}).name}</span>
+              {t('adm_pros_using')} <span className="text-teal">{(data.templates.find(t2 => t2.key === openTpl) || {}).name}</span>
             </p>
             {(data.templates.find(t2 => t2.key === openTpl) || { pros: [] }).pros.length === 0 ? (
-              <p className="text-xs text-ink-muted">No pros yet</p>
+              <p className="text-xs text-ink-muted">{t('adm_no_pros')}</p>
             ) : (
               <ul className="space-y-1">
                 {(data.templates.find(t2 => t2.key === openTpl) || {}).pros.map((p) => (

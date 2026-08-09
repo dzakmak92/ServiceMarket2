@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useLang } from '../../../contexts/LangContext';
 import api from '../../../api/client';
 import AdminFilterBar from '../../../components/admin/AdminFilterBar';
 import AdminPagination from '../../../components/admin/AdminPagination';
@@ -26,6 +27,7 @@ function StatusPill({ status }) {
 }
 
 function FeePanel({ jobId, flash }) {
+  const { t } = useLang();
   const [fees, setFees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
@@ -69,16 +71,16 @@ function FeePanel({ jobId, flash }) {
     } finally { setBusy(false); }
   };
 
-  if (loading) return <div className="text-xs text-ink-muted py-2">Loading fees…</div>;
+  if (loading) return <div className="text-xs text-ink-muted py-2">{t('adm_loading_fees')}</div>;
   if (fees.length === 0) {
-    return <div className="text-xs text-ink-muted py-2" data-testid="fee-panel-empty">No fees attached to this job.</div>;
+    return <div className="text-xs text-ink-muted py-2" data-testid="fee-panel-empty">{t('adm_no_fees')}</div>;
   }
 
   return (
     <div className="bg-cream-soft rounded-lg p-3 space-y-2" data-testid="fee-panel">
       <div className="flex items-center justify-between mb-2">
         <h4 className="text-xs font-bold uppercase tracking-wider text-ink-muted inline-flex items-center gap-1.5">
-          <Banknote size={12} /> Fees on this job
+          <Banknote size={12} /> {t('adm_fees_on_job')}
         </h4>
         <span className="text-[10px] text-ink-muted">{fees.length} record(s)</span>
       </div>
@@ -105,12 +107,12 @@ function FeePanel({ jobId, flash }) {
                   onClick={() => beginEdit(f)}
                   className="text-xs font-bold uppercase tracking-wider text-teal hover:underline inline-flex items-center gap-1"
                   data-testid={`fee-edit-${f.id}`}
-                ><Pencil size={10} /> Edit amount</button>
+                ><Pencil size={10} /> {t('adm_edit_amount')}</button>
                 <button
                   onClick={() => { beginEdit(f); setTimeout(() => apply(f, 'cancel'), 50); }}
                   className="text-xs font-bold uppercase tracking-wider text-red-warn hover:underline inline-flex items-center gap-1 ml-auto"
                   data-testid={`fee-cancel-${f.id}`}
-                ><Ban size={10} /> Cancel fee</button>
+                ><Ban size={10} /> {t('adm_cancel_fee')}</button>
               </div>
             )}
             {editingId === f.id && (
@@ -136,13 +138,13 @@ function FeePanel({ jobId, flash }) {
                   data-testid={`fee-edit-reason-${f.id}`}
                 />
                 <div className="flex gap-2 justify-end">
-                  <button onClick={cancel} className="text-xs text-ink-muted hover:underline">Cancel</button>
+                  <button onClick={cancel} className="text-xs text-ink-muted hover:underline">{t('btn_cancel')}</button>
                   <button
                     onClick={() => apply(f, 'cancel')}
                     disabled={busy}
                     className="text-xs font-bold uppercase tracking-wider px-2 py-1 rounded bg-red-warn/10 text-red-warn hover:bg-red-warn/20 disabled:opacity-50"
                     data-testid={`fee-confirm-cancel-${f.id}`}
-                  >Cancel fee</button>
+                  >{t('adm_cancel_fee')}</button>
                   <button
                     onClick={() => apply(f, 'edit')}
                     disabled={busy}
@@ -160,6 +162,7 @@ function FeePanel({ jobId, flash }) {
 }
 
 function JobDetailsPanel({ jobId, flash, onJobCancelled }) {
+  const { t } = useLang();
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
@@ -186,18 +189,18 @@ function JobDetailsPanel({ jobId, flash, onJobCancelled }) {
     } finally { setCancelling(false); }
   };
 
-  if (loading) return <div className="text-xs text-ink-muted py-2">Loading job…</div>;
+  if (loading) return <div className="text-xs text-ink-muted py-2">{t('adm_loading_job')}</div>;
   if (!job) return null;
 
   return (
     <div className="bg-cream-soft rounded-lg p-3 mb-4" data-testid="admin-support-job-panel">
       <div className="flex items-center justify-between mb-2">
         <h4 className="text-xs font-bold uppercase tracking-wider text-ink-muted inline-flex items-center gap-1.5">
-          <Briefcase size={12} /> Job details
+          <Briefcase size={12} /> {t('adm_job_details')}
         </h4>
         <a href={`/jobs/${jobId}`} target="_blank" rel="noreferrer"
            className="text-[10px] uppercase tracking-wider font-bold text-teal hover:underline inline-flex items-center gap-1">
-          <ExternalLink size={10} /> Open
+          <ExternalLink size={10} /> {t('adm_open')}
         </a>
       </div>
       <div className="bg-paper rounded p-3 border border-sm-border space-y-1.5">
@@ -209,20 +212,20 @@ function JobDetailsPanel({ jobId, flash, onJobCancelled }) {
               : 'bg-teal/15 text-teal'}`}>{job.status}</span>
         </div>
         <p className="text-xs text-ink-soft flex items-center gap-1">
-          <MapPin size={10} /> {job.city || '—'} · Category: <span className="capitalize">{(job.category || '').replace('_', ' ')}</span>
+          <MapPin size={10} /> {job.city || '—'} · {t('adm_category')} <span className="capitalize">{(job.category || '').replace('_', ' ')}</span>
         </p>
         <p className="text-xs text-ink-muted line-clamp-2">{job.description}</p>
         <div className="grid grid-cols-3 gap-2 pt-2 border-t border-sm-border">
           <div>
-            <p className="text-[9px] uppercase font-bold text-ink-muted">Customer</p>
+            <p className="text-[9px] uppercase font-bold text-ink-muted">{t('adm_customer')}</p>
             <p className="text-xs text-ink truncate">{job.homeowner?.name || '—'}</p>
           </div>
           <div>
-            <p className="text-[9px] uppercase font-bold text-ink-muted">Accepted Pro</p>
+            <p className="text-[9px] uppercase font-bold text-ink-muted">{t('adm_accepted_pro')}</p>
             <p className="text-xs text-ink truncate">{job.accepted_pro?.business_name || job.accepted_pro?.name || '—'}</p>
           </div>
           <div>
-            <p className="text-[9px] uppercase font-bold text-ink-muted">Quotes</p>
+            <p className="text-[9px] uppercase font-bold text-ink-muted">{t('adm_quotes')}</p>
             <p className="text-xs text-ink">{job.quote_count} received</p>
           </div>
         </div>
@@ -234,7 +237,7 @@ function JobDetailsPanel({ jobId, flash, onJobCancelled }) {
               className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-bold uppercase tracking-wider bg-red-warn/10 text-red-warn hover:bg-red-warn/20 disabled:opacity-50"
               data-testid="admin-support-cancel-job"
             >
-              {cancelling ? <Loader2 size={10} className="animate-spin" /> : <Ban size={10} />} Cancel job
+              {cancelling ? <Loader2 size={10} className="animate-spin" /> : <Ban size={10} />} {t('adm_cancel_job')}
             </button>
           </div>
         )}
@@ -268,12 +271,12 @@ function DetailDrawer({ item, onClose, onUpdate, flash }) {
         </p>
         {item.job_id && (
           <a href={`/jobs/${item.job_id}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-teal font-bold hover:underline mb-3">
-            <ExternalLink size={11} /> Open related job: {item.job_title || item.job_id}
+            <ExternalLink size={11} /> {t('adm_open_job')} {item.job_title || item.job_id}
           </a>
         )}
         <p className="text-sm text-ink-soft whitespace-pre-wrap mb-4 bg-cream-soft p-3 rounded-lg">{item.message}</p>
 
-        {/* Job details — only when ticket is bound to a job */}
+        {/* {t('adm_job_details')} — only when ticket is bound to a job */}
         {item.job_id && <JobDetailsPanel jobId={item.job_id} flash={flash} />}
 
         {/* Fee panel — only when ticket is bound to a job */}
@@ -285,19 +288,19 @@ function DetailDrawer({ item, onClose, onUpdate, flash }) {
 
         <div className="space-y-3">
           <div>
-            <label className="text-[10px] font-bold uppercase tracking-wider text-ink-muted block mb-1">Status</label>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-ink-muted block mb-1">{t('admin_th_status')}</label>
             <select value={status} onChange={(e) => setStatus(e.target.value)} className="admin-input w-full" data-testid="support-status-select">
               {Object.entries(STATUS_META).map(([k, m]) => <option key={k} value={k}>{m.label}</option>)}
             </select>
           </div>
           <div>
-            <label className="text-[10px] font-bold uppercase tracking-wider text-ink-muted block mb-1">Admin response</label>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-ink-muted block mb-1">{t('adm_response')}</label>
             <textarea value={response} onChange={(e) => setResponse(e.target.value)} rows={4} className="admin-input w-full" data-testid="support-response" />
           </div>
         </div>
 
         <div className="flex justify-end gap-2 mt-4">
-          <button onClick={onClose} disabled={busy} className="px-3 py-1.5 rounded-lg border border-sm-border text-sm">Cancel</button>
+          <button onClick={onClose} disabled={busy} className="px-3 py-1.5 rounded-lg border border-sm-border text-sm">{t('btn_cancel')}</button>
           <button onClick={submit} disabled={busy} className="px-4 py-1.5 rounded-lg bg-teal text-paper text-sm font-bold disabled:opacity-50" data-testid="support-save">
             {busy ? 'Saving…' : 'Save changes'}
           </button>
@@ -374,7 +377,7 @@ export default function AdminSupport({ flash }) {
       ) : items.length === 0 ? (
         <div className="admin-panel text-center py-12 text-ink-muted">
           <HeartHandshake size={32} className="mx-auto mb-2 opacity-50" />
-          No support tickets
+          {t('adm_no_tickets')}
         </div>
       ) : (
         <div className="admin-panel">

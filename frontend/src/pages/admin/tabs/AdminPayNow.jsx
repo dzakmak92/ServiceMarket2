@@ -75,17 +75,17 @@ export default function AdminPayNow() {
         <div className="admin-panel" data-testid="pay-now-top-pros">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-headings font-bold text-ink text-lg">Top earners (1% fee)</h3>
-            <span className="text-xs text-ink-muted">All-time, paid only</span>
+            <span className="text-xs text-ink-muted">{t('adm_alltime_paid')}</span>
           </div>
           {data.top_pros.length === 0 ? (
-            <p className="text-center text-ink-muted text-sm py-6">No data yet</p>
+            <p className="text-center text-ink-muted text-sm py-6">{t('adm_no_data_yet')}</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs font-bold uppercase tracking-wider text-ink-muted border-b border-sm-border">
                   <th className="py-2">Pro</th>
-                  <th className="py-2 text-right">Volume</th>
-                  <th className="py-2 text-right">Fees</th>
+                  <th className="py-2 text-right">{t('adm_volume')}</th>
+                  <th className="py-2 text-right">{t('adm_fees')}</th>
                   <th className="py-2 text-right">#</th>
                 </tr>
               </thead>
@@ -106,15 +106,15 @@ export default function AdminPayNow() {
         {/* Recent activity */}
         <div className="admin-panel" data-testid="pay-now-recent">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-headings font-bold text-ink text-lg">Latest 20 paid sessions</h3>
+            <h3 className="font-headings font-bold text-ink text-lg">{t('adm_latest_paid')}</h3>
             <button
               onClick={downloadCsv}
               className="text-xs font-bold uppercase tracking-wider text-teal hover:underline"
               data-testid="pay-now-export-csv"
-            >Export CSV</button>
+            >{t('admin_export_csv')}</button>
           </div>
           {data.recent.length === 0 ? (
-            <p className="text-center text-ink-muted text-sm py-6">No paid sessions yet</p>
+            <p className="text-center text-ink-muted text-sm py-6">{t('adm_no_paid')}</p>
           ) : (
             <ul className="divide-y divide-sm-border">
               {data.recent.map((r) => (

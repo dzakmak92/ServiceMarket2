@@ -121,7 +121,7 @@ export default function AdminPage() {
               <button
                 className="admin-icon-btn admin-icon-btn-dark relative"
                 onClick={() => setBellOpen((o) => !o)}
-                aria-label="Notifications"
+                aria-label={t('adm_notifications')}
                 data-testid="admin-bell-btn"
               >
                 <Bell size={16} />
@@ -134,11 +134,11 @@ export default function AdminPage() {
               {bellOpen && (
                 <div className="absolute right-0 top-full mt-2 w-80 bg-paper rounded-[16px] shadow-2xl border border-sm-border z-50 overflow-hidden" data-testid="admin-bell-dropdown">
                   <div className="px-4 py-3 border-b border-sm-border flex items-center justify-between">
-                    <span className="font-semibold text-ink text-sm">Platform Alerts</span>
+                    <span className="font-semibold text-ink text-sm">{t('adm_alerts')}</span>
                     <button onClick={() => setBellOpen(false)} className="text-ink-muted hover:text-ink text-xs">✕</button>
                   </div>
                   {adminNotifs.length === 0 ? (
-                    <div className="px-4 py-6 text-center text-sm text-ink-muted">No new alerts</div>
+                    <div className="px-4 py-6 text-center text-sm text-ink-muted">{t('adm_no_alerts')}</div>
                   ) : (
                     <div className="max-h-72 overflow-y-auto divide-y divide-sm-border">
                       {adminNotifs.map((n) => (

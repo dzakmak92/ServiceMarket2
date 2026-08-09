@@ -89,7 +89,7 @@ export default function AdminProjects({ flash }) {
       {loading ? (
         <div className="flex justify-center py-10"><Loader2 size={24} className="text-teal animate-spin" /></div>
       ) : projects.length === 0 ? (
-        <div className="text-center py-16 text-ink-muted">No projects found</div>
+        <div className="text-center py-16 text-ink-muted">{t('adm_no_projects')}</div>
       ) : (
         <div className="overflow-x-auto rounded-[16px] border border-sm-border">
           <table className="w-full text-sm">
@@ -140,7 +140,7 @@ export default function AdminProjects({ flash }) {
                         target="_blank"
                         rel="noreferrer"
                         className="p-1 text-ink-muted hover:text-teal"
-                        title="View"
+                        title={t('btn_view_short')}
                         data-testid={`admin-project-view-${proj.id}`}
                       >
                         <Eye size={15} />
@@ -149,7 +149,7 @@ export default function AdminProjects({ flash }) {
                         onClick={() => remove(proj.id, proj.title)}
                         disabled={acting === proj.id}
                         className="p-1 text-ink-muted hover:text-red-warn disabled:opacity-40"
-                        title="Delete"
+                        title={t('btn_delete')}
                         data-testid={`admin-project-delete-${proj.id}`}
                       >
                         {acting === proj.id ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}

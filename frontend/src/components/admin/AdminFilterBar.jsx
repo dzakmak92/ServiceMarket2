@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLang } from '../../contexts/LangContext';
 import { Search, Filter as FilterIcon, X, ChevronDown } from 'lucide-react';
 
 /**
@@ -20,6 +21,7 @@ export default function AdminFilterBar({
   totalLabel,
   onReset,
 }) {
+  const { t } = useLang();
   const [mobileOpen, setMobileOpen] = useState(false);
   const now = new Date();
   const years = [];
@@ -42,7 +44,7 @@ export default function AdminFilterBar({
       {/* Header row — always visible */}
       <div className="flex items-center gap-2 mb-3 flex-wrap">
         <FilterIcon size={14} className="text-ink-muted" />
-        <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">Filters</span>
+        <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">{t('adm_filters')}</span>
         {hasActive && (
           <span className="text-[10px] font-bold bg-teal text-paper px-1.5 py-0.5 rounded-full" data-testid="admin-filter-active-count">{activeCount}</span>
         )}
@@ -63,7 +65,7 @@ export default function AdminFilterBar({
             className="text-xs font-bold uppercase tracking-wider text-red-warn hover:underline inline-flex items-center gap-1"
             data-testid="admin-filter-reset"
           >
-            <X size={11} /> Reset
+            <X size={11} /> {t('adm_reset')}
           </button>
         )}
       </div>
@@ -118,14 +120,14 @@ export default function AdminFilterBar({
           {/* Year filter */}
           {showYear && (
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">Year</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">{t('adm_year')}</span>
               <select
                 value={yearValue || ''}
                 onChange={(e) => onYearChange(e.target.value ? parseInt(e.target.value, 10) : null)}
                 className="admin-input text-xs h-8 py-0"
                 data-testid="filter-year"
               >
-                <option value="">All</option>
+                <option value="">{t('admin_all')}</option>
                 {years.map((y) => <option key={y} value={y}>{y}</option>)}
               </select>
             </div>
@@ -134,14 +136,14 @@ export default function AdminFilterBar({
           {/* Month filter (only when year selected) */}
           {showMonth && yearValue && (
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">Month</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">{t('adm_month')}</span>
               <select
                 value={monthValue || ''}
                 onChange={(e) => onMonthChange(e.target.value ? parseInt(e.target.value, 10) : null)}
                 className="admin-input text-xs h-8 py-0"
                 data-testid="filter-month"
               >
-                <option value="">All</option>
+                <option value="">{t('admin_all')}</option>
                 {months.map((m) => <option key={m.v} value={m.v}>{m.l}</option>)}
               </select>
             </div>

@@ -71,6 +71,10 @@ const ALLOWED = new Set([
      document however the interface is set — the same reason ÖNORM numbers
      stay untranslated in the catalogue's assumption notes. */
   'UID:', '% USt',
+
+  /* The token kind, printed as an identifier in a table of share links
+     beside a reference and an amount — a value, not a label. */
+  'PAY-LINK',
 ]);
 
 const NOT_PROSE = [

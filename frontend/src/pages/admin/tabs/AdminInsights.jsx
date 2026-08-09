@@ -27,9 +27,12 @@ export default function AdminInsights({ flash }) {
       setAnalysis(data.analysis);
       setCounts({ fb: data.current_feedback_count, rv: data.current_review_count });
     } catch (e) {
-      setError(e?.response?.data?.detail || 'Failed to load');
+      setError(e?.response?.data?.detail || t('adm_err_load'));
     } finally { setLoading(false); }
-  }, []);
+    // `t` is read in the catch, so it belongs in the deps — the effect below
+    // depends on this callback, and without it an error raised after a
+    // language switch is announced in the old one.
+  }, [t]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -41,7 +44,7 @@ export default function AdminInsights({ flash }) {
       flash?.(t('insights_done'));
       load();
     } catch (e) {
-      setError(e?.response?.data?.detail || 'Analysis failed');
+      setError(e?.response?.data?.detail || t('adm_err_analysis'));
     } finally { setRunning(false); }
   };
 

@@ -45,9 +45,9 @@ function ExplorerToggleCard({ t }) {
               data-testid="admin-explorer-status">
           {cfg.explorer_enabled ? t('admin_explorer_on') : t('admin_explorer_off')}
         </span>
-        <span className="text-xs text-ink-muted">New pros · 30d: <strong className="text-ink">{cfg.new_pros_30d}</strong></span>
-        <span className="text-xs text-ink-muted">New pros · 7d: <strong className="text-ink">{cfg.new_pros_7d}</strong></span>
-        <span className="text-xs text-ink-muted">On Explorer now: <strong className="text-ink">{cfg.explorer_active_count}</strong></span>
+        <span className="text-xs text-ink-muted">{t('adm_new_pros_30')} <strong className="text-ink">{cfg.new_pros_30d}</strong></span>
+        <span className="text-xs text-ink-muted">{t('adm_new_pros_7')} <strong className="text-ink">{cfg.new_pros_7d}</strong></span>
+        <span className="text-xs text-ink-muted">{t('adm_on_explorer')} <strong className="text-ink">{cfg.explorer_active_count}</strong></span>
       </div>
     </div>
   );
@@ -64,6 +64,7 @@ function StatPill({ label, value, sub }) {
 }
 
 function ToolkitCard({ icon: Icon, name, data, accent, bundleSubs }) {
+  const { t } = useLang();
   if (!data) return null;
   const fullyBundled = bundleSubs != null && bundleSubs > 0 && bundleSubs === data.subs && name !== 'Bundle';
   return (
@@ -77,17 +78,17 @@ function ToolkitCard({ icon: Icon, name, data, accent, bundleSubs }) {
           <h3 className="font-headings font-bold text-ink text-base">{name}</h3>
           {fullyBundled && (
             <span className="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full bg-green-pos/15 text-green-pos"
-                  title="All subscribers come via Bundle — MRR is attributed there."
+                  title={t('adm_bundled_hint')}
                   data-testid={`toolkit-card-${name.toLowerCase()}-bundled`}>
-              Bundled
+              {t('adm_bundled')}
             </span>
           )}
         </div>
-        <span className="text-xs font-bold text-ink-muted">{data.conversion_pct}% adoption</span>
+        <span className="text-xs font-bold text-ink-muted">{t('adm_adoption', { p: data.conversion_pct })}</span>
       </div>
       <div className="grid grid-cols-3 gap-3">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">Subs</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">{t('adm_subs')}</p>
           <p className="font-headings font-bold text-2xl text-ink">{data.subs}</p>
         </div>
         <div>
@@ -100,27 +101,30 @@ function ToolkitCard({ icon: Icon, name, data, accent, bundleSubs }) {
         </div>
       </div>
       {fullyBundled && (
-        <p className="text-xs text-ink-muted mt-2">All {data.subs} subs are on the all-in-one Bundle — see the Bundle card for MRR.</p>
+        <p className="text-xs text-ink-muted mt-2">{t('adm_all_bundled', { n: data.subs })}</p>
       )}
     </div>
   );
 }
 
 function OcrPanel() {
+  const { t } = useLang();
   const [data, setData] = useState(null);
   useEffect(() => {
     api.get('/api/admin/tax/ocr-audit').then(r => setData(r.data)).catch(() => {});
   }, []);
   if (!data) return null;
-  const t = data.totals;
+  // Renamed from `t`: that is the translator's name everywhere else in the
+  // file, and a local one here would be called as a function on first render.
+  const tot = data.totals;
   return (
     <div className="admin-panel" data-testid="admin-ocr-panel">
-      <h3 className="font-headings font-bold text-ink text-lg mb-1">Tax Toolkit · OCR usage</h3>
-      <p className="text-xs text-ink-muted mb-4">Receipt OCR via Emergent LLM Vision. Cost estimate: €{data.per_receipt_cost_eur}/scan.</p>
+      <h3 className="font-headings font-bold text-ink text-lg mb-1">{t('adm_ocr_title')}</h3>
+      <p className="text-xs text-ink-muted mb-4">{t('adm_ocr_sub', { c: data.per_receipt_cost_eur })}</p>
       <div className="admin-stat-grid mb-4">
-        <StatPill label="ALL RECEIPTS" value={t.all_receipts} sub={`€${t.est_cost_all_eur.toFixed(2)} est. cost`} />
-        <StatPill label="THIS MONTH" value={t.mtd_receipts} sub={`€${t.est_cost_mtd_eur.toFixed(2)} est. cost`} />
-        <StatPill label="AVG CONFIDENCE" value={`${(t.avg_confidence * 100).toFixed(0)}%`} sub="across all scans" />
+        <StatPill label="ALL RECEIPTS" value={tot.all_receipts} sub={`€${tot.est_cost_all_eur.toFixed(2)} est. cost`} />
+        <StatPill label="THIS MONTH" value={tot.mtd_receipts} sub={`€${tot.est_cost_mtd_eur.toFixed(2)} est. cost`} />
+        <StatPill label="AVG CONFIDENCE" value={`${(tot.avg_confidence * 100).toFixed(0)}%`} sub="across all scans" />
         <StatPill label="TOP USERS" value={data.top_users.length} sub="active uploaders" />
       </div>
       {data.top_users.length > 0 && (
@@ -129,8 +133,8 @@ function OcrPanel() {
             <thead>
               <tr className="text-left text-xs font-bold uppercase tracking-wider text-ink-muted border-b border-sm-border">
                 <th className="py-2">Pro</th>
-                <th className="py-2 text-right">Receipts</th>
-                <th className="py-2 text-right">Est. cost</th>
+                <th className="py-2 text-right">{t('adm_receipts')}</th>
+                <th className="py-2 text-right">{t('adm_est_cost')}</th>
               </tr>
             </thead>
             <tbody>
@@ -150,6 +154,7 @@ function OcrPanel() {
 }
 
 function RefundModal({ pro, toolkit, onClose, onDone }) {
+  const { t } = useLang();
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   const submit = async () => {
@@ -167,12 +172,11 @@ function RefundModal({ pro, toolkit, onClose, onDone }) {
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" data-testid="refund-modal">
       <div className="bg-paper rounded-2xl max-w-md w-full p-5 shadow-2xl">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-headings font-bold text-ink text-lg">Refund · {toolkit} toolkit</h3>
+          <h3 className="font-headings font-bold text-ink text-lg">{t('adm_refund_title', { t: toolkit })}</h3>
           <button onClick={onClose}><X size={16} /></button>
         </div>
         <p className="text-sm text-ink-soft mb-3">
-          Refund the latest cycle for <strong>{pro.pro_name}</strong> and disable the toolkit flag.
-          Stripe refund will be attempted (best-effort).
+          {t('adm_refund_body', { name: pro.pro_name })}
         </p>
         <textarea
           className="admin-input w-full"
@@ -183,7 +187,7 @@ function RefundModal({ pro, toolkit, onClose, onDone }) {
           data-testid="refund-reason-input"
         />
         <div className="flex justify-end gap-2 mt-3">
-          <button onClick={onClose} className="px-3 py-1.5 rounded-lg border border-sm-border text-sm" disabled={busy}>Cancel</button>
+          <button onClick={onClose} className="px-3 py-1.5 rounded-lg border border-sm-border text-sm" disabled={busy}>{t('btn_cancel')}</button>
           <button
             onClick={submit}
             disabled={busy || reason.length < 3}
@@ -248,7 +252,7 @@ export default function AdminToolkits({ flash }) {
 
       {/* Share tokens audit */}
       <div className="admin-panel" data-testid="admin-share-tokens">
-        <h3 className="font-headings font-bold text-ink text-lg mb-3">Public share-token inventory</h3>
+        <h3 className="font-headings font-bold text-ink text-lg mb-3">{t('adm_tokens_title')}</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           <StatPill label="PM CUSTOMER" value={shareTokens.totals.pm_customer} />
           <StatPill label="PM SUB-CONTRACTOR" value={shareTokens.totals.pm_sub} />
@@ -260,10 +264,10 @@ export default function AdminToolkits({ flash }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs font-bold uppercase tracking-wider text-ink-muted border-b border-sm-border">
-                  <th className="py-2">Kind</th>
-                  <th className="py-2">Reference</th>
-                  <th className="py-2 text-right">Outstanding</th>
-                  <th className="py-2 text-right">Action</th>
+                  <th className="py-2">{t('adm_kind')}</th>
+                  <th className="py-2">{t('adm_reference')}</th>
+                  <th className="py-2 text-right">{t('adm_outstanding')}</th>
+                  <th className="py-2 text-right">{t('adm_action')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -277,12 +281,12 @@ export default function AdminToolkits({ flash }) {
                         className="text-red-warn text-xs font-bold uppercase tracking-wider hover:underline"
                         data-testid={`revoke-pay-link-${p.invoice_id}`}
                         onClick={async () => {
-                          if (!window.confirm('Revoke this pay-link?')) return;
+                          if (!window.confirm(t('adm_revoke_confirm'))) return;
                           await api.post('/api/admin/share-tokens/revoke', { kind: 'pay_link', invoice_id: p.invoice_id });
                           flash?.('Pay-link revoked');
                           load();
                         }}
-                      >Revoke</button>
+                      >{t('adm_revoke')}</button>
                     </td>
                   </tr>
                 ))}
@@ -295,26 +299,26 @@ export default function AdminToolkits({ flash }) {
       {/* Subscribers list with force-disable / refund */}
       {subscribers.length > 0 && (
         <div className="admin-panel" data-testid="admin-toolkit-subscribers">
-          <h3 className="font-headings font-bold text-ink text-lg mb-1">Subscribers · Support actions</h3>
+          <h3 className="font-headings font-bold text-ink text-lg mb-1">{t('adm_subscribers')}</h3>
           <p className="text-xs text-ink-muted mb-3">Force-disable a toolkit + refund the latest cycle. Audited.</p>
           <div className="overflow-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs font-bold uppercase tracking-wider text-ink-muted border-b border-sm-border">
                   <th className="py-2">Pro</th>
-                  <th className="py-2">Invoice</th>
-                  <th className="py-2">Tax</th>
+                  <th className="py-2">{t('admin_th_invoice')}</th>
+                  <th className="py-2">{t('nav_tax')}</th>
                   <th className="py-2">PM</th>
-                  <th className="py-2 text-right">Plan</th>
+                  <th className="py-2 text-right">{t('admin_th_plan')}</th>
                 </tr>
               </thead>
               <tbody>
                 {subscribers.map((p) => (
                   <tr key={p.pro_id} className="border-b border-sm-border/50">
                     <td className="py-2 text-ink">{p.pro_name}</td>
-                    <td className="py-2">{p.has_invoice_toolkit ? <button onClick={() => setRefundTarget({ pro: p, toolkit: 'invoice' })} className="text-red-warn font-bold text-xs" data-testid={`refund-invoice-${p.pro_id}`}>Refund</button> : '—'}</td>
-                    <td className="py-2">{p.has_tax_toolkit ? <button onClick={() => setRefundTarget({ pro: p, toolkit: 'tax' })} className="text-red-warn font-bold text-xs" data-testid={`refund-tax-${p.pro_id}`}>Refund</button> : '—'}</td>
-                    <td className="py-2">{p.has_pm_toolkit ? <button onClick={() => setRefundTarget({ pro: p, toolkit: 'pm' })} className="text-red-warn font-bold text-xs" data-testid={`refund-pm-${p.pro_id}`}>Refund</button> : '—'}</td>
+                    <td className="py-2">{p.has_invoice_toolkit ? <button onClick={() => setRefundTarget({ pro: p, toolkit: 'invoice' })} className="text-red-warn font-bold text-xs" data-testid={`refund-invoice-${p.pro_id}`}>{t('adm_refund')}</button> : '—'}</td>
+                    <td className="py-2">{p.has_tax_toolkit ? <button onClick={() => setRefundTarget({ pro: p, toolkit: 'tax' })} className="text-red-warn font-bold text-xs" data-testid={`refund-tax-${p.pro_id}`}>{t('adm_refund')}</button> : '—'}</td>
+                    <td className="py-2">{p.has_pm_toolkit ? <button onClick={() => setRefundTarget({ pro: p, toolkit: 'pm' })} className="text-red-warn font-bold text-xs" data-testid={`refund-pm-${p.pro_id}`}>{t('adm_refund')}</button> : '—'}</td>
                     <td className="py-2 text-right text-xs font-bold uppercase">{p.plan_tier}</td>
                   </tr>
                 ))}

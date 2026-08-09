@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useLang } from '../../../contexts/LangContext';
 import api from '../../../api/client';
 import AdminFilterBar from '../../../components/admin/AdminFilterBar';
 import AdminPagination from '../../../components/admin/AdminPagination';
@@ -23,6 +24,7 @@ function StatusPill({ status }) {
 }
 
 function DetailDrawer({ item, onClose, onUpdate }) {
+  const { t } = useLang();
   const [status, setStatus] = useState(item.status);
   const [response, setResponse] = useState(item.admin_response || '');
   const [busy, setBusy] = useState(false);
@@ -53,7 +55,7 @@ function DetailDrawer({ item, onClose, onUpdate }) {
 
         <div className="space-y-3">
           <div>
-            <label className="text-[10px] font-bold uppercase tracking-wider text-ink-muted block mb-1">Status</label>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-ink-muted block mb-1">{t('admin_th_status')}</label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
@@ -64,20 +66,20 @@ function DetailDrawer({ item, onClose, onUpdate }) {
             </select>
           </div>
           <div>
-            <label className="text-[10px] font-bold uppercase tracking-wider text-ink-muted block mb-1">Admin response</label>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-ink-muted block mb-1">{t('adm_response')}</label>
             <textarea
               value={response}
               onChange={(e) => setResponse(e.target.value)}
               rows={4}
               className="admin-input w-full"
-              placeholder="Your response will be visible to the user."
+              placeholder={t('adm_response_hint')}
               data-testid="feedback-response"
             />
           </div>
         </div>
 
         <div className="flex justify-end gap-2 mt-4">
-          <button onClick={onClose} disabled={busy} className="px-3 py-1.5 rounded-lg border border-sm-border text-sm">Cancel</button>
+          <button onClick={onClose} disabled={busy} className="px-3 py-1.5 rounded-lg border border-sm-border text-sm">{t('btn_cancel')}</button>
           <button
             onClick={submit}
             disabled={busy}
@@ -91,6 +93,7 @@ function DetailDrawer({ item, onClose, onUpdate }) {
 }
 
 export default function AdminFeedback({ flash }) {
+  const { t } = useLang();
   const [items, setItems] = useState([]);
   const [counts, setCounts] = useState({});
   const [total, setTotal] = useState(0);
@@ -162,7 +165,7 @@ export default function AdminFeedback({ flash }) {
       ) : items.length === 0 ? (
         <div className="admin-panel text-center py-12 text-ink-muted">
           <MessageSquare size={32} className="mx-auto mb-2 opacity-50" />
-          No feedback yet
+          {t('adm_no_feedback')}
         </div>
       ) : (
         <div className="admin-panel">

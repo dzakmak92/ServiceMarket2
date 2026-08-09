@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useLang } from '../../../contexts/LangContext';
 import api, { formatError } from '../../../api/client';
 import {
   Loader2, Banknote, CheckCircle2, Percent, Building2, Copy, Check, X,
@@ -22,6 +23,7 @@ function StatCard({ icon: Icon, label, value, accent = 'text-teal', testid }) {
 }
 
 function ProPayoutCard({ p, onSettle, busy }) {
+  const { t } = useLang();
   const [open, setOpen] = useState(false);
   const [ref, setRef] = useState('');
   const [copied, setCopied] = useState(false);
@@ -42,7 +44,7 @@ function ProPayoutCard({ p, onSettle, busy }) {
                 {p.iban} {copied ? <Check size={11} className="text-green-pos" /> : <Copy size={11} />}
               </button>
             ) : (
-              <span className="text-[11px] text-red-warn">⚠ No IBAN on file</span>
+              <span className="text-[11px] text-red-warn">⚠ {t('adm_no_iban')}</span>
             )}
             <span className="text-[11px] text-ink-muted">{p.count} payment{p.count === 1 ? '' : 's'}</span>
           </div>
@@ -54,7 +56,7 @@ function ProPayoutCard({ p, onSettle, busy }) {
             className="mt-1 text-xs font-semibold text-paper bg-teal px-3 py-1.5 rounded-full hover:opacity-90 transition-opacity"
             data-testid={`payout-settle-toggle-${p.pro_id}`}
           >
-            Mark settled
+            {t('adm_mark_settled')}
           </button>
         </div>
       </div>
@@ -62,7 +64,7 @@ function ProPayoutCard({ p, onSettle, busy }) {
         <div className="mt-3 pt-3 border-t border-sm-border flex items-end gap-2" data-testid={`payout-settle-form-${p.pro_id}`}>
           <div className="flex-1">
             <label className="text-[11px] font-semibold text-ink-soft">Transfer reference (optional)</label>
-            <input value={ref} onChange={(e) => setRef(e.target.value)} placeholder="e.g. SEPA batch 2026-06-14" className="sm-input w-full text-sm" data-testid={`payout-ref-${p.pro_id}`} />
+            <input value={ref} onChange={(e) => setRef(e.target.value)} placeholder={t('adm_ref_example')} className="sm-input w-full text-sm" data-testid={`payout-ref-${p.pro_id}`} />
           </div>
           <button onClick={() => onSettle(p.pro_id, ref)} disabled={busy} className="btn-primary text-xs px-4 py-2 rounded-[10px] disabled:opacity-50" data-testid={`payout-confirm-${p.pro_id}`}>
             {busy ? <Loader2 size={14} className="animate-spin" /> : `Confirm ${eur(p.owed_eur)}`}
@@ -75,6 +77,7 @@ function ProPayoutCard({ p, onSettle, busy }) {
 }
 
 export default function AdminPayouts({ flash }) {
+  const { t } = useLang();
   const [summary, setSummary] = useState(null);
   const [ledger, setLedger] = useState([]);
   const [ledgerStatus, setLedgerStatus] = useState('owed');
@@ -114,7 +117,7 @@ export default function AdminPayouts({ flash }) {
     <div className="space-y-5" data-testid="admin-payouts">
       <div>
         <h2 className="font-headings font-bold text-ink text-lg flex items-center gap-2">
-          <Wallet size={18} className="text-teal" /> Payouts owed to pros
+          <Wallet size={18} className="text-teal" /> {t('adm_payouts_owed')}
         </h2>
         <p className="text-xs text-ink-muted">Online card payments are collected into your Stripe account (invoice + 1% fee). Transfer each pro their amount, then mark it settled here. (Auto-split arrives with your live Stripe Connect key.)</p>
       </div>
@@ -127,10 +130,10 @@ export default function AdminPayouts({ flash }) {
 
       {/* Owed by pro */}
       <div>
-        <h3 className="font-headings font-bold text-ink text-sm mb-3">Outstanding by pro</h3>
+        <h3 className="font-headings font-bold text-ink text-sm mb-3">{t('adm_outstanding_by')}</h3>
         {owedPros.length === 0 ? (
           <div className="card-lg text-center py-8 text-sm text-ink-muted flex flex-col items-center gap-2" data-testid="payout-none-owed">
-            <CheckCircle2 size={22} className="text-green-pos" /> Nothing owed — all caught up.
+            <CheckCircle2 size={22} className="text-green-pos" /> {t('adm_nothing_owed')}
           </div>
         ) : (
           <div className="space-y-2">
@@ -142,7 +145,7 @@ export default function AdminPayouts({ flash }) {
       {/* Ledger */}
       <div>
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <h3 className="font-headings font-bold text-ink text-sm">Payment ledger</h3>
+          <h3 className="font-headings font-bold text-ink text-sm">{t('adm_ledger')}</h3>
           <div className="flex gap-1.5">
             {['owed', 'settled', 'all'].map((s) => (
               <button
@@ -157,7 +160,7 @@ export default function AdminPayouts({ flash }) {
           </div>
         </div>
         {ledger.length === 0 ? (
-          <p className="text-center py-8 text-sm text-ink-muted" data-testid="payout-ledger-empty">No payments in this view.</p>
+          <p className="text-center py-8 text-sm text-ink-muted" data-testid="payout-ledger-empty">{t('adm_no_payments')}</p>
         ) : (
           <div className="space-y-1.5" data-testid="payout-ledger-list">
             {ledger.map((r) => (
@@ -166,7 +169,7 @@ export default function AdminPayouts({ flash }) {
                   <p className="text-sm font-medium text-ink truncate">{r.invoice_number} · {r.pro_name}</p>
                   <p className="text-[11px] text-ink-muted flex items-center gap-1">
                     <Clock size={10} />{r.paid_at ? new Date(r.paid_at).toLocaleDateString() : '—'}
-                    {r.settled_ref && <span className="ml-1">· ref: {r.settled_ref}</span>}
+                    {r.settled_ref && <span className="ml-1">· {t('adm_ref')} {r.settled_ref}</span>}
                   </p>
                 </div>
                 <span className="text-sm font-semibold text-ink">{eur(r.amount_eur)}</span>

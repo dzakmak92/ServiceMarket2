@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLang } from '../../contexts/LangContext';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 /**
@@ -11,13 +12,14 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
  *  - onPerPageChange(newPerPage)
  */
 export default function AdminPagination({ page = 1, perPage = 25, total = 0, onPageChange, onPerPageChange, sizes = [25, 50, 100] }) {
+  const { t } = useLang();
   const totalPages = Math.max(1, Math.ceil(total / perPage));
   const goPrev = () => onPageChange(Math.max(1, page - 1));
   const goNext = () => onPageChange(Math.min(totalPages, page + 1));
   return (
     <div className="flex items-center justify-between flex-wrap gap-3 py-3" data-testid="admin-pagination">
       <div className="flex items-center gap-2 text-xs text-ink-muted">
-        <span>Per page:</span>
+        <span>{t('adm_per_page')}</span>
         {sizes.map((n) => (
           <button
             key={n}

@@ -28,8 +28,10 @@ export default function InstallPrompt() {
 
     if (ios) {
       // iOS Safari: show our custom guide after 3s
-      const t = setTimeout(() => setShow(true), 3000);
-      return () => clearTimeout(t);
+      // Named `timer`, not `t`: `t` is the translator in this component and a
+      // local one here is a trap for whoever next adds a string to this block.
+      const timer = setTimeout(() => setShow(true), 3000);
+      return () => clearTimeout(timer);
     }
 
     // Android / Chrome: capture the browser event

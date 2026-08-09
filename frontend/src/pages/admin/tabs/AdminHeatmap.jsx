@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useLang } from '../../../contexts/LangContext';
 import api, { formatError, apiBase } from '../../../api/client';
 import BusinessHeatMap, { MAP_COLORS } from '../../../components/BusinessHeatMap';
 import {
@@ -16,13 +17,14 @@ function StatCard({ label, value, accent = 'text-teal', testid }) {
 }
 
 function BreakdownList({ title, rows, keyName }) {
+  const { t } = useLang();
   const max = Math.max(1, ...rows.map((r) => r.count));
   return (
     <div className="card-lg" data-testid={`breakdown-${keyName}`}>
       <h4 className="font-headings font-bold text-ink text-sm mb-3">{title}</h4>
       <div className="space-y-1.5">
         {rows.length === 0 ? (
-          <p className="text-xs text-ink-muted">No data</p>
+          <p className="text-xs text-ink-muted">{t('admin_no_data')}</p>
         ) : rows.map((r) => (
           <div key={r[keyName]} className="flex items-center gap-2">
             <span className="text-xs text-ink-soft w-28 truncate">{r[keyName]}</span>
@@ -38,6 +40,7 @@ function BreakdownList({ title, rows, keyName }) {
 }
 
 function ClaimCard({ claim, onReview, busy }) {
+  const { t } = useLang();
   return (
     <div className="bg-paper border border-sm-border rounded-[14px] p-3" data-testid={`admin-claim-${claim.id}`}>
       <div className="flex items-start justify-between gap-2">
@@ -65,7 +68,7 @@ function ClaimCard({ claim, onReview, busy }) {
           className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-paper bg-green-pos py-1.5 rounded-[10px] hover:opacity-90 disabled:opacity-50 transition-opacity"
           data-testid={`claim-approve-${claim.id}`}
         >
-          <Check size={13} /> Approve
+          <Check size={13} /> {t('adm_approve')}
         </button>
         <button
           onClick={() => onReview(claim.id, 'reject')}
@@ -73,7 +76,7 @@ function ClaimCard({ claim, onReview, busy }) {
           className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-red-warn border border-red-warn/40 py-1.5 rounded-[10px] hover:bg-red-50 disabled:opacity-50 transition-colors"
           data-testid={`claim-reject-${claim.id}`}
         >
-          <X size={13} /> Reject
+          <X size={13} /> {t('adm_reject')}
         </button>
       </div>
     </div>
@@ -81,6 +84,7 @@ function ClaimCard({ claim, onReview, busy }) {
 }
 
 function LeadCard({ lead, onResolve, busy }) {
+  const { t } = useLang();
   return (
     <div className="bg-paper border border-sm-border rounded-[14px] p-3" data-testid={`admin-lead-${lead.id}`}>
       <div className="flex items-start justify-between gap-2">
@@ -109,7 +113,7 @@ function LeadCard({ lead, onResolve, busy }) {
         className="mt-2 w-full flex items-center justify-center gap-1 text-xs font-semibold text-paper bg-teal py-1.5 rounded-[10px] hover:opacity-90 disabled:opacity-50 transition-opacity"
         data-testid={`lead-resolve-${lead.id}`}
       >
-        <Check size={13} /> Mark handled
+        <Check size={13} /> {t('adm_mark_handled')}
       </button>
     </div>
   );
@@ -190,9 +194,9 @@ export default function AdminHeatmap({ flash }) {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h2 className="font-headings font-bold text-ink text-lg flex items-center gap-2">
-            <Flame size={18} className="text-teal" /> Business Directory
+            <Flame size={18} className="text-teal" /> {t('adm_directory')}
           </h2>
-          <p className="text-xs text-ink-muted">Business density across Austria · import your CSV to populate real listings</p>
+          <p className="text-xs text-ink-muted">{t('adm_directory_sub')}</p>
         </div>
         <div className="flex items-center gap-2">
           <a
@@ -201,7 +205,7 @@ export default function AdminHeatmap({ flash }) {
             className="text-xs px-4 py-2 rounded-full border border-sm-border text-ink-soft hover:bg-cream-soft transition-colors flex items-center gap-2"
             data-testid="csv-template-btn"
           >
-            <Download size={14} /> Template
+            <Download size={14} /> {t('adm_template')}
           </a>
           <input ref={fileRef} type="file" accept=".csv,text/csv" onChange={onImport} className="hidden" data-testid="csv-file-input" />
           <button
@@ -211,7 +215,7 @@ export default function AdminHeatmap({ flash }) {
             data-testid="csv-import-btn"
           >
             {importing ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-            Import CSV
+            {t('adm_import_csv')}
           </button>
         </div>
       </div>
@@ -229,27 +233,27 @@ export default function AdminHeatmap({ flash }) {
         <BusinessHeatMap markers={markers} height={460} />
         <div className="flex items-center gap-x-5 gap-y-1.5 mt-3 flex-wrap" data-testid="admin-map-legend">
           <span className="flex items-center gap-1.5 text-[11px] text-ink-muted">
-            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: MAP_COLORS.unclaimed }} /> Unclaimed
+            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: MAP_COLORS.unclaimed }} /> {t('adm_unclaimed')}
           </span>
           <span className="flex items-center gap-1.5 text-[11px] text-ink-muted">
             <span className="w-3 h-3 rounded-full" style={{ backgroundColor: MAP_COLORS.claimed }} /> Claimed (on platform)
           </span>
-          <span className="text-[11px] text-ink-muted">Showing {markers.length.toLocaleString()} of {(stats?.total ?? 0).toLocaleString()}</span>
+          <span className="text-[11px] text-ink-muted">{t('adm_showing', { n: markers.length.toLocaleString(), total: (stats?.total ?? 0).toLocaleString() })}</span>
         </div>
       </div>
 
       {/* Breakdown — categories only */}
-      <BreakdownList title="Top categories" rows={stats?.top_segments || []} keyName="segment" />
+      <BreakdownList title={t('adm_top_categories')} rows={stats?.top_segments || []} keyName="segment" />
 
       {/* Pending claims */}
       <div>
         <h3 className="font-headings font-bold text-ink text-sm mb-3 flex items-center gap-2">
-          <Hand size={15} className="text-teal" /> Pending claims
+          <Hand size={15} className="text-teal" /> {t('adm_pending_claims')}
           <span className="ml-1 text-[10px] font-bold bg-amber/15 text-amber-deep px-2 py-0.5 rounded-full">{claims.length}</span>
         </h3>
         {claims.length === 0 ? (
           <div className="card-lg text-center py-8 text-sm text-ink-muted flex flex-col items-center gap-2" data-testid="no-pending-claims">
-            <BadgeCheck size={22} className="text-green-pos" /> No pending claims
+            <BadgeCheck size={22} className="text-green-pos" /> {t('adm_no_claims')}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
