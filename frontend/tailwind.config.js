@@ -25,9 +25,9 @@ module.exports = {
         // aimed for deliberately rather than falling out of the numbers.
         ink: { DEFAULT: '#1a3a52', soft: '#4a5a6c', muted: '#4d6477', faint: '#566c7e' },
         // `tint` is a third step mixed from the same hue, not a new colour.
-        // The home tiles run a light-to-dark ramp down each column and three
-        // values are the minimum that reads as a progression rather than as
-        // two colours and an accident.
+        // It was added for a light-to-dark tile ramp that no longer exists;
+        // what it does now is carry the focus card's kicker and meta line,
+        // where it reaches 6.67:1 on `deep`.
         teal: { DEFAULT: '#2d6a7f', deep: '#1f4d5e', tint: '#cfdee3' },
         // Weather, and only weather. A cool family of its own so the forecast
         // can never be misread as an appointment. Tailwind ships a `sky`
@@ -49,45 +49,20 @@ module.exports = {
         // blue navy and goes muddy on orange; this is the same hue family as
         // the amber itself, darkened. Named for its job, not its colour.
         'on-amber': '#3a2a08',
-        // The home screen's six workflow tiles and the focus card above them.
+        // The home screen used to need two colour families of its own here —
+        // six desaturated tile fills and a four-token focus card — because the
+        // tiles were solid blocks and solid blocks drawn from `amber` and
+        // `teal` at full strength left nothing on the screen leading.
         //
-        // Their own family, not `amber` and `teal`, because those two are the
-        // brand: they colour every button, the calendar, the weather card and
-        // the quote header. The tiles were drawn straight from them at full
-        // saturation, so six saturated blocks sat directly under a saturated
-        // focus card and nothing on the screen led. Desaturating the brand to
-        // fix that would have repainted the whole app.
+        // They are gone. The tiles are white cards with a tinted icon badge,
+        // which is what the dashboard has always done, and that shape needs no
+        // colours the brand does not already have: `paper` for the card,
+        // `cream-deep` for its hairline, `amber`/`teal` at 10-15 % for the
+        // badge, `amber-text`/`teal` for the icon inside it. The focus card is
+        // `teal-deep` with the real brand `amber` on its button.
         //
-        // So the ramps below are the brand's two hues at roughly 40% of their
-        // chroma — still recognisably warm-left and cool-right, still running
-        // light to dark down each column, but reading as card stock rather
-        // than as signal. `warm` takes `on-amber` for text and `cool` takes
-        // `ink`; both were checked at 4.87:1 or better on their own fill,
-        // which is why no new text colour was needed.
-        stage: {
-          w1: '#f5ecdc', w2: '#e9d8ba', w3: '#d9c39c',
-          c1: '#93aab0', c2: '#b8cacd', c3: '#dde6e7',
-        },
-        // The focus card, and the one measurement that decided it.
-        //
-        // The card began as brand teal at 45% saturation with a 71% amber
-        // button, sitting directly above tiles at 15-17% and 44-56%. It was
-        // three times the chroma of everything beneath it, which is why no
-        // choice of a nicer teal ever made it sit right — the problem was
-        // never the hue.
-        //
-        // So these are not picked colours. `DEFAULT` is the cool tile ramp
-        // continued downward — the same hue and saturation as `stage.c1`, two
-        // steps darker — and `cta` is the warm ramp continued the same way.
-        // The card stays the heaviest thing on the screen, which is its job,
-        // without being the only saturated one.
-        //
-        // `sub` is the kicker and the meta line; on this fill it reaches
-        // 5.47:1, and `on-cta` reaches 6.59:1 on the button.
-        focus: {
-          DEFAULT: '#3e5155', cta: '#c9aa73',
-          sub: '#c8d3d5', 'on-cta': '#33270f',
-        },
+        // Ten tokens removed, no new ones added. The measurements that used to
+        // justify them now live where the classes are, in `utils/workflow.js`.
         'green-pos': '#4a8b3f',
         'red-warn': '#c14655',
         'sm-border': '#f0e3c8',

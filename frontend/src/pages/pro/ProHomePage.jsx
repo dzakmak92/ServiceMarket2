@@ -123,11 +123,11 @@ export default function ProHomePage() {
         {/* ── Als Nächstes ───────────────────────────────────────── */}
         <Link
           to={focus.to}
-          className="block bg-focus text-paper rounded-[18px] p-5 mt-1
-                     focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus/40"
+          className="block bg-teal-deep text-paper rounded-[18px] p-5 mt-1
+                     focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal-deep/40"
           data-testid="home-focus"
         >
-          <p className="text-[10.5px] uppercase tracking-[.13em] font-bold text-focus-sub">
+          <p className="text-[10.5px] uppercase tracking-[.13em] font-bold text-teal-tint">
             {t('home_focus_kicker')}
           </p>
           <p className="font-headings font-bold text-[15px] leading-tight mt-1.5">
@@ -142,9 +142,9 @@ export default function ProHomePage() {
               {focus.amount}
             </p>
           )}
-          {focus.sub && <p className="text-[12.5px] text-focus-sub mt-1.5">{focus.sub}</p>}
-          <span className="mt-4 flex items-center justify-center gap-1.5 bg-focus-cta
-                           text-focus-on-cta rounded-xl py-3 font-headings font-bold text-sm">
+          {focus.sub && <p className="text-[12.5px] text-teal-tint mt-1.5">{focus.sub}</p>}
+          <span className="mt-4 flex items-center justify-center gap-1.5 bg-amber
+                           text-on-amber rounded-xl py-3 font-headings font-bold text-sm">
             {focus.cta} <ArrowRight size={15} />
           </span>
         </Link>
@@ -164,16 +164,24 @@ export default function ProHomePage() {
             const n = counts?.[s.key];
             const body = (
               <>
-                <Icon
-                  size={50} strokeWidth={1.7} aria-hidden="true"
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 opacity-[.40]
-                             pointer-events-none"
-                />
+                {/* A badge, not a watermark. At 50 px and 40 % opacity the icon
+                    was a texture behind the label — it read as noise on a solid
+                    fill and would read as dirt on a white one. The dashboard's
+                    stat cards have always put the icon in a tinted circle, which
+                    is what makes the tint legible at this size: 10-15 % of a hue
+                    is invisible as a card fill and unmistakable as a 44 px disc. */}
+                <span
+                  aria-hidden="true"
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full
+                              flex items-center justify-center pointer-events-none ${s.badge}`}
+                >
+                  <Icon size={21} strokeWidth={1.9} />
+                </span>
                 <span className="relative font-headings font-bold text-[14.5px]
                                  leading-tight tracking-[-.022em]">
                   {t(s.labelKey)}
                 </span>
-                <span className="relative text-[11px] opacity-80 leading-snug">
+                <span className="relative text-[11px] text-ink-muted leading-snug">
                   {s.to
                     ? `${n ?? 0} ${t(s.unitKey)}`
                     : t('stage_soon')}
