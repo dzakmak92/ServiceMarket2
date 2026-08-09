@@ -85,6 +85,23 @@ const PAIRS = [
   ['note · ordinary text on its tint', 'ink.soft', ['amber.DEFAULT', 'paper', 0.07]],
   ['card · total chip', 'ink.DEFAULT', ['teal.DEFAULT', 'paper', 0.08]],
   ['card · missing-quantity warning', 'amber.text', 'paper'],
+
+  /* The Innen/Außen zone panels. Two surfaces stacked — a tint of the zone
+     colour over the cream page, and a card that is a *different* mix (the same
+     colour over white) sitting on top of it — so every reading here is text on
+     a surface that neither token names on its own. Getting this wrong is what
+     the whole file exists for: the panel has to be deep enough that the card
+     lifts off it, and one step deeper than this the group subtitle fails. */
+  ['zone · Innen heading on its panel', 'teal.DEFAULT', ['teal.DEFAULT', 'cream', 0.09]],
+  ['zone · Außen heading on its panel', 'amber.text', ['amber.DEFAULT', 'cream', 0.09]],
+  ['zone · group subtitle on Innen', 'ink.muted', ['teal.DEFAULT', 'cream', 0.09]],
+  ['zone · group subtitle on Außen', 'ink.muted', ['amber.DEFAULT', 'cream', 0.09]],
+  ['zone · card title on Innen card', 'ink.DEFAULT', 'zone-in'],
+  ['zone · card title on Außen card', 'ink.DEFAULT', 'zone-out'],
+  ['zone · card band on Innen card', 'ink.muted', 'zone-in'],
+  ['zone · card band on Außen card', 'ink.muted', 'zone-out'],
+  ['zone · site-visit flag on Innen card', 'red-warn', 'zone-in'],
+  ['zone · site-visit flag on Außen card', 'red-warn', 'zone-out'],
 ];
 
 let fails = 0;

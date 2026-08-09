@@ -2,6 +2,7 @@ const t = {
   en: {
     est_one_more_note: '1 more note',
     est_qty: 'Quantity',
+    est_n_templates: '{n} templates',
     est_details: 'Details',
     est_needs_qty: 'Quantity missing',
     est_missing_qty: '{n} without a quantity',
@@ -1780,6 +1781,7 @@ const t = {
   de: {
     est_one_more_note: '1 weiterer Hinweis',
     est_qty: 'Menge',
+    est_n_templates: '{n} Vorlagen',
     est_details: 'Details',
     est_needs_qty: 'Menge fehlt',
     est_missing_qty: '{n} ohne Menge',
@@ -3453,6 +3455,7 @@ const t = {
   tr: {
     est_one_more_note: '1 not daha',
     est_qty: 'Miktar',
+    est_n_templates: '{n} şablon',
     est_details: 'Ayrıntılar',
     est_needs_qty: 'Miktar eksik',
     est_missing_qty: '{n} kalemde miktar yok',
@@ -5058,6 +5061,7 @@ const t = {
   es: {
     est_one_more_note: '1 aviso más',
     est_qty: 'Cantidad',
+    est_n_templates: '{n} plantillas',
     est_details: 'Detalles',
     est_needs_qty: 'Falta la cantidad',
     est_missing_qty: '{n} sin cantidad',

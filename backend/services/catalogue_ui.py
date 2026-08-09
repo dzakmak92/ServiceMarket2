@@ -61,20 +61,36 @@ from services import catalogue_i18n
 
 SECTIONS: dict[str, list[tuple[str, str, list[str]]]] = {
     # trade: [(section key, German heading, [job keys])]
+    # Maler is ordered by the sequence the work happens in, not by frequency:
+    # strip and fill, then paint, then wall covering, then the per-piece lacquer
+    # work, then what is left, then outside. Eleven of the nineteen used to sit
+    # in one "Innen" bucket, which is a list rather than a grouping — a painter
+    # scanning for Spachteln Q3 had to read past wallpaper and radiators.
+    #
+    # The headings are verbs. The order carries the logic, so the numbering that
+    # would have made that explicit is not needed and would read as instructions
+    # to a tradesperson about how to do their own job.
     "maler": [
-        ("innen", "Innen", [
+        ("vorbereiten", "Vorbereiten", [
+            "maler.tapete_entfernen", "maler.risse_sanieren",
+            "maler.spachteln_q3", "maler.spachteln_q4",
+        ]),
+        ("streichen", "Streichen", [
             "maler.innenanstrich", "maler.decke", "maler.wohnung_komplett",
-            "maler.spachteln_q3", "maler.spachteln_q4", "maler.tapezieren",
-            "maler.designtapete", "maler.tapete_entfernen", "maler.strukturputz",
+        ]),
+        ("wandbelag", "Tapezieren und verputzen", [
+            "maler.tapezieren", "maler.designtapete", "maler.strukturputz",
+        ]),
+        ("lackieren", "Lackieren", [
             "maler.tuer_lackieren", "maler.heizkoerper_lackieren",
+            "maler.holzfenster_streichen",
         ]),
-        ("aussen", "Außen", [
-            "maler.fassade", "maler.fassade_reinigen", "maler.holzschutz",
-            "maler.wdvs", "maler.holzfenster_streichen",
+        ("sanieren", "Sanieren und beschichten", [
+            "maler.schimmelsanierung", "maler.bodenbeschichtung",
         ]),
-        ("sanierung", "Sanierung", [
-            "maler.schimmelsanierung", "maler.risse_sanieren",
-            "maler.bodenbeschichtung",
+        ("fassade", "Fassade streichen und dämmen", [
+            "maler.fassade_reinigen", "maler.fassade", "maler.holzschutz",
+            "maler.wdvs",
         ]),
     ],
     "garten": [
@@ -186,9 +202,16 @@ SECTIONS: dict[str, list[tuple[str, str, list[str]]]] = {
 # translations the interface needs. Keyed by section key, which is unique
 # only within a trade — hence the trade prefix.
 SECTION_LABELS: dict[str, dict[str, str]] = {
-    "maler.innen": {"en": "Indoors", "tr": "İç mekan", "es": "Interior"},
-    "maler.aussen": {"en": "Outdoors", "tr": "Dış mekan", "es": "Exterior"},
-    "maler.sanierung": {"en": "Remediation", "tr": "Onarım", "es": "Saneamiento"},
+    "maler.vorbereiten": {"en": "Preparing", "tr": "Hazırlamak", "es": "Preparar"},
+    "maler.streichen": {"en": "Painting", "tr": "Boyamak", "es": "Pintar"},
+    "maler.wandbelag": {"en": "Wallpapering and plastering",
+                        "tr": "Duvar kağıdı ve sıva", "es": "Empapelar y revocar"},
+    "maler.lackieren": {"en": "Lacquering", "tr": "Lake boyamak", "es": "Lacar"},
+    "maler.sanieren": {"en": "Remediating and coating",
+                       "tr": "Onarmak ve kaplamak", "es": "Sanear y revestir"},
+    "maler.fassade": {"en": "Painting and insulating the façade",
+                      "tr": "Cepheyi boyamak ve yalıtmak",
+                      "es": "Pintar y aislar la fachada"},
     "garten.pflege": {"en": "Regular upkeep", "tr": "Düzenli bakım", "es": "Mantenimiento"},
     "garten.baeume": {"en": "Trees and hedges", "tr": "Ağaç ve çit", "es": "Árboles y setos"},
     "garten.anlegen": {"en": "Planting", "tr": "Ekim ve dikim", "es": "Plantación"},
@@ -214,6 +237,62 @@ SECTION_LABELS: dict[str, dict[str, str]] = {
 }
 
 
+# One line under a section heading naming what is in it, because a verb on its
+# own ("Sanieren und beschichten") does not say which two templates that is.
+# German included here rather than in SECTIONS: SECTIONS is the placement, this
+# is prose, and keeping all four languages of one sentence together is what
+# stops three of them being updated and the fourth not.
+#
+# Only Maler has these. A section without one renders without a subtitle.
+SECTION_SUBS: dict[str, dict[str, str]] = {
+    "maler.vorbereiten": {
+        "de": "Entfernen, spachteln, Risse schließen",
+        "en": "Stripping, filling, closing cracks",
+        "tr": "Sökme, macunlama, çatlak kapatma",
+        "es": "Retirar, alisar, sellar fisuras"},
+    "maler.streichen": {
+        "de": "Wände und Decken", "en": "Walls and ceilings",
+        "tr": "Duvar ve tavan", "es": "Paredes y techos"},
+    "maler.wandbelag": {
+        "de": "Wandbeläge innen", "en": "Indoor wall coverings",
+        "tr": "İç mekan duvar kaplamaları", "es": "Revestimientos interiores"},
+    "maler.lackieren": {
+        "de": "Türen, Heizkörper, Fenster", "en": "Doors, radiators, windows",
+        "tr": "Kapı, radyatör, pencere", "es": "Puertas, radiadores, ventanas"},
+    "maler.sanieren": {
+        "de": "Schimmel, Boden", "en": "Mould, floors",
+        "tr": "Küf, zemin", "es": "Moho, suelos"},
+    "maler.fassade": {
+        "de": "Alles an der Außenhülle", "en": "Everything on the building envelope",
+        "tr": "Bina kabuğundaki her şey", "es": "Todo en la envolvente del edificio"},
+}
+
+# ── Zones ───────────────────────────────────────────────────────────────
+#
+# A band above the sections saying where the work happens. The interface gives
+# each zone its own colour, which is the whole reason this exists: colour that
+# alternates down a page carries no information, so a zone's sections have to
+# be contiguous and are listed here in the order they appear in SECTIONS.
+#
+# Maler only. Every other trade returns `zone: None` on every section and the
+# interface renders them exactly as before.
+#
+# Note what is *not* here: a third zone for "Sanierung". Schimmelsanierung
+# Innenwand and Bodenbeschichtung Garage oder Keller are both indoor work, so
+# they sit in Innen. Giving them a colour of their own would have invented a
+# place that does not exist.
+ZONES: dict[str, list[tuple[str, dict[str, str], list[str]]]] = {
+    "maler": [
+        ("innen", {"de": "Innen", "en": "Indoors",
+                   "tr": "İç mekan", "es": "Interior"},
+         ["vorbereiten", "streichen", "wandbelag", "lackieren", "sanieren"]),
+        ("aussen", {"de": "Außen", "en": "Outdoors",
+                    "tr": "Dış mekan", "es": "Exterior"},
+         ["fassade"]),
+    ],
+}
+
+
 def sections_for(trade: str, job_keys: list[str]) -> list[dict] | None:
     """The section layout for one trade, or None when a flat list is right.
 
@@ -227,21 +306,38 @@ def sections_for(trade: str, job_keys: list[str]) -> list[dict] | None:
     if not scheme:
         return None
 
+    # Which zone each section belongs to, flattened from ZONES so the lookup
+    # below is a dict access rather than a scan.
+    zone_of = {sec: (zkey, labels)
+               for zkey, labels, secs in ZONES.get(trade, [])
+               for sec in secs}
+
     have = set(job_keys)
     out: list[dict] = []
     placed: set[str] = set()
     for key, heading, keys in scheme:
         present = [k for k in keys if k in have]
         placed.update(present)
-        if present:
-            out.append({"key": key, "label_de": heading,
-                        "labels": SECTION_LABELS.get(f"{trade}.{key}", {}),
-                        "job_keys": present})
+        if not present:
+            continue
+        zkey, zlabels = zone_of.get(key, (None, {}))
+        subs = SECTION_SUBS.get(f"{trade}.{key}", {})
+        out.append({"key": key, "label_de": heading,
+                    "labels": SECTION_LABELS.get(f"{trade}.{key}", {}),
+                    "sub_de": subs.get("de", ""),
+                    "subs": {k: v for k, v in subs.items() if k != "de"},
+                    "zone": zkey,
+                    "zone_label_de": zlabels.get("de", ""),
+                    "zone_labels": {k: v for k, v in zlabels.items() if k != "de"},
+                    "job_keys": present})
 
     leftover = [k for k in job_keys if k not in placed]
     if leftover:
+        # No zone: a template nobody placed cannot be claimed to be indoors.
         out.append({"key": "weitere", "label_de": "Weitere",
                     "labels": {"en": "More", "tr": "Diğer", "es": "Otros"},
+                    "sub_de": "", "subs": {},
+                    "zone": None, "zone_label_de": "", "zone_labels": {},
                     "job_keys": leftover})
     return out
 

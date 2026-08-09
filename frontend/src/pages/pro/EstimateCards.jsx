@@ -120,8 +120,39 @@ function Note({ note, tone = 'normal' }) {
   );
 }
 
+/* Per-zone chrome.
+
+   `rest` is the card at rest — not open, not ticked — and it is the only state
+   the zone tint applies to. Both other states go white, and that is the point
+   rather than a shortcut: inside a tinted panel, `paper` is the lightest
+   surface available, so a card that is ticked or open lifts off the zone
+   instead of sinking into it.
+
+   The obvious thing — keeping the `bg-teal/[.03]` wash that means "in the
+   quote" everywhere else — does the opposite here. A Tailwind opacity utility
+   composites over what is behind the element, which inside a zone is the
+   panel, not the page; the ticked card came out darker than the untouched
+   ones around it, so selecting a template made it recede. */
+const ZONE = {
+  innen: {
+    panel: 'bg-teal/[.09] border-teal/20',
+    head: 'text-teal',
+    rest: 'border-teal/20 bg-zone-in',
+    picked: 'border-teal bg-paper',
+    box: 'border-teal/50',
+  },
+  aussen: {
+    panel: 'bg-amber/[.09] border-amber/30',
+    head: 'text-amber-text',
+    rest: 'border-amber/30 bg-zone-out',
+    picked: 'border-teal bg-paper',
+    box: 'border-amber/60',
+  },
+};
+
 /** One template: a checkbox, and everything it needs once it is checked. */
-function Card({ job, state, onToggle, onOpen, onAnswer, t }) {
+function Card({ job, state, onToggle, onOpen, onAnswer, t, zone }) {
+  const z = ZONE[zone];
   // Ticked, which is not the same as on screen: a card can be open because
   // somebody wanted to read it without putting it in the quote.
   const checked = !!state?.checked;
@@ -166,8 +197,8 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t }) {
     <div data-testid={`estimate-card-${job.key}`}
          className={`rounded-[14px] border overflow-hidden transition-colors
                      ${open ? 'border-teal shadow-[0_2px_10px_rgba(45,106,127,.10)] bg-paper'
-                            : checked ? 'border-teal/25 bg-teal/[.03]'
-                                      : 'border-cream-deep bg-paper'}`}>
+                            : checked ? (z?.picked || 'border-teal/25 bg-teal/[.03]')
+                                      : (z?.rest || 'border-cream-deep bg-paper')}`}>
       <div className="flex items-center gap-2.5 px-3 py-2.5">
         <button type="button" onClick={() => onToggle(job.key)}
                 aria-pressed={checked} aria-label={lbl(job)}
@@ -175,7 +206,8 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t }) {
                 className={`h-5 w-5 shrink-0 rounded-[6px] border-[1.6px] flex items-center
                             justify-center focus-visible:outline-none focus-visible:ring-4
                             focus-visible:ring-teal/30
-                            ${checked ? 'border-teal bg-teal' : 'border-ink-faint/50'}`}>
+                            ${checked ? 'border-teal bg-teal'
+                                      : (z?.box || 'border-ink-faint/50')}`}>
           {checked && (
             <svg width="10" height="8" viewBox="0 0 10 8" aria-hidden="true">
               <path d="M1 4l2.5 2.5L9 1" stroke="#fff" strokeWidth="2"
@@ -477,32 +509,77 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting }
      filtering the jobs array instead threw that away and returned whatever
      order the API happened to send. */
   const byKey = new Map(jobs.map((j) => [j.key, j]));
+  const say = (de, other) => (lang !== 'de' && other?.[lang]) || de;
   const groups = sections && sections.length
     ? sections
-      .map((s) => ({ key: s.key, label: s.label_de, labels: s.labels,
+      .map((s) => ({ key: s.key, label: say(s.label_de, s.labels),
+                     sub: say(s.sub_de, s.subs),
+                     zone: s.zone, zoneLabel: say(s.zone_label_de, s.zone_labels),
                      rows: s.job_keys.map((k) => byKey.get(k)).filter(Boolean) }))
       .filter((s) => s.rows.length)
-    : [{ key: '_all', label: '', rows: jobs }];
+    : [{ key: '_all', label: '', sub: '', zone: null, rows: jobs }];
+
+  /* Consecutive sections sharing a zone become one panel. Runs, not a group-by:
+     a zone drawn twice down the page is two panels of one colour, and colour
+     that repeats in two places stops saying where you are. The backend lists a
+     zone's sections contiguously for exactly this reason; if that ever stops
+     being true this renders it as two panels rather than silently reordering
+     the sections behind the pro's back. */
+  const bands = [];
+  groups.forEach((sec) => {
+    const last = bands[bands.length - 1];
+    if (last && last.zone === sec.zone && sec.zone) last.secs.push(sec);
+    else bands.push({ zone: sec.zone, label: sec.zoneLabel, secs: [sec] });
+  });
 
   return (
     <>
-      {groups.map((sec) => (
-        <div key={sec.key} className="mb-1">
-          {sec.key !== '_all' && (
-            <h2 className="text-[10px] font-extrabold uppercase tracking-[.12em] text-ink-muted
-                           mt-4 mb-2 px-0.5">
-              {(lang !== 'de' && sec.labels?.[lang]) || sec.label}
-              <span className="font-medium tracking-normal"> · {sec.rows.length}</span>
-            </h2>
-          )}
-          <div className="space-y-1.5">
-            {sec.rows.map((j) => (
-              <Card key={j.key} job={j} state={picked[j.key]} t={t}
-                    onToggle={toggle} onOpen={open} onAnswer={answer} />
-            ))}
+      {bands.map((band, bi) => {
+        const z = ZONE[band.zone];
+        const n = band.secs.reduce((s, x) => s + x.rows.length, 0);
+        return (
+          <div key={`${band.zone || '_'}${bi}`}
+               data-testid={band.zone ? `estimate-zone-${band.zone}` : undefined}
+               className={z ? `mt-8 first:mt-4 rounded-[18px] border px-3 pt-3 pb-3.5 ${z.panel}`
+                            : 'mb-1'}>
+            {z && (
+              <h2 className={`text-[11px] font-extrabold uppercase tracking-[.16em] ${z.head}`}>
+                {band.label}
+                <span className="ml-1.5 font-medium normal-case tracking-normal text-ink-muted">
+                  {t('est_n_templates', { n })}
+                </span>
+              </h2>
+            )}
+            {band.secs.map((sec) => {
+              /* h3 under a zone's h2, h2 when there is no zone. The six trades
+                 without zones would otherwise get an h3 with no h2 above it,
+                 which is a broken outline for anyone reading by headings. */
+              const H = z ? 'h3' : 'h2';
+              return (
+              <div key={sec.key}>
+                {sec.key !== '_all' && (
+                  <H className={`text-[9.5px] font-extrabold uppercase tracking-[.11em]
+                                 ${z ? `${z.head} mt-4 first:mt-3` : 'text-ink-muted mt-4'} mb-2 px-0.5`}>
+                    {sec.label}
+                    <span className="font-medium tracking-normal"> · {sec.rows.length}</span>
+                    {sec.sub && (
+                      <span className="block font-medium normal-case tracking-normal
+                                       text-ink-muted mt-[2px]">{sec.sub}</span>
+                    )}
+                  </H>
+                )}
+                <div className="space-y-1.5">
+                  {sec.rows.map((j) => (
+                    <Card key={j.key} job={j} state={picked[j.key]} t={t} zone={band.zone}
+                          onToggle={toggle} onOpen={open} onAnswer={answer} />
+                  ))}
+                </div>
+              </div>
+              );
+            })}
           </div>
-        </div>
-      ))}
+        );
+      })}
 
       {(chosen.length > 0 || pending.length > 0) && (
         <div data-testid="estimate-total-bar"

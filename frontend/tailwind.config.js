@@ -66,6 +66,18 @@ module.exports = {
         'green-pos': '#4a8b3f',
         'red-warn': '#c14655',
         'sm-border': '#f0e3c8',
+        // The estimate picker groups its templates into Innen and Außen zones,
+        // each a tinted panel. A card *inside* a panel has to be lighter than
+        // the panel or it stops reading as a card at all — and it cannot be
+        // written as `bg-teal/[.035]`, because a Tailwind opacity utility
+        // composites over whatever is behind the element, which here is the
+        // panel and not the page. These two are that mix already resolved:
+        // teal at 3.5 % and amber at 5 % over `paper`. Opaque on purpose.
+        //
+        // The panels themselves stay as opacity utilities (`bg-teal/[.09]`,
+        // `bg-amber/[.09]`) because those genuinely do sit on `cream`.
+        'zone-in': '#f8fafb',
+        'zone-out': '#fefbf4',
         // Shadcn system
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
