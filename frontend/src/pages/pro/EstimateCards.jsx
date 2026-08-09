@@ -54,6 +54,14 @@ const txt = (o) => (o && (o.text || o.text_de)) || '';
 const UNIT = { m2: 'm²', m3: 'm³' };
 const unit = (u) => UNIT[u] || u;
 
+/** Has this position a quantity somebody actually typed? */
+function hasQty(state) {
+  const qq = qtyQuestion(state?.form);
+  if (!qq) return true;               // a Pauschale job prices without one
+  const v = state.answers[qq.key];
+  return v !== undefined && v !== null && v !== '' && Number(v) > 0;
+}
+
 /** The quantity question, which is the one field that is always editable. */
 function qtyQuestion(form) {
   return (form || []).find((q) => q.is_quantity)
@@ -188,14 +196,18 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t }) {
           </span>
         </button>
 
-        {checked && amount != null && !open && (
+        {checked && !open && (amount != null ? (
           <span className="text-right whitespace-nowrap">
             <span className="block font-extrabold text-[13px] text-ink">{fmtEur(amount)}</span>
             <span className="block text-[9px] text-ink-muted">
               {est.qty} {unit(job.unit)}
             </span>
           </span>
-        )}
+        ) : (
+          <span className="whitespace-nowrap text-[10px] font-bold text-amber-text">
+            {t('est_needs_qty')}
+          </span>
+        ))}
         {state?.loading && <Loader2 size={14} className="animate-spin text-teal" />}
         <ChevronDown size={14} aria-hidden="true"
                      className={`text-ink-faint transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -213,6 +225,7 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t }) {
                 type="number" inputMode="decimal" min="0"
                 value={qq ? (state.answers[qq.key] ?? '') : ''}
                 onChange={(e) => qq && onAnswer(job.key, qq.key, e.target.value)}
+                placeholder={unit(job.unit)}
                 data-testid={`estimate-qty-${job.key}`}
                 className="w-full rounded-[9px] border border-sm-border bg-paper px-2.5 py-2
                            text-right text-[13px] font-bold text-ink"
@@ -317,7 +330,7 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting }
   const bump = useCallback(() => setTick((n) => n + 1), []);
 
   useEffect(() => {
-    const keys = Object.keys(picked).filter((k) => picked[k]?.form);
+    const keys = Object.keys(picked).filter((k) => picked[k]?.form && hasQty(picked[k]));
     if (!keys.length) return undefined;
     const id = setTimeout(async () => {
       const next = {};
@@ -357,15 +370,32 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting }
     });
     try {
       const { data } = await api.get(`/api/estimate/jobs/${key}`, { params: { lang } });
-      // Seed the form's own defaults. An empty form would price from fallbacks
-      // the pro never saw and cannot correct.
+      /* Seed the form's own defaults — except the quantity, which is left
+         empty on purpose.
+
+         `survey()` synthesises a quantity question whose default is the
+         template's typical size, and `test_estimator` asserts that default is
+         exactly what the estimator uses when nothing is answered. That
+         invariant is worth keeping: it is what stops the number on screen
+         disagreeing with the number in the price. So the field is not zeroed —
+         zero would still price as 57,5 m² and the screen would be lying — it
+         is left blank, and a position with no quantity is simply not priced
+         yet. A quote is a promise about a number somebody typed. */
+      const qq = qtyQuestion(data.form || []);
       const seed = {};
       (data.form || []).forEach((q) => {
+        if (q === qq) return;
         if (q.default !== null && q.default !== undefined) seed[q.key] = q.default;
       });
-      setPicked((cur) => (cur[key]
-        ? { ...cur, [key]: { ...cur[key], form: data.form || [], answers: seed } }
-        : cur));
+      /* The spinner has to mean "a price is coming". A Pauschale job prices
+         straight away and keeps spinning until it does; a job that wants a
+         quantity is not waiting on anything until one is typed, and a spinner
+         that never resolves is worse than no spinner. */
+      setPicked((cur) => {
+        if (!cur[key]) return cur;
+        const next = { ...cur[key], form: data.form || [], answers: seed };
+        return { ...cur, [key]: { ...next, loading: hasQty(next) } };
+      });
       bump();
     } catch {
       setPicked(({ [key]: _drop, ...rest }) => rest);
@@ -388,15 +418,27 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting }
   };
 
   const answer = (key, qk, value) => {
-    setPicked((cur) => (cur[key]
-      ? { ...cur, [key]: { ...cur[key], answers: { ...cur[key].answers, [qk]: value },
-                           loading: true } }
-      : cur));
+    setPicked((cur) => {
+      if (!cur[key]) return cur;
+      const next = { ...cur[key], answers: { ...cur[key].answers, [qk]: value } };
+      /* Clearing the quantity cancels the price rather than requesting one,
+         and the last estimate goes with it — a figure left on screen for a
+         quantity that is no longer there is the one number nobody should
+         trust, and it would still have been counted into the total. */
+      if (!hasQty(next)) return { ...cur, [key]: { ...next, est: null, loading: false } };
+      return { ...cur, [key]: { ...next, loading: true } };
+    });
     bump();
   };
 
   const chosen = Object.entries(picked).filter(([, p]) => p.est);
   const total = chosen.reduce((s, [, p]) => s + p.est.total_net[1], 0);
+
+  /* Ticked, but no quantity typed yet, so it has no price and cannot go into
+     the quote. Somebody who ticks a position means to send it — dropping it
+     out of the total silently would hand them a quote that is short a line
+     they thought they had added. Count it, name it, and hold the button. */
+  const pending = Object.entries(picked).filter(([, p]) => p.form && !hasQty(p));
 
   /* Order comes from the section, not from the job array. `sections_for`
      lists "what most people came for" first — a painter opens this for an
@@ -431,26 +473,41 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting }
         </div>
       ))}
 
-      {chosen.length > 0 && (
+      {(chosen.length > 0 || pending.length > 0) && (
         <div data-testid="estimate-total-bar"
              className="sticky bottom-0 -mx-4 mt-4 flex items-center justify-between gap-3
                         border-t border-sm-border bg-paper px-4 py-2.5
                         shadow-[0_-3px_14px_rgba(26,58,82,.07)]">
           <div>
             <p className="text-[9.5px] text-ink-muted">
-              {chosen.length === 1 ? t('est_one_position')
-                : t('est_n_positions', { n: chosen.length })} · {t('est_net_estimated')}
+              {chosen.length > 0 && (
+                <>
+                  {chosen.length === 1 ? t('est_one_position')
+                    : t('est_n_positions', { n: chosen.length })} · {t('est_net_estimated')}
+                </>
+              )}
+              {pending.length > 0 && (
+                <span className="font-bold text-amber-text">
+                  {chosen.length > 0 ? ' · ' : ''}
+                  {t('est_missing_qty', { n: pending.length })}
+                </span>
+              )}
             </p>
-            <p className="font-headings text-[17px] font-extrabold text-ink tabular-nums">
-              {fmtEur(total)}
-            </p>
+            {/* No amount while nothing is priced. A 0,00 € under two ticked
+                positions reads as a total, and it is not one. */}
+            {chosen.length > 0 && (
+              <p className="font-headings text-[17px] font-extrabold text-ink tabular-nums">
+                {fmtEur(total)}
+              </p>
+            )}
           </div>
-          <button type="button" disabled={quoting}
+          <button type="button" disabled={quoting || pending.length > 0 || !chosen.length}
                   onClick={() => onQuote(chosen.map(([key, p]) => ({
                     job_key: key, answers: p.answers, tier: 'standard',
                   })))}
                   data-testid="estimate-multi-quote"
-                  className="btn-amber !px-4 !py-2.5 !text-[13px]">
+                  className="btn-amber !px-4 !py-2.5 !text-[13px]
+                             disabled:opacity-50 disabled:cursor-not-allowed">
             {quoting ? <Loader2 size={14} className="animate-spin" /> : t('est_create_quote')}
           </button>
         </div>

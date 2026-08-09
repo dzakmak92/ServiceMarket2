@@ -84,6 +84,7 @@ const PAIRS = [
   ['note · severe text on its tint', 'ink.DEFAULT', ['red-warn', 'paper', 0.06]],
   ['note · ordinary text on its tint', 'ink.soft', ['amber.DEFAULT', 'paper', 0.07]],
   ['card · total chip', 'ink.DEFAULT', ['teal.DEFAULT', 'paper', 0.08]],
+  ['card · missing-quantity warning', 'amber.text', 'paper'],
 ];
 
 let fails = 0;
