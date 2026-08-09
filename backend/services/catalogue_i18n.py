@@ -2759,10 +2759,1200 @@ OPTIONS: dict[str, dict[str, str]] = {
         "es": 'Válvula de llenado'},
 }
 
+
+# ── Quote line descriptions ─────────────────────────────────────────────
+#
+# What the customer reads on the quote and the invoice.
+
+QUOTE_LINES: dict[str, dict[str, str]] = {
+    'Riss öffnen und entstauben': {
+        "en": 'Open out and dust off the crack', "tr": 'Çatlağı açıp tozunu alma',
+        "es": 'Abrir la fisura y desempolvar'},
+    'Rohinstallation Wasser/Abwasser': {
+        "en": 'First-fix water and waste', "tr": 'Su/atık su kaba tesisat',
+        "es": 'Instalación en bruto de agua y desagüe'},
+    'Rohinstallation und Elektro': {
+        "en": 'First fix and electrics', "tr": 'Kaba tesisat ve elektrik',
+        "es": 'Instalación en bruto y electricidad'},
+    'Rohr reparieren, Dichtheitsprüfung': {
+        "en": 'Repair the pipe, pressure test', "tr": 'Boru onarımı, sızdırmazlık testi',
+        "es": 'Reparar la tubería y probar estanqueidad'},
+    'Rohr verlegen und pressen': {
+        "en": 'Lay and press the pipe', "tr": 'Boru döşeme ve presleme',
+        "es": 'Tender y prensar la tubería'},
+    'Rohr, Vlies und Filterkies einbringen': {
+        "en": 'Place pipe, fleece and filter gravel', "tr": 'Boru, keçe ve filtre çakılı serme',
+        "es": 'Colocar tubo, geotextil y grava filtrante'},
+    'Rohre und Regner setzen': {
+        "en": 'Set the pipes and sprinklers', "tr": 'Boru ve fıskiyeleri yerleştirme',
+        "es": 'Colocar tuberías y aspersores'},
+    'Rohrmaterial, Fittings': {
+        "en": 'Pipework and fittings', "tr": 'Boru malzemesi, fitings',
+        "es": 'Tubería y accesorios'},
+    'Rohrspirale einsetzen': {
+        "en": 'Run the drain auger', "tr": 'Kanal spiralini kullanma',
+        "es": 'Introducir la sonda de desatasco'},
+    'Rollladenkasten und Panzer': {
+        "en": 'Shutter box and curtain', "tr": 'Panjur kutusu ve lameller',
+        "es": 'Cajón y lamas de persiana'},
+    'Räder wechseln und wuchten': {
+        "en": 'Change and balance the wheels', "tr": 'Tekerlek değişimi ve balans',
+        "es": 'Cambiar y equilibrar las ruedas'},
+    'Räumen und tragen': {
+        "en": 'Clear and carry', "tr": 'Boşaltma ve taşıma',
+        "es": 'Vaciar y transportar'},
+    'Räumen über die Saison': {
+        "en": 'Clearing through the season', "tr": 'Sezon boyunca temizleme',
+        "es": 'Retirada durante la temporada'},
+    'Saat ausbringen und walzen': {
+        "en": 'Sow and roll', "tr": 'Tohum atma ve silindirleme',
+        "es": 'Sembrar y rodillar'},
+    'Sanitärobjekte und Armaturen': {
+        "en": 'Sanitaryware and taps', "tr": 'Vitrifiye ve armatürler',
+        "es": 'Sanitarios y grifería'},
+    'Sanitärobjekte, Armaturen, Heizkörper': {
+        "en": 'Sanitaryware, taps, radiator', "tr": 'Vitrifiye, armatür, radyatör',
+        "es": 'Sanitarios, grifería y radiador'},
+    'Sanitärsilikon und Vorlegeband': {
+        "en": 'Sanitary silicone and backing strip', "tr": 'Saniter silikon ve fitil bandı',
+        "es": 'Silicona sanitaria y cinta de respaldo'},
+    'Schalter, Steckdosen, Auslässe': {
+        "en": 'Switches, sockets, outlets', "tr": 'Anahtar, priz, çıkışlar',
+        "es": 'Interruptores, enchufes, salidas'},
+    'Schimmelentferner, Sperrgrund, Farbe': {
+        "en": 'Mould remover, blocking primer, paint', "tr": 'Küf temizleyici, izolasyon astarı, boya',
+        "es": 'Antimoho, imprimación bloqueante, pintura'},
+    'Schleifen und ausbessern': {
+        "en": 'Sand and make good', "tr": 'Zımpara ve onarım',
+        "es": 'Lijar y repasar'},
+    'Schleifen und entstauben': {
+        "en": 'Sand and dust off', "tr": 'Zımpara ve tozunu alma',
+        "es": 'Lijar y desempolvar'},
+    'Schleifen und versiegeln': {
+        "en": 'Sand and seal', "tr": 'Zımpara ve vernik',
+        "es": 'Acuchillar y barnizar'},
+    'Schlitz fräsen': {
+        "en": 'Cut the chase', "tr": 'Kanal frezeleme',
+        "es": 'Fresar la roza'},
+    'Schlitz verschließen': {
+        "en": 'Make good the chase', "tr": 'Kanalı kapatma',
+        "es": 'Cerrar la roza'},
+    'Schlitze stemmen': {
+        "en": 'Cut the chases', "tr": 'Kanal kırma',
+        "es": 'Abrir las rozas'},
+    'Schlitze und Dosen': {
+        "en": 'Chases and back boxes', "tr": 'Kanallar ve kutular',
+        "es": 'Rozas y cajas'},
+    'Schlitze verschließen': {
+        "en": 'Make good the chases', "tr": 'Kanalları kapatma',
+        "es": 'Cerrar las rozas'},
+    'Schnittgut aufnehmen': {
+        "en": 'Collect the clippings', "tr": 'Kesilen otları toplama',
+        "es": 'Recoger los restos de siega'},
+    'Sichtprüfung': {
+        "en": 'Visual inspection', "tr": 'Gözle muayene',
+        "es": 'Inspección visual'},
+    'Sockel, Laibungen und Anschlüsse': {
+        "en": 'Plinth, reveals and junctions', "tr": 'Sokle, söve ve birleşimler',
+        "es": 'Zócalo, mochetas y encuentros'},
+    'Sockelleisten demontieren': {
+        "en": 'Remove the skirting', "tr": 'Süpürgelikleri sökme',
+        "es": 'Retirar los rodapiés'},
+    'Sockelleisten montieren': {
+        "en": 'Fit the skirting', "tr": 'Süpürgelik montajı',
+        "es": 'Colocar los rodapiés'},
+    'Spachtelmasse und Grundierung': {
+        "en": 'Filler and primer', "tr": 'Macun ve astar',
+        "es": 'Masilla e imprimación'},
+    'Spachtelmasse, Fein- und Grundierung': {
+        "en": 'Filler, fine coat and primer', "tr": 'Macun, ince kat ve astar',
+        "es": 'Masilla, capa fina e imprimación'},
+    'Spachteln Q2': {
+        "en": 'Filling to Q2', "tr": 'Q2 macun',
+        "es": 'Enlucido Q2'},
+    'Speicher inkl. Sicherheitsgruppe': {
+        "en": 'Cylinder incl. safety set', "tr": 'Emniyet grubu dahil depo',
+        "es": 'Acumulador incl. grupo de seguridad'},
+    'Sperrgrund und Neuanstrich': {
+        "en": 'Blocking primer and repaint', "tr": 'İzolasyon astarı ve yeni boya',
+        "es": 'Imprimación bloqueante y repintado'},
+    'Splittbettung': {
+        "en": 'Grit bedding', "tr": 'Mıcır yataklama',
+        "es": 'Cama de gravilla'},
+    'Sprühextraktion': {
+        "en": 'Hot water extraction', "tr": 'Püskürtmeli ekstraksiyon',
+        "es": 'Inyección-extracción'},
+    'Spülventil/Füllventil tauschen': {
+        "en": 'Replace flush or fill valve', "tr": 'Boşaltma/dolum valfi değişimi',
+        "es": 'Sustituir válvula de descarga o llenado'},
+    'Steinplatte nach Maß': {
+        "en": 'Made-to-measure stone slab', "tr": 'Ölçüye göre taş plaka',
+        "es": 'Losa de piedra a medida'},
+    'Stiegenhaus reinigen': {
+        "en": 'Clean the stairwell', "tr": 'Merdiven boşluğunu temizleme',
+        "es": 'Limpiar la escalera'},
+    'Streuen über die Saison': {
+        "en": 'Gritting through the season', "tr": 'Sezon boyunca serpme',
+        "es": 'Esparcido durante la temporada'},
+    'Stufen setzen': {
+        "en": 'Set the steps', "tr": 'Basamak yerleştirme',
+        "es": 'Colocar los peldaños'},
+    'Stufen setzen und ausrichten': {
+        "en": 'Set and align the steps', "tr": 'Basamakları yerleştirip hizalama',
+        "es": 'Colocar y alinear los peldaños'},
+    'Sturz einbauen': {
+        "en": 'Install the lintel', "tr": 'Lento yerleştirme',
+        "es": 'Colocar el dintel'},
+    'Ständerwerk stellen': {
+        "en": 'Erect the studwork', "tr": 'Profil iskeleti kurma',
+        "es": 'Levantar la estructura de perfiles'},
+    'Substrat und Dünger': {
+        "en": 'Substrate and fertiliser', "tr": 'Harç ve gübre',
+        "es": 'Sustrato y abono'},
+    'System konfigurieren': {
+        "en": 'Configure the system', "tr": 'Sistemi yapılandırma',
+        "es": 'Configurar el sistema'},
+    'Systemplatte verlegen': {
+        "en": 'Lay the system panel', "tr": 'Sistem plakası döşeme',
+        "es": 'Colocar el panel del sistema'},
+    'Tapete ansetzen und verlegen': {
+        "en": 'Set out and hang the paper', "tr": 'Duvar kağıdını yerleştirip kaplama',
+        "es": 'Replantear y colocar el papel'},
+    'Tapete lösen und abziehen': {
+        "en": 'Soak and strip the paper', "tr": 'Duvar kağıdını ıslatıp sökme',
+        "es": 'Reblandecer y retirar el papel'},
+    'Teppich zuschneiden und verlegen': {
+        "en": 'Cut and lay the carpet', "tr": 'Halıyı kesip döşeme',
+        "es": 'Cortar y colocar la moqueta'},
+    'Tiefengrund': {
+        "en": 'Penetrating primer', "tr": 'Derin astar',
+        "es": 'Imprimación penetrante'},
+    'Transport': {
+        "en": 'Transport', "tr": 'Nakliye',
+        "es": 'Transporte'},
+    'Trittschalldämmung verlegen': {
+        "en": 'Lay the acoustic underlay', "tr": 'Darbe sesi yalıtımı döşeme',
+        "es": 'Colocar el aislamiento acústico'},
+    'Tür zerstörungsfrei öffnen': {
+        "en": 'Open the door without damage', "tr": 'Kapıyı hasarsız açma',
+        "es": 'Abrir la puerta sin daños'},
+    'Türblatt und Zarge': {
+        "en": 'Door leaf and frame', "tr": 'Kapı kanadı ve kasa',
+        "es": 'Hoja y marco de puerta'},
+    'Untergrund herstellen': {
+        "en": 'Form the base', "tr": 'Zemin oluşturma',
+        "es": 'Ejecutar la base'},
+    'Untergrund nacharbeiten': {
+        "en": 'Make good the substrate', "tr": 'Zemini düzeltme',
+        "es": 'Repasar el soporte'},
+    'Untergrund prüfen und nivellieren': {
+        "en": 'Check and level the substrate', "tr": 'Zemini kontrol edip tesviye etme',
+        "es": 'Comprobar y nivelar el soporte'},
+    'Untergrund prüfen und vorbereiten': {
+        "en": 'Check and prepare the substrate', "tr": 'Zemini kontrol edip hazırlama',
+        "es": 'Comprobar y preparar el soporte'},
+    'Untergrund reinigen und grundieren': {
+        "en": 'Clean and prime the substrate', "tr": 'Zemini temizleyip astarlama',
+        "es": 'Limpiar e imprimar el soporte'},
+    'Untergrund spachteln': {
+        "en": 'Fill the substrate', "tr": 'Zemini macunlama',
+        "es": 'Enlucir el soporte'},
+    'Untergrund und Gefälle prüfen': {
+        "en": 'Check substrate and fall', "tr": 'Zemin ve eğim kontrolü',
+        "es": 'Comprobar soporte y pendiente'},
+    'Untergrund vorbereiten': {
+        "en": 'Prepare the substrate', "tr": 'Zemini hazırlama',
+        "es": 'Preparar el soporte'},
+    'Untergrund vorbereiten und grundieren': {
+        "en": 'Prepare and prime the substrate', "tr": 'Zemini hazırlayıp astarlama',
+        "es": 'Preparar e imprimar el soporte'},
+    'Unterkonstruktion montieren': {
+        "en": 'Fit the sub-structure', "tr": 'Alt konstrüksiyon montajı',
+        "es": 'Montar la subestructura'},
+    'Unterkonstruktion setzen und ausrichten': {
+        "en": 'Set and align the sub-structure', "tr": 'Alt konstrüksiyonu kurup hizalama',
+        "es": 'Colocar y nivelar la subestructura'},
+    'Unterschränke stellen und ausrichten': {
+        "en": 'Set and align the base units', "tr": 'Alt dolapları yerleştirip hizalama',
+        "es": 'Colocar y nivelar los muebles bajos'},
+    'Unterspannbahn': {
+        "en": 'Roofing underlay', "tr": 'Çatı altı membran',
+        "es": 'Lámina bajo cubierta'},
+    'Ventilbox und Steuerung': {
+        "en": 'Valve box and controller', "tr": 'Vana kutusu ve kontrol',
+        "es": 'Arqueta de válvulas y programador'},
+    'Verbundabdichtung': {
+        "en": 'Tanking membrane', "tr": 'Kompozit su yalıtımı',
+        "es": 'Impermeabilización bajo alicatado'},
+    'Verdrahten und anschließen': {
+        "en": 'Wire and connect', "tr": 'Kablolama ve bağlantı',
+        "es": 'Cablear y conectar'},
+    'Verfugen': {
+        "en": 'Grouting', "tr": 'Derzleme',
+        "es": 'Rejuntado'},
+    'Verfugen und Silikon': {
+        "en": 'Grouting and silicone', "tr": 'Derzleme ve silikon',
+        "es": 'Rejuntado y silicona'},
+    'Verfugen, Randfugen elastisch': {
+        "en": 'Grouting, flexible perimeter joints', "tr": 'Derzleme, elastik kenar derzleri',
+        "es": 'Rejuntado, juntas perimetrales elásticas'},
+    'Verglasen und verklotzen': {
+        "en": 'Glaze and pack', "tr": 'Camlama ve takozlama',
+        "es": 'Acristalar y calzar'},
+    'Verladen': {
+        "en": 'Loading', "tr": 'Yükleme',
+        "es": 'Carga'},
+    'Verlegen im Kombiverfahren mit Nivelliersystem': {
+        "en": 'Lay by buttering-floating with a levelling system', "tr": 'Tesviye sistemiyle kombine döşeme',
+        "es": 'Colocar por doble encolado con sistema nivelador'},
+    'Verlegeplan und Einmessen': {
+        "en": 'Setting-out plan and measuring', "tr": 'Döşeme planı ve ölçüm',
+        "es": 'Plano de replanteo y mediciones'},
+    'Verpacken und sichern': {
+        "en": 'Pack and secure', "tr": 'Paketleme ve sabitleme',
+        "es": 'Embalar y asegurar'},
+    'Verputzen beidseitig': {
+        "en": 'Render both sides', "tr": 'İki yüzü sıvama',
+        "es": 'Revocar por ambas caras'},
+    'Versetzen und verfugen': {
+        "en": 'Set and grout', "tr": 'Yerleştirme ve derzleme',
+        "es": 'Colocar y rejuntar'},
+    'Verteiler anschließen und abdrücken': {
+        "en": 'Connect and pressure-test the manifold', "tr": 'Kollektörü bağlayıp basınç testi',
+        "es": 'Conectar y probar el colector'},
+    'Verteiler montieren und verdrahten': {
+        "en": 'Fit and wire the board', "tr": 'Panoyu monte edip kablolama',
+        "es": 'Montar y cablear el cuadro'},
+    'Verteiler neu': {
+        "en": 'New consumer unit', "tr": 'Yeni pano',
+        "es": 'Cuadro nuevo'},
+    'Verteiler, LS-Schalter, FI': {
+        "en": 'Board, breakers, RCD', "tr": 'Pano, sigorta, kaçak akım rölesi',
+        "es": 'Cuadro, magnetotérmicos, diferencial'},
+    'Vertikutieren': {
+        "en": 'Scarifying', "tr": 'Havalandırma',
+        "es": 'Escarificado'},
+    'Vlies und Mulchschicht': {
+        "en": 'Fleece and mulch layer', "tr": 'Keçe ve malç tabakası',
+        "es": 'Geotextil y capa de mantillo'},
+    'Vlies- bzw. Designtapete': {
+        "en": 'Fleece or designer wallpaper', "tr": 'Flizelin veya desenli duvar kağıdı',
+        "es": 'Papel tejido o de diseño'},
+    'WC montieren und anschließen': {
+        "en": 'Fit and connect the WC', "tr": 'Klozeti monte edip bağlama',
+        "es": 'Montar y conectar el inodoro'},
+    'Wallbox montieren und anschließen': {
+        "en": 'Fit and connect the wallbox', "tr": 'Wallbox montaj ve bağlantısı',
+        "es": 'Montar y conectar el wallbox'},
+    'Wand abbrechen': {
+        "en": 'Demolish the wall', "tr": 'Duvarı yıkma',
+        "es": 'Derribar el muro'},
+    'Wand/Boden öffnen': {
+        "en": 'Open up wall or floor', "tr": 'Duvar/zemin açma',
+        "es": 'Abrir pared o suelo'},
+    'Wandanstrich, zwei Anstriche': {
+        "en": 'Wall paint, two coats', "tr": 'Duvar boyası, iki kat',
+        "es": 'Pintura de pared, dos manos'},
+    'Wanddurchführung herstellen': {
+        "en": 'Form the wall penetration', "tr": 'Duvar geçişi yapma',
+        "es": 'Ejecutar el paso de muro'},
+    'Wanne inkl. Träger und Ablauf': {
+        "en": 'Bath incl. support and waste', "tr": 'Taşıyıcı ve gider dahil küvet',
+        "es": 'Bañera incl. bastidor y desagüe'},
+    'Wanne und Fliesen entfernen': {
+        "en": 'Remove bath and tiles', "tr": 'Küvet ve fayans sökümü',
+        "es": 'Retirar bañera y azulejos'},
+    'Wartung, Reinigung, Abgasmessung': {
+        "en": 'Service, clean, flue gas test', "tr": 'Bakım, temizlik, baca gazı ölçümü',
+        "es": 'Mantenimiento, limpieza y medición de gases'},
+    'Waschtisch und Armatur montieren': {
+        "en": 'Fit basin and tap', "tr": 'Lavabo ve armatür montajı',
+        "es": 'Montar lavabo y grifo'},
+    'Wände, zwei Anstriche': {
+        "en": 'Walls, two coats', "tr": 'Duvarlar, iki kat',
+        "es": 'Paredes, dos manos'},
+    'Wärmepumpe inkl. Speicher': {
+        "en": 'Heat pump incl. cylinder', "tr": 'Depo dahil ısı pompası',
+        "es": 'Bomba de calor incl. acumulador'},
+    'Zarge setzen und Blatt einhängen': {
+        "en": 'Set the frame and hang the leaf', "tr": 'Kasayı takıp kanadı asma',
+        "es": 'Colocar el marco y colgar la hoja'},
+    'Zarge setzen, Tür einhängen, justieren': {
+        "en": 'Set the frame, hang and adjust the door', "tr": 'Kasayı takma, kapıyı asma, ayarlama',
+        "es": 'Colocar marco, colgar y ajustar la puerta'},
+    'Zu- und Ablauf herstellen': {
+        "en": 'Form the supply and waste', "tr": 'Giriş ve çıkış yapımı',
+        "es": 'Ejecutar acometida y desagüe'},
+    'Zuleitung verlegen': {
+        "en": 'Run the supply cable', "tr": 'Besleme hattı çekme',
+        "es": 'Tender la alimentación'},
+    'Zuschnitt Tritt- und Setzstufe': {
+        "en": 'Cut treads and risers', "tr": 'Basamak ve rıht kesimi',
+        "es": 'Corte de huellas y contrahuellas'},
+    'Zuschnitt und Ansetzen': {
+        "en": 'Cutting and setting out', "tr": 'Kesim ve yerleştirme',
+        "es": 'Corte y replanteo'},
+    'Zwei Anstriche': {
+        "en": 'Two coats', "tr": 'İki kat',
+        "es": 'Dos manos'},
+    'Zweilagige Abdichtung': {
+        "en": 'Two-layer waterproofing', "tr": 'Çift kat su yalıtımı',
+        "es": 'Impermeabilización en dos capas'},
+    'Zweimal Wetterschutzlack': {
+        "en": 'Two coats of weather paint', "tr": 'İki kat hava koruyucu boya',
+        "es": 'Dos manos de esmalte de intemperie'},
+    'Zweimal lackieren mit Zwischenschliff': {
+        "en": 'Two coats with sanding between', "tr": 'Ara zımparalı iki kat boya',
+        "es": 'Dos manos con lijado intermedio'},
+    'Zweimal lasieren': {
+        "en": 'Two coats of stain', "tr": 'İki kat vernik',
+        "es": 'Dos manos de lasur'},
+    'Zylinder ausmessen und tauschen': {
+        "en": 'Measure and replace the cylinder', "tr": 'Göbeği ölçüp değiştirme',
+        "es": 'Medir y sustituir el bombín'},
+    'Öl und Filter': {
+        "en": 'Oil and filters', "tr": 'Yağ ve filtre',
+        "es": 'Aceite y filtros'},
+    'Ölwechsel, Filter, Sichtprüfung': {
+        "en": 'Oil change, filters, visual check', "tr": 'Yağ değişimi, filtre, gözle muayene',
+        "es": 'Cambio de aceite, filtros, inspección visual'},
+    'Gastherme inkl. Montagezubehör': {
+        "en": 'Gas boiler incl. fitting kit', "tr": 'Montaj aksesuarı dahil kombi',
+        "es": 'Caldera de gas incl. accesorios'},
+    'Geräte anschließen (E/Wasser)': {
+        "en": 'Connect appliances (electric/water)', "tr": 'Cihaz bağlantısı (elektrik/su)',
+        "es": 'Conectar aparatos (luz/agua)'},
+    'Geräteanschlussventil und Siphon': {
+        "en": 'Appliance valve and trap', "tr": 'Cihaz vanası ve sifon',
+        "es": 'Llave de aparato y sifón'},
+    'Gerüst abbauen': {
+        "en": 'Dismantle the scaffold', "tr": 'İskele söküm',
+        "es": 'Desmontar el andamio'},
+    'Gerüst aufbauen': {
+        "en": 'Erect the scaffold', "tr": 'İskele kurulum',
+        "es": 'Montar el andamio'},
+    'Gerüstmiete 4 Wochen': {
+        "en": 'Scaffold hire, 4 weeks', "tr": 'İskele kirası, 4 hafta',
+        "es": 'Alquiler de andamio, 4 semanas'},
+    'Graben ausheben': {
+        "en": 'Dig the trench', "tr": 'Hendek kazma',
+        "es": 'Excavar la zanja'},
+    'Graben schließen und verdichten': {
+        "en": 'Backfill and compact the trench', "tr": 'Hendeği kapatıp sıkıştırma',
+        "es": 'Rellenar y compactar la zanja'},
+    'Grobreinigung und Bauschutt aufnehmen': {
+        "en": 'Rough clean and remove rubble', "tr": 'Kaba temizlik ve moloz toplama',
+        "es": 'Limpieza gruesa y retirada de escombros'},
+    'Grobschliff': {
+        "en": 'Coarse sanding', "tr": 'Kaba zımpara',
+        "es": 'Lijado grueso'},
+    'Grundierung': {
+        "en": 'Primer', "tr": 'Astar',
+        "es": 'Imprimación'},
+    'Grundierung und Beschichtung': {
+        "en": 'Primer and coating', "tr": 'Astar ve kaplama',
+        "es": 'Imprimación y revestimiento'},
+    'Grundierung und Heizkörperlack': {
+        "en": 'Primer and radiator enamel', "tr": 'Astar ve radyatör boyası',
+        "es": 'Imprimación y esmalte para radiadores'},
+    'Grundierung und Lack': {
+        "en": 'Primer and paint', "tr": 'Astar ve boya',
+        "es": 'Imprimación y esmalte'},
+    'Grundierung und Oberputz': {
+        "en": 'Primer and top coat render', "tr": 'Astar ve son kat sıva',
+        "es": 'Imprimación y revoco de acabado'},
+    'Grundierung, Lack und Dichtstoff': {
+        "en": 'Primer, paint and sealant', "tr": 'Astar, boya ve dolgu',
+        "es": 'Imprimación, esmalte y sellador'},
+    'Grundreinigung aller Flächen': {
+        "en": 'Deep clean of all surfaces', "tr": 'Tüm yüzeylerin genel temizliği',
+        "es": 'Limpieza a fondo de todas las superficies'},
+    'Grundspachtelung': {
+        "en": 'Base filling', "tr": 'Temel macun',
+        "es": 'Enlucido base'},
+    'Gräben ziehen und schließen': {
+        "en": 'Cut and close the trenches', "tr": 'Hendek açma ve kapatma',
+        "es": 'Abrir y cerrar zanjas'},
+    'Grünschnitt entsorgen': {
+        "en": 'Dispose of green waste', "tr": 'Yeşil atık bertarafı',
+        "es": 'Retirar restos vegetales'},
+    'Haftgrund': {
+        "en": 'Bonding primer', "tr": 'Aderans astarı',
+        "es": 'Imprimación de agarre'},
+    'Halterung dübeln und ausrichten': {
+        "en": 'Plug and align the bracket', "tr": 'Askıyı dübelleyip hizalama',
+        "es": 'Tacar y alinear el soporte'},
+    'Handwerkerleistung nach Aufwand': {
+        "en": 'Trade work, time and material', "tr": 'Aufwanda göre ustalık hizmeti',
+        "es": 'Trabajo por administración'},
+    'Heizkörper und Ventile': {
+        "en": 'Radiator and valves', "tr": 'Radyatör ve vanalar',
+        "es": 'Radiador y válvulas'},
+    'Heizkörperlack, zwei Aufträge': {
+        "en": 'Radiator enamel, two coats', "tr": 'Radyatör boyası, iki kat',
+        "es": 'Esmalte de radiador, dos manos'},
+    'Heizrohr verlegen': {
+        "en": 'Lay the heating pipe', "tr": 'Isıtma borusu döşeme',
+        "es": 'Tender el tubo de calefacción'},
+    'Holzgrundierung': {
+        "en": 'Wood primer', "tr": 'Ahşap astarı',
+        "es": 'Imprimación para madera'},
+    'Holzschutzlasur': {
+        "en": 'Wood preservative stain', "tr": 'Ahşap koruyucu vernik',
+        "es": 'Lasur protector para madera'},
+    'Häckseln und verladen': {
+        "en": 'Chip and load', "tr": 'Parçalama ve yükleme',
+        "es": 'Astillar y cargar'},
+    'Imprägnierung auftragen': {
+        "en": 'Apply the sealer', "tr": 'Emprenye uygulama',
+        "es": 'Aplicar el hidrofugante'},
+    'Inbetriebnahme und Anmeldung': {
+        "en": 'Commissioning and registration', "tr": 'Devreye alma ve bildirim',
+        "es": 'Puesta en marcha y alta'},
+    'Inbetriebnahme und Einregulierung': {
+        "en": 'Commissioning and balancing', "tr": 'Devreye alma ve ayar',
+        "es": 'Puesta en marcha y equilibrado'},
+    'Inbetriebnahme, Messung, Anmeldung': {
+        "en": 'Commissioning, testing, registration', "tr": 'Devreye alma, ölçüm, bildirim',
+        "es": 'Puesta en marcha, medición y alta'},
+    'Isolierglas nach Maß': {
+        "en": 'Made-to-measure double glazing', "tr": 'Ölçüye göre ısıcam',
+        "es": 'Vidrio aislante a medida'},
+    'Kabel NYM': {
+        "en": 'NYM cable', "tr": 'NYM kablo',
+        "es": 'Cable NYM'},
+    'Kabine montieren und ausrichten': {
+        "en": 'Fit and align the enclosure', "tr": 'Kabini takıp hizalama',
+        "es": 'Montar y alinear la mampara'},
+    'Kanten und Ränder': {
+        "en": 'Edges and borders', "tr": 'Kenarlar ve sınırlar',
+        "es": 'Bordes y remates'},
+    'Kehrung und Abgasmessung': {
+        "en": 'Sweeping and flue gas test', "tr": 'Temizlik ve baca gazı ölçümü',
+        "es": 'Deshollinado y medición de gases'},
+    'Kleber und Fugenmasse': {
+        "en": 'Adhesive and grout', "tr": 'Yapıştırıcı ve derz',
+        "es": 'Adhesivo y material de junta'},
+    'Kleber, Fuge, Kantenprofil': {
+        "en": 'Adhesive, grout, edge trim', "tr": 'Yapıştırıcı, derz, kenar profili',
+        "es": 'Adhesivo, junta, perfil de canto'},
+    'Kleber, Fuge, Silikon': {
+        "en": 'Adhesive, grout, silicone', "tr": 'Yapıştırıcı, derz, silikon',
+        "es": 'Adhesivo, junta, silicona'},
+    'Kleberreste abschleifen': {
+        "en": 'Sand off adhesive residue', "tr": 'Yapıştırıcı kalıntısını zımparalama',
+        "es": 'Lijar restos de adhesivo'},
+    'Kleberreste entfernen': {
+        "en": 'Remove adhesive residue', "tr": 'Yapıştırıcı kalıntısını sökme',
+        "es": 'Retirar restos de adhesivo'},
+    'Kleinausbesserungen': {
+        "en": 'Minor making good', "tr": 'Küçük onarımlar',
+        "es": 'Pequeños repasos'},
+    'Kleinmaterial': {
+        "en": 'Sundries', "tr": 'Sarf malzeme',
+        "es": 'Material menudo'},
+    'Kleinmaterial, Dichtungen, Silikon': {
+        "en": 'Sundries, seals, silicone', "tr": 'Sarf malzeme, conta, silikon',
+        "es": 'Material menudo, juntas, silicona'},
+    'Kleinteile und Schmiermittel': {
+        "en": 'Small parts and lubricant', "tr": 'Küçük parçalar ve yağ',
+        "es": 'Piezas pequeñas y lubricante'},
+    'Kleisterreste waschen': {
+        "en": 'Wash off paste residue', "tr": 'Tutkal kalıntısını yıkama',
+        "es": 'Lavar restos de cola'},
+    'Komplettdemontage inkl. Fliesen': {
+        "en": 'Full strip-out incl. tiles', "tr": 'Fayans dahil komple söküm',
+        "es": 'Desmontaje completo incl. azulejos'},
+    'Komplettservice': {
+        "en": 'Full service', "tr": 'Komple bakım',
+        "es": 'Revisión completa'},
+    'Konsolen setzen und montieren': {
+        "en": 'Fit and mount the brackets', "tr": 'Konsolları takıp monte etme',
+        "es": 'Colocar y montar los soportes'},
+    'Konterlattung und Lattung': {
+        "en": 'Counter battens and battens', "tr": 'Kontrlata ve lata',
+        "es": 'Contralistones y rastreles'},
+    'Korpus und Fronten': {
+        "en": 'Carcass and fronts', "tr": 'Gövde ve kapaklar',
+        "es": 'Cuerpo y frentes'},
+    'Korpusse setzen und ausrichten': {
+        "en": 'Set and align the carcasses', "tr": 'Gövdeleri yerleştirip hizalama',
+        "es": 'Colocar y nivelar los cuerpos'},
+    'Kronenpflege bzw. Auslichten': {
+        "en": 'Crown care or thinning', "tr": 'Taç bakımı veya seyreltme',
+        "es": 'Cuidado de copa o aclareo'},
+    'Kurz mähen': {
+        "en": 'Cut short', "tr": 'Kısa biçme',
+        "es": 'Segar corto'},
+    'Körbe stellen und ausrichten': {
+        "en": 'Set and align the baskets', "tr": 'Sepetleri kurup hizalama',
+        "es": 'Colocar y alinear las cestas'},
+    'Küche demontieren': {
+        "en": 'Strip out the kitchen', "tr": 'Mutfağı sökme',
+        "es": 'Desmontar la cocina'},
+    'Laibungen nacharbeiten': {
+        "en": 'Make good the reveals', "tr": 'Söveleri düzeltme',
+        "es": 'Repasar las mochetas'},
+    'Laibungen verputzen': {
+        "en": 'Render the reveals', "tr": 'Söveleri sıvama',
+        "es": 'Revocar las mochetas'},
+    'Laub zusammenblasen und aufnehmen': {
+        "en": 'Blow up and collect the leaves', "tr": 'Yaprakları üfleyip toplama',
+        "es": 'Soplar y recoger las hojas'},
+    'Leckortung': {
+        "en": 'Leak tracing', "tr": 'Kaçak tespiti',
+        "es": 'Localización de fugas'},
+    'Leitung verlegen': {
+        "en": 'Run the cable', "tr": 'Hat çekme',
+        "es": 'Tender la línea'},
+    'Leitungen verlegen': {
+        "en": 'Run the cables', "tr": 'Hatları çekme',
+        "es": 'Tender las líneas'},
+    'Lösemittel und Hochdruck': {
+        "en": 'Solvent and high pressure', "tr": 'Çözücü ve yüksek basınç',
+        "es": 'Disolvente y alta presión'},
+    'Markise inkl. Motor': {
+        "en": 'Awning incl. motor', "tr": 'Motor dahil tente',
+        "es": 'Toldo incl. motor'},
+    'Maschinell kehren und waschen': {
+        "en": 'Machine sweep and wash', "tr": 'Makineyle süpürme ve yıkama',
+        "es": 'Barrido y fregado mecánico'},
+    'Matten montieren': {
+        "en": 'Fit the mesh panels', "tr": 'Panelleri montaj',
+        "es": 'Montar los paneles'},
+    'Mauerwerk herstellen': {
+        "en": 'Build the masonry', "tr": 'Duvar örme',
+        "es": 'Ejecutar la fábrica'},
+    'Mechanische Reinigung, Siphon': {
+        "en": 'Mechanical cleaning, trap', "tr": 'Mekanik temizlik, sifon',
+        "es": 'Limpieza mecánica, sifón'},
+    'Messtechnische Eingrenzung': {
+        "en": 'Narrow down by measurement', "tr": 'Ölçümle daraltma',
+        "es": 'Acotar mediante medición'},
+    'Messung und Protokoll': {
+        "en": 'Measurement and certificate', "tr": 'Ölçüm ve rapor',
+        "es": 'Medición e informe'},
+    'Messung, Befund, Übergabe': {
+        "en": 'Measurement, findings, handover', "tr": 'Ölçüm, bulgu, teslim',
+        "es": 'Medición, diagnóstico y entrega'},
+    'Messungen nach ÖVE/ÖNORM E 8001 bzw. DIN VDE 0100-600': {
+        "en": 'Tests to ÖVE/ÖNORM E 8001 or DIN VDE 0100-600', "tr": "ÖVE/ÖNORM E 8001 veya DIN VDE 0100-600'e göre ölçümler",
+        "es": 'Mediciones según ÖVE/ÖNORM E 8001 o DIN VDE 0100-600'},
+    'Module und Wechselrichter': {
+        "en": 'Panels and inverter', "tr": 'Modüller ve invertör',
+        "es": 'Módulos e inversor'},
+    'Montage': {
+        "en": 'Installation', "tr": 'Montaj',
+        "es": 'Montaje'},
+    'Montage und Anschluss': {
+        "en": 'Fitting and connection', "tr": 'Montaj ve bağlantı',
+        "es": 'Montaje y conexión'},
+    'Montage und Funktionstest': {
+        "en": 'Fitting and function test', "tr": 'Montaj ve işlev testi',
+        "es": 'Montaje y prueba de funcionamiento'},
+    'Montage und Inbetriebnahme': {
+        "en": 'Fitting and commissioning', "tr": 'Montaj ve devreye alma',
+        "es": 'Montaje y puesta en marcha'},
+    'Montage und Verankerung': {
+        "en": 'Fitting and anchoring', "tr": 'Montaj ve ankraj',
+        "es": 'Montaje y anclaje'},
+    'Montage vor Ort': {
+        "en": 'Fitting on site', "tr": 'Yerinde montaj',
+        "es": 'Montaje in situ'},
+    'Montage, Anschluss Gas/Wasser/Strom': {
+        "en": 'Fitting, gas/water/electric connection', "tr": 'Montaj, gaz/su/elektrik bağlantısı',
+        "es": 'Montaje y conexión de gas/agua/luz'},
+    'Montage, Anschluss, Inbetriebnahme': {
+        "en": 'Fitting, connection, commissioning', "tr": 'Montaj, bağlantı, devreye alma',
+        "es": 'Montaje, conexión y puesta en marcha'},
+    'Montieren und anschließen': {
+        "en": 'Fit and connect', "tr": 'Montaj ve bağlantı',
+        "es": 'Montar y conectar'},
+    'Mosaik ansetzen und verlegen': {
+        "en": 'Set out and lay the mosaic', "tr": 'Mozaiği yerleştirip döşeme',
+        "es": 'Replantear y colocar el mosaico'},
+    'Motor anschließen': {
+        "en": 'Connect the motor', "tr": 'Motoru bağlama',
+        "es": 'Conectar el motor'},
+    'Möbel montieren': {
+        "en": 'Assemble the furniture', "tr": 'Mobilya montajı',
+        "es": 'Montar los muebles'},
+    'Nachsaat und Startdünger': {
+        "en": 'Overseed and starter feed', "tr": 'Tohum takviyesi ve başlangıç gübresi',
+        "es": 'Resiembra y abono de arranque'},
+    'Neu eindecken': {
+        "en": 'Re-cover the roof', "tr": 'Yeniden örtme',
+        "es": 'Retejar'},
+    'Neu verfugen': {
+        "en": 'Re-grout', "tr": 'Yeniden derzleme',
+        "es": 'Rejuntar'},
+    'Neue Armatur montieren': {
+        "en": 'Fit the new tap', "tr": 'Yeni armatürü takma',
+        "es": 'Montar el grifo nuevo'},
+    'Neue Fliese setzen und verfugen': {
+        "en": 'Set and grout the new tile', "tr": 'Yeni fayansı takıp derzleme',
+        "es": 'Colocar y rejuntar el azulejo nuevo'},
+    'Neue Silikonfuge ziehen': {
+        "en": 'Run the new silicone joint', "tr": 'Yeni silikon derz çekme',
+        "es": 'Aplicar la nueva junta de silicona'},
+    'Nägel versenken, Fugen kitten': {
+        "en": 'Punch nails, fill joints', "tr": 'Çivileri gömme, derzleri macunlama',
+        "es": 'Embutir clavos, masillar juntas'},
+    'Oberschränke montieren': {
+        "en": 'Fit the wall units', "tr": 'Üst dolapları montaj',
+        "es": 'Montar los muebles altos'},
+    'Ortstermin und Aufnahme': {
+        "en": 'Site visit and survey', "tr": 'Yerinde inceleme ve tespit',
+        "es": 'Visita y toma de datos'},
+    'Parkett vollflächig verkleben': {
+        "en": 'Bond the parquet fully', "tr": 'Parkeyi tam yüzey yapıştırma',
+        "es": 'Encolar el parqué a toda superficie'},
+    'Pflanzen setzen': {
+        "en": 'Plant out', "tr": 'Bitki dikimi',
+        "es": 'Plantar'},
+    'Pflanzen setzen und wässern': {
+        "en": 'Plant out and water in', "tr": 'Bitki dikimi ve sulama',
+        "es": 'Plantar y regar'},
+    'Pflanzgraben ausheben': {
+        "en": 'Dig the planting trench', "tr": 'Dikim hendeği kazma',
+        "es": 'Abrir la zanja de plantación'},
+    'Pflanzsubstrat einbringen': {
+        "en": 'Place the planting medium', "tr": 'Dikim harcı serme',
+        "es": 'Aportar sustrato de plantación'},
+    'Pflaster verlegen und rütteln': {
+        "en": 'Lay and compact the paving', "tr": 'Parke döşeme ve sıkıştırma',
+        "es": 'Colocar y vibrar el adoquinado'},
+    'Pfosten setzen und betonieren': {
+        "en": 'Set and concrete the posts', "tr": 'Direkleri dikip betonlama',
+        "es": 'Colocar y hormigonar los postes'},
+    'Pfosten und Elemente montieren': {
+        "en": 'Fit posts and panels', "tr": 'Direk ve paneller montajı',
+        "es": 'Montar postes y paneles'},
+    'Polsterung erneuern und beziehen': {
+        "en": 'Renew padding and re-cover', "tr": 'Dolgu yenileme ve kaplama',
+        "es": 'Renovar relleno y tapizar'},
+    'Protokoll erstellen': {
+        "en": 'Produce the certificate', "tr": 'Rapor düzenleme',
+        "es": 'Emitir el informe'},
+    'Prüfprotokoll': {
+        "en": 'Test certificate', "tr": 'Test raporu',
+        "es": 'Acta de comprobación'},
+    'Prüfung und Beschriftung': {
+        "en": 'Testing and labelling', "tr": 'Test ve etiketleme',
+        "es": 'Comprobación y etiquetado'},
+    'Prüfung und Kennzeichnung': {
+        "en": 'Testing and marking', "tr": 'Test ve işaretleme',
+        "es": 'Comprobación y marcado'},
+    'Prüfung und Protokoll': {
+        "en": 'Testing and certificate', "tr": 'Test ve rapor',
+        "es": 'Comprobación e informe'},
+    'Punktfundamente setzen': {
+        "en": 'Cast the pad foundations', "tr": 'Nokta temel dökme',
+        "es": 'Ejecutar las zapatas'},
+    'Putz auftragen und strukturieren': {
+        "en": 'Apply and texture the render', "tr": 'Sıva uygulama ve desenleme',
+        "es": 'Aplicar y texturar el revoco'},
+    'Putz und Haftgrund': {
+        "en": 'Render and bonding primer', "tr": 'Sıva ve aderans astarı',
+        "es": 'Revoco e imprimación de agarre'},
+    'Rahmen anpassen und einsetzen': {
+        "en": 'Trim and fit the frame', "tr": 'Çerçeveyi uyarlayıp takma',
+        "es": 'Ajustar y colocar el marco'},
+    'Randgestaltung': {
+        "en": 'Edge detailing', "tr": 'Kenar düzenlemesi',
+        "es": 'Remate de bordes'},
+    'Rasen mähen': {
+        "en": 'Mow the lawn', "tr": 'Çim biçme',
+        "es": 'Cortar el césped'},
+    'Rasentragschicht': {
+        "en": 'Lawn base layer', "tr": 'Çim taşıyıcı tabakası',
+        "es": 'Capa soporte de césped'},
+    'Rauchrohr und Anschluss herstellen': {
+        "en": 'Fit the flue pipe and connection', "tr": 'Duman borusu ve bağlantı yapımı',
+        "es": 'Ejecutar el tubo de humos y la conexión'},
+    'Rauchwarnmelder': {
+        "en": 'Smoke alarm', "tr": 'Duman dedektörü',
+        "es": 'Detector de humo'},
+    'Raufaser ansetzen und tapezieren': {
+        "en": 'Set out and hang the woodchip', "tr": 'Kabartmalı kağıdı yerleştirip kaplama',
+        "es": 'Replantear y colocar el papel de fibra'},
+    'Raufaser, Kleister und Farbe': {
+        "en": 'Woodchip, paste and paint', "tr": 'Kabartmalı kağıt, tutkal ve boya',
+        "es": 'Papel de fibra, cola y pintura'},
+    'Reinigen und entfetten': {
+        "en": 'Clean and degrease', "tr": 'Temizleme ve yağ alma',
+        "es": 'Limpiar y desengrasar'},
+    'Reinigen und entstauben': {
+        "en": 'Clean and dust off', "tr": 'Temizleme ve tozunu alma',
+        "es": 'Limpiar y desempolvar'},
+    'Reinigen, Niederdruck': {
+        "en": 'Clean, low pressure', "tr": 'Temizleme, düşük basınç',
+        "es": 'Limpiar, baja presión'},
+    'Reinigen, schleifen, entgrauen': {
+        "en": 'Clean, sand, remove greying', "tr": 'Temizleme, zımpara, grileşme giderme',
+        "es": 'Limpiar, lijar, desgrisar'},
+    'Reiniger und Imprägnierung': {
+        "en": 'Cleaner and sealer', "tr": 'Temizleyici ve emprenye',
+        "es": 'Limpiador e hidrofugante'},
+    'Revisionsöffnung, Diagnose': {
+        "en": 'Access opening, diagnosis', "tr": 'Bakım açıklığı, teşhis',
+        "es": 'Registro de acceso y diagnóstico'},
+    'Rinne und Fallrohr': {
+        "en": 'Gutter and downpipe', "tr": 'Oluk ve iniş borusu',
+        "es": 'Canalón y bajante'},
+    'Rinneisen setzen und montieren': {
+        "en": 'Fit and mount the gutter brackets', "tr": 'Oluk demirlerini takıp montaj',
+        "es": 'Colocar y montar los ganchos'},
+    'Abdecken': {
+        "en": 'Cover up', "tr": 'Örtme',
+        "es": 'Cubrir'},
+    'Abdecken und Abkleben': {
+        "en": 'Cover and mask', "tr": 'Örtme ve bantlama',
+        "es": 'Cubrir y proteger'},
+    'Abdichtung und Drainage': {
+        "en": 'Waterproofing and drainage', "tr": 'Su yalıtımı ve drenaj',
+        "es": 'Impermeabilización y drenaje'},
+    'Abdichtung, zwei Lagen': {
+        "en": 'Waterproofing, two layers', "tr": 'Su yalıtımı, çift kat',
+        "es": 'Impermeabilización, dos capas'},
+    'Abdichtungsmasse und Grundierung': {
+        "en": 'Tanking compound and primer', "tr": 'Yalıtım malzemesi ve astar',
+        "es": 'Masa impermeable e imprimación'},
+    'Ablauf und Gefälle herstellen': {
+        "en": 'Form the waste and the fall', "tr": 'Gider ve eğim oluşturma',
+        "es": 'Ejecutar desagüe y pendiente'},
+    'Absicherung und FI im Verteiler': {
+        "en": 'Protection and RCD in the board', "tr": 'Panoda sigorta ve kaçak akım rölesi',
+        "es": 'Protección y diferencial en el cuadro'},
+    'Abstützung stellen': {
+        "en": 'Install propping', "tr": 'Destek kurma',
+        "es": 'Colocar apeos'},
+    'Aktor und Bedienteil': {
+        "en": 'Actuator and control unit', "tr": 'Aktüatör ve kumanda',
+        "es": 'Actuador y panel de control'},
+    'Aktoren setzen und einlernen': {
+        "en": 'Fit and pair the actuators', "tr": 'Aktüatörleri takıp eşleştirme',
+        "es": 'Instalar y emparejar actuadores'},
+    'Altanlage demontieren': {
+        "en": 'Strip out the old installation', "tr": 'Eski tesisatı sökme',
+        "es": 'Desmontar la instalación antigua'},
+    'Altanstrich anschleifen, lose Teile entfernen': {
+        "en": 'Sand the old coat, remove loose material', "tr": 'Eski boyayı zımparalama, gevşek kısımları alma',
+        "es": 'Lijar la pintura vieja, retirar lo suelto'},
+    'Altarmatur demontieren': {
+        "en": 'Remove the old tap', "tr": 'Eski armatürü sökme',
+        "es": 'Desmontar el grifo antiguo'},
+    'Altbestand demontieren': {
+        "en": 'Strip out the existing', "tr": 'Mevcudu sökme',
+        "es": 'Desmontar lo existente'},
+    'Altbezug abnehmen': {
+        "en": 'Strip the old cover', "tr": 'Eski kılıfı sökme',
+        "es": 'Retirar la tapicería antigua'},
+    'Altdeckung abnehmen': {
+        "en": 'Strip the old roof covering', "tr": 'Eski çatı örtüsünü sökme',
+        "es": 'Retirar la cubierta antigua'},
+    'Alte Bank entfernen': {
+        "en": 'Remove the old sill', "tr": 'Eski denizliği sökme',
+        "es": 'Retirar el alféizar antiguo'},
+    'Alte Tür ausbauen': {
+        "en": 'Remove the old door', "tr": 'Eski kapıyı sökme',
+        "es": 'Desmontar la puerta antigua'},
+    'Alte Tür und Zarge ausbauen': {
+        "en": 'Remove the old door and frame', "tr": 'Eski kapı ve kasayı sökme',
+        "es": 'Desmontar puerta y marco antiguos'},
+    'Altfenster ausbauen': {
+        "en": 'Remove the old window', "tr": 'Eski pencereyi sökme',
+        "es": 'Desmontar la ventana antigua'},
+    'Altfuge entfernen': {
+        "en": 'Rake out the old joint', "tr": 'Eski derzi sökme',
+        "es": 'Retirar la junta antigua'},
+    'Altgerät demontieren': {
+        "en": 'Remove the old appliance', "tr": 'Eski cihazı sökme',
+        "es": 'Desmontar el aparato antiguo'},
+    'Altgerät demontieren, Anlage entleeren': {
+        "en": 'Remove the old unit, drain the system', "tr": 'Eski cihazı sökme, tesisatı boşaltma',
+        "es": 'Desmontar el equipo y vaciar la instalación'},
+    'Altgerät entleeren und ausbauen': {
+        "en": 'Drain and remove the old unit', "tr": 'Eski cihazı boşaltıp sökme',
+        "es": 'Vaciar y desmontar el equipo antiguo'},
+    'Altglas ausbauen': {
+        "en": 'Remove the old glazing', "tr": 'Eski camı sökme',
+        "es": 'Retirar el vidrio antiguo'},
+    'Altheizkörper demontieren': {
+        "en": 'Remove the old radiator', "tr": 'Eski radyatörü sökme',
+        "es": 'Desmontar el radiador antiguo'},
+    'Altrinne demontieren': {
+        "en": 'Remove the old gutter', "tr": 'Eski oluğu sökme',
+        "es": 'Desmontar el canalón antiguo'},
+    'Altverteiler demontieren': {
+        "en": 'Strip out the old board', "tr": 'Eski panoyu sökme',
+        "es": 'Desmontar el cuadro antiguo'},
+    'Altwanne ausbauen': {
+        "en": 'Remove the old bath', "tr": 'Eski küveti sökme',
+        "es": 'Retirar la bañera antigua'},
+    'Anfahrt': {
+        "en": 'Travel to site', "tr": 'Gidiş',
+        "es": 'Desplazamiento'},
+    'Anfahrt Notdienst': {
+        "en": 'Emergency call-out travel', "tr": 'Acil servis gidişi',
+        "es": 'Desplazamiento de urgencia'},
+    'Anlage inkl. Außenstation': {
+        "en": 'System including door station', "tr": 'Dış ünite dahil sistem',
+        "es": 'Sistema incl. placa exterior'},
+    'Anschließen und prüfen': {
+        "en": 'Connect and test', "tr": 'Bağlama ve test',
+        "es": 'Conectar y comprobar'},
+    'Anschlussfugen schließen': {
+        "en": 'Seal the perimeter joints', "tr": 'Bağlantı derzlerini kapatma',
+        "es": 'Sellar juntas de encuentro'},
+    'Anschlussschläuche, Dichtungen': {
+        "en": 'Connection hoses, seals', "tr": 'Bağlantı hortumları, contalar',
+        "es": 'Latiguillos y juntas'},
+    'Arbeitsbereich abschotten': {
+        "en": 'Seal off the work area', "tr": 'Çalışma alanını izole etme',
+        "es": 'Confinar la zona de trabajo'},
+    'Arbeitsplatte und Anschlüsse': {
+        "en": 'Worktop and connections', "tr": 'Tezgah ve bağlantılar',
+        "es": 'Encimera y conexiones'},
+    'Arbeitsplatte zuschneiden und montieren': {
+        "en": 'Cut and fit the worktop', "tr": 'Tezgahı kesip monte etme',
+        "es": 'Cortar y montar la encimera'},
+    'Armierband, Spachtel, Grundierung': {
+        "en": 'Scrim tape, filler, primer', "tr": 'File bandı, macun, astar',
+        "es": 'Cinta de armar, masilla, imprimación'},
+    'Armieren und verspachteln': {
+        "en": 'Reinforce and fill', "tr": 'Filelemek ve macunlamak',
+        "es": 'Armar y enlucir'},
+    'Armierungsschicht mit Gewebe': {
+        "en": 'Reinforcing coat with mesh', "tr": 'Fileli sıva katı',
+        "es": 'Capa de armadura con malla'},
+    'Aufarbeiten, häckseln, verladen': {
+        "en": 'Process, chip and load', "tr": 'İşleme, parçalama, yükleme',
+        "es": 'Trocear, astillar y cargar'},
+    'Aufbauen und ausrichten': {
+        "en": 'Assemble and align', "tr": 'Kurma ve hizalama',
+        "es": 'Montar y nivelar'},
+    'Aufmaß und Planung': {
+        "en": 'Survey and planning', "tr": 'Ölçüm ve planlama',
+        "es": 'Medición y planificación'},
+    'Aufmaß vor Ort': {
+        "en": 'Site survey', "tr": 'Yerinde ölçüm',
+        "es": 'Medición in situ'},
+    'Aufstellung, Hydraulik, Elektro': {
+        "en": 'Siting, pipework, electrics', "tr": 'Yerleştirme, hidrolik, elektrik',
+        "es": 'Ubicación, hidráulica y electricidad'},
+    'Aus- und Einladen': {
+        "en": 'Loading and unloading', "tr": 'Yükleme ve boşaltma',
+        "es": 'Carga y descarga'},
+    'Ausgleichsmasse auftragen': {
+        "en": 'Apply levelling compound', "tr": 'Tesviye şapı uygulama',
+        "es": 'Aplicar masa niveladora'},
+    'Aushub und Abtransport': {
+        "en": 'Excavate and cart away', "tr": 'Kazı ve nakliye',
+        "es": 'Excavar y retirar'},
+    'Aushub und Abtransport (Minibagger)': {
+        "en": 'Excavate and cart away (mini digger)', "tr": 'Kazı ve nakliye (mini ekskavatör)',
+        "es": 'Excavar y retirar (miniexcavadora)'},
+    'Aushub und Planum': {
+        "en": 'Excavation and formation level', "tr": 'Kazı ve zemin kotu',
+        "es": 'Excavación y explanada'},
+    'Ausrichten, bohren, befestigen': {
+        "en": 'Align, drill, fix', "tr": 'Hizalama, delme, sabitleme',
+        "es": 'Alinear, taladrar, fijar'},
+    'Auswertung und Gutachten': {
+        "en": 'Assessment and report', "tr": 'Değerlendirme ve rapor',
+        "es": 'Evaluación e informe'},
+    'Automaten und FI ergänzen': {
+        "en": 'Add breakers and RCD', "tr": 'Sigorta ve kaçak akım rölesi ekleme',
+        "es": 'Añadir magnetotérmicos y diferencial'},
+    'Becken inkl. Technik': {
+        "en": 'Pool shell including plant', "tr": 'Teknik dahil havuz',
+        "es": 'Vaso incl. equipamiento'},
+    'Befahrung und Aufzeichnung': {
+        "en": 'Survey run and recording', "tr": 'İnceleme ve kayıt',
+        "es": 'Inspección y grabación'},
+    'Befallenen Putz bzw. Anstrich entfernen': {
+        "en": 'Remove affected render or paint', "tr": 'Etkilenen sıva veya boyayı sökme',
+        "es": 'Retirar revoco o pintura afectados'},
+    'Befund und Ortung': {
+        "en": 'Assessment and tracing', "tr": 'Tespit ve konumlandırma',
+        "es": 'Diagnóstico y localización'},
+    'Befund und Protokoll': {
+        "en": 'Findings and certificate', "tr": 'Bulgu ve rapor',
+        "es": 'Diagnóstico e informe'},
+    'Befüllen und entlüften': {
+        "en": 'Fill and vent', "tr": 'Doldurma ve hava alma',
+        "es": 'Llenar y purgar'},
+    'Behandlung': {
+        "en": 'Treatment', "tr": 'Uygulama',
+        "es": 'Tratamiento'},
+    'Behebung im Rahmen der Erstmaßnahme': {
+        "en": 'Repair within the first call-out', "tr": 'İlk müdahale kapsamında giderme',
+        "es": 'Reparación dentro de la primera intervención'},
+    'Belag aufnehmen': {
+        "en": 'Lift the covering', "tr": 'Kaplamayı sökme',
+        "es": 'Levantar el revestimiento'},
+    'Belag verlegen': {
+        "en": 'Lay the covering', "tr": 'Kaplamayı döşeme',
+        "es": 'Colocar el revestimiento'},
+    'Beschichtung auftragen': {
+        "en": 'Apply the coating', "tr": 'Kaplamayı uygulama',
+        "es": 'Aplicar el revestimiento'},
+    'Beschläge demontieren und montieren': {
+        "en": 'Remove and refit ironmongery', "tr": 'Donanımı sökme ve takma',
+        "es": 'Desmontar y montar herrajes'},
+    'Beschläge lösen und wieder montieren': {
+        "en": 'Free off and refit ironmongery', "tr": 'Donanımı sökme ve yeniden takma',
+        "es": 'Soltar y volver a montar herrajes'},
+    'Bezugsstoff': {
+        "en": 'Cover fabric', "tr": 'Kılıf kumaşı',
+        "es": 'Tela de tapizado'},
+    'Boden fräsen und planieren': {
+        "en": 'Rotavate and level the ground', "tr": 'Zemini frezeleyip düzleme',
+        "es": 'Fresar y nivelar el terreno'},
+    'Boden lockern und Aushub': {
+        "en": 'Break up the ground and excavate', "tr": 'Zemini gevşetme ve kazı',
+        "es": 'Roturar el terreno y excavar'},
+    'Boden vorbereiten': {
+        "en": 'Prepare the ground', "tr": 'Zemini hazırlama',
+        "es": 'Preparar el terreno'},
+    'Bodenplatte / Funkenschutz': {
+        "en": 'Hearth plate / spark guard', "tr": 'Zemin plakası / kıvılcım koruma',
+        "es": 'Placa de suelo / protección de chispas'},
+    'Bohren, dübeln, ausrichten': {
+        "en": 'Drill, plug, align', "tr": 'Delme, dübelleme, hizalama',
+        "es": 'Taladrar, tacar, alinear'},
+    'Böden, Sanitär, Papierkorb': {
+        "en": 'Floors, washrooms, bins', "tr": 'Zeminler, saniter, çöp kutusu',
+        "es": 'Suelos, aseos, papeleras'},
+    'DC/AC-Verkabelung': {
+        "en": 'DC/AC wiring', "tr": 'DC/AC kablolama',
+        "es": 'Cableado CC/CA'},
+    'Datenleitung verlegen': {
+        "en": 'Run the data cable', "tr": 'Veri kablosu çekme',
+        "es": 'Tender el cable de datos'},
+    'Decken, zwei Anstriche': {
+        "en": 'Ceilings, two coats', "tr": 'Tavanlar, iki kat',
+        "es": 'Techos, dos manos'},
+    'Deckenanstrich, zwei Anstriche': {
+        "en": 'Ceiling paint, two coats', "tr": 'Tavan boyası, iki kat',
+        "es": 'Pintura de techo, dos manos'},
+    'Deckenfarbe': {
+        "en": 'Ceiling paint', "tr": 'Tavan boyası',
+        "es": 'Pintura de techo'},
+    'Desinfektion und Trocknung prüfen': {
+        "en": 'Disinfect and check drying', "tr": 'Dezenfeksiyon ve kuruma kontrolü',
+        "es": 'Desinfectar y comprobar el secado'},
+    'Dichtbänder, Ecken und Manschetten': {
+        "en": 'Sealing tapes, corners and collars', "tr": 'Yalıtım bantları, köşe ve manşetler',
+        "es": 'Bandas, esquinas y manguitos'},
+    'Dichtheitsprüfung': {
+        "en": 'Pressure test', "tr": 'Sızdırmazlık testi',
+        "es": 'Prueba de estanqueidad'},
+    'Dichtheitsprüfung und Übergabe': {
+        "en": 'Pressure test and handover', "tr": 'Sızdırmazlık testi ve teslim',
+        "es": 'Prueba de estanqueidad y entrega'},
+    'Dichtungen und Verschleißteile': {
+        "en": 'Seals and wear parts', "tr": 'Contalar ve aşınma parçaları',
+        "es": 'Juntas y piezas de desgaste'},
+    'Dichtungen, Kleinmaterial': {
+        "en": 'Seals, sundries', "tr": 'Contalar, sarf malzeme',
+        "es": 'Juntas y material menudo'},
+    'Dielen verlegen und verschrauben': {
+        "en": 'Lay and screw down the boards', "tr": 'Döşemeleri serip vidalama',
+        "es": 'Colocar y atornillar las tablas'},
+    'Dispersionsfarbe': {
+        "en": 'Emulsion paint', "tr": 'Dispersiyon boya',
+        "es": 'Pintura plástica'},
+    'Doppelt beplanken': {
+        "en": 'Double boarding', "tr": 'Çift kat kaplama',
+        "es": 'Doble placa'},
+    'Dose setzen (Dosenfräse)': {
+        "en": 'Cut in the back box (core cutter)', "tr": 'Kutu açma (kutu freze)',
+        "es": 'Abrir la caja (fresa)'},
+    'Dose setzen und anschließen': {
+        "en": 'Fit and connect the back box', "tr": 'Kutuyu takıp bağlama',
+        "es": 'Colocar y conectar la caja'},
+    'Dose setzen und auflegen': {
+        "en": 'Fit the outlet and terminate', "tr": 'Kutuyu takıp uçları bağlama',
+        "es": 'Colocar la toma y conexionar'},
+    'Dose, Einsatz, Abdeckung': {
+        "en": 'Box, insert, faceplate', "tr": 'Kutu, mekanizma, kapak',
+        "es": 'Caja, mecanismo, embellecedor'},
+    'Drainmörtel bzw. Lager, Fuge': {
+        "en": 'Drainage mortar or pedestals, grout', "tr": 'Drenaj harcı veya takoz, derz',
+        "es": 'Mortero drenante o plots, junta'},
+    'Dreimal versiegeln': {
+        "en": 'Seal three times', "tr": 'Üç kat vernik',
+        "es": 'Barnizar tres manos'},
+    'Druckprobe durchführen': {
+        "en": 'Carry out the pressure test', "tr": 'Basınç testi yapma',
+        "es": 'Realizar la prueba de presión'},
+    'Druckprobe und Protokoll': {
+        "en": 'Pressure test and certificate', "tr": 'Basınç testi ve rapor',
+        "es": 'Prueba de presión e informe'},
+    'Durchbruch herstellen': {
+        "en": 'Form the opening', "tr": 'Açıklık oluşturma',
+        "es": 'Ejecutar el hueco'},
+    'Duschelemente, Armatur, Tür': {
+        "en": 'Shower elements, tap, door', "tr": 'Duş elemanları, armatür, kapı',
+        "es": 'Elementos de ducha, grifo, puerta'},
+    'Dämmplatten kleben und dübeln': {
+        "en": 'Bond and fix the insulation boards', "tr": 'Yalıtım levhalarını yapıştırıp dübelleme',
+        "es": 'Pegar y anclar las placas aislantes'},
+    'Dämmung einlegen': {
+        "en": 'Install insulation', "tr": 'Yalıtım yerleştirme',
+        "es": 'Colocar el aislamiento'},
+    'Dämmung nach ÖNORM': {
+        "en": 'Insulation to ÖNORM', "tr": "ÖNORM'a göre yalıtım",
+        "es": 'Aislamiento según ÖNORM'},
+    'Dämmung verlegen': {
+        "en": 'Lay insulation', "tr": 'Yalıtım döşeme',
+        "es": 'Tender el aislamiento'},
+    'Dämmung, Kleber, Gewebe, Putz': {
+        "en": 'Insulation, adhesive, mesh, render', "tr": 'Yalıtım, yapıştırıcı, file, sıva',
+        "es": 'Aislante, adhesivo, malla, revoco'},
+    'Eckventile, Siphon, Kleinmaterial': {
+        "en": 'Isolating valves, trap, sundries', "tr": 'Ara musluk, sifon, sarf malzeme',
+        "es": 'Llaves de escuadra, sifón, material menudo'},
+    'Einbau, Anschluss, Abdichtung': {
+        "en": 'Installation, connection, sealing', "tr": 'Montaj, bağlantı, yalıtım',
+        "es": 'Instalación, conexión, sellado'},
+    'Einbau, Befestigung, Abdichtung (RAL)': {
+        "en": 'Installation, fixing, sealing (RAL)', "tr": 'Montaj, sabitleme, yalıtım (RAL)',
+        "es": 'Instalación, fijación, sellado (RAL)'},
+    'Einbau, Verrohrung, Technikraum': {
+        "en": 'Installation, pipework, plant room', "tr": 'Montaj, borulama, teknik oda',
+        "es": 'Instalación, tuberías, sala técnica'},
+    'Einsatz tauschen und prüfen': {
+        "en": 'Replace and test the mechanism', "tr": 'Mekanizmayı değiştirip test etme',
+        "es": 'Sustituir y comprobar el mecanismo'},
+    'Einsatz und Abdeckung': {
+        "en": 'Mechanism and faceplate', "tr": 'Mekanizma ve kapak',
+        "es": 'Mecanismo y embellecedor'},
+    'Elektroanschluss': {
+        "en": 'Electrical connection', "tr": 'Elektrik bağlantısı',
+        "es": 'Conexión eléctrica'},
+    'Endmontage und Übergabe': {
+        "en": 'Final fit and handover', "tr": 'Son montaj ve teslim',
+        "es": 'Montaje final y entrega'},
+    'Entrosten und anschleifen': {
+        "en": 'De-rust and sand', "tr": 'Pas alma ve zımpara',
+        "es": 'Desoxidar y lijar'},
+    'Entsorgung': {
+        "en": 'Disposal', "tr": 'Bertaraf',
+        "es": 'Retirada'},
+    'Entsorgung Bauschutt': {
+        "en": 'Rubble disposal', "tr": 'İnşaat atığı bertarafı',
+        "es": 'Retirada de escombros'},
+    'Epoxid-Grundierung': {
+        "en": 'Epoxy primer', "tr": 'Epoksi astar',
+        "es": 'Imprimación epoxi'},
+    'Ersatzteile': {
+        "en": 'Spare parts', "tr": 'Yedek parçalar',
+        "es": 'Repuestos'},
+    'Erstdiagnose vor Ort': {
+        "en": 'First diagnosis on site', "tr": 'Yerinde ilk teşhis',
+        "es": 'Primer diagnóstico in situ'},
+    'Estrich abbrechen': {
+        "en": 'Break out the screed', "tr": 'Şapı sökme',
+        "es": 'Demoler la solera'},
+    'Fallbereich sichern und abseilen': {
+        "en": 'Secure the fall zone and rope down', "tr": 'Devrilme alanını güvenceye alıp indirme',
+        "es": 'Asegurar la zona de caída y descolgar'},
+    'Fassade reinigen': {
+        "en": 'Clean the facade', "tr": 'Cepheyi temizleme',
+        "es": 'Limpiar la fachada'},
+    'Fassadenanstrich, zwei Anstriche': {
+        "en": 'Facade paint, two coats', "tr": 'Cephe boyası, iki kat',
+        "es": 'Pintura de fachada, dos manos'},
+    'Fassadenfarbe': {
+        "en": 'Facade paint', "tr": 'Cephe boyası',
+        "es": 'Pintura de fachada'},
+    'Fehler suchen und beheben': {
+        "en": 'Find and fix the fault', "tr": 'Arıza arama ve giderme',
+        "es": 'Localizar y reparar la avería'},
+    'Fein- und Zwischenschliff': {
+        "en": 'Fine and intermediate sanding', "tr": 'İnce ve ara zımpara',
+        "es": 'Lijado fino e intermedio'},
+    'Feinreinigung Flächen und Glas': {
+        "en": 'Fine clean, surfaces and glass', "tr": 'Yüzey ve cam ince temizliği',
+        "es": 'Limpieza fina de superficies y cristales'},
+    'Feinspachtelung vollflächig': {
+        "en": 'Full-surface fine filling', "tr": 'Tam yüzey ince macun',
+        "es": 'Enlucido fino a toda superficie'},
+    'Fenster beidseitig reinigen': {
+        "en": 'Clean windows both sides', "tr": 'Pencereleri iki yüzden temizleme',
+        "es": 'Limpiar ventanas por ambas caras'},
+    'Fensterelement': {
+        "en": 'Window unit', "tr": 'Pencere elemanı',
+        "es": 'Unidad de ventana'},
+    'Fertigung': {
+        "en": 'Fabrication', "tr": 'İmalat',
+        "es": 'Fabricación'},
+    'Fertigung in der Werkstatt': {
+        "en": 'Fabrication at the workshop', "tr": 'Atölyede imalat',
+        "es": 'Fabricación en taller'},
+    'Filz abrechen und aufnehmen': {
+        "en": 'Rake out and collect the thatch', "tr": 'Keçeyi tırmıklayıp toplama',
+        "es": 'Rastrillar y recoger el fieltro'},
+    'Fliese und Kleberbett entfernen': {
+        "en": 'Remove tile and adhesive bed', "tr": 'Fayans ve yapıştırıcı yatağını sökme',
+        "es": 'Retirar azulejo y lecho de adhesivo'},
+    'Fliese, Kleber, Fuge': {
+        "en": 'Tile, adhesive, grout', "tr": 'Fayans, yapıştırıcı, derz',
+        "es": 'Azulejo, adhesivo, junta'},
+    'Fliesen abschlagen': {
+        "en": 'Break off the tiles', "tr": 'Fayansları kırma',
+        "es": 'Picar los azulejos'},
+    'Fliesen und Mörtelbett abschlagen': {
+        "en": 'Break off tiles and mortar bed', "tr": 'Fayans ve harç yatağını kırma',
+        "es": 'Picar azulejos y lecho de mortero'},
+    'Fliesen verlegen': {
+        "en": 'Lay tiles', "tr": 'Fayans döşeme',
+        "es": 'Colocar azulejos'},
+    'Fliesenarbeiten': {
+        "en": 'Tiling work', "tr": 'Fayans işleri',
+        "es": 'Trabajos de alicatado'},
+    'Fließbettkleber, Fuge, Nivellierkeile': {
+        "en": 'Flow-bed adhesive, grout, levelling wedges', "tr": 'Akışkan yapıştırıcı, derz, tesviye kaması',
+        "es": 'Adhesivo fluido, junta, cuñas niveladoras'},
+    'Flächenspachtelung Q3': {
+        "en": 'Q3 surface filling', "tr": 'Q3 yüzey macunu',
+        "es": 'Enlucido de superficie Q3'},
+    'Frostschutz und Tragschicht': {
+        "en": 'Frost blanket and base course', "tr": 'Don koruma ve taşıyıcı tabaka',
+        "es": 'Capa anticongelante y base'},
+    'Frostsicher verlegen': {
+        "en": 'Lay frost-proof', "tr": 'Dona dayanıklı döşeme',
+        "es": 'Colocar resistente a heladas'},
+    'Fugen ausfräsen': {
+        "en": 'Rake out the joints', "tr": 'Derzleri açma',
+        "es": 'Fresar las juntas'},
+    'Fugenmasse und Silikon': {
+        "en": 'Grout and silicone', "tr": 'Derz dolgusu ve silikon',
+        "es": 'Material de junta y silicona'},
+    'Fundament herstellen': {
+        "en": 'Form the foundation', "tr": 'Temel yapma',
+        "es": 'Ejecutar la cimentación'},
+    'Fundament und Tragschicht': {
+        "en": 'Foundation and base course', "tr": 'Temel ve taşıyıcı tabaka',
+        "es": 'Cimentación y capa base'},
+    'Funktionskontrolle und Spülung': {
+        "en": 'Function check and flush', "tr": 'İşlev kontrolü ve yıkama',
+        "es": 'Comprobación de funcionamiento y purga'},
+    'Fällen bzw. Stückfällung': {
+        "en": 'Felling or sectional felling', "tr": 'Kesim veya parçalı kesim',
+        "es": 'Tala o tala por tramos'},
+    'Füllsteine einbringen': {
+        "en": 'Place the fill stones', "tr": 'Dolgu taşlarını yerleştirme',
+        "es": 'Colocar la piedra de relleno'},
+}
+
 # Every table in this module, in the order a lookup should try them. Split by
 # what they describe rather than merged, so a translator can be handed one
 # section at a time and so the coverage test can report which part is short.
-TABLES: tuple[dict, ...] = (OPTIONS, QUESTIONS, AXES, JOB_TITLES)
+TABLES: tuple[dict, ...] = (QUOTE_LINES, OPTIONS, QUESTIONS, AXES, JOB_TITLES)
 
 
 def translate(text: str, lang: str = "de") -> str:
