@@ -343,12 +343,28 @@ export default function EstimatePage() {
       const { data } = await api.post('/api/estimate/quote/multi', {
         positions, job_id: targetJob || null, lang,
       });
+      /* Go to the quote that was just made.
+
+         This used to set a notice and stay put, and the notice renders at the
+         top of the page while the button that triggers it is pinned to the
+         bottom of a list that is around four thousand pixels tall. The quote
+         was created every time — it just happened entirely off screen, so the
+         only readable outcome of pressing "create quote" was that nothing
+         appeared to happen. Pressing it should show you the thing. */
+      const id = data?.quotes?.[0]?.id;
+      if (id) { navigate(`/quotes/${id}`); return data; }
+      // No id came back, so there is nothing to navigate to and the notice is
+      // the only thing left that can report the outcome.
       setNotice(t('est_multi_created', { n: positions.length }));
       setCreatedQuote(true);
       api.get('/api/estimate/accuracy').then(({ data: a }) => setAccuracy(a)).catch(() => {});
       return data;
     } catch (e) {
+      /* The failure has to be visible from where the button is. Without this
+         the error message lands at the top of the page too, and a quote that
+         failed looks exactly like a quote that succeeded: nothing happens. */
       setError(e?.response?.data?.detail || t('est_err_multi'));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return null;
     } finally { setCreating(false); }
   };
