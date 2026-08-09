@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import NumberField from '../../components/NumberField';
+import EstimateCards from './EstimateCards';
 import { fmtEur0 as fmtEur, fmtEur as fmtEur2, fmtNum as fmtNumRaw } from '../../utils/money';
 
 import {
@@ -329,6 +330,29 @@ export default function EstimatePage() {
     }
   };
 
+  /** Several ticked templates, one quote.
+
+      The single-position path below stays: it is what a pro uses when they are
+      working through one job type and want the breakdown, the tier comparison
+      and the rate card. This is the other case, and it is the more common one
+      — a bathroom is tiling and plumbing and painting, and quoting it as three
+      documents is something nobody does by hand. */
+  const createMultiQuote = async (positions) => {
+    setCreating(true); setError(''); setNotice('');
+    try {
+      const { data } = await api.post('/api/estimate/quote/multi', {
+        positions, job_id: targetJob || null, lang,
+      });
+      setNotice(t('est_multi_created', { n: positions.length }));
+      setCreatedQuote(true);
+      api.get('/api/estimate/accuracy').then(({ data: a }) => setAccuracy(a)).catch(() => {});
+      return data;
+    } catch (e) {
+      setError(e?.response?.data?.detail || t('est_err_multi'));
+      return null;
+    } finally { setCreating(false); }
+  };
+
   /** Rebuild the speed correction from every finished, timed job.
       Rebuilt rather than nudged, so correcting one bad timer entry actually
       fixes the number instead of leaving it baked in. */
@@ -438,7 +462,13 @@ export default function EstimatePage() {
                        sections={query.trim() ? null : sections}
                        query={query} setQuery={setQuery}
                        onPickTrade={(k) => navigate(`/estimate/${k}`)}
-                       onPick={openJob} t={t} lang={lang} />
+                       onPick={openJob} t={t} lang={lang}
+                       cards={trade ? (
+                         <EstimateCards jobs={visible}
+                                        sections={query.trim() ? null : sections}
+                                        lang={lang} quoting={creating}
+                                        onQuote={createMultiQuote} />
+                       ) : null} />
             {/* Accuracy and the rate card are expert tools, not the task. They
                 sat above the picker, so the first thing on the screen was
                 never the thing the pro came to do. Below it now — still
@@ -496,7 +526,7 @@ export default function EstimatePage() {
 }
 
 function JobPicker({ meta, jobs, trade, sections, query, setQuery,
-                    onPickTrade, onPick, t, lang }) {
+                    onPickTrade, onPick, t, lang, cards }) {
   const trades = meta?.trades || [];
 
   // ── /estimate — the seven trades ──────────────────────────────────
@@ -574,53 +604,13 @@ function JobPicker({ meta, jobs, trade, sections, query, setQuery,
         )}
       </label>
 
-      {groups.map((sec) => (
-        <div key={sec.key}>
-          {sec.key !== '_all' && (
-            <h2 className="text-[11px] font-bold uppercase tracking-[.07em] text-ink-faint
-                           mt-4 mb-1.5 px-0.5 flex items-baseline gap-1.5"
-                data-testid={`estimate-section-${sec.key}`}>
-              {sectionLabel(sec, lang)}
-              <span className="font-medium normal-case tracking-normal opacity-80">
-                · {sec.rows.length}
-              </span>
-            </h2>
-          )}
-          <div className="bg-paper border border-sm-border rounded-[14px] overflow-hidden">
-            {sec.rows.map((j, i) => (
-              <button key={j.key} type="button" onClick={() => onPick(j.key)}
-                      data-testid={`estimate-job-${j.key}`}
-                      className={`w-full text-left px-3 py-2.5 flex items-center gap-3
-                                  hover:bg-cream-soft transition-colors
-                                  focus-visible:outline-none focus-visible:ring-4
-                                  focus-visible:ring-teal/30 focus-visible:relative
-                                  ${i ? 'border-t border-sm-border/70' : ''}`}>
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-ink text-[14px] leading-snug">{lbl(j)}</p>
-                  {j.quote_mode === 'regie' && (
-                    /* The one badge that changes what the pro does next — and
-                       now it says what it wants, rather than leaving a
-                       first-time user to guess what an orange word means. */
-                    <p className="text-[11px] text-amber-text mt-0.5 flex items-center gap-1">
-                      <MapPin size={11} className="shrink-0" aria-hidden="true" />
-                      {t('est_site_visit_short')}
-                    </p>
-                  )}
-                </div>
-                {/* The typical size moves out of the grey subtitle into its
-                    own column. Same figure, but now it is something the eye
-                    can run down instead of prose it has to read. */}
-                <span className="shrink-0 text-right text-[11px] text-ink-faint leading-tight">
-                  <b className="block text-[13px] font-semibold text-ink-soft tabular-nums">
-                    {j.typical_size[0]}–{j.typical_size[1]}
-                  </b>
-                  {j.unit}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      ))}
+      {/* The rows themselves. Nineteen templates that differ only in their
+          wording is a list nobody scans — they read it top to bottom or give
+          up — and picking one of them was all this list ever let you do.
+          `EstimateCards` renders the same rows as something you can tick,
+          configure in place and total up, which is what quoting a real job
+          needs: a bathroom is tiling and plumbing and painting. */}
+      {cards}
 
       {jobs.length === 0 && (
         <p className="text-sm text-ink-muted text-center py-8" data-testid="estimate-empty">

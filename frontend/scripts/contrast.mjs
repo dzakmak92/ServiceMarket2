@@ -73,6 +73,17 @@ const PAIRS = [
   // Section headings sit on the page, not on a card
   ['section heading', 'ink.muted', 'cream'],
   ['greeting', 'ink.muted', 'cream'],
+
+  /* The estimate cards. A note nobody can read is a note that did not warn
+     anybody, and these sit on tints of their own severity colour — so the
+     text and its background move together and the ratio has to be checked
+     rather than assumed. */
+  ['card · template name', 'ink.DEFAULT', 'paper'],
+  ['card · band and unit', 'ink.muted', 'paper'],
+  ['card · amount on a checked row', 'ink.DEFAULT', ['teal.DEFAULT', 'paper', 0.03]],
+  ['note · severe text on its tint', 'ink.DEFAULT', ['red-warn', 'paper', 0.06]],
+  ['note · ordinary text on its tint', 'ink.soft', ['amber.DEFAULT', 'paper', 0.07]],
+  ['card · total chip', 'ink.DEFAULT', ['teal.DEFAULT', 'paper', 0.08]],
 ];
 
 let fails = 0;

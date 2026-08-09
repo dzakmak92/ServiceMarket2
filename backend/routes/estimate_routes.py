@@ -114,6 +114,42 @@ class EstimateToQuoteIn(EstimateIn):
     lang: str = Field(default="de", pattern="^(de|en|tr|es)$")
 
 
+class PositionIn(BaseModel):
+    """One line of a multi-position quote: a job type and its answers.
+
+    Deliberately not the whole of `EstimateIn`. Country, own-rates, calibration
+    and language are properties of the *quote*, not of a position within it — a
+    quote cannot be half in Austria, and a pro cannot want their learned rates
+    applied to the painting and not to the tiling. Those stay on the parent so
+    they cannot disagree between lines.
+    """
+    job_key: str
+    answers: dict[str, Any] = Field(default_factory=dict)
+    tier: str = Field(default="standard", pattern=TIER_PATTERN)
+    hourly_rate: Optional[float] = Field(default=None, gt=0, le=1000)
+    qty_overrides: dict[str, float] = Field(default_factory=dict)
+
+
+class MultiQuoteIn(BaseModel):
+    """Several priced positions, one quote.
+
+    The single-position endpoint stays: it is what the estimate screen calls
+    while a pro works through one job type, and every existing caller uses it.
+    This is the shape the new picker needs, where several templates are ticked
+    on one screen and become several lines of the same document — a bathroom is
+    tiling *and* plumbing *and* painting, and quoting it as three separate
+    documents is something no tradesperson would do by hand.
+    """
+    positions: list[PositionIn] = Field(min_length=1, max_length=40)
+    country: Optional[str] = Field(default=None, pattern=COUNTRY_PATTERN)
+    use_own_rates: bool = True
+    use_calibration: bool = True
+    job_id: Optional[str] = None
+    customer_id: Optional[str] = None
+    title: Optional[str] = None
+    lang: str = Field(default="de", pattern="^(de|en|tr|es)$")
+
+
 async def _country_for(pro_id: str) -> str:
     """The country whose rates and disposal prices apply.
 
@@ -196,7 +232,11 @@ async def list_jobs(trade: Optional[str] = None, group: Optional[str] = None,
                     q: Optional[str] = Query(default=None, description="Search label or key"),
                     lang: str = Query(default="de", pattern="^(de|en|tr|es)$"),
                     user: dict = Depends(get_current_user)):
-    await require_pro_id(user)
+    pro_id = await require_pro_id(user)
+    # The band is a price and prices differ by country, so it cannot be added
+    # to this list without knowing which one — the same invoicing country the
+    # estimate itself is computed against, not a guess from a locale.
+    country = await _country_for(pro_id)
     found = estimator.jobs(trade=trade, group=group)
     if q:
         # Searched against both languages: a Turkish-speaking pro types what
@@ -214,6 +254,11 @@ async def list_jobs(trade: Optional[str] = None, group: Optional[str] = None,
         "quote_mode": j["quote_mode"],
         "emergency_capable": j["emergency_capable"],
         "question_count": len(j["guided_form"]),
+        # What the trade charges for this, per unit or as a total. The list
+        # showed `typical_size` and nothing else, so a row read "25–90 m2" —
+        # a size where a pro scanning for work worth doing expects a price.
+        "market_band": list(j["market_band_at"] if country == "AT" else j["market_band_de"]),
+        "band_basis": j["band_basis"],
     } for j in found]
 
     # How to chunk the list, when there is enough of it to be worth chunking.
@@ -437,3 +482,118 @@ async def estimate_to_quote(body: EstimateToQuoteIn,
 
     return {"quotes": created, "estimate": ref, "estimate_id": estimate_id,
             "job_id": job_id, "job_created": created_job is not None}
+
+
+@router.post("/quote/multi", status_code=201)
+async def multi_position_quote(body: MultiQuoteIn,
+                               user: dict = Depends(get_current_user)):
+    """Several priced positions, one quote.
+
+    Each position is estimated on its own — same arithmetic, same catalogue,
+    same guardrails as the single-position endpoint, because it is literally
+    the same `estimator.estimate` call. Nothing here reprices anything: this
+    concatenates lines and joins assumptions.
+
+    Two decisions worth stating, because both could reasonably have gone the
+    other way:
+
+    **The assumptions are merged and deduplicated.** Six positions on one
+    bathroom carry the same "Möbel werden bauseits ausgeräumt" six times, and
+    a quote that says it six times reads as a document nobody proofread. First
+    occurrence wins so the order still follows the positions.
+
+    **Confidence is the lowest of the positions, not the average.** A quote
+    that is 90 % solid and 10 % guesswork is a quote with guesswork in it, and
+    averaging would hide exactly the position that needs the site visit.
+    """
+    pro_id = await require_pro_id(user)
+    if not body.positions:
+        raise HTTPException(400, "at least one position is required")
+
+    country = body.country or await _country_for(pro_id)
+    rates = await _rates_for(pro_id) if body.use_own_rates else {}
+
+    results = []
+    for pos in body.positions:
+        cal = await _calibration_for(pro_id, pos.job_key, body.use_calibration)
+        kw = {"country": country, "tier": pos.tier, "rates": rates, "calibration": cal}
+        if pos.hourly_rate:
+            kw["hourly"] = (pos.hourly_rate, pos.hourly_rate)
+        if pos.qty_overrides:
+            kw["qty_overrides"] = pos.qty_overrides
+        try:
+            results.append(estimator.estimate(pos.job_key, pos.answers, **kw))
+        except LookupError as exc:
+            raise HTTPException(404, f"{pos.job_key}: {exc}") from exc
+
+    localised = [catalogue_ui.localise_estimate(r, body.lang) for r in results]
+
+    lines = []
+    for r in localised:
+        lines.extend(r["lines"])
+    # `position` is 1..n within each estimate, so concatenating produces six
+    # lines numbered 1 and the quote renders them in whatever order the
+    # database returns. Renumbered across the whole document.
+    for i, ln in enumerate(lines, start=1):
+        ln["position"] = i
+
+    seen: set[str] = set()
+    assumptions = []
+    for r in localised:
+        for note in (r["assumptions"] or "").split("\n"):
+            if note and note not in seen:
+                seen.add(note)
+                assumptions.append(note)
+
+    ref = localised[0]
+    title = body.title or (ref["job"].get("label") or ref["job"]["label_de"])
+    if len(localised) > 1:
+        title = body.title or f"{title} + {len(localised) - 1}"
+
+    job_id = body.job_id
+    created_job = None
+    if not job_id:
+        created_job = await jobs_repo.create(pro_id, {
+            "title": title,
+            "category": ref["job"]["trade"],
+            "customer_id": body.customer_id,
+            "mode": "simple",
+            "source": "manual",
+        })
+        job_id = str(created_job["id"])
+
+    worst = min((CONFIDENCE_SCORE.get(r["job"]["confidence"], 0.35) for r in localised),
+                default=0.35)
+    try:
+        created = [await quotes_repo.create(
+            pro_id, job_id, lines=lines, tier=body.positions[0].tier,
+            title=title,
+            assumptions="\n".join(assumptions) or None,
+            ai_confidence=worst,
+            ai_sources=[f"estimation_catalogue/{estimator.catalogue()['version']}"]
+                       + [r["job"]["key"] for r in localised])]
+    except LookupError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+    # One snapshot per position, all pointing at the same quote. The accuracy
+    # loop compares predicted against measured *per job type*; storing the
+    # merged document would make six job types indistinguishable and teach the
+    # calibration nothing.
+    estimate_ids = []
+    for r in results:
+        try:
+            row = await estimates_repo.save(
+                pro_id, r, job_id=job_id, quote_id=str(created[0]["id"]),
+                calibration_applied=(r.get("calibration") or {}).get("hours_factor"))
+            estimate_ids.append(str(row["id"]))
+        except Exception as exc:  # noqa: BLE001 — the quote is the deliverable
+            logger.error("estimate snapshot not stored for quote %s (%s): %s",
+                         created[0]["id"], r["job"]["key"], exc)
+
+    total = [round(sum(r["total_net"][0] for r in localised), 2),
+             round(sum(r["total_net"][1] for r in localised), 2)]
+    return {"quotes": created, "positions": localised, "total_net": total,
+            "estimate_ids": estimate_ids, "job_id": job_id,
+            "job_created": created_job is not None}

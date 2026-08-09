@@ -1,5 +1,14 @@
 const t = {
   en: {
+    est_one_more_note: '1 more note',
+    est_qty: 'Quantity',
+    no: 'No',
+    est_more_notes: '{n} more notes',
+    est_n_positions: '{n} positions',
+    est_one_position: '1 position',
+    est_err_multi: 'The quote could not be created from these positions',
+    est_multi_created: 'Quote created from {n} positions.',
+    est_rate_card_hint: 'Per-unit price comes from the catalogue and your own rates. Change it on the rate card.',
     dsr_authority_addr: ', Barichgasse 40-42, 1030 Vienna —',
     legal_version: 'Version',
     legal_updated: 'Last updated',
@@ -1766,6 +1775,15 @@ const t = {
   },
 
   de: {
+    est_one_more_note: '1 weiterer Hinweis',
+    est_qty: 'Menge',
+    no: 'Nein',
+    est_more_notes: '{n} weitere Hinweise',
+    est_n_positions: '{n} Positionen',
+    est_one_position: '1 Position',
+    est_err_multi: 'Aus diesen Positionen konnte kein Angebot erstellt werden',
+    est_multi_created: 'Angebot aus {n} Positionen erstellt.',
+    est_rate_card_hint: 'Der Einheitspreis kommt aus dem Katalog und Ihren eigenen Sätzen. Ändern im Preisblatt.',
     dsr_authority_addr: ', Barichgasse 40-42, 1030 Wien —',
     legal_version: 'Version',
     legal_updated: 'Zuletzt aktualisiert',
@@ -3427,6 +3445,15 @@ const t = {
   },
 
   tr: {
+    est_one_more_note: '1 not daha',
+    est_qty: 'Miktar',
+    no: 'Hayır',
+    est_more_notes: '{n} not daha',
+    est_n_positions: '{n} kalem',
+    est_one_position: '1 kalem',
+    est_err_multi: 'Bu kalemlerden teklif oluşturulamadı',
+    est_multi_created: '{n} kalemden teklif oluşturuldu.',
+    est_rate_card_hint: 'Birim fiyat katalogdan ve kendi fiyatlarınızdan gelir. Fiyat kartından değiştirin.',
     dsr_authority_addr: ', Barichgasse 40-42, 1030 Viyana —',
     legal_version: 'Sürüm',
     legal_updated: 'Son güncelleme',
@@ -5020,6 +5047,15 @@ const t = {
   },
 
   es: {
+    est_one_more_note: '1 aviso más',
+    est_qty: 'Cantidad',
+    no: 'No',
+    est_more_notes: '{n} avisos más',
+    est_n_positions: '{n} partidas',
+    est_one_position: '1 partida',
+    est_err_multi: 'No se ha podido crear el presupuesto con estas partidas',
+    est_multi_created: 'Presupuesto creado con {n} partidas.',
+    est_rate_card_hint: 'El precio unitario procede del catálogo y de sus propias tarifas. Cámbielo en la tarifa.',
     dsr_authority_addr: ', Barichgasse 40-42, 1030 Viena —',
     legal_version: 'Versión',
     legal_updated: 'Última actualización',
