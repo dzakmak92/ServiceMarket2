@@ -17,14 +17,21 @@ deliberately a separate file rather than more fields in the generator:
     away; a wrong hours_per_unit puts a wrong number on a customer's invoice.
     Keeping them apart keeps that distinction visible in the diff.
 
-Two things live here:
+Three things live here:
 
-**SECTIONS** — how one trade's templates are chunked. `group` in the
-catalogue cannot do this: every one of the 19 Maler templates carries the
-same group, "Maler & Tapezierer", so grouping by it produces one section
+**SECTIONS**, and the tables around it — how one trade's templates are
+chunked, what each group is called in four languages, which coloured zone it
+sits in, and which templates are shown in two groups at once. `group` in the
+catalogue cannot do any of this: every one of the 19 Maler templates carries
+the same group, "Maler & Tapezierer", so grouping by it produces one section
 containing everything. Only the seven trades with enough templates to need
 chunking have sections; below about ten a flat list is faster to read than a
 list with headings in it.
+
+`test_sections.py` checks the shape of all of it: every template placed
+exactly once before cross-listing, every cross-listing pointing at a section
+that exists, every zone's sections contiguous, and every heading, subtitle and
+zone name present in all four languages.
 
 **FIELD_HELP** — one line under a form field saying what it is for, so the
 survey does not read as an interrogation: five questions with no indication
@@ -49,27 +56,55 @@ from __future__ import annotations
 
 from services import catalogue_i18n
 
-# ── Sections ────────────────────────────────────────────────────────────
+# ── Sections, zones and cross-listings ──────────────────────────────────
 #
-# Ordered. The order is "what most people came for" first, not alphabetical:
-# a painter opens the app for an Innenanstrich far more often than for a
-# Wärmedämmverbundsystem.
+# Four tables describe how one trade's templates are laid out:
 #
-# Every job key of a listed trade must appear exactly once. `sections_for`
-# asserts that, so adding a template to the catalogue without placing it here
-# fails loudly instead of making it invisible on the screen.
+#   SECTIONS        the groups, ordered, with their German heading
+#   SECTION_LABELS  that heading in the other three languages
+#   SECTION_SUBS    one line under the heading naming what is in the group
+#   ZONES           an optional pair of coloured bands above the sections
+#   CROSS_LISTED    templates that honestly belong in two groups
+#
+# **Grouping.** Ordered by the sequence the work happens in where a trade has
+# one — a painter strips and fills before painting, a plumber quotes the
+# blockage before the bathroom — and by kind where it does not. No group is
+# larger than seven, because past that a group is a list again, which is the
+# defect this replaced: eleven of nineteen Maler templates used to sit under
+# one "Innen" heading.
+#
+# **Zones.** A band above the sections, given its own colour by the interface.
+# Only where a trade has a real second axis that the sections do not already
+# carry: indoors/outdoors for Maler and Reinigung, recurring/one-off for
+# Garten, fault/planned for Sanitär, single points/whole installation for
+# Elektrik. Fliesen and Montage get none — their sections already say
+# everything a zone would, and a band drawn round the whole list separates
+# nothing.
+#
+# Two colours exist, so a trade gets at most two zones. That is a constraint
+# worth keeping rather than working around: a third zone would need a third
+# colour, and the palette has no third colour that is not already spoken for.
+#
+# A zone's sections must be contiguous and are listed here in the order they
+# appear in SECTIONS. Colour that alternates down a page says nothing.
+#
+# **Cross-listing.** A template may appear in more than one group when it
+# genuinely belongs to both, rather than being filed under whichever is least
+# wrong. Holzfenster streichen is lacquer work billed per piece *and* work on
+# the weather side of the building; a Kanal-Kamerabefahrung is a documented
+# survey *and* how a blockage gets found. Both places show the template, and
+# both say where else it appears, so the duplicate reads as one template seen
+# twice rather than two similar templates.
+#
+# It is the same template either way: one key, one price, one position in the
+# quote. Ticking it in one place ticks it in the other.
 
 SECTIONS: dict[str, list[tuple[str, str, list[str]]]] = {
     # trade: [(section key, German heading, [job keys])]
-    # Maler is ordered by the sequence the work happens in, not by frequency:
-    # strip and fill, then paint, then wall covering, then the per-piece lacquer
-    # work, then what is left, then outside. Eleven of the nineteen used to sit
-    # in one "Innen" bucket, which is a list rather than a grouping — a painter
-    # scanning for Spachteln Q3 had to read past wallpaper and radiators.
-    #
-    # The headings are verbs. The order carries the logic, so the numbering that
-    # would have made that explicit is not needed and would read as instructions
-    # to a tradesperson about how to do their own job.
+
+    # Maler: the order the work happens in. Headings are verbs and are not
+    # numbered — the order carries the sequence on its own, and numbering it
+    # would read as instructions to a tradesperson about their own job.
     "maler": [
         ("vorbereiten", "Vorbereiten", [
             "maler.tapete_entfernen", "maler.risse_sanieren",
@@ -93,106 +128,144 @@ SECTIONS: dict[str, list[tuple[str, str, list[str]]]] = {
             "maler.wdvs",
         ]),
     ],
+
+    # Garten splits on how the work is sold, not on where it is: mowing is a
+    # season, a terrace is a project, and the two are quoted, scheduled and
+    # priced differently.
     "garten": [
-        ("pflege", "Regelmäßige Pflege", [
-            "garten.rasenmaehen", "garten.hecke_schnitt", "garten.laub",
-            "garten.vertikutieren", "garten.winterdienst",
+        ("pflege_flaechen", "Rasen und Flächen pflegen", [
+            "garten.rasenmaehen", "garten.vertikutieren", "garten.laub",
+            "garten.winterdienst",
         ]),
-        ("baeume", "Bäume und Hecken", [
-            "garten.baumfaellung", "garten.baumschnitt", "garten.hecke_pflanzen",
+        ("schneiden", "Schneiden", [
+            "garten.hecke_schnitt", "garten.baumschnitt",
         ]),
-        ("anlegen", "Anlegen und Bepflanzen", [
+        ("baeume", "Bäume und Gehölze", [
+            "garten.baumfaellung", "garten.hecke_pflanzen",
+        ]),
+        ("anlegen", "Rasen und Beete anlegen", [
             "garten.rasen_neu", "garten.rollrasen", "garten.beet_anlegen",
-            "garten.bewaesserung",
         ]),
-        ("bauen", "Bauen und Befestigen", [
-            "garten.pflaster", "garten.terrasse_holz", "garten.zaun",
-            "garten.sichtschutz", "garten.mauer_gabione", "garten.treppe_aussen",
-            "garten.drainage", "garten.pool",
+        ("wege", "Wege, Terrassen, Treppen", [
+            "garten.pflaster", "garten.terrasse_holz", "garten.treppe_aussen",
+        ]),
+        ("grenzen", "Grenzen und Sichtschutz", [
+            "garten.zaun", "garten.sichtschutz", "garten.mauer_gabione",
+        ]),
+        ("wasser", "Wasser im Boden", [
+            "garten.drainage", "garten.bewaesserung", "garten.pool",
         ]),
     ],
+
+    # Sanitär splits on whether something is broken now. A blocked WC and a
+    # bathroom refit are not the same errand, and the customer on the phone
+    # has already told you which one it is.
     "sanitaer": [
-        ("stoerung", "Störung und Notdienst", [
-            "sanitaer.rohrreinigung_wc", "sanitaer.rohrreinigung_waschbecken",
-            "sanitaer.rohrbruch", "sanitaer.notdienst_anfahrt",
-            "sanitaer.spuelkasten",
+        ("verstopfung", "Verstopfung lösen", [
+            "sanitaer.rohrreinigung_waschbecken", "sanitaer.rohrreinigung_wc",
         ]),
-        ("tausch", "Einzelnes Gerät tauschen", [
-            "sanitaer.armatur", "sanitaer.wc_tauschen", "sanitaer.waschtisch",
-            "sanitaer.badewanne_tausch", "sanitaer.duschkabine",
-            "sanitaer.boiler", "sanitaer.therme_tausch",
-            "sanitaer.waschmaschinenanschluss",
+        ("leck", "Leck, Ausfall, Notdienst", [
+            "sanitaer.rohrbruch", "sanitaer.spuelkasten",
+            "sanitaer.notdienst_anfahrt",
         ]),
-        ("umbau", "Bad und Umbau", [
-            "sanitaer.bad_komplett", "sanitaer.bad_basis",
-            "sanitaer.wanne_zu_dusche", "sanitaer.steigleitung",
+        ("geraet", "Einzelnes Gerät tauschen", [
+            "sanitaer.wc_tauschen", "sanitaer.waschtisch", "sanitaer.armatur",
+            "sanitaer.duschkabine", "sanitaer.badewanne_tausch",
+            "sanitaer.waschmaschinenanschluss", "sanitaer.boiler",
         ]),
-        ("pruefen", "Prüfen und Warten", [
-            "sanitaer.therme_wartung", "sanitaer.dichtheitspruefung",
-            "sanitaer.kamerabefahrung",
+        ("waerme", "Wärme und Warmwasser", [
+            "sanitaer.therme_tausch", "sanitaer.therme_wartung",
+        ]),
+        ("bad", "Bad und Leitungen erneuern", [
+            "sanitaer.wanne_zu_dusche", "sanitaer.bad_basis",
+            "sanitaer.bad_komplett", "sanitaer.steigleitung",
+        ]),
+        ("pruefen", "Prüfen und dokumentieren", [
+            "sanitaer.dichtheitspruefung", "sanitaer.kamerabefahrung",
         ]),
     ],
+
+    # Elektrik splits on scale: one point on an existing installation, or the
+    # installation itself. The first is an hour with a bag of tools, the
+    # second wants the power off and a certificate at the end.
     "elektrik": [
-        ("punkte", "Einzelne Punkte", [
+        ("dosen", "Steckdosen und Schalter", [
             "elektrik.steckdose", "elektrik.schalter_tauschen",
-            "elektrik.aussensteckdose", "elektrik.leuchte_montieren",
-            "elektrik.datendose", "elektrik.rauchmelder",
-            "elektrik.herdanschluss",
+            "elektrik.aussensteckdose", "elektrik.datendose",
         ]),
-        ("anlage", "Verteiler und Leitungen", [
-            "elektrik.verteiler", "elektrik.verteiler_klein",
-            "elektrik.leitung_verlegen", "elektrik.wohnung_neuinstallation",
+        ("licht", "Licht und Geräteanschlüsse", [
+            "elektrik.leuchte_montieren", "elektrik.rauchmelder",
+            "elektrik.herdanschluss", "elektrik.smarthome",
+        ]),
+        ("leitungen", "Leitungen und Verteiler", [
+            "elektrik.leitung_verlegen", "elektrik.verteiler_klein",
+            "elektrik.verteiler", "elektrik.wohnung_neuinstallation",
         ]),
         ("nachruesten", "Nachrüsten", [
-            "elektrik.wallbox", "elektrik.smarthome",
-            "elektrik.gegensprechanlage",
+            "elektrik.wallbox", "elektrik.gegensprechanlage",
         ]),
         ("pruefen", "Prüfen und Störungssuche", [
-            "elektrik.e_befund", "elektrik.geraetepruefung",
-            "elektrik.stoerungssuche",
+            "elektrik.stoerungssuche", "elektrik.e_befund",
+            "elektrik.geraetepruefung",
         ]),
     ],
+
+    # Fliesen is a sequence and nothing else: what is there comes off, the
+    # substrate is sealed, tiles go on, joints get finished. No zone — the
+    # sections already say everything a band round them would.
     "fliesen": [
-        ("verlegen", "Verlegen", [
-            "fliesen.verlegen_boden", "fliesen.verlegen_wand",
-            "fliesen.grossformat", "fliesen.mosaik", "fliesen.terrasse",
-            "fliesen.treppe", "fliesen.sockelleisten",
-        ]),
-        ("vorbereiten", "Entfernen und Vorbereiten", [
+        ("vorbereiten", "Entfernen und abdichten", [
             "fliesen.entfernen_duennbett", "fliesen.entfernen_dickbett",
             "fliesen.abdichtung",
+        ]),
+        ("verlegen", "Verlegen", [
+            "fliesen.verlegen_boden", "fliesen.verlegen_wand",
+            "fliesen.grossformat", "fliesen.mosaik",
+        ]),
+        ("sonder", "Treppen, Terrassen, Sockel", [
+            "fliesen.treppe", "fliesen.terrasse", "fliesen.sockelleisten",
         ]),
         ("reparatur", "Fugen und Reparatur", [
             "fliesen.fugen_sanieren", "fliesen.silikonfugen",
             "fliesen.einzelne_ersetzen",
         ]),
     ],
+
+    # Montage is grouped by what is being fitted. There is no sequence to
+    # follow and no second axis, so no zone.
     "montage": [
-        ("innen", "Möbel und Innenausbau", [
-            "montage.moebel", "montage.regal", "montage.kueche",
-            "montage.tv_wandhalterung", "montage.innentuer",
+        ("moebel", "Möbel und Einrichtung", [
+            "montage.kueche", "montage.moebel", "montage.regal",
+            "montage.tv_wandhalterung",
         ]),
-        ("fenster", "Fenster und Außen", [
-            "montage.rollladen", "montage.fliegengitter", "montage.markise",
+        ("tueren", "Türen und Schlösser", [
+            "montage.innentuer", "montage.schliesszylinder",
+            # Not `montage.tueroeffnung`. Three templates carry a key from a
+            # neighbouring trade — this one, `steinmetz.fensterbank` under
+            # maurer and `glaser.scheibe` under fenster — so the key prefix
+            # cannot be assumed to be the trade. Placing it by the name it
+            # looks like it should have is how it goes missing from the screen.
+            "schluessel.tueroeffnung",
         ]),
-        ("schloss", "Schlösser und Türöffnung", [
-            "montage.schliesszylinder", "schluessel.tueroeffnung",
+        ("fenster", "Fenster und Beschattung", [
+            "montage.fliegengitter", "montage.markise", "montage.rollladen",
         ]),
         ("regie", "Nach Aufwand", [
             "montage.stunde",
         ]),
     ],
+
+    # Reinigung is indoors or it is the building. Nine templates is few enough
+    # that one group per zone is the whole layout.
     "reinigung": [
-        ("innen", "Wohnung und Büro", [
-            "reinigung.grundreinigung", "reinigung.unterhalt_buero",
-            "reinigung.bauendreinigung", "reinigung.polster",
+        ("innen", "Wohnung, Büro, Innenräume", [
+            "reinigung.grundreinigung", "reinigung.bauendreinigung",
+            "reinigung.unterhalt_buero", "reinigung.polster",
+            "reinigung.schaedlinge",
         ]),
         ("gebaeude", "Gebäude und Außenflächen", [
-            "reinigung.hausbetreuung", "reinigung.fenster",
-            "reinigung.tiefgarage", "reinigung.graffiti",
-        ]),
-        ("spezial", "Spezial", [
-            "reinigung.schaedlinge",
+            "reinigung.fenster", "reinigung.hausbetreuung",
+            "reinigung.graffiti", "reinigung.tiefgarage",
         ]),
     ],
 }
@@ -212,38 +285,80 @@ SECTION_LABELS: dict[str, dict[str, str]] = {
     "maler.fassade": {"en": "Painting and insulating the façade",
                       "tr": "Cepheyi boyamak ve yalıtmak",
                       "es": "Pintar y aislar la fachada"},
-    "garten.pflege": {"en": "Regular upkeep", "tr": "Düzenli bakım", "es": "Mantenimiento"},
-    "garten.baeume": {"en": "Trees and hedges", "tr": "Ağaç ve çit", "es": "Árboles y setos"},
-    "garten.anlegen": {"en": "Planting", "tr": "Ekim ve dikim", "es": "Plantación"},
-    "garten.bauen": {"en": "Building and paving", "tr": "Yapı ve döşeme", "es": "Obra y pavimento"},
-    "sanitaer.stoerung": {"en": "Faults and callouts", "tr": "Arıza ve acil", "es": "Averías y urgencias"},
-    "sanitaer.tausch": {"en": "Replacing a fixture", "tr": "Tekil değişim", "es": "Sustituir un aparato"},
-    "sanitaer.umbau": {"en": "Bathrooms and refits", "tr": "Banyo ve tadilat", "es": "Baños y reformas"},
-    "sanitaer.pruefen": {"en": "Testing and servicing", "tr": "Kontrol ve bakım", "es": "Revisión y mantenimiento"},
-    "elektrik.punkte": {"en": "Single points", "tr": "Tekil noktalar", "es": "Puntos sueltos"},
-    "elektrik.anlage": {"en": "Boards and cabling", "tr": "Pano ve tesisat", "es": "Cuadros y cableado"},
-    "elektrik.nachruesten": {"en": "Retrofits", "tr": "Sonradan ekleme", "es": "Instalaciones nuevas"},
-    "elektrik.pruefen": {"en": "Testing and fault-finding", "tr": "Test ve arıza arama", "es": "Pruebas y averías"},
+
+    "garten.pflege_flaechen": {"en": "Mowing and clearing",
+                               "tr": "Biçme ve temizleme", "es": "Segar y despejar"},
+    "garten.schneiden": {"en": "Cutting back", "tr": "Budama", "es": "Podar"},
+    "garten.baeume": {"en": "Trees and shrubs", "tr": "Ağaç ve çalılar",
+                      "es": "Árboles y arbustos"},
+    "garten.anlegen": {"en": "New lawn and beds", "tr": "Yeni çim ve tarhlar",
+                       "es": "Césped y parterres nuevos"},
+    "garten.wege": {"en": "Paths, terraces, steps", "tr": "Yol, teras, merdiven",
+                    "es": "Caminos, terrazas, escaleras"},
+    "garten.grenzen": {"en": "Boundaries and screening",
+                       "tr": "Sınır ve perde", "es": "Límites y protección visual"},
+    "garten.wasser": {"en": "Water below ground", "tr": "Yer altı suyu işleri",
+                      "es": "Agua bajo tierra"},
+
+    "sanitaer.verstopfung": {"en": "Clearing a blockage", "tr": "Tıkanıklık açma",
+                             "es": "Desatascar"},
+    "sanitaer.leck": {"en": "Leaks, failures, callouts",
+                      "tr": "Sızıntı, arıza, acil çağrı",
+                      "es": "Fugas, averías, urgencias"},
+    "sanitaer.geraet": {"en": "Replacing one fixture", "tr": "Tek cihaz değişimi",
+                        "es": "Sustituir un aparato"},
+    "sanitaer.waerme": {"en": "Heat and hot water", "tr": "Isı ve sıcak su",
+                        "es": "Calefacción y agua caliente"},
+    "sanitaer.bad": {"en": "Renewing a bathroom or pipework",
+                     "tr": "Banyo ve tesisat yenileme",
+                     "es": "Renovar baño o instalación"},
+    "sanitaer.pruefen": {"en": "Testing and certifying",
+                         "tr": "Kontrol ve belgeleme",
+                         "es": "Comprobar y certificar"},
+
+    "elektrik.dosen": {"en": "Sockets and switches", "tr": "Priz ve anahtarlar",
+                       "es": "Enchufes e interruptores"},
+    "elektrik.licht": {"en": "Lights and appliance points",
+                       "tr": "Aydınlatma ve cihaz bağlantıları",
+                       "es": "Luces y tomas de aparatos"},
+    "elektrik.leitungen": {"en": "Cabling and boards", "tr": "Tesisat ve panolar",
+                           "es": "Cableado y cuadros"},
+    "elektrik.nachruesten": {"en": "Retrofitting", "tr": "Sonradan ekleme",
+                             "es": "Instalar después"},
+    "elektrik.pruefen": {"en": "Testing and fault-finding",
+                         "tr": "Test ve arıza arama", "es": "Pruebas y averías"},
+
+    "fliesen.vorbereiten": {"en": "Removing and sealing",
+                            "tr": "Sökme ve su yalıtımı", "es": "Retirar e impermeabilizar"},
     "fliesen.verlegen": {"en": "Laying", "tr": "Döşeme", "es": "Colocación"},
-    "fliesen.vorbereiten": {"en": "Removal and prep", "tr": "Sökme ve hazırlık", "es": "Retirada y preparación"},
-    "fliesen.reparatur": {"en": "Grout and repairs", "tr": "Derz ve onarım", "es": "Juntas y reparación"},
-    "montage.innen": {"en": "Furniture and interiors", "tr": "Mobilya ve iç mekan", "es": "Muebles e interiores"},
-    "montage.fenster": {"en": "Windows and outdoors", "tr": "Pencere ve dış mekan", "es": "Ventanas y exterior"},
-    "montage.schloss": {"en": "Locks and lockouts", "tr": "Kilit ve kapı açma", "es": "Cerraduras y aperturas"},
+    "fliesen.sonder": {"en": "Stairs, terraces, skirting",
+                       "tr": "Merdiven, teras, süpürgelik",
+                       "es": "Escaleras, terrazas, rodapiés"},
+    "fliesen.reparatur": {"en": "Grout and repairs", "tr": "Derz ve onarım",
+                          "es": "Juntas y reparación"},
+
+    "montage.moebel": {"en": "Furniture and fittings", "tr": "Mobilya ve donanım",
+                       "es": "Muebles y equipamiento"},
+    "montage.tueren": {"en": "Doors and locks", "tr": "Kapı ve kilitler",
+                       "es": "Puertas y cerraduras"},
+    "montage.fenster": {"en": "Windows and shading", "tr": "Pencere ve gölgeleme",
+                        "es": "Ventanas y protección solar"},
     "montage.regie": {"en": "By the hour", "tr": "Saat başı", "es": "Por horas"},
-    "reinigung.innen": {"en": "Homes and offices", "tr": "Ev ve ofis", "es": "Viviendas y oficinas"},
-    "reinigung.gebaeude": {"en": "Buildings and outdoor areas", "tr": "Bina ve dış alanlar", "es": "Edificios y exteriores"},
-    "reinigung.spezial": {"en": "Specialist", "tr": "Özel", "es": "Especial"},
+
+    "reinigung.innen": {"en": "Homes, offices, interiors",
+                        "tr": "Ev, ofis, iç mekanlar",
+                        "es": "Viviendas, oficinas, interiores"},
+    "reinigung.gebaeude": {"en": "Buildings and outdoor areas",
+                           "tr": "Bina ve dış alanlar", "es": "Edificios y exteriores"},
 }
 
-
-# One line under a section heading naming what is in it, because a verb on its
-# own ("Sanieren und beschichten") does not say which two templates that is.
-# German included here rather than in SECTIONS: SECTIONS is the placement, this
-# is prose, and keeping all four languages of one sentence together is what
-# stops three of them being updated and the fourth not.
+# One line under a section heading naming what is in it, because a heading on
+# its own ("Sanieren und beschichten") does not say which two templates that
+# is. German included here rather than in SECTIONS: SECTIONS is the placement,
+# this is prose, and keeping all four languages of one sentence together is
+# what stops three of them being updated and the fourth not.
 #
-# Only Maler has these. A section without one renders without a subtitle.
+# A section without an entry renders without a subtitle.
 SECTION_SUBS: dict[str, dict[str, str]] = {
     "maler.vorbereiten": {
         "de": "Entfernen, spachteln, Risse schließen",
@@ -265,23 +380,115 @@ SECTION_SUBS: dict[str, dict[str, str]] = {
     "maler.fassade": {
         "de": "Alles an der Außenhülle", "en": "Everything on the building envelope",
         "tr": "Bina kabuğundaki her şey", "es": "Todo en la envolvente del edificio"},
+
+    "garten.pflege_flaechen": {
+        "de": "Pro Einsatz oder pro Saison", "en": "Per visit or per season",
+        "tr": "Sefer başına veya sezonluk", "es": "Por visita o por temporada"},
+    "garten.schneiden": {
+        "de": "Hecke und Baumkrone", "en": "Hedges and tree crowns",
+        "tr": "Çit ve ağaç tacı", "es": "Setos y copas"},
+    "garten.baeume": {
+        "de": "Fällen, pflanzen, Krone", "en": "Felling, planting, crown work",
+        "tr": "Kesme, dikme, taç bakımı", "es": "Talar, plantar, copa"},
+    "garten.anlegen": {
+        "de": "Saat, Rollrasen, Bepflanzung", "en": "Seed, turf, planting",
+        "tr": "Tohum, hazır çim, bitkilendirme", "es": "Siembra, tepe, plantación"},
+    "garten.wege": {
+        "de": "Befestigte Flächen", "en": "Hard landscaping",
+        "tr": "Sert zeminler", "es": "Superficies pavimentadas"},
+    "garten.grenzen": {
+        "de": "Zaun, Wand, Sichtschutz", "en": "Fences, walls, screens",
+        "tr": "Çit, duvar, perde", "es": "Vallas, muros, pantallas"},
+    "garten.wasser": {
+        "de": "Was unter der Oberfläche liegt", "en": "What sits below the surface",
+        "tr": "Yüzeyin altında kalanlar", "es": "Lo que va bajo la superficie"},
+
+    "sanitaer.verstopfung": {
+        "de": "Abfluss läuft nicht ab", "en": "The drain will not run",
+        "tr": "Gider akmıyor", "es": "El desagüe no evacua"},
+    "sanitaer.leck": {
+        "de": "Wasser, wo keines sein soll", "en": "Water where none should be",
+        "tr": "Olmaması gereken yerde su", "es": "Agua donde no debe haberla"},
+    "sanitaer.geraet": {
+        "de": "Ein Stück raus, eines rein", "en": "One out, one in",
+        "tr": "Biri çıkar, biri girer", "es": "Uno fuera, otro dentro"},
+    "sanitaer.waerme": {
+        "de": "Therme und Speicher", "en": "Boilers and cylinders",
+        "tr": "Kombi ve boyler", "es": "Calderas y acumuladores"},
+    "sanitaer.bad": {
+        "de": "Mehrere Tage Baustelle", "en": "Several days on site",
+        "tr": "Birkaç günlük şantiye", "es": "Varios días de obra"},
+    "sanitaer.pruefen": {
+        "de": "Mit Protokoll", "en": "With a written report",
+        "tr": "Raporlu", "es": "Con acta escrita"},
+
+    "elektrik.dosen": {
+        "de": "Am Bestand, pro Stück", "en": "On an existing installation, per piece",
+        "tr": "Mevcut tesisatta, adet başına", "es": "Sobre instalación existente, por pieza"},
+    "elektrik.licht": {
+        "de": "Anschließen und montieren", "en": "Connecting and mounting",
+        "tr": "Bağlama ve montaj", "es": "Conectar y montar"},
+    "elektrik.leitungen": {
+        "de": "Strom aus, Wand auf", "en": "Power off, wall open",
+        "tr": "Elektrik kesik, duvar açık", "es": "Sin corriente, pared abierta"},
+    "elektrik.nachruesten": {
+        "de": "Was vorher nicht da war", "en": "What was not there before",
+        "tr": "Önceden olmayanlar", "es": "Lo que antes no estaba"},
+    "elektrik.pruefen": {
+        "de": "Messen, suchen, befunden", "en": "Measuring, tracing, certifying",
+        "tr": "Ölçme, arama, belgeleme", "es": "Medir, localizar, certificar"},
+
+    "fliesen.vorbereiten": {
+        "de": "Bevor die erste Fliese liegt", "en": "Before the first tile goes down",
+        "tr": "İlk karo döşenmeden önce", "es": "Antes de la primera baldosa"},
+    "fliesen.verlegen": {
+        "de": "Boden und Wand", "en": "Floor and wall",
+        "tr": "Zemin ve duvar", "es": "Suelo y pared"},
+    "fliesen.sonder": {
+        "de": "Zuschnitt und Detailarbeit", "en": "Cutting and detail work",
+        "tr": "Kesim ve detay işi", "es": "Corte y trabajo de detalle"},
+    "fliesen.reparatur": {
+        "de": "Am bestehenden Belag", "en": "On tiling that is already there",
+        "tr": "Mevcut kaplamada", "es": "Sobre el alicatado existente"},
+
+    "montage.moebel": {
+        "de": "Möbel werden beigestellt", "en": "Furniture supplied by the customer",
+        "tr": "Mobilya müşteri tarafından sağlanır",
+        "es": "Los muebles los aporta el cliente"},
+    "montage.tueren": {
+        "de": "Montieren, tauschen, öffnen", "en": "Fitting, swapping, opening",
+        "tr": "Montaj, değişim, açma", "es": "Montar, cambiar, abrir"},
+    "montage.fenster": {
+        "de": "Am und ums Fenster", "en": "On and around the window",
+        "tr": "Pencerede ve çevresinde", "es": "En la ventana y su entorno"},
+    "montage.regie": {
+        "de": "Wenn keine Vorlage passt", "en": "When no template fits",
+        "tr": "Hiçbir şablon uymadığında", "es": "Cuando ninguna plantilla encaja"},
+
+    "reinigung.innen": {
+        "de": "Bewohnte und genutzte Räume", "en": "Lived-in and working rooms",
+        "tr": "Oturulan ve kullanılan mekanlar", "es": "Espacios habitados y en uso"},
+    "reinigung.gebaeude": {
+        "de": "Außenhaut und Gemeinschaftsflächen",
+        "en": "Building envelope and common areas",
+        "tr": "Bina kabuğu ve ortak alanlar",
+        "es": "Envolvente y zonas comunes"},
 }
 
 # ── Zones ───────────────────────────────────────────────────────────────
 #
-# A band above the sections saying where the work happens. The interface gives
-# each zone its own colour, which is the whole reason this exists: colour that
-# alternates down a page carries no information, so a zone's sections have to
-# be contiguous and are listed here in the order they appear in SECTIONS.
+# The band above the sections, one colour each. Listed in the order the zones
+# appear, with the section keys they contain — which must be contiguous in
+# SECTIONS, because a zone drawn twice down the page is two bands of one
+# colour and colour that repeats says nothing about where you are.
 #
-# Maler only. Every other trade returns `zone: None` on every section and the
-# interface renders them exactly as before.
-#
-# Note what is *not* here: a third zone for "Sanierung". Schimmelsanierung
-# Innenwand and Bodenbeschichtung Garage oder Keller are both indoor work, so
-# they sit in Innen. Giving them a colour of their own would have invented a
-# place that does not exist.
+# A trade absent from here returns `zone: None` on every section and renders
+# as a plain list of headings.
 ZONES: dict[str, list[tuple[str, dict[str, str], list[str]]]] = {
+    # Where the work happens. Note what is *not* here: a third zone for
+    # Sanierung. Schimmelsanierung Innenwand and Bodenbeschichtung Garage oder
+    # Keller are both indoor work, so they sit in Innen — a colour of their own
+    # would have invented a place that does not exist.
     "maler": [
         ("innen", {"de": "Innen", "en": "Indoors",
                    "tr": "İç mekan", "es": "Interior"},
@@ -290,6 +497,87 @@ ZONES: dict[str, list[tuple[str, dict[str, str], list[str]]]] = {
                     "tr": "Dış mekan", "es": "Exterior"},
          ["fassade"]),
     ],
+    # How the work is sold. Everything a gardener does is outdoors, so
+    # indoors/outdoors would be one band round the whole list; recurring
+    # against one-off is the split that actually changes the quote.
+    "garten": [
+        ("pflege", {"de": "Regelmäßige Pflege", "en": "Regular upkeep",
+                    "tr": "Düzenli bakım", "es": "Mantenimiento periódico"},
+         ["pflege_flaechen", "schneiden"]),
+        ("projekt", {"de": "Anlegen und bauen", "en": "Landscaping and building",
+                     "tr": "Peyzaj ve yapım", "es": "Crear y construir"},
+         ["baeume", "anlegen", "wege", "grenzen", "wasser"]),
+    ],
+    # Whether something is broken now. Störung comes first because that is the
+    # call you are on the phone to when you open this.
+    "sanitaer": [
+        ("stoerung", {"de": "Störung", "en": "Something is broken",
+                      "tr": "Arıza", "es": "Avería"},
+         ["verstopfung", "leck"]),
+        ("geplant", {"de": "Geplante Arbeiten", "en": "Planned work",
+                     "tr": "Planlı işler", "es": "Trabajos planificados"},
+         ["geraet", "waerme", "bad", "pruefen"]),
+    ],
+    # Scale. One point on an existing installation is a different job from
+    # opening up the installation itself.
+    "elektrik": [
+        ("punkte", {"de": "Einzelne Punkte", "en": "Single points",
+                    "tr": "Tekil noktalar", "es": "Puntos sueltos"},
+         ["dosen", "licht"]),
+        ("anlage", {"de": "Anlage und Prüfung", "en": "Installation and testing",
+                    "tr": "Tesisat ve kontrol", "es": "Instalación y pruebas"},
+         ["leitungen", "nachruesten", "pruefen"]),
+    ],
+    "reinigung": [
+        ("innen", {"de": "Innen", "en": "Indoors",
+                   "tr": "İç mekan", "es": "Interior"}, ["innen"]),
+        ("aussen", {"de": "Gebäude und Außen", "en": "Building and outdoors",
+                    "tr": "Bina ve dış mekan", "es": "Edificio y exterior"},
+         ["gebaeude"]),
+    ],
+}
+
+# Templates that honestly belong in two groups, and are shown in both.
+#
+# The bar for an entry here is that filing it in one place only would make it
+# hard to find from the other, *and* that both readings describe the same work
+# — not that two headings could each be argued for. Six entries across seven
+# trades; if this list grows much past that, the grouping above is wrong and
+# duplicating templates is hiding it.
+#
+# `{job key: [extra section keys]}`. The job stays in its SECTIONS home and is
+# additionally shown in each section named here.
+CROSS_LISTED: dict[str, dict[str, list[str]]] = {
+    "maler": {
+        # Lacquer work billed per piece, and the weather side of the building.
+        "maler.holzfenster_streichen": ["fassade"],
+        # Remediation in its own right, and the thing that has to happen
+        # before a wall can be painted at all.
+        "maler.schimmelsanierung": ["vorbereiten"],
+    },
+    "garten": {
+        # Crown work is routine care on a maintained garden and part of the
+        # decision when a tree is coming out.
+        "garten.baumschnitt": ["baeume"],
+    },
+    "sanitaer": {
+        # A cylinder is one more fixture to swap, and it is what makes the hot
+        # water — somebody quoting a heating job looks for it there.
+        "sanitaer.boiler": ["waerme"],
+        # A service visit is planned maintenance and a documented one.
+        "sanitaer.therme_wartung": ["pruefen"],
+        # A camera survey is a report with a protocol, and it is how a
+        # blockage that will not clear gets found.
+        "sanitaer.kamerabefahrung": ["verstopfung"],
+    },
+    "elektrik": {
+        # Smart switches are a point on the wall and a retrofit.
+        "elektrik.smarthome": ["nachruesten"],
+    },
+    "reinigung": {
+        # A window has two sides and is cleaned from both.
+        "reinigung.fenster": ["innen"],
+    },
 }
 
 
@@ -301,6 +589,18 @@ def sections_for(trade: str, job_keys: list[str]) -> list[dict] | None:
     template can be retired. Anything in the catalogue but *not* placed in a
     section lands in a trailing "Weitere" bucket rather than disappearing,
     because a template nobody can reach is worse than an untidy heading.
+
+    A key may appear in more than one section, via CROSS_LISTED. Each section
+    that shows a cross-listed key also carries, in `cross`, the keys of the
+    *other* sections it appears in, so the interface can say so on the card.
+    Only section keys are returned, not labels: the caller already has every
+    section's label in all four languages and resolving it there is what keeps
+    the notice translated without this function knowing about languages.
+
+    `total` is the number of distinct templates, which is not the number of
+    rows once anything is cross-listed. A heading that counted placements
+    would tell a painter there are twenty-one templates when there are
+    nineteen.
     """
     scheme = SECTIONS.get(trade)
     if not scheme:
@@ -312,13 +612,33 @@ def sections_for(trade: str, job_keys: list[str]) -> list[dict] | None:
                for zkey, labels, secs in ZONES.get(trade, [])
                for sec in secs}
 
+    cross = CROSS_LISTED.get(trade, {})
     have = set(job_keys)
+    home = {k: skey for skey, _, keys in scheme for k in keys}
+
+    # Every section a cross-listed key ends up in: its home plus its extras.
+    # Built before the loop because a section needs to name the *other* places
+    # a key appears, including ones later in the list.
+    appears: dict[str, list[str]] = {}
+    for k, extra in cross.items():
+        if k in have and k in home:
+            appears[k] = [home[k], *extra]
+
+    # Where a section has to show keys that are not its own.
+    extra_in: dict[str, list[str]] = {}
+    for k, secs in appears.items():
+        for skey in secs[1:]:
+            extra_in.setdefault(skey, []).append(k)
+
     out: list[dict] = []
     placed: set[str] = set()
     for key, heading, keys in scheme:
         present = [k for k in keys if k in have]
         placed.update(present)
-        if not present:
+        # Cross-listed arrivals go last in the section, after what lives there.
+        borrowed = [k for k in extra_in.get(key, []) if k in have]
+        rows = present + borrowed
+        if not rows:
             continue
         zkey, zlabels = zone_of.get(key, (None, {}))
         subs = SECTION_SUBS.get(f"{trade}.{key}", {})
@@ -329,7 +649,9 @@ def sections_for(trade: str, job_keys: list[str]) -> list[dict] | None:
                     "zone": zkey,
                     "zone_label_de": zlabels.get("de", ""),
                     "zone_labels": {k: v for k, v in zlabels.items() if k != "de"},
-                    "job_keys": present})
+                    "cross": {k: [s for s in appears[k] if s != key]
+                              for k in rows if k in appears},
+                    "job_keys": rows})
 
     leftover = [k for k in job_keys if k not in placed]
     if leftover:
@@ -338,7 +660,7 @@ def sections_for(trade: str, job_keys: list[str]) -> list[dict] | None:
                     "labels": {"en": "More", "tr": "Diğer", "es": "Otros"},
                     "sub_de": "", "subs": {},
                     "zone": None, "zone_label_de": "", "zone_labels": {},
-                    "job_keys": leftover})
+                    "cross": {}, "job_keys": leftover})
     return out
 
 

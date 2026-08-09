@@ -102,6 +102,12 @@ const PAIRS = [
   ['zone · card band on Außen card', 'ink.muted', 'zone-out'],
   ['zone · site-visit flag on Innen card', 'red-warn', 'zone-in'],
   ['zone · site-visit flag on Außen card', 'red-warn', 'zone-out'],
+  /* The "also under X" chip: a tint of ink on a card that is itself a tint.
+     Three surfaces deep, and it is the one piece of text explaining why a
+     template appears twice — the reading nobody would think to check. */
+  ['card · cross-listing chip on Innen', 'ink.muted', ['ink.DEFAULT', 'zone-in', 0.05]],
+  ['card · cross-listing chip on Außen', 'ink.muted', ['ink.DEFAULT', 'zone-out', 0.05]],
+  ['card · cross-listing chip on paper', 'ink.muted', ['ink.DEFAULT', 'paper', 0.05]],
 ];
 
 let fails = 0;

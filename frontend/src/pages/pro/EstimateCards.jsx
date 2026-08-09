@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChevronDown, Loader2, MapPin, Info } from 'lucide-react';
+import { ChevronDown, Loader2, MapPin, Info, Repeat2 } from 'lucide-react';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import { fmtEur } from '../../utils/money';
@@ -151,13 +151,21 @@ const ZONE = {
 };
 
 /** One template: a checkbox, and everything it needs once it is checked. */
-function Card({ job, state, onToggle, onOpen, onAnswer, t, zone }) {
+function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section }) {
   const z = ZONE[zone];
+  /* A cross-listed template is on the page twice, so its test ids have to say
+     which copy. Rows that appear once keep the plain id they always had —
+     `alsoIn` is set on every copy of a duplicated template and on nothing
+     else, so "has a suffix" and "is duplicated" are the same statement. */
+  const tid = alsoIn ? `${job.key}@${section}` : job.key;
   // Ticked, which is not the same as on screen: a card can be open because
   // somebody wanted to read it without putting it in the quote.
   const checked = !!state?.checked;
   const est = state?.est;
-  const open = state?.open;
+  /* Open where it was opened. A cross-listed template shares one state object
+     between its two copies, so `state.open` alone would expand both — two
+     identical forms, hundreds of pixels apart, for one position. */
+  const open = !!state?.open && state.openIn === section;
   // Memoised so the empty-array fallback is not a new array on every
   // render, which would make the summary below recompute continuously.
   const form = useMemo(() => state?.form || [], [state]);
@@ -194,15 +202,15 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone }) {
   const fields = form.filter((q) => q !== qq && q.key !== 'condition' && q.key !== 'access');
 
   return (
-    <div data-testid={`estimate-card-${job.key}`}
+    <div data-testid={`estimate-card-${tid}`}
          className={`rounded-[14px] border overflow-hidden transition-colors
                      ${open ? 'border-teal shadow-[0_2px_10px_rgba(45,106,127,.10)] bg-paper'
                             : checked ? (z?.picked || 'border-teal/25 bg-teal/[.03]')
                                       : (z?.rest || 'border-cream-deep bg-paper')}`}>
       <div className="flex items-center gap-2.5 px-3 py-2.5">
-        <button type="button" onClick={() => onToggle(job.key)}
+        <button type="button" onClick={() => onToggle(job.key, section)}
                 aria-pressed={checked} aria-label={lbl(job)}
-                data-testid={`estimate-check-${job.key}`}
+                data-testid={`estimate-check-${tid}`}
                 className={`h-5 w-5 shrink-0 rounded-[6px] border-[1.6px] flex items-center
                             justify-center focus-visible:outline-none focus-visible:ring-4
                             focus-visible:ring-teal/30
@@ -216,8 +224,8 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone }) {
           )}
         </button>
 
-        <button type="button" onClick={() => onOpen(job.key)}
-                data-testid={`estimate-open-${job.key}`}
+        <button type="button" onClick={() => onOpen(job.key, section)}
+                data-testid={`estimate-open-${tid}`}
                 className="min-w-0 flex-1 text-left focus-visible:outline-none
                            focus-visible:ring-4 focus-visible:ring-teal/30 rounded">
           <span className="block font-bold text-ink text-[13px] leading-tight">{lbl(job)}</span>
@@ -228,6 +236,19 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone }) {
               <span className="text-red-warn"> · {t('est_site_visit')}</span>
             )}
           </span>
+          {/* The same template, seen from its other group. Without this the
+              duplicate reads as a second, near-identical template — and the
+              pro's next question is which of the two to quote. There is only
+              one: same key, same price, one position, and ticking it here
+              ticks it there. */}
+          {alsoIn && (
+            <span className="mt-1 inline-flex items-center gap-1 rounded-full
+                             bg-ink/[.05] px-1.5 py-[1px] text-[9px] font-semibold
+                             text-ink-muted">
+              <Repeat2 size={9} aria-hidden="true" />
+              {t('est_also_in', { s: alsoIn })}
+            </span>
+          )}
         </button>
 
         {checked && !open && (amount != null ? (
@@ -248,9 +269,9 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone }) {
             carried the click, which left the one control that looks like a
             control doing nothing. Its own hit area, not a wider title button:
             44 px of tappable target at the end of the row. */}
-        <button type="button" onClick={() => onOpen(job.key)}
+        <button type="button" onClick={() => onOpen(job.key, section)}
                 aria-expanded={!!open} aria-label={`${lbl(job)} — ${t('est_details')}`}
-                data-testid={`estimate-expand-${job.key}`}
+                data-testid={`estimate-expand-${tid}`}
                 className="-my-2 -mr-1 shrink-0 px-1 py-2 rounded focus-visible:outline-none
                            focus-visible:ring-4 focus-visible:ring-teal/30">
           <ChevronDown size={14} aria-hidden="true"
@@ -271,7 +292,7 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone }) {
                 value={qq ? (state.answers[qq.key] ?? '') : ''}
                 onChange={(e) => qq && onAnswer(job.key, qq.key, e.target.value)}
                 placeholder={unit(job.unit)}
-                data-testid={`estimate-qty-${job.key}`}
+                data-testid={`estimate-qty-${tid}`}
                 className="w-full rounded-[9px] border border-sm-border bg-paper px-2.5 py-2
                            text-right text-[13px] font-bold text-ink"
               />
@@ -323,7 +344,7 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone }) {
                     <select
                       value={state.answers[q.key] ?? ''}
                       onChange={(e) => onAnswer(job.key, q.key, e.target.value)}
-                      data-testid={`estimate-field-${job.key}-${q.key}`}
+                      data-testid={`estimate-field-${tid}-${q.key}`}
                       className="w-full rounded-[9px] border border-sm-border bg-paper px-2.5 py-2
                                  text-[12px] text-ink">
                       {(q.options || []).map(([v, l]) => (
@@ -341,15 +362,15 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone }) {
 
           {footer && <div className="mt-3"><Note note={footer} /></div>}
           {hidden > 0 && (
-            <button type="button" onClick={() => onOpen(job.key, 'notes')}
-                    data-testid={`estimate-more-notes-${job.key}`}
+            <button type="button" onClick={() => onOpen(job.key, section, 'notes')}
+                    data-testid={`estimate-more-notes-${tid}`}
                     className="mt-2 flex items-center gap-1 text-[11px] font-bold text-teal">
               <Info size={12} /> {hidden === 1 ? t('est_one_more_note')
                 : t('est_more_notes', { n: hidden })}
             </button>
           )}
           {state.showNotes && (
-            <div className="mt-2 space-y-1" data-testid={`estimate-all-notes-${job.key}`}>
+            <div className="mt-2 space-y-1" data-testid={`estimate-all-notes-${tid}`}>
               {always.filter((n) => n !== footer).map((n) => (
                 <Note key={n.key} note={n} tone="flat" />
               ))}
@@ -457,9 +478,9 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting }
   };
 
   /** The checkbox: what goes in the quote. Ticking a fresh row opens it too. */
-  const toggle = (key) => {
+  const toggle = (key, section) => {
     const cur = picked[key];
-    if (!cur) return load(key, { checked: true, open: true });
+    if (!cur) return load(key, { checked: true, open: true, openIn: section });
     if (!cur.checked) {
       return setPicked((s) => ({ ...s, [key]: { ...s[key], checked: true } }));
     }
@@ -470,14 +491,20 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting }
   };
 
   /** The chevron and the title: what is on screen. Never ticks anything. */
-  const open = (key, what) => {
+  const open = (key, section, what) => {
     const cur = picked[key];
-    if (!cur) return load(key, { checked: false, open: true });
+    if (!cur) return load(key, { checked: false, open: true, openIn: section });
     if (what === 'notes') {
       return setPicked((s) => ({ ...s, [key]: { ...s[key], showNotes: !s[key].showNotes } }));
     }
-    if (cur.open && !cur.checked) return drop(key);
-    return setPicked((s) => openOnly(s, key, { open: !s[key].open }));
+    /* Clicking the other copy of a cross-listed template moves it there rather
+       than closing it. Reading "auch unter Fassade" and tapping it there should
+       show you the template, not collapse the one you were already looking at. */
+    const elsewhere = cur.open && cur.openIn !== section;
+    if (cur.open && !elsewhere && !cur.checked) return drop(key);
+    return setPicked((s) => openOnly(s, key,
+      elsewhere ? { open: true, openIn: section }
+                : { open: !s[key].open, openIn: section }));
   };
 
   const answer = (key, qk, value) => {
@@ -510,14 +537,29 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting }
      order the API happened to send. */
   const byKey = new Map(jobs.map((j) => [j.key, j]));
   const say = (de, other) => (lang !== 'de' && other?.[lang]) || de;
+
+  /* Section labels resolved once, so a cross-listing notice can name the other
+     group in the reader's own language without the API having to send that
+     label twice. The backend deliberately returns section *keys* in `cross`
+     for this reason. */
+  const secLabel = new Map((sections || []).map((s) => [s.key, say(s.label_de, s.labels)]));
+
   const groups = sections && sections.length
     ? sections
       .map((s) => ({ key: s.key, label: say(s.label_de, s.labels),
                      sub: say(s.sub_de, s.subs),
                      zone: s.zone, zoneLabel: say(s.zone_label_de, s.zone_labels),
+                     /* Which other groups each row also appears in, as a
+                        readable list. Joined here rather than in the card so
+                        a template shown in three places still reads as one
+                        sentence. */
+                     also: Object.fromEntries(Object.entries(s.cross || {})
+                       .map(([k, others]) => [k, others.map((o) => secLabel.get(o))
+                         .filter(Boolean).join(', ')])
+                       .filter(([, v]) => v)),
                      rows: s.job_keys.map((k) => byKey.get(k)).filter(Boolean) }))
       .filter((s) => s.rows.length)
-    : [{ key: '_all', label: '', sub: '', zone: null, rows: jobs }];
+    : [{ key: '_all', label: '', sub: '', zone: null, also: {}, rows: jobs }];
 
   /* Consecutive sections sharing a zone become one panel. Runs, not a group-by:
      a zone drawn twice down the page is two panels of one colour, and colour
@@ -536,7 +578,10 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting }
     <>
       {bands.map((band, bi) => {
         const z = ZONE[band.zone];
-        const n = band.secs.reduce((s, x) => s + x.rows.length, 0);
+        /* Distinct templates, not rows. Summing row counts would tell a
+           painter the Innen zone holds seventeen templates when it holds
+           fifteen and shows two of them twice. */
+        const n = new Set(band.secs.flatMap((x) => x.rows.map((j) => j.key))).size;
         return (
           <div key={`${band.zone || '_'}${bi}`}
                data-testid={band.zone ? `estimate-zone-${band.zone}` : undefined}
@@ -570,7 +615,11 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting }
                 )}
                 <div className="space-y-1.5">
                   {sec.rows.map((j) => (
-                    <Card key={j.key} job={j} state={picked[j.key]} t={t} zone={band.zone}
+                    /* Keyed by section *and* template: a cross-listed template
+                       renders twice on one page, and two siblings with the
+                       same React key is one of them silently not rendering. */
+                    <Card key={`${sec.key}/${j.key}`} job={j} state={picked[j.key]} t={t}
+                          zone={band.zone} alsoIn={sec.also?.[j.key]} section={sec.key}
                           onToggle={toggle} onOpen={open} onAnswer={answer} />
                   ))}
                 </div>
