@@ -3949,10 +3949,504 @@ QUOTE_LINES: dict[str, dict[str, str]] = {
         "es": 'Colocar la piedra de relleno'},
 }
 
+
+# ── Assumption notes ────────────────────────────────────────────────────
+#
+# What the pro forwards to a customer as the terms of the quote.
+
+NOTES: dict[str, dict[str, str]] = {
+    'Ohne funktionierendes Absperrventil muss der Steigstrang abgesperrt werden. Abstimmung mit der Hausverwaltung und Mehraufwand sind nicht enthalten.': {
+        "en": 'Without a working shut-off valve the riser has to be isolated. Coordination with the building management and the extra work involved are not included.', "tr": 'Çalışır durumda bir kesme vanası yoksa ana kolonun kapatılması gerekir. Bina yönetimiyle koordinasyon ve ek iş yükü dahil değildir.',
+        "es": 'Sin una llave de corte operativa hay que cerrar el montante. La coordinación con la administración de la finca y el sobrecoste no están incluidos.'},
+    'Ohne vorhandene Anschlussdose ist eine neue Zuleitung vom Verteiler erforderlich; nicht im Angebot enthalten.': {
+        "en": 'If there is no existing junction box, a new supply line from the distribution board is required; this is not included in the quote.', "tr": 'Mevcut bir bağlantı kutusu yoksa, dağıtım panosundan yeni bir besleme hattı çekilmesi gerekir; teklife dahil değildir.',
+        "es": 'Si no existe caja de conexión, se requiere una nueva línea desde el cuadro eléctrico; no está incluida en la oferta.'},
+    'Prüfintervalle richten sich nach Nutzung und Landesrecht (Wohnung meist 10 Jahre, Gewerbe kürzer).': {
+        "en": 'Inspection intervals depend on use and regional law (usually ten years for dwellings, shorter for commercial premises).', "tr": 'Muayene aralıkları kullanıma ve eyalet mevzuatına göre belirlenir (konutlarda genellikle 10 yıl, ticari yerlerde daha kısa).',
+        "es": 'Los intervalos de revisión dependen del uso y de la normativa autonómica (en viviendas, por lo general diez años; en locales comerciales, menos).'},
+    'RDKS-Sensoren werden geprüft; Ersatz bei Defekt nach Aufwand.': {
+        "en": 'TPMS sensors are checked; replacement of faulty ones is charged on a time-and-materials basis.', "tr": 'Lastik basınç sensörleri (TPMS) kontrol edilir; arızalı olanların değişimi sarf esasına göre faturalandırılır.',
+        "es": 'Se comprueban los sensores TPMS; su sustitución en caso de avería se factura según el tiempo y el material empleados.'},
+    'Radikalschnitt ist zwischen 1. März und 30. September gesetzlich eingeschränkt.': {
+        "en": 'Hard cutting back is legally restricted between 1 March and 30 September.', "tr": 'Radikal budama, 1 Mart ile 30 Eylül arasında yasal olarak kısıtlıdır.',
+        "es": 'La poda radical está legalmente restringida entre el 1 de marzo y el 30 de septiembre.'},
+    'Rauchwarnmelderpflicht besteht in allen österreichischen Bundesländern und deutschen Ländern; Wartung obliegt je nach Landesrecht Eigentümer oder Mieter.': {
+        "en": 'Smoke alarms are mandatory in every Austrian and German state; depending on regional law, maintenance is the duty of either the owner or the tenant.', "tr": 'Duman dedektörü zorunluluğu tüm Avusturya ve Almanya eyaletlerinde geçerlidir; bakım, eyalet mevzuatına göre mülk sahibine veya kiracıya aittir.',
+        "es": 'La instalación de detectores de humo es obligatoria en todos los estados de Austria y Alemania; según la normativa autonómica, el mantenimiento corresponde al propietario o al inquilino.'},
+    'Raumklima 18-24 °C und 45-65 % rel. Luftfeuchte sind bauseits sicherzustellen.': {
+        "en": 'The client must ensure indoor conditions of 18-24 °C and 45-65 % relative humidity.', "tr": '18-24 °C oda sıcaklığı ve %45-65 bağıl nem koşullarının sağlanması mal sahibine aittir.',
+        "es": 'La propiedad debe garantizar unas condiciones ambientales de 18-24 °C y 45-65 % de humedad relativa.'},
+    'Rollrasen muss innerhalb von 24 Stunden nach Lieferung verlegt und gewässert werden. Der Termin ist witterungs- und lieferabhängig.': {
+        "en": 'Turf must be laid and watered within 24 hours of delivery. The date depends on the weather and on delivery.', "tr": 'Hazır çim, teslimattan sonraki 24 saat içinde serilmeli ve sulanmalıdır. Tarih hava koşullarına ve teslimata bağlıdır.',
+        "es": 'El césped en rollo debe colocarse y regarse dentro de las 24 horas siguientes a su entrega. La fecha depende de la meteorología y del suministro.'},
+    'Schlüsselübergabe ist zu vereinbaren; Schlüsselverwaltung nach Absprache.': {
+        "en": 'Handover of keys must be arranged; key-holding by agreement.', "tr": 'Anahtar teslimi ayrıca kararlaştırılmalıdır; anahtar saklama hizmeti mutabakata bağlıdır.',
+        "es": 'La entrega de llaves debe acordarse; la custodia de llaves, según convenio.'},
+    'Schäden durch Fremdkörper (Feuchttücher, Hygieneartikel) sind nicht vom Angebot gedeckt.': {
+        "en": 'Damage caused by foreign objects (wet wipes, sanitary products) is not covered by this quote.', "tr": 'Yabancı cisimlerin (ıslak mendil, hijyen ürünleri) yol açtığı hasarlar bu teklif kapsamında değildir.',
+        "es": 'Los daños causados por cuerpos extraños (toallitas, productos de higiene) no están cubiertos por esta oferta.'},
+    'Silikonfugen sind Wartungsfugen und von der Gewährleistung ausgenommen (ÖNORM B 2207 / IVD).': {
+        "en": 'Silicone joints are maintenance joints and are excluded from the warranty (ÖNORM B 2207 / IVD).', "tr": 'Silikon derzler bakım derzidir ve garanti kapsamı dışındadır (ÖNORM B 2207 / IVD).',
+        "es": 'Las juntas de silicona son juntas de mantenimiento y quedan excluidas de la garantía (ÖNORM B 2207 / IVD).'},
+    'Sind mehrere Abläufe betroffen, liegt die Ursache meist im Fallstrang. Fallstrangreinigung und ggf. Kamerabefahrung werden gesondert verrechnet.': {
+        "en": 'If several drains are affected, the cause usually lies in the soil stack. Cleaning the stack and, where needed, a camera survey are charged separately.', "tr": 'Birden fazla gider etkilenmişse, sorunun kaynağı genellikle ana düşey borudur. Düşey borunun temizliği ve gerekirse kamera ile inceleme ayrıca faturalandırılır.',
+        "es": 'Si hay varios desagües afectados, la causa suele estar en la bajante. La limpieza de la bajante y, en su caso, la inspección con cámara se facturan aparte.'},
+    'Sockelausbildung, Laibungen, Rollladenkästen, Fensterbänke und Dachanschluss sind gesondert zu bewerten. Sie bestimmen die Bauphysik des Systems und sind hier nur pauschal berücksichtigt.': {
+        "en": 'The plinth detail, reveals, roller-shutter boxes, window sills and the roof junction have to be assessed separately. They govern the building physics of the system and are only allowed for as a lump sum here.', "tr": 'Sokel detayı, pervaz yüzeyleri, panjur kutuları, denizlikler ve çatı bağlantısı ayrıca değerlendirilmelidir. Bunlar sistemin yapı fiziğini belirler ve burada yalnızca götürü olarak dikkate alınmıştır.',
+        "es": 'El detalle de zócalo, las mochetas, las cajas de persiana, los vierteaguas y el encuentro con la cubierta deben valorarse por separado. Determinan la física constructiva del sistema y aquí solo se consideran a tanto alzado.'},
+    'Staubschutz und tägliche Grobreinigung sind enthalten. Feinreinigung nicht enthalten.': {
+        "en": 'Dust protection and daily rough cleaning are included. Final detailed cleaning is not.', "tr": 'Toz koruması ve günlük kaba temizlik dahildir. İnce temizlik dahil değildir.',
+        "es": 'La protección contra el polvo y la limpieza basta diaria están incluidas. La limpieza fina no.'},
+    'Tore und Türen sind nicht im Laufmeterpreis enthalten und werden gesondert angeboten.': {
+        "en": 'Gates and doors are not covered by the price per linear metre and are quoted separately.', "tr": 'Kapılar ve bahçe kapıları metretül fiyatına dahil değildir, ayrıca teklif edilir.',
+        "es": 'Las puertas y portones no están incluidos en el precio por metro lineal y se ofertan por separado.'},
+    'Tragen ohne Aufzug ist kalkuliert; ab dem 3. Obergeschoss entsteht Mehraufwand.': {
+        "en": 'Carrying without a lift is allowed for; from the third floor upwards additional effort arises.', "tr": 'Asansörsüz taşıma hesaba katılmıştır; 3. kattan itibaren ek iş yükü doğar.',
+        "es": 'El acarreo sin ascensor está contemplado; a partir de la tercera planta se genera un sobrecoste.'},
+    'Transportversicherung deckt den gesetzlichen Rahmen; Höherwertversicherung auf Wunsch.': {
+        "en": 'Transport insurance covers the statutory limits; higher-value cover is available on request.', "tr": 'Nakliye sigortası yasal çerçeveyi kapsar; talep hâlinde yüksek değer sigortası yapılabilir.',
+        "es": 'El seguro de transporte cubre los límites legales; a petición, se puede contratar cobertura de mayor valor.'},
+    'Trocknung und Folgeschäden (Maler, Boden) sind nicht enthalten.': {
+        "en": 'Drying out and consequential damage (painting, flooring) are not included.', "tr": 'Kurutma ve dolaylı hasarlar (boya, zemin) dahil değildir.',
+        "es": 'El secado y los daños derivados (pintura, suelo) no están incluidos.'},
+    'Untergrund wird als eben und tragfähig angenommen. Ausgleichsarbeiten sind nicht enthalten.': {
+        "en": 'The substrate is assumed to be level and sound. Levelling work is not included.', "tr": 'Zeminin düz ve taşıyıcı olduğu varsayılmaktadır. Tesviye işleri dahil değildir.',
+        "es": 'Se presupone que el soporte es plano y firme. Los trabajos de nivelación no están incluidos.'},
+    'Verbundabdichtung im Nassbereich nach ÖNORM B 3407 / DIN 18534 ist enthalten.': {
+        "en": 'A bonded waterproofing membrane in the wet area to ÖNORM B 3407 / DIN 18534 is included.', "tr": "Islak hacimlerde ÖNORM B 3407 / DIN 18534'e uygun sürme su yalıtımı dahildir.",
+        "es": 'Se incluye la impermeabilización adherida en la zona húmeda según ÖNORM B 3407 / DIN 18534.'},
+    'Verschleißteile (Kette, Bremsbeläge, Züge) sind nicht enthalten.': {
+        "en": 'Wear parts (chain, brake pads, cables) are not included.', "tr": 'Aşınan parçalar (zincir, fren balatası, teller) dahil değildir.',
+        "es": 'Las piezas de desgaste (cadena, pastillas de freno, cables) no están incluidas.'},
+    'Verschnitt ist mit dem angegebenen Prozentsatz kalkuliert. Diagonal- oder Musterverlegung erhöht den Verschnitt.': {
+        "en": 'Wastage is calculated at the percentage stated. Diagonal or patterned laying increases wastage.', "tr": 'Fire, belirtilen yüzdeye göre hesaplanmıştır. Diyagonal veya desenli döşeme fireyi artırır.',
+        "es": 'El desperdicio está calculado con el porcentaje indicado. La colocación en diagonal o con dibujo lo incrementa.'},
+    'Viele Smart-Home-Aktoren benötigen einen Neutralleiter in der Schalterdose. Fehlt er, ist eine Leitungsergänzung nötig; Mehraufwand nach Aufwand.': {
+        "en": 'Many smart-home actuators need a neutral conductor in the switch box. If there is none, additional wiring is required; the extra work is charged on a time-and-materials basis.', "tr": 'Birçok akıllı ev aktüatörü, anahtar kutusunda nötr iletken gerektirir. Yoksa hat takviyesi gerekir; ek iş yükü sarf esasına göre faturalandırılır.',
+        "es": 'Muchos actuadores domóticos necesitan un conductor neutro en la caja del interruptor. Si no lo hay, se requiere cableado adicional; el sobrecoste se factura según el tiempo y el material empleados.'},
+    'Vor Grabarbeiten sind Leitungspläne einzuholen. Schäden an nicht eingemessenen Leitungen sind nicht vom Angebot gedeckt.': {
+        "en": 'Utility plans must be obtained before any excavation. Damage to unsurveyed services is not covered by this quote.', "tr": 'Kazı işlerinden önce altyapı planları temin edilmelidir. Ölçülmemiş hatlarda oluşan hasarlar bu teklif kapsamında değildir.',
+        "es": 'Antes de excavar deben solicitarse los planos de servicios. Los daños en conducciones no replanteadas no están cubiertos por esta oferta.'},
+    'Vor Verlegung ist die Belegreife des Estrichs mittels CM-Messung nachzuweisen (Zementestrich max. 2,0 CM-%, mit Fußbodenheizung 1,8). Die Messung ist nicht enthalten; bei zu hoher Restfeuchte verschiebt sich der Termin.': {
+        "en": 'Before laying, the screed must be shown to be ready to cover by CM (carbide) measurement (cement screed max. 2.0 CM-%, 1.8 with underfloor heating). The measurement is not included; if residual moisture is too high the date is postponed.', "tr": 'Döşemeden önce şapın kaplamaya hazır olduğu CM ölçümüyle belgelenmelidir (çimento şapta azami %2,0 CM, yerden ısıtmalıda %1,8). Ölçüm dahil değildir; kalıntı nem yüksekse tarih ertelenir.',
+        "es": 'Antes de la colocación debe acreditarse la aptitud de la solera mediante medición CM (mortero de cemento máx. 2,0 CM-%; con suelo radiante, 1,8). La medición no está incluida; si la humedad residual es excesiva, la fecha se aplaza.'},
+    'Vor dem Bohren wird eine Leitungsortung durchgeführt. Für nicht ortbare Altleitungen wird keine Haftung übernommen.': {
+        "en": 'Cable and pipe detection is carried out before drilling. No liability is accepted for old services that cannot be detected.', "tr": 'Delme işleminden önce hat tespiti yapılır. Tespit edilemeyen eski hatlar için sorumluluk kabul edilmez.',
+        "es": 'Antes de taladrar se realiza una detección de conducciones. No se asume responsabilidad por instalaciones antiguas no detectables.'},
+    'Wanddurchführung wird fachgerecht abgedichtet; Putz- und Malerarbeiten sind nicht enthalten.': {
+        "en": 'The wall penetration is sealed to a professional standard; plastering and painting are not included.', "tr": 'Duvar geçişi tekniğine uygun şekilde sızdırmaz hâle getirilir; sıva ve boya işleri dahil değildir.',
+        "es": 'El pasamuros se sella conforme a la técnica; los trabajos de enlucido y pintura no están incluidos.'},
+    'Wasser-, Abwasser- und Elektroanschlüsse werden an geeigneter Position als vorhanden angenommen.': {
+        "en": 'Water, waste water and electrical connections are assumed to exist in a suitable position.', "tr": 'Su, atık su ve elektrik bağlantılarının uygun konumda mevcut olduğu varsayılmaktadır.',
+        "es": 'Se presupone que existen tomas de agua, desagüe y electricidad en una posición adecuada.'},
+    'Wasseranschluss mit ausreichendem Druck und Durchfluss ist bauseits bereitzustellen. Druckerhöhung ist nicht enthalten.': {
+        "en": 'A water connection with adequate pressure and flow is to be provided by the client. Pressure boosting is not included.', "tr": 'Yeterli basınç ve debiye sahip su bağlantısı mal sahibi tarafından sağlanmalıdır. Basınç yükseltme dahil değildir.',
+        "es": 'La propiedad debe facilitar una toma de agua con presión y caudal suficientes. El grupo de presión no está incluido.'},
+    'Wertgegenstände und persönliche Unterlagen sind vor Beginn zu entnehmen.': {
+        "en": 'Valuables and personal documents must be removed before work starts.', "tr": 'Değerli eşyalar ve kişisel belgeler işe başlamadan önce alınmalıdır.',
+        "es": 'Los objetos de valor y la documentación personal deben retirarse antes de comenzar.'},
+    'Wurzelstock fräsen oder roden ist nicht enthalten und wird gesondert angeboten.': {
+        "en": 'Stump grinding or removal is not included and is quoted separately.', "tr": 'Kütük frezeleme veya sökümü dahil değildir, ayrıca teklif edilir.',
+        "es": 'El destoconado o la extracción del tocón no están incluidos y se ofertan por separado.'},
+    'Wände werden als lot- und fluchtgerecht angenommen; Ausgleich nach Aufwand.': {
+        "en": 'Walls are assumed to be plumb and in line; making good is charged on a time-and-materials basis.', "tr": 'Duvarların şakülünde ve hizasında olduğu varsayılmaktadır; tesviye sarf esasına göre faturalandırılır.',
+        "es": 'Se presupone que los muros están a plomo y alineados; su nivelación se factura según el tiempo y el material empleados.'},
+    'Zeitweise Abschaltung der Stromversorgung ist erforderlich.': {
+        "en": 'The power supply has to be switched off temporarily.', "tr": 'Elektrik beslemesinin geçici olarak kesilmesi gerekir.',
+        "es": 'Es necesario interrumpir temporalmente el suministro eléctrico.'},
+    'Zwischen den Anstrichen sind Trocknungszeiten einzuhalten. Die Räume sind während der Arbeiten und mindestens 24 Stunden danach nur eingeschränkt nutzbar.': {
+        "en": 'Drying times between coats must be observed. The rooms are only usable to a limited extent during the work and for at least 24 hours afterwards.', "tr": 'Katlar arasında kuruma sürelerine uyulmalıdır. Odalar, çalışmalar sırasında ve sonrasında en az 24 saat boyunca ancak sınırlı ölçüde kullanılabilir.',
+        "es": 'Deben respetarse los tiempos de secado entre manos. Las estancias solo podrán usarse de forma limitada durante los trabajos y al menos 24 horas después.'},
+    'Öffnen und Verschließen von Wand bzw. Boden ist enthalten; Oberflächenwiederherstellung nicht.': {
+        "en": 'Opening up and closing the wall or floor is included; restoring the surface finish is not.', "tr": 'Duvar veya zeminin açılması ve kapatılması dahildir; yüzey kaplamasının eski hâline getirilmesi dahil değildir.',
+        "es": 'La apertura y el cierre del muro o del suelo están incluidos; la reposición del acabado superficial no.'},
+    'Fliesen- und Malerarbeiten erfolgen durch das Folgegewerk und sind nicht enthalten.': {
+        "en": 'Tiling and painting are carried out by the follow-on trade and are not included.', "tr": 'Fayans ve boya işleri takip eden meslek grubu tarafından yapılır ve dahil değildir.',
+        "es": 'El alicatado y la pintura los ejecuta el gremio posterior y no están incluidos.'},
+    'Fliesen-, Maler- und Elektroarbeiten sind nicht enthalten.': {
+        "en": 'Tiling, painting and electrical work are not included.', "tr": 'Fayans, boya ve elektrik işleri dahil değildir.',
+        "es": 'Los trabajos de alicatado, pintura y electricidad no están incluidos.'},
+    'Funktionsfähiges Absperrventil wird vorausgesetzt.': {
+        "en": 'A working shut-off valve is assumed to be in place.', "tr": 'Çalışır durumda bir kesme vanası bulunduğu varsayılmaktadır.',
+        "es": 'Se presupone que existe una llave de corte en funcionamiento.'},
+    'Fällungen und starke Rückschnitte sind vielerorts genehmigungspflichtig (AT: Baumschutzgesetze der Länder und Gemeinden, DE: kommunale Baumschutzsatzungen). Die Genehmigung ist bauseits einzuholen und muss vor Arbeitsbeginn vorliegen.': {
+        "en": 'Felling and hard pruning require a permit in many places (Austria: provincial and municipal tree protection laws; Germany: municipal tree protection by-laws). The client must obtain the permit and it must be in hand before work starts.', "tr": 'Ağaç kesimi ve sert budama birçok yerde izne tabidir (AT: eyalet ve belediye ağaç koruma yasaları; DE: belediye ağaç koruma yönetmelikleri). İznin alınması mal sahibine aittir ve işe başlamadan önce hazır olmalıdır.',
+        "es": 'La tala y las podas severas requieren autorización en muchos lugares (Austria: leyes de protección del arbolado de los estados y municipios; Alemania: ordenanzas municipales de protección del arbolado). La propiedad debe obtener la autorización, que ha de estar disponible antes del inicio de los trabajos.'},
+    'Förderungsabwicklung ist nicht enthalten.': {
+        "en": 'Handling of grant applications is not included.', "tr": 'Teşvik başvurularının yürütülmesi dahil değildir.',
+        "es": 'La tramitación de subvenciones no está incluida.'},
+    'Für Einsätze außerhalb der Geschäftszeiten gelten Zuschläge.': {
+        "en": 'Call-outs outside business hours are subject to surcharges.', "tr": 'Mesai saatleri dışındaki müdahalelerde ek ücret uygulanır.',
+        "es": 'Las intervenciones fuera del horario comercial están sujetas a recargos.'},
+    'Für Ladeeinrichtungen ist ein FI Typ B bzw. Typ A EV erforderlich. Ist keiner vorhanden, wird er ergänzt und gesondert verrechnet.': {
+        "en": 'Charging equipment requires a type B or type A EV residual-current device. If none is present, one is added and charged separately.', "tr": 'Şarj üniteleri için tip B ya da tip A EV kaçak akım rölesi gereklidir. Mevcut değilse eklenir ve ayrıca faturalandırılır.',
+        "es": 'Los puntos de recarga requieren un diferencial de tipo B o de tipo A EV. Si no existe, se instala y se factura aparte.'},
+    'Für Verkauf oder Vermietung wird der Befund auf den Übergabestichtag ausgestellt.': {
+        "en": 'For a sale or letting, the certificate is issued as of the handover date.', "tr": 'Satış veya kiralama için rapor, devir tarihi esas alınarak düzenlenir.',
+        "es": 'En caso de venta o alquiler, el certificado se emite con fecha de la entrega.'},
+    'Für barrierefreie Umbauten bestehen Förderungen (AT: Länder/Pflegefonds, DE: KfW 455-B, Pflegekasse). Antragstellung ist nicht enthalten.': {
+        "en": 'Grants are available for accessibility conversions (Austria: provincial funds and the care fund; Germany: KfW 455-B and the long-term care insurance fund). Filing the application is not included.', "tr": 'Engelsiz dönüşümler için teşvikler mevcuttur (AT: eyaletler/bakım fonu, DE: KfW 455-B, bakım sigortası). Başvurunun yapılması dahil değildir.',
+        "es": 'Existen ayudas para reformas de accesibilidad (Austria: fondos de los estados y fondo de dependencia; Alemania: KfW 455-B y caja de dependencia). La presentación de la solicitud no está incluida.'},
+    'Für diese Arbeiten ist ein Gerüst erforderlich; es ist nicht im Angebot enthalten.': {
+        "en": 'Scaffolding is required for this work; it is not included in the quote.', "tr": 'Bu işler için iskele gereklidir; teklife dahil değildir.',
+        "es": 'Estos trabajos requieren andamio, que no está incluido en la oferta.'},
+    'Für eine bodengleiche Dusche ist eine ausreichende Aufbauhöhe erforderlich. Ist sie nicht gegeben, sind Ablaufvariante oder Aufbau anzupassen; Mehraufwand nach Aufwand.': {
+        "en": 'A level-access shower needs sufficient build-up height. If it is not available, either the drain type or the build-up must be adapted; the extra work is charged on a time-and-materials basis.', "tr": 'Zemine sıfır duş için yeterli yapı yüksekliği gereklidir. Yoksa gider tipi veya yapı katmanı uyarlanmalıdır; ek işler sarf esasına göre faturalandırılır.',
+        "es": 'Una ducha a ras de suelo requiere una altura de montaje suficiente. Si no la hay, debe adaptarse el tipo de desagüe o la composición del suelo; el sobrecoste se factura según el tiempo y el material empleados.'},
+    'Für kleine Flächen gilt eine Mindestpauschale je Einsatz — Anfahrt und Rüstzeit fallen unabhängig von der Größe an.': {
+        "en": 'A minimum flat rate applies per visit for small areas — travel and set-up time arise regardless of size.', "tr": 'Küçük alanlar için her müdahalede asgari bir götürü ücret geçerlidir — yol ve hazırlık süresi alandan bağımsız olarak oluşur.',
+        "es": 'En superficies pequeñas se aplica una tarifa mínima por intervención: el desplazamiento y el tiempo de preparación se producen con independencia del tamaño.'},
+    'Geländer und Handlauf sind nicht enthalten und werden gesondert angeboten.': {
+        "en": 'Balustrade and handrail are not included and are quoted separately.', "tr": 'Korkuluk ve tutamak dahil değildir, ayrıca teklif edilir.',
+        "es": 'La barandilla y el pasamanos no están incluidos y se ofertan por separado.'},
+    'Genehmigung für die Nutzung öffentlichen Grundes ist bauseits einzuholen.': {
+        "en": 'Permission to use public land must be obtained by the client.', "tr": 'Kamusal alanın kullanımı için izin alınması mal sahibine aittir.',
+        "es": 'La autorización para ocupar la vía pública debe obtenerla la propiedad.'},
+    'Geprüfte Geräte erhalten eine Prüfplakette mit Datum der nächsten Prüfung.': {
+        "en": 'Tested appliances receive a test label showing the date of the next inspection.', "tr": 'Test edilen cihazlara, bir sonraki muayene tarihini gösteren bir test etiketi yapıştırılır.',
+        "es": 'Los aparatos revisados reciben una etiqueta de control con la fecha de la próxima revisión.'},
+    'Gerüst ist nicht im Angebot enthalten und wird bauseits beigestellt.': {
+        "en": 'Scaffolding is not included in the quote and is provided by the client.', "tr": 'İskele teklife dahil değildir ve mal sahibi tarafından sağlanır.',
+        "es": 'El andamio no está incluido en la oferta y lo aporta la propiedad.'},
+    'Grenzabstände und Zustimmung des Nachbarn sind bauseits zu klären.': {
+        "en": "Boundary distances and the neighbour's consent must be settled by the client.", "tr": 'Sınır mesafeleri ve komşunun onayı mal sahibi tarafından açıklığa kavuşturulmalıdır.',
+        "es": 'Las distancias a linderos y el consentimiento del vecino debe gestionarlos la propiedad.'},
+    'Großformate ab 60x120 werden zu zweit im Kombiverfahren mit Nivelliersystem verlegt. Ab 120x240 steigt der Aufwand nochmals deutlich und wird gesondert bewertet.': {
+        "en": 'Large formats from 60x120 upwards are laid by two people using the buttering-floating method with a levelling system. From 120x240 the effort rises considerably again and is assessed separately.', "tr": "60x120 ve üzeri büyük formatlar, nivelman sistemiyle iki kişi tarafından kombine yöntemle döşenir. 120x240'tan itibaren iş yükü bir kez daha belirgin şekilde artar ve ayrıca değerlendirilir.",
+        "es": 'Los formatos grandes a partir de 60x120 se colocan entre dos personas mediante el método de doble encolado con sistema nivelador. A partir de 120x240 el esfuerzo aumenta notablemente de nuevo y se valora por separado.'},
+    'Halteverbotszonen sind bauseits zu beantragen; Kosten nicht enthalten.': {
+        "en": 'No-parking zones must be applied for by the client; the cost is not included.', "tr": 'Park yasağı bölgeleri mal sahibi tarafından talep edilmelidir; masraflar dahil değildir.',
+        "es": 'Las zonas de prohibición de estacionamiento debe solicitarlas la propiedad; su coste no está incluido.'},
+    'Holzschutz an bewitterten Bauteilen ist je nach Ausrichtung alle 3 bis 6 Jahre zu erneuern. Der Anstrich ist keine dauerhafte Versiegelung.': {
+        "en": 'Wood protection on weather-exposed elements has to be renewed every three to six years depending on orientation. The coating is not a permanent seal.', "tr": 'Hava koşullarına maruz yapı elemanlarındaki ahşap koruması, cepheye göre 3 ila 6 yılda bir yenilenmelidir. Boya kalıcı bir yalıtım değildir.',
+        "es": 'La protección de la madera en elementos expuestos a la intemperie debe renovarse cada tres a seis años según la orientación. El acabado no es un sellado permanente.'},
+    'Hydraulischer Abgleich ist nicht enthalten und wird gesondert angeboten.': {
+        "en": 'Hydronic balancing is not included and is quoted separately.', "tr": 'Hidrolik denge ayarı dahil değildir ve ayrıca teklif edilir.',
+        "es": 'El equilibrado hidráulico no está incluido y se oferta por separado.'},
+    'Im Rahmen eines Wartungsvertrags gelten reduzierte Sätze und ein bevorzugter Termin.': {
+        "en": 'Under a maintenance contract, reduced rates and priority scheduling apply.', "tr": 'Bakım sözleşmesi kapsamında indirimli fiyatlar ve öncelikli randevu geçerlidir.',
+        "es": 'Con un contrato de mantenimiento se aplican tarifas reducidas y cita preferente.'},
+    'Im Verteiler ist kein Platz frei. Erweiterung oder Tausch wird gesondert angeboten.': {
+        "en": 'There is no free space in the distribution board. Extending or replacing it is quoted separately.', "tr": 'Dağıtım panosunda boş yer yoktur. Genişletme veya değişim ayrıca teklif edilir.',
+        "es": 'No hay espacio libre en el cuadro eléctrico. Su ampliación o sustitución se oferta por separado.'},
+    'In Altbauten sind Leitungen häufig nicht normgerecht verlegt. Notwendige Anpassungen werden nach Aufwand verrechnet.': {
+        "en": 'In older buildings wiring is often not routed to current standards. Any necessary adaptations are charged on a time-and-materials basis.', "tr": 'Eski binalarda hatlar çoğu zaman standartlara uygun döşenmemiştir. Gerekli uyarlamalar sarf esasına göre faturalandırılır.',
+        "es": 'En edificios antiguos, las instalaciones a menudo no están tendidas conforme a la norma. Las adaptaciones necesarias se facturan según el tiempo y el material empleados.'},
+    'Innen- und Außenlaibungen sind nachzuarbeiten; Malerarbeiten nicht enthalten.': {
+        "en": 'Internal and external reveals need making good; painting is not included.', "tr": 'İç ve dış pervaz yüzeylerinin rötuşlanması gerekir; boya işleri dahil değildir.',
+        "es": 'Las mochetas interiores y exteriores requieren repaso; la pintura no está incluida.'},
+    'Klassische Nullung ohne getrennten Schutzleiter entspricht nicht dem Stand der Technik. Ein Weiterbetrieb nach Eingriff ist unzulässig; die betroffenen Stromkreise sind zu sanieren. Nicht im Angebot enthalten.': {
+        "en": 'Classic protective neutralling without a separate earth conductor does not meet current technical standards. Continued operation after any intervention is not permissible; the affected circuits have to be rewired. Not included in the quote.', "tr": 'Ayrı koruma iletkeni olmayan klasik sıfırlama, günümüz tekniğine uygun değildir. Müdahale sonrası kullanıma devam edilmesi caiz değildir; ilgili devreler yenilenmelidir. Teklife dahil değildir.',
+        "es": 'La puesta a neutro clásica sin conductor de protección independiente no se ajusta al estado de la técnica. No se admite seguir utilizándola tras una intervención; los circuitos afectados deben sanearse. No está incluido en la oferta.'},
+    'Laboranalysen und Materialprüfungen werden gesondert verrechnet.': {
+        "en": 'Laboratory analyses and material tests are charged separately.', "tr": 'Laboratuvar analizleri ve malzeme testleri ayrıca faturalandırılır.',
+        "es": 'Los análisis de laboratorio y los ensayos de materiales se facturan aparte.'},
+    'Ladeeinrichtungen sind beim Netzbetreiber zu melden, ab 11 kW genehmigungspflichtig. Die Meldung ist enthalten, eine allfällige Netzverstärkung nicht.': {
+        "en": 'Charging equipment must be registered with the grid operator, and from 11 kW upwards requires approval. Registration is included; any grid reinforcement is not.', "tr": 'Şarj üniteleri şebeke işletmecisine bildirilmelidir; 11 kW üzeri izne tabidir. Bildirim dahildir, olası şebeke güçlendirmesi dahil değildir.',
+        "es": 'Los puntos de recarga deben comunicarse a la distribuidora eléctrica y, a partir de 11 kW, requieren autorización. La comunicación está incluida; un eventual refuerzo de red no.'},
+    'Leistung ist behördlich vorgeschrieben; Intervalle richten sich nach der Landesverordnung.': {
+        "en": 'This service is required by law; the intervals follow the applicable regional regulation.', "tr": 'Bu hizmet yasal olarak zorunludur; aralıklar ilgili eyalet yönetmeliğine göre belirlenir.',
+        "es": 'Esta prestación es obligatoria por ley; los intervalos se rigen por la normativa autonómica aplicable.'},
+    'Markise ist für die angegebene Windklasse ausgelegt; bei Sturm einzufahren.': {
+        "en": 'The awning is rated for the stated wind class; it must be retracted in storms.', "tr": 'Tente belirtilen rüzgâr sınıfına göre tasarlanmıştır; fırtınada içeri alınmalıdır.',
+        "es": 'El toldo está dimensionado para la clase de viento indicada; debe recogerse en caso de temporal.'},
+    'Montageanleitung und Beschläge sind bauseits beizustellen.': {
+        "en": 'Assembly instructions and fittings are to be provided by the client.', "tr": 'Montaj kılavuzu ve donanımlar mal sahibi tarafından temin edilmelidir.',
+        "es": 'Las instrucciones de montaje y los herrajes los aporta la propiedad.'},
+    'Möbel werden bauseits ausgeräumt bzw. mittig gestellt und abgedeckt.': {
+        "en": 'The client clears the furniture out, or moves it to the centre of the room and covers it.', "tr": 'Mobilyalar mal sahibi tarafından boşaltılır ya da odanın ortasına toplanıp örtülür.',
+        "es": 'El mobiliario lo retira la propiedad o lo desplaza al centro de la estancia y lo cubre.'},
+    'Neue Fugenmasse trocknet farblich anders auf als die gealterte Bestandsfuge. Teilerneuerungen bleiben sichtbar.': {
+        "en": 'Fresh grout dries to a different shade than aged existing grout. Partial renewals stay visible.', "tr": 'Yeni derz dolgusu, yaşlanmış mevcut derzden farklı bir tonda kurur. Kısmi yenilemeler görünür kalır.',
+        "es": 'La lechada nueva seca con un tono distinto al de la junta existente envejecida. Las renovaciones parciales seguirán siendo visibles.'},
+    'Nikotin-, Ruß- und Wasserflecken schlagen durch Dispersionsfarbe durch. Ein Isoliergrund ist erforderlich und wird gesondert ausgewiesen.': {
+        "en": 'Nicotine, soot and water stains bleed through emulsion paint. A stain-blocking primer is required and is shown as a separate item.', "tr": 'Nikotin, is ve su lekeleri dispersiyon boyanın altından vurur. Yalıtım astarı gereklidir ve ayrı kalem olarak gösterilir.',
+        "es": 'Las manchas de nicotina, hollín y agua traspasan la pintura plástica. Se requiere una imprimación aislante, que se indica como partida aparte.'},
+    'Ohne Ersatzfliesen aus derselben Charge ist ein exakt gleicher Farbton und Kaliber nicht erreichbar. Ein sichtbarer Unterschied ist kein Mangel.': {
+        "en": 'Without replacement tiles from the same batch, an exact match in shade and calibre cannot be achieved. A visible difference is not a defect.', "tr": 'Aynı partiden yedek fayans olmadan tam olarak aynı renk tonu ve kalibre elde edilemez. Görünür bir fark kusur sayılmaz.',
+        "es": 'Sin azulejos de repuesto del mismo lote no es posible lograr un tono y un calibre idénticos. Una diferencia visible no constituye un defecto.'},
+    'Ohne FI-Schutzschalter entspricht die Anlage nicht dem Stand der Technik. Bei Eingriffen in den Verteiler ist die Nachrüstung erforderlich (ÖVE/ÖNORM E 8001, DIN VDE 0100-410) und wird gesondert angeboten.': {
+        "en": 'Without a residual-current device the installation does not meet current technical standards. When the distribution board is worked on, retrofitting one is required (ÖVE/ÖNORM E 8001, DIN VDE 0100-410) and is quoted separately.', "tr": 'Kaçak akım rölesi olmadan tesisat günümüz tekniğine uygun değildir. Dağıtım panosuna müdahale edildiğinde sonradan takılması zorunludur (ÖVE/ÖNORM E 8001, DIN VDE 0100-410) ve ayrıca teklif edilir.',
+        "es": 'Sin interruptor diferencial, la instalación no se ajusta al estado de la técnica. Al intervenir en el cuadro eléctrico es obligatorio instalarlo (ÖVE/ÖNORM E 8001, DIN VDE 0100-410) y se oferta por separado.'},
+    'Der Umbau von Stand-WC auf wandhängend erfordert eine Vorwandinstallation mit Spülkasten und tragendem Element. Fliesen-, Trockenbau- und Malerarbeiten sind nicht enthalten.': {
+        "en": 'Converting a floor-standing WC to a wall-hung one requires a pre-wall installation with concealed cistern and load-bearing frame. Tiling, drywall and painting work are not included.', "tr": 'Ayaklı klozetten asma klozete geçiş, gömme rezervuar ve taşıyıcı çerçeveli bir ön duvar tesisatı gerektirir. Fayans, alçıpan ve boya işleri dahil değildir.',
+        "es": 'El cambio de un inodoro de pie a uno suspendido requiere una instalación tras pared con cisterna empotrada y bastidor portante. Los trabajos de alicatado, pladur y pintura no están incluidos.'},
+    'Der Zustand der Bestandsanlage ist nicht bekannt. Zeigt sich beim Öffnen eine nicht normgerechte Ausführung, sind Zusatzarbeiten erforderlich, die nach Aufwand verrechnet werden.': {
+        "en": 'The condition of the existing installation is unknown. If opening it up reveals work that does not meet current standards, additional work is required and is charged on a time-and-materials basis.', "tr": 'Mevcut tesisatın durumu bilinmemektedir. Açıldığında standartlara uygun olmayan bir uygulama ortaya çıkarsa, ek işler gerekir ve bunlar sarf esasına göre faturalandırılır.',
+        "es": 'Se desconoce el estado de la instalación existente. Si al abrirla se detecta una ejecución no conforme a la norma, serán necesarios trabajos adicionales que se facturarán según el tiempo y el material empleados.'},
+    'Der tatsächliche Zeitaufwand ist modellabhängig und richtet sich nach den Herstellervorgaben (Arbeitswerte).': {
+        "en": "The actual time required depends on the model and follows the manufacturer's flat-rate labour times.", "tr": 'Gerçek çalışma süresi modele bağlıdır ve üreticinin belirlediği iş değerlerine göre hesaplanır.',
+        "es": 'El tiempo real necesario depende del modelo y se rige por los baremos de trabajo del fabricante.'},
+    'Die Anfahrtspauschale wird bei Auftragserteilung angerechnet.': {
+        "en": 'The call-out fee is credited against the invoice if the job is awarded.', "tr": 'Yol ücreti, iş verilmesi hâlinde faturadan düşülür.',
+        "es": 'El importe del desplazamiento se descuenta de la factura si se adjudica el trabajo.'},
+    'Die Auswahl bindet an ein Hersteller-Ökosystem; ein späterer Wechsel bedeutet Austausch der Aktoren.': {
+        "en": "This choice ties you to one manufacturer's ecosystem; switching later means replacing the actuators.", "tr": 'Bu seçim sizi tek bir üreticinin ekosistemine bağlar; sonradan değiştirmek aktüatörlerin de değişmesi anlamına gelir.',
+        "es": 'Esta elección le vincula al ecosistema de un fabricante; cambiar más adelante implica sustituir los actuadores.'},
+    'Die Einleitung von Drainagewasser in den Kanal ist genehmigungspflichtig und vielerorts unzulässig. Die Klärung erfolgt bauseits.': {
+        "en": "Discharging drainage water into the sewer requires a permit and is prohibited in many places. Clarifying this is the client's responsibility.", "tr": 'Drenaj suyunun kanalizasyona verilmesi izne tabidir ve birçok yerde yasaktır. Bunun açıklığa kavuşturulması mal sahibine aittir.',
+        "es": 'El vertido de agua de drenaje a la red de alcantarillado requiere autorización y está prohibido en muchos lugares. Su aclaración corresponde a la propiedad.'},
+    'Die Erneuerung der Zuleitungen ist als Zusatzposition kalkuliert.': {
+        "en": 'Renewing the supply lines is costed as a separate item.', "tr": 'Besleme hatlarının yenilenmesi ayrı bir kalem olarak hesaplanmıştır.',
+        "es": 'La renovación de las acometidas está presupuestada como partida aparte.'},
+    'Die Erstmaßnahme umfasst Eingrenzung und Sofortbehebung. Weitergehende Instandsetzung wird nach Aufwand verrechnet.': {
+        "en": 'The initial call covers containment and an immediate fix. Any further repair is charged on a time-and-materials basis.', "tr": 'İlk müdahale, sorunun sınırlandırılmasını ve acil giderilmesini kapsar. Daha kapsamlı onarım sarf esasına göre faturalandırılır.',
+        "es": 'La primera intervención cubre la contención y la reparación inmediata. Cualquier reparación posterior se factura según el tiempo y el material empleados.'},
+    'Die Grundmiete umfasst vier Wochen Standzeit; darüber hinaus wird wochenweise verrechnet.': {
+        "en": 'The base hire covers four weeks on site; beyond that it is charged by the week.', "tr": 'Temel kira dört haftalık bekleme süresini kapsar; bunun ötesi haftalık olarak faturalandırılır.',
+        "es": 'El alquiler base cubre cuatro semanas de permanencia; a partir de ahí se factura por semanas.'},
+    'Die Heizungsanlage muss für die Arbeiten entleert werden; Wiederbefüllung ist enthalten.': {
+        "en": 'The heating system has to be drained for this work; refilling is included.', "tr": 'Bu işler için ısıtma tesisatının boşaltılması gerekir; yeniden doldurma dahildir.',
+        "es": 'La instalación de calefacción debe vaciarse para estos trabajos; el llenado posterior está incluido.'},
+    'Die Koordination der Folgegewerke (Elektro, Maler) ist enthalten; deren Leistungen sind es nicht.': {
+        "en": 'Coordinating the follow-on trades (electrical, painting) is included; their own work is not.', "tr": 'Takip eden meslek gruplarının (elektrik, boya) koordinasyonu dahildir; onların işleri dahil değildir.',
+        "es": 'La coordinación de los gremios posteriores (electricidad, pintura) está incluida; sus trabajos no.'},
+    'Die Räum- und Streupflicht bleibt beim Eigentümer und wird durch diesen Vertrag vertraglich übertragen. Umfang, Zeitfenster und Dokumentation sind im Vertrag festzuhalten.': {
+        "en": 'The legal duty to clear and grit remains with the owner and is transferred by this contract. Scope, time windows and record-keeping must be set out in the contract.', "tr": 'Kar temizleme ve tuzlama yükümlülüğü mülk sahibinde kalır ve bu sözleşmeyle devredilir. Kapsam, zaman aralıkları ve belgeleme sözleşmede yazılı olmalıdır.',
+        "es": 'La obligación legal de despejar y esparcir sal recae en el propietario y se transfiere mediante este contrato. El alcance, las franjas horarias y la documentación deben fijarse en el contrato.'},
+    'Die Räume sind während der Behandlung und der Nachwirkzeit nicht zu betreten.': {
+        "en": 'The rooms must not be entered during treatment or the subsequent exposure period.', "tr": 'Uygulama ve etki süresi boyunca odalara girilmemelidir.',
+        "es": 'No debe accederse a las estancias durante el tratamiento ni durante el tiempo de actuación posterior.'},
+    'Die Sanierung behandelt den Befall, nicht die Ursache. Ohne Beseitigung der Feuchtequelle tritt der Schaden wieder auf; Ursachenermittlung und bauliche Maßnahmen sind nicht enthalten.': {
+        "en": 'Remediation treats the infestation, not its cause. Unless the source of moisture is removed the damage will return; investigating the cause and any structural work are not included.', "tr": 'Sanasyon, küfü giderir ancak nedenini gidermez. Nem kaynağı ortadan kaldırılmazsa hasar tekrar eder; neden tespiti ve yapısal önlemler dahil değildir.',
+        "es": 'El saneamiento trata la afectación, no su causa. Si no se elimina la fuente de humedad, el daño reaparecerá; la investigación de la causa y las obras estructurales no están incluidas.'},
+    'Die Tragfähigkeit der Dachkonstruktion für die Zusatzlast ist vor Montage nachzuweisen.': {
+        "en": "The roof structure's capacity to carry the additional load must be verified before installation.", "tr": 'Çatı konstrüksiyonunun ek yükü taşıyabileceği montajdan önce belgelenmelidir.',
+        "es": 'Antes del montaje debe acreditarse que la estructura de la cubierta soporta la carga adicional.'},
+    'Die Tragfähigkeit des Altanstrichs wird vor Ort mittels Kratz- und Klebebandprobe geprüft. Ist der Untergrund kreidend oder nicht tragfähig, sind Zusatzarbeiten erforderlich.': {
+        "en": 'The soundness of the old paint is checked on site with a scratch and tape test. If the substrate is chalking or unsound, additional work is required.', "tr": 'Eski boyanın taşıyıcılığı yerinde çizik ve bant testiyle kontrol edilir. Zemin tebeşirleniyorsa veya taşıyıcı değilse ek işler gerekir.',
+        "es": 'La solidez de la pintura antigua se comprueba in situ mediante ensayo de rayado y de cinta adhesiva. Si el soporte pulveriza o no es firme, serán necesarios trabajos adicionales.'},
+    'Die erforderliche Aufbauhöhe ist bauseits sicherzustellen; Türen sind ggf. zu kürzen.': {
+        "en": 'The client must ensure the required build-up height is available; doors may need to be trimmed.', "tr": 'Gerekli yapı yüksekliğinin sağlanması mal sahibine aittir; kapıların kısaltılması gerekebilir.',
+        "es": 'La propiedad debe garantizar la altura de montaje necesaria; puede ser preciso recortar las puertas.'},
+    'Die vorgeschriebenen Sicherheitsabstände zu brennbaren Bauteilen sind einzuhalten; bauseits zu prüfen.': {
+        "en": 'The prescribed safety clearances to combustible building elements must be observed; to be checked by the client.', "tr": 'Yanıcı yapı elemanlarına karşı öngörülen güvenlik mesafelerine uyulmalıdır; kontrolü mal sahibine aittir.',
+        "es": 'Deben respetarse las distancias de seguridad prescritas respecto a elementos constructivos combustibles; su comprobación corresponde a la propiedad.'},
+    'Durch die neue Aufbauhöhe können Türblätter zu kürzen sein. Tischlerarbeiten sind nicht enthalten.': {
+        "en": 'The new build-up height may mean door leaves have to be trimmed. Joinery work is not included.', "tr": 'Yeni yapı yüksekliği nedeniyle kapı kanatlarının kısaltılması gerekebilir. Marangoz işleri dahil değildir.',
+        "es": 'La nueva altura de montaje puede obligar a recortar las hojas de las puertas. Los trabajos de carpintería no están incluidos.'},
+    'Ein Identitäts- und Wohnsitznachweis ist vor der Öffnung vorzulegen.': {
+        "en": 'Proof of identity and of residence must be produced before the lock is opened.', "tr": 'Kapı açılmadan önce kimlik ve ikamet belgesi ibraz edilmelidir.',
+        "es": 'Antes de la apertura debe presentarse un documento de identidad y un justificante de domicilio.'},
+    'Ein Messprotokoll der Strecken ist enthalten.': {
+        "en": 'A measurement report for the runs is included.', "tr": 'Hatlara ait bir ölçüm protokolü dahildir.',
+        "es": 'Se incluye un acta de mediciones de los tramos.'},
+    'Ein normgerechter Elektroanschluss mit ausreichender Absicherung wird vorausgesetzt; Anpassungen durch einen Elektriker sind nicht enthalten.': {
+        "en": 'A compliant electrical connection with adequate fusing is assumed; any adaptation by an electrician is not included.', "tr": 'Yeterli sigortaya sahip, standartlara uygun bir elektrik bağlantısı olduğu varsayılmaktadır; elektrikçi tarafından yapılacak uyarlamalar dahil değildir.',
+        "es": 'Se presupone una conexión eléctrica conforme a la norma y con protección suficiente; las adaptaciones a cargo de un electricista no están incluidas.'},
+    'Eine 24-Stunden-Bereitschaft wird als Saisonpauschale unabhängig von der Anzahl der Einsätze verrechnet.': {
+        "en": 'A 24-hour standby service is charged as a flat seasonal fee, regardless of how many call-outs occur.', "tr": '24 saatlik hazırbulunuşluk, müdahale sayısından bağımsız olarak sezonluk götürü ücret şeklinde faturalandırılır.',
+        "es": 'El servicio de guardia 24 horas se factura como tarifa fija de temporada, con independencia del número de intervenciones.'},
+    'Eine Anwachsgarantie setzt die vereinbarte Bewässerung und Pflege voraus und ist nur mit Pflegevertrag möglich.': {
+        "en": 'An establishment guarantee depends on the agreed watering and care and is only available with a maintenance contract.', "tr": 'Tutma garantisi, üzerinde anlaşılan sulama ve bakımın yapılmasına bağlıdır ve yalnızca bakım sözleşmesiyle mümkündür.',
+        "es": 'La garantía de arraigo exige el riego y los cuidados acordados y solo es posible con un contrato de mantenimiento.'},
+    'Eine Nachkontrolle ist im Preis enthalten; weitere Behandlungen nach Aufwand.': {
+        "en": 'One follow-up inspection is included in the price; any further treatments are charged on a time-and-materials basis.', "tr": 'Bir kez sonradan kontrol fiyata dahildir; ilave uygulamalar sarf esasına göre faturalandırılır.',
+        "es": 'Una revisión de control está incluida en el precio; los tratamientos adicionales se facturan según el tiempo y el material empleados.'},
+    'Eine neue Steuerleitung ist erforderlich und gesondert kalkuliert.': {
+        "en": 'A new control cable is required and is costed separately.', "tr": 'Yeni bir kumanda hattı gereklidir ve ayrıca hesaplanmıştır.',
+        "es": 'Se requiere una nueva línea de control, presupuestada por separado.'},
+    'Eingriffe in tragende Bauteile erfordern eine statische Berechnung und Freigabe. Diese ist nicht im Angebot enthalten und muss vor Arbeitsbeginn vorliegen.': {
+        "en": 'Work on load-bearing elements requires a structural calculation and sign-off. This is not part of the quote and must be available before work starts.', "tr": 'Taşıyıcı yapı elemanlarına müdahale, statik hesap ve onay gerektirir. Bu, teklife dahil değildir ve işe başlamadan önce hazır olmalıdır.',
+        "es": 'La intervención en elementos portantes requiere un cálculo estructural y su aprobación. No está incluido en la oferta y debe estar disponible antes del inicio de los trabajos.'},
+    'Einhaltung der Schallschutzgrenzwerte am Aufstellort ist zu prüfen.': {
+        "en": 'Compliance with noise limits at the installation location must be checked.', "tr": 'Kurulum yerindeki gürültü sınır değerlerine uyulup uyulmadığı kontrol edilmelidir.',
+        "es": 'Debe comprobarse el cumplimiento de los límites de ruido en el lugar de instalación.'},
+    'Elektrobefund bzw. Anlagenprüfung nicht enthalten. Bestehende Leitungen werden als normgerecht angenommen.': {
+        "en": 'An electrical inspection certificate or system test is not included. Existing wiring is assumed to meet current standards.', "tr": 'Elektrik raporu veya tesisat muayenesi dahil değildir. Mevcut hatların standartlara uygun olduğu varsayılmaktadır.',
+        "es": 'No se incluye el certificado de instalación eléctrica ni la revisión de la instalación. Se presupone que el cableado existente cumple la norma.'},
+    'Entleeren und Winterfestmachen der Anlage ist eine jährlich wiederkehrende Leistung und nicht im Einbaupreis enthalten.': {
+        "en": 'Draining and winterising the system is an annually recurring service and is not part of the installation price.', "tr": 'Tesisatın boşaltılması ve kışa hazırlanması yıllık tekrarlanan bir hizmettir ve montaj fiyatına dahil değildir.',
+        "es": 'El vaciado y la preparación para el invierno son un servicio anual recurrente y no están incluidos en el precio de instalación.'},
+    'Entsorgung des Altgeräts ist enthalten.': {
+        "en": 'Disposal of the old appliance is included.', "tr": 'Eski cihazın bertarafı dahildir.',
+        "es": 'La retirada del aparato antiguo está incluida.'},
+    'Entwässerung und Anschluss an den Kanal sind nicht enthalten.': {
+        "en": 'Drainage and connection to the sewer are not included.', "tr": 'Drenaj ve kanalizasyon bağlantısı dahil değildir.',
+        "es": 'El drenaje y la conexión al alcantarillado no están incluidos.'},
+    'Erdarbeiten für eine erdverlegte Zuleitung sind nicht enthalten.': {
+        "en": 'Excavation work for a buried supply line is not included.', "tr": 'Yeraltına döşenecek besleme hattı için kazı işleri dahil değildir.',
+        "es": 'Los trabajos de excavación para una acometida enterrada no están incluidos.'},
+    'Estricharbeiten sind nicht enthalten und erfolgen durch das Folgegewerk.': {
+        "en": 'Screed work is not included and is carried out by the follow-on trade.', "tr": 'Şap işleri dahil değildir ve takip eden meslek grubu tarafından yapılır.',
+        "es": 'Los trabajos de solera no están incluidos y los ejecuta el gremio posterior.'},
+    'Farbtöne und Strukturen wirken auf der Fläche anders als auf der Musterkarte. Ein Musteranstrich vor Ausführung wird empfohlen und ist gesondert zu beauftragen.': {
+        "en": 'Colours and textures look different on a full surface than on a sample card. A trial coat before execution is recommended and must be ordered separately.', "tr": 'Renkler ve dokular geniş yüzeyde numune kartındakinden farklı görünür. Uygulamadan önce numune boyama önerilir ve ayrıca sipariş edilmelidir.',
+        "es": 'Los tonos y las texturas se perciben de forma distinta en la superficie que en la carta de muestras. Se recomienda una pintura de muestra previa, que debe encargarse por separado.'},
+    'Fertigung erst nach Aufmaß vor Ort. Maßabweichungen zum Plan können den Preis ändern.': {
+        "en": 'Manufacture begins only after on-site measurement. Deviations from the plan dimensions can change the price.', "tr": 'Üretim ancak yerinde ölçüm sonrası başlar. Plandan sapan ölçüler fiyatı değiştirebilir.',
+        "es": 'La fabricación comienza solo tras la medición in situ. Las desviaciones respecto a las medidas del plano pueden alterar el precio.'},
+    'Ab 3 m Raumhöhe ist eine Arbeitsbühne oder ein Gerüst erforderlich; nicht enthalten.': {
+        "en": 'From 3 m ceiling height a platform or scaffold is required; not included.', "tr": '3 m tavan yüksekliğinden itibaren çalışma platformu veya iskele gerekir; dahil değildir.',
+        "es": 'A partir de 3 m de altura se requiere plataforma o andamio; no incluido.'},
+    'Ab etwa 0,5 m² Befall ist nach Umweltbundesamt-Leitfaden eine fachgerechte Sanierung mit Abschottung erforderlich. Ursachenklärung, Trocknung und ggf. Raumluftmessung sind nicht enthalten.': {
+        "en": 'From roughly 0.5 m² of growth the Umweltbundesamt guidance requires professional remediation under containment. Establishing the cause, drying and any air testing are not included.', "tr": "Yaklaşık 0,5 m²'den fazla küf için Umweltbundesamt kılavuzuna göre izolasyonlu profesyonel sanitasyon gerekir. Neden tespiti, kurutma ve gerekirse iç hava ölçümü dahil değildir.",
+        "es": 'A partir de unos 0,5 m² afectados, la guía del Umweltbundesamt exige un saneamiento profesional con confinamiento. No se incluyen el diagnóstico de la causa, el secado ni la medición del aire.'},
+    'Abholung und Rücklieferung in die Werkstatt sind enthalten.': {
+        "en": 'Collection and return to the workshop are included.', "tr": 'Atölyeye alım ve geri teslim dahildir.',
+        "es": 'La recogida y la devolución al taller están incluidas.'},
+    'Abrechnung nach tatsächlichem Aufwand; angefangene Viertelstunden werden gerundet.': {
+        "en": 'Charged on time and material; part quarter-hours are rounded.', "tr": 'Gerçek harcamaya göre faturalanır; başlanan çeyrek saatler yuvarlanır.',
+        "es": 'Se factura por tiempo real; los cuartos de hora iniciados se redondean.'},
+    'Abschleifen setzt eine ausreichende Nutzschicht voraus. Bei zu geringer Restdicke oder durchgeschliffenen Stellen ist eine Sanierung nicht möglich; die Prüfung erfolgt vor Ort.': {
+        "en": 'Sanding requires enough wear layer. Where too little remains, or where it has been sanded through, restoration is not possible; this is checked on site.', "tr": 'Zımpara için yeterli aşınma tabakası gerekir. Kalan kalınlık azsa veya delinmişse restorasyon mümkün değildir; kontrol yerinde yapılır.',
+        "es": 'El acuchillado exige capa de uso suficiente. Si queda poco espesor o hay zonas pasadas, no es posible restaurar; se comprueba in situ.'},
+    'Abtransport und Deponiegebühren sind kalkuliert; Mulde bauseits stellplatzpflichtig.': {
+        "en": 'Haulage and tip fees are included; the customer must provide a permit for the skip.', "tr": 'Nakliye ve döküm ücretleri hesaba dahildir; konteyner yeri müşteri tarafından izinlendirilir.',
+        "es": 'Transporte y tasas de vertedero incluidos; el cliente debe gestionar el permiso del contenedor.'},
+    'Abtransport und Entsorgung des Grünschnitts sind kalkuliert.': {
+        "en": 'Removal and disposal of the green waste are included.', "tr": 'Yeşil atığın nakli ve bertarafı hesaba dahildir.',
+        "es": 'La retirada y el vertido de los restos vegetales están incluidos.'},
+    'Alte Leim- oder Kalkfarben sind nicht überstreichbar und müssen vollständig abgewaschen werden. Der Mehraufwand ist erst nach Freilegen einer Probefläche bezifferbar.': {
+        "en": 'Old distemper or limewash cannot be painted over and has to be washed off completely. The extra work can only be priced once a test patch has been opened up.', "tr": 'Eski tutkal veya kireç boyanın üzeri boyanamaz, tamamen yıkanmalıdır. Ek iş ancak deneme alanı açıldıktan sonra fiyatlanabilir.',
+        "es": 'La pintura al temple o a la cal no admite repintado y debe lavarse por completo. El sobrecoste solo puede cifrarse tras abrir una cata.'},
+    'Altölentsorgung ist im Preis enthalten.': {
+        "en": 'Disposal of the used oil is included in the price.', "tr": 'Atık yağ bertarafı fiyata dahildir.',
+        "es": 'La gestión del aceite usado está incluida en el precio.'},
+    'Angebot basiert auf überschlägiger Auslegung. Eine Heizlastberechnung nach ÖNORM H 7500 / DIN EN 12831 wird empfohlen.': {
+        "en": 'The quote is based on an approximate sizing. A heat load calculation to ÖNORM H 7500 / DIN EN 12831 is recommended.', "tr": "Teklif kaba bir hesaba dayanır. ÖNORM H 7500 / DIN EN 12831'e göre ısı yükü hesabı önerilir.",
+        "es": 'La oferta se basa en un dimensionado aproximado. Se recomienda un cálculo de carga térmica según ÖNORM H 7500 / DIN EN 12831.'},
+    'Angebot geht von einer nutzbaren Bestandsleitung aus. Ist sie es nicht, wird eine neue Leitung nach Aufwand verrechnet.': {
+        "en": 'The quote assumes the existing cable can be reused. If it cannot, a new cable is charged on time and material.', "tr": 'Teklif mevcut hattın kullanılabilir olduğunu varsayar. Değilse yeni hat harcamaya göre faturalanır.',
+        "es": 'La oferta supone que el cableado existente es utilizable. Si no lo es, el cable nuevo se factura por administración.'},
+    'Angebot gilt für nichttragende Bauteile. Die Tragfähigkeit ist bauseits bzw. durch einen Statiker zu bestätigen.': {
+        "en": 'The quote covers non-load-bearing elements. Load-bearing status must be confirmed by the customer or a structural engineer.', "tr": 'Teklif taşıyıcı olmayan elemanlar içindir. Taşıyıcılık müşteri veya bir statik mühendisi tarafından teyit edilmelidir.',
+        "es": 'La oferta cubre elementos no portantes. La condición portante debe confirmarla el cliente o un técnico estructural.'},
+    'Angebot gilt für tragfähigen Untergrund. Bodenaustausch bei nicht tragfähigem Untergrund nach Aufwand.': {
+        "en": 'The quote assumes a load-bearing base. Replacing unsuitable ground is charged on time and material.', "tr": 'Teklif taşıyıcı zemin içindir. Taşıyıcı olmayan zeminde zemin değişimi harcamaya göre faturalanır.',
+        "es": 'La oferta supone un terreno con capacidad portante. La sustitución del terreno no apto se factura por administración.'},
+    'Angebot gilt für tragfähigen, trockenen Untergrund. Risse, Schimmel oder nicht tragfähige Altanstriche sind nicht enthalten.': {
+        "en": 'The quote assumes a sound, dry substrate. Cracks, mould or unsound old coatings are not included.', "tr": 'Teklif sağlam ve kuru zemin içindir. Çatlak, küf veya sağlam olmayan eski boyalar dahil değildir.',
+        "es": 'La oferta supone un soporte firme y seco. No se incluyen fisuras, moho ni pinturas antiguas sin adherencia.'},
+    'Angebot gilt für vom Boden bzw. Innenraum erreichbare Flächen.': {
+        "en": 'The quote covers surfaces reachable from the ground or from inside.', "tr": 'Teklif yerden veya iç mekandan erişilebilen yüzeyler içindir.',
+        "es": 'La oferta cubre las superficies accesibles desde el suelo o desde el interior.'},
+    'Anmeldung beim Netzbetreiber und Zählertausch sind nicht im Angebot enthalten.': {
+        "en": 'Registration with the network operator and any meter change are not included.', "tr": 'Şebeke işletmecisine bildirim ve sayaç değişimi dahil değildir.',
+        "es": 'El alta ante la distribuidora y el cambio de contador no están incluidos.'},
+    'Anstriche vor etwa 1960 können Blei enthalten. Trockenes Schleifen ist dann unzulässig; staubarme Verfahren sind nicht im Angebot enthalten.': {
+        "en": 'Coatings from before about 1960 may contain lead. Dry sanding is then prohibited; low-dust methods are not included in the quote.', "tr": 'Yaklaşık 1960 öncesi boyalar kurşun içerebilir. Bu durumda kuru zımpara yasaktır; az tozlu yöntemler teklife dahil değildir.',
+        "es": 'Las pinturas anteriores a 1960 pueden contener plomo. El lijado en seco queda prohibido; los métodos de bajo polvo no están incluidos.'},
+    'Arbeiten am Steigstrang erfordern Abstimmung mit Hausverwaltung und Miteigentümern sowie eine Wasserabschaltung.': {
+        "en": 'Work on the riser requires agreement with the managing agent and co-owners, and a water shut-off.', "tr": 'Kolon üzerindeki işler yönetim ve kat maliklerinin onayını ve su kesintisini gerektirir.',
+        "es": 'Trabajar en el montante exige acuerdo con la administración y los copropietarios, y corte de agua.'},
+    'Arbeiten in der Krone erfolgen mit Seilklettertechnik oder Hubarbeitsbühne durch qualifiziertes Personal. Bühnenmiete und Stellplatzgenehmigung sind gesondert zu bewerten.': {
+        "en": 'Crown work is carried out by qualified staff using rope access or an access platform. Platform hire and parking permits are assessed separately.', "tr": 'Taçtaki işler nitelikli personel tarafından halatla tırmanma veya platformla yapılır. Platform kirası ve park izni ayrıca değerlendirilir.',
+        "es": 'Los trabajos en copa los realiza personal cualificado con trepa o plataforma. El alquiler de la plataforma y el permiso de ocupación se valoran aparte.'},
+    'Aufbau nicht einsehbar. Bei Dickbett-Verlegung entsteht Mehraufwand, der nach tatsächlichem Aufwand verrechnet wird.': {
+        "en": 'The build-up cannot be seen. A thick-bed installation causes extra work, charged on time and material.', "tr": 'Katman görünmüyor. Kalın yataklı döşemede oluşan ek iş harcamaya göre faturalanır.',
+        "es": 'No se ve el sistema constructivo. Una colocación en capa gruesa genera trabajo adicional, facturado por administración.'},
+    'Auftausalz ist in vielen Gemeinden auf Gehwegen untersagt. Die örtliche Vorgabe ist bauseits zu prüfen.': {
+        "en": 'De-icing salt is banned on footpaths in many municipalities. The local rule must be checked by the customer.', "tr": 'Buz çözücü tuz birçok belediyede kaldırımlarda yasaktır. Yerel kural müşteri tarafından kontrol edilmelidir.',
+        "es": 'La sal fundente está prohibida en aceras en muchos municipios. El cliente debe comprobar la norma local.'},
+    'Ausführung nach ÖNORM B 5371 / DIN 18065 (Geländerhöhe, Öffnungsweiten).': {
+        "en": 'Executed to ÖNORM B 5371 / DIN 18065 (balustrade height, opening widths).', "tr": "ÖNORM B 5371 / DIN 18065'e göre uygulanır (korkuluk yüksekliği, açıklık genişlikleri).",
+        "es": 'Ejecución según ÖNORM B 5371 / DIN 18065 (altura de barandilla, anchos de paso).'},
+    'Ausführung witterungsabhängig; Verzögerungen begründen keinen Preisnachlass.': {
+        "en": 'Work depends on the weather; delays are not grounds for a discount.', "tr": 'Uygulama hava koşullarına bağlıdır; gecikmeler indirim gerekçesi değildir.',
+        "es": 'La ejecución depende del tiempo; los retrasos no dan derecho a descuento.'},
+    'Ausreichendes Gefälle zur Entwässerung wird vorausgesetzt.': {
+        "en": 'Adequate fall for drainage is assumed.', "tr": 'Drenaj için yeterli eğim varsayılır.',
+        "es": 'Se presupone pendiente suficiente para el desagüe.'},
+    'Außenbeläge werden frostsicher und mit Gefälle ausgeführt. Bestehende Abdichtung und Untergrundaufbau werden als normgerecht angenommen.': {
+        "en": 'Outdoor coverings are laid frost-proof and to falls. Existing waterproofing and build-up are assumed to meet the standard.', "tr": 'Dış kaplamalar dona dayanıklı ve eğimli yapılır. Mevcut su yalıtımı ve katman standarda uygun kabul edilir.',
+        "es": 'Los pavimentos exteriores se ejecutan resistentes a heladas y con pendiente. Se supone que la impermeabilización y el soporte existentes cumplen la norma.'},
+    'Baubehördliche Genehmigung ist bauseits einzuholen und nicht im Angebot enthalten.': {
+        "en": 'Building consent must be obtained by the customer and is not included.', "tr": 'Yapı ruhsatı müşteri tarafından alınır ve teklife dahil değildir.',
+        "es": 'La licencia de obra la gestiona el cliente y no está incluida.'},
+    'Bauseitiger Stromanschluss an geeigneter Stelle wird vorausgesetzt.': {
+        "en": 'A power supply at a suitable point is assumed to be provided by the customer.', "tr": 'Uygun bir noktada müşteri tarafından elektrik sağlanacağı varsayılır.',
+        "es": 'Se presupone toma de corriente aportada por el cliente en un punto adecuado.'},
+    'Behördliche Abnahme und Rauchfangkehrer-Befund sind nicht enthalten.': {
+        "en": "Official sign-off and the chimney sweep's certificate are not included.", "tr": 'Resmi kabul ve baca temizleyicisi raporu dahil değildir.',
+        "es": 'La recepción oficial y el certificado del deshollinador no están incluidos.'},
+    'Bei Altbauten ist der Untergrund oft nicht lot- und fluchtgerecht. Ausgleich nach Aufwand.': {
+        "en": 'In period buildings the substrate is often out of plumb and line. Levelling is charged on time and material.', "tr": 'Eski yapılarda zemin çoğu kez şakulünde ve düzgün değildir. Tesviye harcamaya göre faturalanır.',
+        "es": 'En edificios antiguos el soporte suele estar fuera de plomo y alineación. La nivelación se factura por administración.'},
+    'Bei Bauteilen vor 1990 kann der Kleber bzw. Bodenbelag Asbest enthalten. Vor Abbruch ist eine Materialanalyse erforderlich; Arbeiten nach TRGS 519 sind nicht im Angebot enthalten.': {
+        "en": 'In elements from before 1990 the adhesive or covering may contain asbestos. A material analysis is required before removal; work to TRGS 519 is not included.', "tr": '1990 öncesi yapı elemanlarında yapıştırıcı veya kaplama asbest içerebilir. Sökümden önce malzeme analizi gerekir; TRGS 519 kapsamındaki işler dahil değildir.',
+        "es": 'En elementos anteriores a 1990 el adhesivo o el revestimiento pueden contener amianto. Antes del desmontaje se requiere un análisis; los trabajos según TRGS 519 no están incluidos.'},
+    'Bei Brunnen- oder Zisternenwasser ist eine Wasseranalyse zu empfehlen; eisenhaltiges Wasser verfärbt Beläge und setzt Düsen zu.': {
+        "en": 'With well or tank water a water analysis is advisable; iron-rich water stains surfaces and blocks nozzles.', "tr": 'Kuyu veya sarnıç suyunda su analizi önerilir; demirli su yüzeyleri boyar ve memeleri tıkar.',
+        "es": 'Con agua de pozo o aljibe conviene un análisis; el agua ferruginosa mancha los pavimentos y obtura los difusores.'},
+    'Bei Fußbodenheizung ist ein Aufheiz- bzw. Funktionsheizprotokoll erforderlich und vor Verlegebeginn vorzulegen. Erstellung ist nicht enthalten.': {
+        "en": 'With underfloor heating a commissioning heat-up record is required and must be produced before laying starts. Producing it is not included.', "tr": 'Yerden ısıtmada ısıtma/işletme protokolü gerekir ve döşemeden önce sunulmalıdır. Hazırlanması dahil değildir.',
+        "es": 'Con suelo radiante se exige un protocolo de puesta en marcha, a presentar antes de iniciar la colocación. Su emisión no está incluida.'},
+    'Bei beengtem Fallraum wird der Baum in Stücken abgetragen und abgeseilt. Der Mehraufwand gegenüber einer Fällung im Ganzen wird nach tatsächlichem Aufwand verrechnet.': {
+        "en": 'Where the fall zone is confined the tree is taken down in sections and lowered. The extra over a single fell is charged on time and material.', "tr": 'Devrilme alanı darsa ağaç parçalar halinde indirilir. Tek parça kesime göre ek iş harcamaya göre faturalanır.',
+        "es": 'Si la zona de caída es reducida, el árbol se desmonta por tramos y se desciende. El sobrecoste frente a la tala entera se factura por administración.'},
+    'Bei deutlichem Farbwechsel, besonders dunkel auf hell oder bei intensiven Farbtönen, ist ein dritter Anstrich erforderlich. Dieser ist im Grundpreis nicht enthalten und wird gesondert ausgewiesen.': {
+        "en": 'A marked change of colour — especially dark to light, or strong shades — needs a third coat. That is not in the base price and is shown separately.', "tr": 'Belirgin renk değişiminde, özellikle koyudan açığa veya yoğun tonlarda, üçüncü kat gerekir. Bu temel fiyata dahil değildir ve ayrı gösterilir.',
+        "es": 'Un cambio de color marcado —sobre todo de oscuro a claro o con tonos intensos— requiere una tercera mano. No está en el precio base y se indica aparte.'},
+    'Bei länger zurückliegender Wartung ist mit zusätzlichem Reinigungs- und Teileaufwand zu rechnen.': {
+        "en": 'If the last service was some time ago, expect extra cleaning and parts.', "tr": 'Son bakım üzerinden uzun süre geçtiyse ek temizlik ve parça beklenmelidir.',
+        "es": 'Si el último mantenimiento fue hace tiempo, cabe esperar más limpieza y piezas.'},
+    'Bei mehreren Ladepunkten oder begrenztem Hausanschluss ist ein Lastmanagement erforderlich.': {
+        "en": 'With several charge points, or a limited supply, load management is required.', "tr": 'Birden fazla şarj noktası veya sınırlı bağlantıda yük yönetimi gerekir.',
+        "es": 'Con varios puntos de recarga o una acometida limitada se requiere gestión de carga.'},
+    'Bei unbekanntem Hersteller kann die Ersatzteilbeschaffung Mehraufwand verursachen oder einen Komplettaustausch erfordern.': {
+        "en": 'If the manufacturer is unknown, sourcing parts may cost extra or force a full replacement.', "tr": 'Üretici bilinmiyorsa yedek parça temini ek iş getirebilir veya komple değişim gerektirebilir.',
+        "es": 'Si se desconoce el fabricante, conseguir repuestos puede encarecer el trabajo u obligar a sustituirlo todo.'},
+    'Bei verdichteten Baustellenflächen kann ein Bodenaustausch erforderlich sein. Dieser ist nicht enthalten und wird nach tatsächlichem Aufwand verrechnet.': {
+        "en": 'Compacted site ground may need replacing. That is not included and is charged on time and material.', "tr": 'Sıkışmış şantiye zemininde zemin değişimi gerekebilir. Bu dahil değildir ve harcamaya göre faturalanır.',
+        "es": 'El terreno de obra compactado puede exigir sustitución. No está incluido y se factura por administración.'},
+    'Bei wiederkehrenden Verstopfungen wird eine Kamerabefahrung empfohlen, um die Ursache zu finden.': {
+        "en": 'Where blockages recur, a camera survey is recommended to find the cause.', "tr": 'Tekrarlayan tıkanıklıklarda nedeni bulmak için kamera incelemesi önerilir.',
+        "es": 'Si los atascos se repiten, se recomienda una inspección con cámara para hallar la causa.'},
+    'Beim Wannentausch werden angrenzende Fliesen beschädigt. Fliesenarbeiten sind nicht enthalten.': {
+        "en": 'Replacing the bath damages the tiles around it. Tiling work is not included.', "tr": 'Küvet değişiminde çevredeki fayanslar zarar görür. Fayans işleri dahil değildir.',
+        "es": 'Al sustituir la bañera se dañan los azulejos contiguos. Los trabajos de alicatado no están incluidos.'},
+    'Beistellung des Bezugsstoffs durch den Auftraggeber ist möglich; Materialanteil entfällt dann.': {
+        "en": 'The customer may supply the cover fabric; the material share is then omitted.', "tr": 'Kılıf kumaşını müşteri temin edebilir; bu durumda malzeme payı düşer.',
+        "es": 'El cliente puede aportar la tela; en ese caso se descuenta la parte de material.'},
+    'Beschläge, Griffe und Dichtungen werden demontiert und wieder montiert. Defekte Beschläge werden nicht ersetzt.': {
+        "en": 'Ironmongery, handles and seals are removed and refitted. Faulty ironmongery is not replaced.', "tr": 'Donanım, kollar ve contalar sökülüp yeniden takılır. Arızalı donanım değiştirilmez.',
+        "es": 'Herrajes, manillas y juntas se desmontan y vuelven a montar. Los herrajes defectuosos no se sustituyen.'},
+    'Bestehende Gasleitung, Abgasführung und Elektroanschluss werden als normgerecht und weiterverwendbar angenommen.': {
+        "en": 'The existing gas pipe, flue and electrical connection are assumed to meet the standard and be reusable.', "tr": 'Mevcut gaz hattı, baca ve elektrik bağlantısı standarda uygun ve kullanılabilir kabul edilir.',
+        "es": 'Se supone que la tubería de gas, la salida de humos y la conexión eléctrica existentes cumplen la norma y son reutilizables.'},
+    'Bewässerung in den ersten Wochen ist bauseits sicherzustellen; ohne sie keine Anwachsgarantie.': {
+        "en": "Watering in the first weeks is the customer's responsibility; without it there is no establishment guarantee.", "tr": 'İlk haftalardaki sulama müşteriye aittir; sulama olmadan tutma garantisi verilmez.',
+        "es": 'El riego de las primeras semanas corre a cargo del cliente; sin él no hay garantía de arraigo.'},
+    'Bleileitungen sind gesundheitsschädlich und in Gebäuden vor 1970 möglich. Wird Blei vorgefunden, ist der gesamte Strang zu tauschen; dies ist im Angebot nicht enthalten.': {
+        "en": 'Lead pipes are a health hazard and possible in buildings from before 1970. If lead is found the whole riser must be replaced; that is not included.', "tr": 'Kurşun borular sağlığa zararlıdır ve 1970 öncesi binalarda bulunabilir. Kurşun bulunursa tüm kolon değiştirilmelidir; bu teklife dahil değildir.',
+        "es": 'Las tuberías de plomo son nocivas y posibles en edificios anteriores a 1970. Si aparece plomo hay que sustituir todo el montante; no está incluido.'},
+    'Das Bad ist während der Arbeiten nicht nutzbar. Ohne zweites WC ist eine Ersatzlösung bauseits zu organisieren.': {
+        "en": 'The bathroom cannot be used during the work. Without a second WC the customer must arrange an alternative.', "tr": 'Banyo çalışma süresince kullanılamaz. İkinci WC yoksa alternatifi müşteri sağlar.',
+        "es": 'El baño no puede usarse durante los trabajos. Sin un segundo aseo, el cliente debe organizar una alternativa.'},
+    'Das Gutachten wird unabhängig erstellt; ein bestimmtes Ergebnis kann nicht zugesagt werden.': {
+        "en": 'The report is produced independently; no particular outcome can be promised.', "tr": 'Rapor bağımsız olarak hazırlanır; belirli bir sonuç taahhüt edilemez.',
+        "es": 'El informe se emite de forma independiente; no puede prometerse un resultado concreto.'},
+    'Das Protokoll ist für die Vorlage bei Versicherung oder Hausverwaltung geeignet.': {
+        "en": 'The certificate is suitable for submission to an insurer or managing agent.', "tr": 'Rapor sigortaya veya yönetime sunulmaya uygundur.',
+        "es": 'El informe es apto para presentarlo a la aseguradora o la administración.'},
+    'Das erforderliche Gefälle zum Ablauf muss herstellbar sein; andernfalls ist eine Pumpenlösung nötig.': {
+        "en": 'The necessary fall to the waste must be achievable; otherwise a pumped solution is needed.', "tr": 'Gidere gerekli eğim sağlanabilmelidir; aksi halde pompalı çözüm gerekir.',
+        "es": 'Debe poderse dar la pendiente necesaria al desagüe; si no, hará falta una solución con bomba.'},
+    'Dehnungsfugen werden nach Herstellervorgabe ausgeführt.': {
+        "en": "Movement joints are formed to the manufacturer's specification.", "tr": 'Genleşme derzleri üretici talimatına göre yapılır.',
+        "es": 'Las juntas de dilatación se ejecutan según especificación del fabricante.'},
+    'Der Anschluss darf nur durch ein konzessioniertes Elektrounternehmen erfolgen.': {
+        "en": 'The connection may only be made by a licensed electrical contractor.', "tr": 'Bağlantı yalnızca yetkili bir elektrik firması tarafından yapılabilir.',
+        "es": 'La conexión solo puede realizarla una empresa eléctrica autorizada.'},
+    'Der Aushub verbleibt am Grundstück; Abtransport und Deponiegebühren entfallen. Zwischenlagerung ist bauseits zu ermöglichen.': {
+        "en": 'The spoil stays on the plot; haulage and tip fees do not apply. The customer must allow space to stockpile it.', "tr": 'Kazı malzemesi arsada kalır; nakliye ve döküm ücreti düşer. Geçici depolama imkanı müşteri tarafından sağlanır.',
+        "es": 'La tierra se queda en la parcela; no hay transporte ni tasas de vertedero. El cliente debe permitir su acopio.'},
+    'Der Befund dokumentiert den Ist-Zustand. Die Behebung festgestellter Mängel ist nicht enthalten.': {
+        "en": 'The report documents the condition as found. Remedying any defects is not included.', "tr": 'Rapor mevcut durumu belgeler. Tespit edilen eksiklerin giderilmesi dahil değildir.',
+        "es": 'El informe documenta el estado actual. La subsanación de los defectos detectados no está incluida.'},
+    'Der Grünschnitt verbleibt vor Ort; der Entsorgungsanteil entfällt.': {
+        "en": 'The green waste stays on site; the disposal share is omitted.', "tr": 'Yeşil atık yerinde kalır; bertaraf payı düşer.',
+        "es": 'Los restos vegetales se quedan en obra; se descuenta la parte de vertido.'},
+    'Der Preis umfasst Verlegung und Verlegematerial (Kleber, Fuge, Dämmung). Fliesen bzw. Bodenbelag sind nicht enthalten und werden gesondert verrechnet.': {
+        "en": 'The price covers laying and laying materials (adhesive, grout, underlay). Tiles or floor covering are not included and are charged separately.', "tr": 'Fiyat döşeme ve döşeme malzemesini (yapıştırıcı, derz, şilte) kapsar. Fayans veya zemin kaplaması dahil değildir, ayrıca faturalanır.',
+        "es": 'El precio cubre la colocación y el material de colocación (adhesivo, junta, aislante). Los azulejos o el pavimento no están incluidos y se facturan aparte.'},
+}
+
 # Every table in this module, in the order a lookup should try them. Split by
 # what they describe rather than merged, so a translator can be handed one
 # section at a time and so the coverage test can report which part is short.
-TABLES: tuple[dict, ...] = (QUOTE_LINES, OPTIONS, QUESTIONS, AXES, JOB_TITLES)
+TABLES: tuple[dict, ...] = (NOTES, QUOTE_LINES, OPTIONS, QUESTIONS, AXES, JOB_TITLES)
 
 
 def translate(text: str, lang: str = "de") -> str:
