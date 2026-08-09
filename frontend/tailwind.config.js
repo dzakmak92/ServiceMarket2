@@ -68,9 +68,26 @@ module.exports = {
           w1: '#f5ecdc', w2: '#e9d8ba', w3: '#d9c39c',
           c1: '#93aab0', c2: '#b8cacd', c3: '#dde6e7',
         },
-        // The focus card. Deeper than `teal` so it outranks every tile
-        // beneath it, and its own token so the brand teal is left alone.
-        focus: { DEFAULT: '#24525f', cta: '#dfa042' },
+        // The focus card, and the one measurement that decided it.
+        //
+        // The card began as brand teal at 45% saturation with a 71% amber
+        // button, sitting directly above tiles at 15-17% and 44-56%. It was
+        // three times the chroma of everything beneath it, which is why no
+        // choice of a nicer teal ever made it sit right — the problem was
+        // never the hue.
+        //
+        // So these are not picked colours. `DEFAULT` is the cool tile ramp
+        // continued downward — the same hue and saturation as `stage.c1`, two
+        // steps darker — and `cta` is the warm ramp continued the same way.
+        // The card stays the heaviest thing on the screen, which is its job,
+        // without being the only saturated one.
+        //
+        // `sub` is the kicker and the meta line; on this fill it reaches
+        // 5.47:1, and `on-cta` reaches 6.59:1 on the button.
+        focus: {
+          DEFAULT: '#3e5155', cta: '#c9aa73',
+          sub: '#c8d3d5', 'on-cta': '#33270f',
+        },
         'green-pos': '#4a8b3f',
         'red-warn': '#c14655',
         'sm-border': '#f0e3c8',

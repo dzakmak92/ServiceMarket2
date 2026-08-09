@@ -66,8 +66,8 @@ export default function ProHomePage() {
       return {
         kind: 'overdue',
         title: t('home_focus_overdue').replace('{days}', worst.days_overdue ?? 0),
-        sub: [worst.customer_name, worst.invoice_number,
-              fmtEur(worst.outstanding ?? worst.gross_total)].filter(Boolean).join(' · '),
+        amount: fmtEur(worst.outstanding ?? worst.gross_total),
+        sub: [worst.customer_name, worst.invoice_number].filter(Boolean).join(' · '),
         cta: t('home_focus_overdue_cta'),
         to: '/overdue',
       };
@@ -82,9 +82,8 @@ export default function ProHomePage() {
         title: t('home_focus_quotes')
           .replace('{n}', quotes.length)
           .replace('{days}', days ?? 0),
-        sub: [oldest?.customer_name, oldest?.title,
-              oldest?.gross_total ? fmtEur(oldest.gross_total) : null]
-          .filter(Boolean).join(' · '),
+        amount: oldest?.gross_total ? fmtEur(oldest.gross_total) : null,
+        sub: [oldest?.customer_name, oldest?.title].filter(Boolean).join(' · '),
         cta: t('home_focus_quotes_cta'),
         to: `/quotes/${oldest?.id || ''}`,
       };
@@ -128,15 +127,24 @@ export default function ProHomePage() {
                      focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus/40"
           data-testid="home-focus"
         >
-          <p className="text-[10.5px] uppercase tracking-[.13em] font-bold text-paper/70">
+          <p className="text-[10.5px] uppercase tracking-[.13em] font-bold text-focus-sub">
             {t('home_focus_kicker')}
           </p>
-          <p className="font-headings font-bold text-xl leading-tight mt-1.5">
+          <p className="font-headings font-bold text-[15px] leading-tight mt-1.5">
             {focus.title}
           </p>
-          {focus.sub && <p className="text-sm text-paper/80 mt-1">{focus.sub}</p>}
-          <span className="mt-3 flex items-center justify-center gap-1.5 bg-focus-cta text-on-amber
-                           rounded-xl py-3 font-headings font-bold text-sm">
+          {/* The amount, at the size the thing it represents deserves.
+              An overdue card is about a sum of money, and that sum used to be
+              the smallest text on it — third in a run-on line, behind the
+              customer and the invoice number. */}
+          {focus.amount && (
+            <p className="font-headings font-bold text-[34px] leading-none mt-2 tabular-nums">
+              {focus.amount}
+            </p>
+          )}
+          {focus.sub && <p className="text-[12.5px] text-focus-sub mt-1.5">{focus.sub}</p>}
+          <span className="mt-4 flex items-center justify-center gap-1.5 bg-focus-cta
+                           text-focus-on-cta rounded-xl py-3 font-headings font-bold text-sm">
             {focus.cta} <ArrowRight size={15} />
           </span>
         </Link>
