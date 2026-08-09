@@ -244,6 +244,14 @@ async def job_survey(job_key: str, lang: str = Query(default="de", pattern="^(de
     except LookupError as exc:
         raise HTTPException(404, str(exc)) from exc
     out["form"] = [catalogue_ui.decorate_question(q, lang) for q in out.get("form") or []]
+    # The questions were translated and the heading above them was not: the
+    # form asked "Alanın durumu" under the title "Rasen mähen (pro Einsatz)".
+    # Same for the notes the job always carries, which are the first thing a
+    # pro reads on an unfamiliar template.
+    out["job"] = {**out["job"],
+                  "label": catalogue_i18n.translate(out["job"]["label_de"], lang)}
+    out["always_notes"] = [{**n, "text": catalogue_i18n.translate(n["de"], lang)}
+                           for n in out.get("always_notes") or []]
     return out
 
 

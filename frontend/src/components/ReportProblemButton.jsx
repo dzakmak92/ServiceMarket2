@@ -64,7 +64,7 @@ export default function ReportProblemButton({
       setCategory('pricing'); // reset to default for next open
       setTimeout(() => { setOpen(false); setDone(false); }, 1800);
     } catch (err) {
-      setError(err?.response?.data?.detail || 'Submission failed');
+      setError(err?.response?.data?.detail || t('err_submit_failed'));
     } finally {
       setBusy(false);
     }
@@ -85,7 +85,7 @@ export default function ReportProblemButton({
       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border border-red-warn/40 bg-red-warn/10 text-red-warn hover:bg-red-warn/15 transition-colors ${className}`}
       data-testid={`${testidPrefix}-trigger`}
     >
-      <AlertTriangle size={12} /> Report a problem
+      <AlertTriangle size={12} /> {t('report_problem')}
     </button>
   );
 
@@ -98,7 +98,7 @@ export default function ReportProblemButton({
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-headings font-bold text-ink text-lg flex items-center gap-2">
                 <AlertTriangle size={18} className="text-red-warn" />
-                Report a problem
+                {t('report_problem')}
               </h3>
               <button onClick={() => setOpen(false)} className="p-1 rounded hover:bg-cream-deep" data-testid={`${testidPrefix}-close`}>
                 <X size={16} />
@@ -168,7 +168,7 @@ export default function ReportProblemButton({
                 )}
                 <div className="flex justify-end gap-2 pt-1">
                   <button type="button" onClick={() => setOpen(false)} disabled={busy} className="px-3 py-1.5 rounded-lg border border-sm-border text-sm">
-                    Cancel
+                    {t('btn_cancel')}
                   </button>
                   <button
                     type="submit"
@@ -177,7 +177,7 @@ export default function ReportProblemButton({
                     data-testid={`${testidPrefix}-submit`}
                   >
                     {busy ? <Loader2 size={14} className="animate-spin" /> : null}
-                    Submit ticket
+                    {t('report_submit')}
                   </button>
                 </div>
               </form>

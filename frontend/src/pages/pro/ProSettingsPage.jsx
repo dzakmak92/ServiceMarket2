@@ -568,7 +568,7 @@ export default function ProSettingsPage() {
                             </p>
                           ) : (
                             <p className="text-xs text-green-pos mt-1 flex items-center gap-1">
-                              <CheckCircle2 size={11} /> Valid IBAN
+                              <CheckCircle2 size={11} /> {t('set_valid_iban')}
                             </p>
                           );
                         }
@@ -588,7 +588,7 @@ export default function ProSettingsPage() {
                         data-testid="bank-bic-input"
                       />
                       {proForm.bank_bic && ![8, 11].includes(proForm.bank_bic.replace(/\s/g, '').length) && (
-                        <p className="text-xs text-red-500 mt-1">BIC must be exactly 8 or 11 characters (e.g. BKAUATWW or BKAUATWWXXX)</p>
+                        <p className="text-xs text-red-500 mt-1">{t('set_bic_format')}</p>
                       )}
                     </div>
                   </div>
@@ -776,7 +776,7 @@ function PortfolioTab({ proProfile, onChange, t }) {
       const { data: pp } = await api.get('/api/profile/pro');
       onChange(pp);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Upload failed');
+      setError(err.response?.data?.detail || t('err_upload_failed'));
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -899,7 +899,7 @@ function WhiteLabelSection({ t, proProfile, reload }) {
       setLogoUrl(data.logo_url);
       if (reload) reload();
     } catch (err) {
-      window.alert(err?.response?.data?.detail || 'Upload failed');
+      window.alert(err?.response?.data?.detail || t('err_upload_failed'));
     } finally { setUploading(false); }
   };
 

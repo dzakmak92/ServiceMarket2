@@ -921,7 +921,7 @@ function PaymentsModal({ invoice, onClose, reload, t }) {
       }
       if (reload) await reload();
     } catch (e) {
-      window.alert(e?.response?.data?.detail || 'Failed to toggle pay link');
+      window.alert(e?.response?.data?.detail || t('myinv_err_paylink'));
     } finally { setBusy(false); }
   };
 

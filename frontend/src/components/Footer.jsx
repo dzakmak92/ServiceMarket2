@@ -31,7 +31,7 @@ export default function Footer() {
               className="hover:text-teal transition-colors"
               data-testid="footer-cookie-prefs-link"
             >
-              Cookie preferences
+              {t('footer_cookie_prefs')}
             </button>
           </nav>
         </div>

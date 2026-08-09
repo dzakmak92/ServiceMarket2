@@ -233,7 +233,7 @@ export default function ProDashboard() {
               <p className="text-xs text-ink-muted mb-3">{t('dash_cashflow_desc')}</p>
               {cashflow?.overdue > 0 && (
                 <div className="flex items-center gap-2 bg-red-warn/10 border border-red-warn/20 rounded-xl px-3 py-1.5 mb-3 text-xs text-red-warn font-semibold">
-                  <AlertCircle size={12} /> {fmtEur(cashflow.overdue)} overdue — follow up now
+                  <AlertCircle size={12} /> {fmtEur(cashflow.overdue)} {t('dash_overdue_now')}
                 </div>
               )}
               {cashflow?.weeks?.some(w => w.amount > 0) ? (
@@ -255,7 +255,7 @@ export default function ProDashboard() {
                 </ResponsiveContainer>
               ) : (
                 <div className="flex items-center justify-center h-32 text-ink-muted text-sm">
-                  No outstanding invoices
+                  {t('dash_no_outstanding')}
                 </div>
               )}
             </div>
@@ -289,7 +289,7 @@ export default function ProDashboard() {
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-32 text-ink-muted text-sm text-center">
-                  Quote at least 2 jobs in the same category to see win rates
+                  {t('dash_winrate_need')}
                 </div>
               )}
             </div>

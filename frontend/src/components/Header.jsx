@@ -335,7 +335,7 @@ export default function Header() {
 
                       {user.role === 'admin' && (
                         <Link to="/admin" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm text-ink hover:bg-cream-soft">
-                          <LayoutDashboard size={14} /> Admin Panel
+                          <LayoutDashboard size={14} /> {t('header_admin_panel')}
                         </Link>
                       )}
                       <Link to="/settings" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm text-ink hover:bg-cream-soft" data-testid="user-menu-settings">

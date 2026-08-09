@@ -76,7 +76,7 @@ export default function CustomersPage() {
       setShowForm(false);
       await load();
     } catch (e2) {
-      setError(e2?.response?.data?.detail || 'Could not save customer');
+      setError(e2?.response?.data?.detail || t('cust_err_save'));
     } finally {
       setSaving(false);
     }

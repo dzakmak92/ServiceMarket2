@@ -31,17 +31,32 @@ const TIER_LABEL = { basic: 'Basis', standard: 'Standard', premium: 'Premium' };
 // Severity drives colour, not decoration. An asbestos warning and a note about
 // who moves the furniture must not look alike — that is the whole reason the
 // API returns them separately instead of as one text blob.
+/* The API sends both forms of every catalogue string: `label` / `text` in the
+   interface language, and `label_de` / `text_de` as the words a quote was
+   agreed in. Screens read the translated one and fall back to the German, so a
+   string whose translation is missing shows German rather than nothing.
+
+   Reading `label_de` directly — which every one of the call sites below did —
+   is why the guided form asked "Alanın durumu" under a German heading with
+   German step titles: the translations were on the payload and nothing looked
+   at them. */
+const lbl = (o) => (o && (o.label || o.label_de)) || '';
+const txt = (o) => (o && (o.text || o.text_de)) || '';
+
+// The label is a key, not a word. These are module constants — evaluated once,
+// before any component has a language — so holding German here would pin the
+// chip to German for the life of the bundle however the interface is set.
 const SEVERITY = {
-  critical: { cls: 'border-red-warn/40 bg-red-warn/5 text-red-warn', label: 'Kritisch' },
-  high: { cls: 'border-amber-500/40 bg-amber-500/5 text-amber-700', label: 'Wichtig' },
-  medium: { cls: 'border-sm-border bg-cream text-ink', label: 'Hinweis' },
-  low: { cls: 'border-sm-border bg-cream text-ink-muted', label: 'Hinweis' },
+  critical: { cls: 'border-red-warn/40 bg-red-warn/5 text-red-warn', label: 'est_sev_critical' },
+  high: { cls: 'border-amber-500/40 bg-amber-500/5 text-amber-700', label: 'est_sev_high' },
+  medium: { cls: 'border-sm-border bg-cream text-ink', label: 'est_sev_note' },
+  low: { cls: 'border-sm-border bg-cream text-ink-muted', label: 'est_sev_note' },
 };
 
 const CONFIDENCE = {
-  high: { label: 'gut belegt', cls: 'text-green-700' },
-  medium: { label: 'Erfahrungswert', cls: 'text-ink-muted' },
-  low: { label: 'ungeprüft', cls: 'text-amber-700' },
+  high: { label: 'est_conf_high', cls: 'text-green-700' },
+  medium: { label: 'est_conf_medium', cls: 'text-ink-muted' },
+  low: { label: 'est_conf_low', cls: 'text-amber-700' },
 };
 
 export default function EstimatePage() {
@@ -128,12 +143,16 @@ export default function EstimatePage() {
           .then(({ data }) => { if (live) setRates(data.rates || []); })
           .catch(() => { if (live) setRates([]); });
       } catch (e) {
-        if (live) setError(e?.response?.data?.detail || 'Katalog konnte nicht geladen werden');
+        if (live) setError(e?.response?.data?.detail || t('est_err_catalogue'));
       } finally {
         if (live) setLoading(false);
       }
     })();
     return () => { live = false; };
+    /* `t` is read only in the catch. Adding it to the deps would refetch on
+       every language switch to change a message nobody is looking at; the
+       load runs once and the error text is resolved when it fires. */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* The section layout comes from the server, which is where the mapping
@@ -157,7 +176,9 @@ export default function EstimatePage() {
     const mine = jobs.filter((j) => j.trade === trade);
     const q = query.trim().toLowerCase();
     if (!q) return mine;
-    return mine.filter((j) => j.label_de.toLowerCase().includes(q)
+    // Searched against both: a pro reading the app in Turkish types the
+    // Turkish name, and one who learned the trade in German types the German.
+    return mine.filter((j) => `${lbl(j)} ${j.label_de}`.toLowerCase().includes(q)
                            || j.key.toLowerCase().includes(q));
   }, [jobs, trade, query]);
 
@@ -186,7 +207,7 @@ export default function EstimatePage() {
       setHourlyRate('');
       setQtyOverrides({});
     } catch (e) {
-      setError(e?.response?.data?.detail || 'Dieser Auftragstyp konnte nicht geladen werden');
+      setError(e?.response?.data?.detail || t('est_err_job'));
     }
   };
 
@@ -197,7 +218,7 @@ export default function EstimatePage() {
         job_key: key, answers: ans, tier: wantTier,
         hourly_rate: rate > 0 ? rate : null,
         qty_overrides: overrides || {},
-      });
+      }, { params: { lang } });
       // Against the figure that was on screen, not against a stored baseline:
       // this is "what did that tap do", and the answer is only meaningful
       // relative to what the pro was just looking at.
@@ -214,11 +235,15 @@ export default function EstimatePage() {
         return data;
       });
     } catch (e) {
-      setError(e?.response?.data?.detail || 'Die Schätzung konnte nicht berechnet werden');
+      setError(e?.response?.data?.detail || t('est_err_calc'));
     } finally {
       setCalculating(false);
     }
-  }, []);
+    // `lang` is in the deps on purpose. The debounce effect below depends on
+    // this callback, so switching language re-runs the calculation and the
+    // positions and assumptions come back in the new one — rather than the
+    // labels changing around a quote that is still German.
+  }, [lang, t]);
 
   // Recalculate as the form is answered. Debounced because number inputs fire
   // on every keystroke and a per-digit round trip makes the field feel laggy.
@@ -269,12 +294,11 @@ export default function EstimatePage() {
       await api.post('/api/estimate/save', {
         job_key: selected.job.key, answers, tier,
         job_id: targetJob || null,
-      });
+      }, { params: { lang } });
       setCreatedQuote(false);
-      setNotice('Schätzung gemerkt. Sobald der Auftrag abgerechnet ist, '
-        + 'vergleicht die App die tatsächlichen Stunden damit.');
+      setNotice(t('est_saved_notice'));
     } catch (e) {
-      setError(e?.response?.data?.detail || 'Die Schätzung konnte nicht gespeichert werden');
+      setError(e?.response?.data?.detail || t('est_err_save'));
     } finally {
       setSaving(false);
     }
@@ -287,13 +311,19 @@ export default function EstimatePage() {
       const { data } = await api.post('/api/estimate/quote', {
         job_key: selected.job.key, answers, tier,
         job_id: targetJob || null, all_tiers: allTiers,
+        // The document's language, not the screen's — see the endpoint. A pro
+        // reading the app in Turkish still sends an Austrian customer a German
+        // quote unless they have switched the whole interface, which is the
+        // signal we have.
+        lang,
       });
       const n = (data.quotes || []).length;
-      setNotice(`${n} ${n === 1 ? 'Angebot' : 'Angebote'} erstellt.`);
+      setNotice(n === 1 ? t('est_quotes_created_one')
+        : t('est_quotes_created_many', { n }));
       setCreatedQuote(true);
       api.get('/api/estimate/accuracy').then(({ data: a }) => setAccuracy(a)).catch(() => {});
     } catch (e) {
-      setError(e?.response?.data?.detail || 'Das Angebot konnte nicht erstellt werden');
+      setError(e?.response?.data?.detail || t('est_err_quote'));
     } finally {
       setCreating(false);
     }
@@ -308,10 +338,11 @@ export default function EstimatePage() {
       const { data } = await api.post('/api/estimate/calibrate');
       const { data: a } = await api.get('/api/estimate/accuracy');
       setAccuracy(a);
-      setNotice(`Neu berechnet aus ${data.jobs_measured} `
-        + `${data.jobs_measured === 1 ? 'Auftrag' : 'Aufträgen'}.`);
+      const n = data.jobs_measured;
+      setNotice(n === 1 ? t('est_recalibrated_one')
+        : t('est_recalibrated_many', { n }));
     } catch (e) {
-      setError(e?.response?.data?.detail || 'Die Neuberechnung ist fehlgeschlagen');
+      setError(e?.response?.data?.detail || t('est_err_recalibrate'));
     } finally { setCalibrating(false); }
   };
 
@@ -323,10 +354,10 @@ export default function EstimatePage() {
     try {
       const { data } = await api.post('/api/estimate/compare', {
         job_key: selected.job.key, answers,
-      });
+      }, { params: { lang } });
       setCompare(data.tiers || null);
     } catch (e) {
-      setError(e?.response?.data?.detail || 'Der Vergleich ist fehlgeschlagen');
+      setError(e?.response?.data?.detail || t('est_err_compare'));
     } finally { setComparing(false); }
   };
 
@@ -395,7 +426,7 @@ export default function EstimatePage() {
             <span>{notice}</span>
             {createdQuote && (
               <Link to="/quotes" className="btn-secondary shrink-0 text-xs py-1 px-3">
-                Zu den Angeboten
+                {t('est_to_quotes')}
               </Link>
             )}
           </div>
@@ -565,7 +596,7 @@ function JobPicker({ meta, jobs, trade, sections, query, setQuery,
                                   focus-visible:ring-teal/30 focus-visible:relative
                                   ${i ? 'border-t border-sm-border/70' : ''}`}>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-ink text-[14px] leading-snug">{j.label_de}</p>
+                  <p className="font-medium text-ink text-[14px] leading-snug">{lbl(j)}</p>
                   {j.quote_mode === 'regie' && (
                     /* The one badge that changes what the pro does next — and
                        now it says what it wants, rather than leaving a
@@ -948,7 +979,7 @@ function OptionRows({ q, value, onPick, alts, t }) {
   const byValue = new Map((alts || []).map((a) => [a.value, a]));
   return (
     <div className="flex flex-col gap-1.5" role="radiogroup"
-         aria-label={q.label_de} data-testid={`estimate-opts-${q.key}`}>
+         aria-label={lbl(q)} data-testid={`estimate-opts-${q.key}`}>
       {(q.options || []).map(([v, label]) => {
         const on = v === value;
         const up = over ? over.get(v) : null;
@@ -1052,7 +1083,7 @@ function SurveyForm({ survey, answers, set, tier, setTier, result, touched, open
   const stepDelta = new Map((bd?.steps || []).map((s) => [s.key, s.delta]));
 
   const answered = (q) => {
-    if (q.type === 'bool') return answers[q.key] ? q.label_de : null;
+    if (q.type === 'bool') return answers[q.key] ? lbl(q) : null;
     const opt = (q.options || []).find(([v]) => v === answers[q.key]);
     return opt ? opt[1] : (answers[q.key] === '' || answers[q.key] == null ? null : String(answers[q.key]));
   };
@@ -1064,7 +1095,7 @@ function SurveyForm({ survey, answers, set, tier, setTier, result, touched, open
     if (q.type === 'bool') {
       return (
         <div key={q.key} className="mb-2 last:mb-0">
-          <SwitchRow id={id} label={q.label_de} help={q.help}
+          <SwitchRow id={id} label={lbl(q)} help={q.help}
                      checked={!!answers[q.key]} onChange={(v) => set(q.key, v)}
                      testid={`estimate-q-${q.key}`} />
         </div>
@@ -1075,7 +1106,7 @@ function SurveyForm({ survey, answers, set, tier, setTier, result, touched, open
       <div key={q.key} className="mb-4 last:mb-0">
         <label htmlFor={id}
                className="block text-[13px] font-bold uppercase tracking-wider text-ink-muted mb-2">
-          {q.label_de}{q.unit ? ` (${q.unit})` : ''}
+          {lbl(q)}{q.unit ? ` (${q.unit})` : ''}
         </label>
         {q.type === 'number' && (
           <NumberField id={id} className="w-full h-14 rounded-[14px] border-[1.5px] border-sm-border
@@ -1105,7 +1136,7 @@ function SurveyForm({ survey, answers, set, tier, setTier, result, touched, open
   return (
     <div data-testid="estimate-form">
       <h2 className="font-headings font-bold text-ink text-[18px] leading-snug px-1 pb-1.5 tracking-[-.025em]">
-        {job.label_de}
+        {lbl(job)}
       </h2>
 
       {/* Confirmations, not filled fields — see confirmedCount. */}
@@ -1182,7 +1213,7 @@ function SurveyForm({ survey, answers, set, tier, setTier, result, touched, open
           const span = spanOf(stepDelta.get(q.key), t);
           return (
             <Step key={st.id} n={n} testid={testid} open={isOpen} onToggle={toggle} done={done}
-                  title={q.label_de} sub={answered(q) || ''}
+                  title={lbl(q)} sub={answered(q) || ''}
                   amount={span || t('est_included')} amountMuted={!span}>
               <OptionRows q={q} value={answers[q.key]} alts={bd?.alternatives?.[q.key]} t={t}
                           onPick={(v) => set(q.key, v)} />
@@ -1198,7 +1229,7 @@ function SurveyForm({ survey, answers, set, tier, setTier, result, touched, open
         return (
           <Step key={st.id} n={n} testid={testid} open={isOpen} onToggle={toggle} done={done} muted
                 title={t('est_step_note')}
-                sub={summary || st.questions.map((q) => q.label_de).join(' · ')}
+                sub={summary || st.questions.map(lbl).join(' · ')}
                 amount={t('est_included')} amountMuted>
             <p className="text-[13px] text-ink-faint leading-relaxed mb-3">{t('est_step_note_sub')}</p>
             {st.questions.map(field)}
@@ -1288,7 +1319,7 @@ function Row({ k, sub, v, tone }) {
  */
 function labelFor(form, key) {
   const q = (form || []).find((x) => x.key === key);
-  if (q) return q.label_de;
+  if (q) return lbl(q);
   if (key === 'qty') return 'Menge';
   if (key === 'emergency' || key === 'zeit') return 'Einsatzzeit';
   return key;
@@ -1342,10 +1373,10 @@ function Result({ result, calculating, form, overrides, setOverrides }) {
       {band && (
         <p className={`text-xs ${outside ? 'text-amber-700' : 'text-ink-muted'}`}>
           <Info size={12} className="inline mr-1 -mt-0.5" />
-          Marktüblich {result.band_basis === 'per_unit'
+          {t('est_market_rate')} {result.band_basis === 'per_unit'
             ? `${fmtEur2(band[0])}–${fmtEur2(band[1])} / ${result.job.unit}`
             : `${fmtEur(band[0])}–${fmtEur(band[1])}`} in {result.country}
-          {outside && ' — diese Schätzung liegt außerhalb. Vor dem Versenden prüfen.'}
+          {outside && t('est_outside_band')}
         </p>
       )}
 
@@ -1384,13 +1415,13 @@ function Result({ result, calculating, form, overrides, setOverrides }) {
                 <div key={n.key}
                      className={`text-[11.5px] leading-relaxed border rounded-lg px-3 py-2
                                  ${SEVERITY[n.severity]?.cls || SEVERITY.medium.cls}`}>
-                  <span className="font-semibold">{SEVERITY[n.severity]?.label}: </span>{n.text_de}
+                  <span className="font-semibold">{t(SEVERITY[n.severity]?.label)}: </span>{txt(n)}
                 </div>
               ) : (
                 <div key={n.key} className="flex gap-2 text-[11.5px] leading-relaxed text-ink-soft
                                             border-t border-sm-border/70 pt-1.5">
                   <Check size={12} className="text-ink-faint shrink-0 mt-0.5" aria-hidden="true" />
-                  <span>{n.text_de}</span>
+                  <span>{txt(n)}</span>
                 </div>
               )
             ))}
@@ -1405,12 +1436,12 @@ function Result({ result, calculating, form, overrides, setOverrides }) {
         <div className="text-xs border border-green-700/30 bg-green-700/5 rounded-lg px-3 py-2">
           <TrendingUp size={12} className="inline mr-1 -mt-0.5 text-green-700" />
           <span className="text-ink">
-            Mit Ihren eigenen Sätzen: <b>{fmtEur2(result.lines_net)}</b>
+            {t('est_own_rates')} <b>{fmtEur2(result.lines_net)}</b>
           </span>
           <span className="text-ink-muted">
-            {' '}· Richtwert {fmtEur(result.total_net[0])}–{fmtEur(result.total_net[1])}
-            {' '}· {result.rates_applied} von {result.lines.length} Positionen
-            aus Ihren angenommenen Angeboten
+            {' '}· {t('est_guide_value')} {fmtEur(result.total_net[0])}–{fmtEur(result.total_net[1])}
+            {' '}· {t('est_positions_learned',
+                        { a: result.rates_applied, b: result.lines.length })}
           </span>
         </div>
       )}
@@ -1547,7 +1578,7 @@ function QuoteBox({ jobs, targetJob, setTargetJob, allTiers, setAllTiers, tiersD
   return (
     <div className="card-lg mb-4 space-y-3" data-testid="estimate-quote-box">
       <p className="text-sm font-medium text-ink flex items-center gap-2">
-        <FileText size={15} />Als Angebot übernehmen
+        <FileText size={15} />{t('est_quote_box_title')}
       </p>
       {/* Empty is the default and it is not an error. A quote is what a pro
           sends *before* there is work — requiring an existing job first put
@@ -1573,14 +1604,13 @@ function QuoteBox({ jobs, targetJob, setTargetJob, allTiers, setAllTiers, tiersD
         <label className="flex items-center gap-2 text-xs text-ink-muted">
           <input type="checkbox" checked={allTiers}
                  onChange={(e) => setAllTiers(e.target.checked)} />
-          Alle drei Varianten anlegen — eine Wahl zwischen Optionen ist keine
-          Wahl zwischen acht Preisen.
+          {t('est_all_tiers')}
         </label>
       )}
       <button type="button" className="btn-primary w-full flex items-center justify-center gap-2"
               disabled={creating} onClick={onCreate} data-testid="estimate-create-quote">
         {creating ? <Loader2 className="animate-spin" size={16} /> : <Calculator size={16} />}
-        Angebot erstellen
+        {t('est_create_quote')}
       </button>
       <p className="text-[12.5px] text-ink-faint leading-relaxed">
         {targetJob ? t('est_job_existing_help') : t('est_job_new_help')}
@@ -1591,13 +1621,16 @@ function QuoteBox({ jobs, targetJob, setTargetJob, allTiers, setAllTiers, tiersD
       <button type="button" className="btn-secondary w-full flex items-center justify-center gap-2"
               disabled={saving} onClick={onSave} data-testid="estimate-save">
         {saving ? <Loader2 className="animate-spin" size={16} /> : <Bookmark size={16} />}
-        Nur merken, kein Angebot
+        {t('est_save_only')}
       </button>
     </div>
   );
 }
 
 function AccuracyCard({ data, open, onToggle, onRecalibrate, calibrating }) {
+  // Its own translator, for the same reason as its siblings above: `t` lives
+  // in the default export's scope and this is not a child of it.
+  const { t } = useLang();
   if (!data || !data.jobs_measured) return null;
   const o = data.overall;
   const enough = o?.applies;
@@ -1605,7 +1638,7 @@ function AccuracyCard({ data, open, onToggle, onRecalibrate, calibrating }) {
     <div className="card-lg mb-4" data-testid="estimate-accuracy">
       <button type="button" onClick={onToggle} className="w-full text-left">
         <p className="text-xs text-ink-muted flex items-center gap-1">
-          <TrendingUp size={12} />Aus Ihren abgerechneten Aufträgen
+          <TrendingUp size={12} />{t('est_accuracy_title')}
         </p>
         <div className="flex items-baseline justify-between gap-3 mt-1">
           <p className="font-headings font-bold text-ink text-xl">
@@ -1614,7 +1647,8 @@ function AccuracyCard({ data, open, onToggle, onRecalibrate, calibrating }) {
               : `${data.jobs_measured} Aufträge gemessen`}
           </p>
           <span className="text-xs text-ink-muted">
-            {data.jobs_measured} {data.jobs_measured === 1 ? 'Auftrag' : 'Aufträge'}
+            {data.jobs_measured === 1 ? t('est_jobs_one')
+              : t('est_jobs_many', { n: data.jobs_measured })}
           </span>
         </div>
         {/* The gap between the rate on the quote and the rate the hours
@@ -1623,10 +1657,8 @@ function AccuracyCard({ data, open, onToggle, onRecalibrate, calibrating }) {
         {o && (
           <p className="text-xs text-ink-muted mt-1">
             {enough
-              ? `Sie brauchen im Schnitt das ${fmtNum(o.hours_factor, 2)}-fache der `
-                + 'Richtwerte. Neue Schätzungen sind entsprechend angepasst.'
-              : `Noch ${data.min_samples - (o.samples || 0)} abgerechnete `
-                + 'Aufträge, bis die Anpassung greift — bis dahin nur zur Information.'}
+              ? t('est_factor_help', { f: fmtNum(o.hours_factor, 2) })
+              : t('est_factor_pending', { n: data.min_samples - (o.samples || 0) })}
           </p>
         )}
       </button>
@@ -1642,7 +1674,7 @@ function AccuracyCard({ data, open, onToggle, onRecalibrate, calibrating }) {
             {calibrating
               ? <Loader2 size={12} className="animate-spin" />
               : <RefreshCw size={12} />}
-            Neu berechnen
+            {t('est_recalculate')}
           </button>
           {data.jobs.map((j) => (
             <div key={j.estimate_id}
@@ -1661,9 +1693,7 @@ function AccuracyCard({ data, open, onToggle, onRecalibrate, calibrating }) {
             // Shown rather than silently dropped, so a forgotten timer can be
             // found and corrected instead of quietly skewing nothing.
             <p className="text-[11px] text-ink-muted pt-1">
-              Ausgeschlossene Aufträge weichen zu stark ab, um etwas über Ihr
-              Arbeitstempo auszusagen — meist ein vergessener Timer oder ein
-              Auftrag, dessen Umfang sich geändert hat.
+              {t('est_excluded_help')}
             </p>
           )}
         </div>
@@ -1710,11 +1740,12 @@ function RateCard({ rates, open, onToggle, onSave, onReset }) {
     <div className="card-lg mb-4" data-testid="estimate-rates">
       <button type="button" onClick={onToggle} className="w-full text-left">
         <p className="text-xs text-ink-muted flex items-center gap-1">
-          <Coins size={12} />Aus Ihren angenommenen Angeboten gelernt
+          <Coins size={12} />{t('est_rates_title')}
         </p>
         <div className="flex items-baseline justify-between gap-3 mt-1">
           <p className="font-headings font-bold text-ink text-xl">
-            {rates.length} {rates.length === 1 ? 'Preis' : 'Preise'}
+            {rates.length === 1 ? t('est_prices_one')
+              : t('est_prices_many', { n: rates.length })}
           </p>
           <span className="text-xs text-ink-muted">
             {manual > 0 ? `${manual} selbst gesetzt` : 'alle gelernt'}
@@ -1736,7 +1767,8 @@ function RateCard({ rates, open, onToggle, onSave, onReset }) {
                       and 92 means something different from one built from
                       prices between 61 and 64. */}
                   {r.n_samples > 0
-                    ? `${r.n_samples} ${r.n_samples === 1 ? 'Angebot' : 'Angebote'}`
+                    ? (r.n_samples === 1 ? t('est_quotes_one')
+                      : t('est_quotes_many', { n: r.n_samples }))
                       + (r.low != null && r.high != null && r.low !== r.high
                           ? ` · ${fmtEur2(r.low)}–${fmtEur2(r.high)}` : '')
                     : 'ohne Belege'}
@@ -1784,7 +1816,7 @@ function RateCard({ rates, open, onToggle, onSave, onReset }) {
             </div>
           ))}
           <p className="text-[11px] text-ink-muted pt-2">
-            Ein selbst gesetzter Preis wird vom Lernen nicht mehr überschrieben.
+            {t('est_manual_price_help')}
           </p>
         </div>
       )}
@@ -1801,6 +1833,8 @@ function RateCard({ rates, open, onToggle, onSave, onReset }) {
  * two would cost, which is the whole point of offering three.
  */
 function TierCompare({ tiers, busy, tier, onCompare, onPick }) {
+  // Its own translator — see AccuracyCard above.
+  const { t } = useLang();
   // Only rendered for job types whose catalogue entry actually gates an
   // operation by tier — see `tiers_differ` in estimator.survey(). Offering a
   // choice between three identical prices makes the product look broken and
@@ -1811,15 +1845,14 @@ function TierCompare({ tiers, busy, tier, onCompare, onPick }) {
       <button type="button" onClick={onCompare} disabled={busy}
               className="btn-ghost w-full mb-4 text-sm" data-testid="estimate-compare">
         {busy ? <Loader2 size={14} className="animate-spin" /> : <Layers size={14} />}
-        Alle drei Varianten vergleichen
+        {t('est_compare_cta')}
       </button>
     );
   }
   return (
     <div className="card-lg mb-4" data-testid="estimate-compare-result">
       <p className="text-xs text-ink-muted mb-3">
-        Dieselben Angaben, drei Ausführungen. Ein Kunde, der zwischen Varianten
-        wählt, vergleicht nicht mehr nur den Preis.
+        {t('est_compare_help')}
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         {['basic', 'standard', 'premium'].map((k) => {
@@ -1840,7 +1873,7 @@ function TierCompare({ tiers, busy, tier, onCompare, onPick }) {
                 {lo === hi ? fmtEur2(lo) : `${fmtEur2(lo)}–${fmtEur2(hi)}`}
               </p>
               <p className="text-[11px] text-ink-muted mt-0.5">
-                {fmtNum(e.hours?.[0])}–{fmtNum(e.hours?.[1])} h · netto
+                {fmtNum(e.hours?.[0])}–{fmtNum(e.hours?.[1])} h · {t('est_net')}
               </p>
             </button>
           );

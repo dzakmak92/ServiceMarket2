@@ -26,7 +26,7 @@ export default function SubContractorPage() {
       const { data: d } = await api.get(`/api/pm/public/sub/${subToken}`);
       setData(d);
     } catch (e) {
-      setError(e?.response?.data?.detail || 'Not found');
+      setError(e?.response?.data?.detail || t('err_not_found'));
     } finally { setLoading(false); }
   };
 

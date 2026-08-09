@@ -22,9 +22,13 @@ export default function PayInvoicePage() {
     let cancelled = false;
     api.get(`/api/pay-link/public/${token}`)
       .then((r) => { if (!cancelled) setData(r.data); })
-      .catch((e) => { if (!cancelled) setError(e?.response?.data?.detail || 'Payment link unavailable'); })
+      .catch((e) => { if (!cancelled) setError(e?.response?.data?.detail || t('pay_err_link')); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
+    /* `t` is read only in the catch. Adding it to the deps would refetch on
+       every language switch to change a message nobody is looking at; the
+       load runs once and the error text is resolved when it fires. */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   const startCheckout = async () => {
@@ -36,7 +40,7 @@ export default function PayInvoicePage() {
       // Redirect customer to Stripe
       window.location.href = cs.checkout_url;
     } catch (e) {
-      setError(e?.response?.data?.detail || 'Checkout could not be created');
+      setError(e?.response?.data?.detail || t('pay_err_checkout'));
       setSubmitting(false);
     }
   };

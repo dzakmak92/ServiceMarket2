@@ -195,9 +195,9 @@ export default function AuthPage() {
                     data-testid="consent-terms"
                   />
                   <span>
-                    I have read and accept the{' '}
+                    {t('auth_accept_prefix')}{' '}
                     <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-teal hover:underline font-medium">
-                      Terms of Service
+                      {t('auth_terms_full')}
                     </a> *
                   </span>
                 </label>
@@ -210,9 +210,9 @@ export default function AuthPage() {
                     data-testid="consent-privacy"
                   />
                   <span>
-                    I have read and accept the{' '}
+                    {t('auth_accept_prefix')}{' '}
                     <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-teal hover:underline font-medium">
-                      Privacy Policy
+                      {t('auth_privacy_full')}
                     </a> *
                   </span>
                 </label>
@@ -272,8 +272,8 @@ export default function AuthPage() {
           )}
 
           <p className="text-center text-xs text-ink-faint mt-6">
-            By signing up, you agree to our{' '}
-            <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-muted">{t('auth_terms_link')}</a> and{' '}
+            {t('auth_signup_agree')}{' '}
+            <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-muted">{t('auth_terms_link')}</a>{' '}{t('word_and')}{' '}
             <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-muted">{t('auth_privacy_link')}</a>
           </p>
         </div>

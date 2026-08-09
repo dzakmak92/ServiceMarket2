@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useLang } from '../contexts/LangContext';
 import { MapContainer, TileLayer, CircleMarker, Tooltip, Circle, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -38,6 +39,7 @@ export default function BusinessHeatMap({
   center = [47.8, 14.6], // Austria
   zoom = 7,
 }) {
+  const { t } = useLang();
   return (
     <div
       className="rounded-[16px] overflow-hidden border border-sm-border relative z-0"
@@ -113,7 +115,7 @@ export default function BusinessHeatMap({
             pathOptions={{ color: '#ffffff', weight: 3, fillColor: MAP_COLORS.you, fillOpacity: 1 }}
           >
             <Tooltip direction="top" offset={[0, -4]} opacity={1} permanent>
-              You are here
+              {t('heatmap_you')}
             </Tooltip>
           </CircleMarker>
         )}

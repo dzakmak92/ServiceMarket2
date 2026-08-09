@@ -193,7 +193,7 @@ export default function BillingPage() {
       const { data } = await api.post('/api/billing/undo-cancel-subscription');
       setInfo(data.message || t('billing_undo_cancel_ok'));
       await refreshUser(); await fetchData();
-    } catch (e) { setError(e.response?.data?.detail || 'Could not restore subscription.'); }
+    } catch (e) { setError(e.response?.data?.detail || t('billing_err_restore')); }
     finally { setUndoCancelLoading(false); }
   };
 
@@ -202,7 +202,7 @@ export default function BillingPage() {
     try {
       const { data } = await api.post('/api/billing/customer-portal', { origin_url: origin });
       if (data.url) window.open(data.url, '_blank');
-    } catch (e) { setError(e.response?.data?.detail || 'Portal not available.'); }
+    } catch (e) { setError(e.response?.data?.detail || t('billing_err_portal')); }
     finally { setPortalLoading(false); }
   };
 
@@ -212,7 +212,7 @@ export default function BillingPage() {
       const { data } = await api.post('/api/billing/trial/start');
       setInfo(data.message || '14-day Pro trial started!');
       await refreshUser(); await fetchData();
-    } catch (e) { setError(e.response?.data?.detail || 'Could not start trial.'); }
+    } catch (e) { setError(e.response?.data?.detail || t('billing_err_trial')); }
     finally { setTrialLoading(false); }
   };
 
@@ -232,7 +232,7 @@ export default function BillingPage() {
       const { data } = await api.post('/api/billing/explorer/choose-standard');
       setInfo(data.message || t('gate_standard_chosen'));
       await refreshUser(); await fetchData();
-    } catch (e) { setError(e.response?.data?.detail || 'Failed.'); }
+    } catch (e) { setError(e.response?.data?.detail || t('err_generic')); }
     finally { setChooseStdLoading(false); }
   };
 
@@ -240,9 +240,9 @@ export default function BillingPage() {
     setDevLoading(true); setError(''); setInfo('');
     try {
       const { data } = await api.post('/api/billing/explorer/simulate-expiry');
-      setInfo(data.message || 'Explorer expired.');
+      setInfo(data.message || t('billing_info_expired'));
       await refreshUser(); await fetchData();
-    } catch (e) { setError(e.response?.data?.detail || 'Failed.'); }
+    } catch (e) { setError(e.response?.data?.detail || t('err_generic')); }
     finally { setDevLoading(false); }
   };
 
@@ -250,9 +250,9 @@ export default function BillingPage() {
     setDevLoading(true); setError(''); setInfo('');
     try {
       const { data } = await api.post('/api/billing/explorer/simulate-reset');
-      setInfo(data.message || 'Reset to Explorer offer.');
+      setInfo(data.message || t('billing_info_reset'));
       await refreshUser(); await fetchData();
-    } catch (e) { setError(e.response?.data?.detail || 'Failed.'); }
+    } catch (e) { setError(e.response?.data?.detail || t('err_generic')); }
     finally { setDevLoading(false); }
   };
 
@@ -371,7 +371,7 @@ export default function BillingPage() {
               <p className="text-xs text-ink-muted">{t('bill_trial_cta')}</p>
             </div>
             <button onClick={handleUpgrade} disabled={checkoutLoading} className="btn-amber text-sm flex-shrink-0" data-testid="trial-upgrade-btn">
-              {checkoutLoading ? <Loader2 size={14} className="animate-spin" /> : <Star size={14} />} Subscribe now
+              {checkoutLoading ? <Loader2 size={14} className="animate-spin" /> : <Star size={14} />} {t('billing_subscribe_now')}
             </button>
           </div>
         )}
@@ -718,7 +718,7 @@ function CurrentPlanCard({
           </h2>
           {isCancelling ? (
             <span className="pro-badge bg-red-warn text-paper text-xs" data-testid="plan-cancelling-badge">
-              Cancelling
+              {t('billing_cancelling')}
             </span>
           ) : isTrial ? (
             <span className="pro-badge bg-amber text-paper text-xs" data-testid="plan-active-badge">{t('bill_trial')}</span>
@@ -729,7 +729,7 @@ function CurrentPlanCard({
           ) : null}
           {isAnnual && !isCancelling && (
             <span className="flex items-center gap-1 text-[10px] font-bold text-amber bg-amber/10 px-2 py-0.5 rounded-full">
-              <TrendingUp size={10} /> Annual
+              <TrendingUp size={10} /> {t('billing_annual')}
             </span>
           )}
         </div>
@@ -751,7 +751,9 @@ function CurrentPlanCard({
           <Calendar size={13} className={`flex-shrink-0 mt-[2px] ${isCancelling ? 'text-red-warn' : 'text-ink-muted'}`} />
           {isTrial ? (
             <span className="text-ink-muted">
-              Trial ends in <strong className="text-ink">{subStatus.trial_days_remaining} day{subStatus.trial_days_remaining !== 1 ? 's' : ''}</strong>
+              {subStatus.trial_days_remaining === 1
+                ? t('billing_trial_ends_one')
+                : t('billing_trial_ends_many', { n: subStatus.trial_days_remaining })}
             </span>
           ) : isCancelling ? (
             <div>
@@ -844,7 +846,7 @@ function UpgradeSection({
       <div className="flex items-center justify-between mb-4">
         <p className="text-[10px] font-bold uppercase tracking-widest text-amber">{t('billing_upgrade_to_pro')}</p>
         <span className="flex items-center gap-1 text-xs font-bold text-teal">
-          <Star size={11} /> Pro Plan
+          <Star size={11} /> {t('billing_pro_plan')}
         </span>
       </div>
 
@@ -859,7 +861,7 @@ function UpgradeSection({
             </div>
           </div>
           <button onClick={onStartTrial} disabled={trialLoading} className="btn-amber text-xs flex-shrink-0" data-testid="start-trial-btn">
-            {trialLoading ? <Loader2 size={12} className="animate-spin" /> : <Gift size={12} />} Start trial
+            {trialLoading ? <Loader2 size={12} className="animate-spin" /> : <Gift size={12} />} {t('billing_start_trial')}
           </button>
         </div>
       )}
@@ -919,7 +921,7 @@ function UpgradeSection({
         {checkoutLoading ? (
           <><Loader2 size={16} className="animate-spin" /> {t('btn_processing')}</>
         ) : billingPeriod === 'annual' ? (
-          <><Star size={16} /> {t('billing_upgrade')} Annual — €{annualNet.toFixed(2).replace('.', ',')} / {t('billing_per_year_short') || 'yr'}</>
+          <><Star size={16} /> {t('billing_upgrade')} {t('billing_annual')} — €{annualNet.toFixed(2).replace('.', ',')} / {t('billing_per_year_short') || 'yr'}</>
         ) : (
           <><Star size={16} /> {t('billing_upgrade')} — €{monthlyNet.toFixed(2).replace('.', ',')} / {t('billing_per_month_short')}</>
         )}
@@ -960,7 +962,7 @@ function ToolkitTab({ kind, meta, active, wasCancelled, selected, onClick, t }) 
         </span>
       ) : wasCancelled ? (
         <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-ink-muted/15 text-ink-muted">
-          Cancelled
+          {t('billing_cancelled_badge')}
         </span>
       ) : (
         <span className="text-[9px] text-ink-muted/60 font-medium uppercase tracking-wider">{t('bill_inactive')}</span>
@@ -996,7 +998,7 @@ function ToolkitDetail({ kind, meta, active, wasCancelled, tk, isPro, loading, c
           </span>
         ) : wasCancelled ? (
           <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full flex-shrink-0 bg-ink-muted/15 text-ink-muted">
-            Cancelled
+            {t('billing_cancelled_badge')}
           </span>
         ) : null}
       </div>
@@ -1076,7 +1078,7 @@ function ToolkitDetail({ kind, meta, active, wasCancelled, tk, isPro, loading, c
             data-testid={`toolkit-reactivate-${kind}`}
           >
             {loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-            Reactivate — €{price?.toFixed(2).replace('.', ',')} / {t('billing_per_month_short')}
+            {t('billing_reactivate')} — €{price?.toFixed(2).replace('.', ',')} / {t('billing_per_month_short')}
           </button>
         ) : (
           <button

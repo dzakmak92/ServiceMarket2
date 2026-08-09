@@ -22,7 +22,7 @@ export default function AccountantSharePage() {
       const { data: d } = await api.get(`/api/tax/public/accountant/${token}?year=${yr}`);
       setData(d);
     } catch (e) {
-      setError(e?.response?.data?.detail || 'Not found');
+      setError(e?.response?.data?.detail || t('err_not_found'));
     } finally { setLoading(false); }
   };
 

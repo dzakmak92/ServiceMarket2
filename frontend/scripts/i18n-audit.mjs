@@ -21,6 +21,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { parse } from '@babel/parser';
 
 const ROOT = path.resolve(new URL('.', import.meta.url).pathname, '..');
 const SRC = path.join(ROOT, 'src');
@@ -43,7 +44,7 @@ const SKIP_FILES = [
    handful of words that are the same in all four languages anyway. */
 /* `a > b && c < d` inside a JSX expression looks exactly like text between
    two tags. Anything carrying an operator is code, not a sentence. */
-const LOOKS_LIKE_CODE = /(&&|\|\||=>|===|!==|<=|>=|\?\.|\+\+|\bnull\b|\bundefined\b|[{}();]|\w\.\w+\(|^[=!<>+\-*/]|[=!<>+\-*/]$)/;
+const LOOKS_LIKE_CODE = /(&&|\|\||=>|===|!==|<=|>=|\?\.|\+\+|\bnull\b|\bundefined\b|[{}();]|\w\.\w+\(|\w\[|^[=!<>+\-*/]|[=!<>+\-*/]$|\w\s[-+*/]\s\w)/;
 
 /* Things that are the same in every language, and things that are examples
    rather than copy. A placeholder reading "Max Mustermann" is showing the
@@ -58,6 +59,18 @@ const ALLOWED = new Set([
   'JPG / PNG / WebP / PDF · max 10 MB',
   // a worked example of a pasted enquiry, shown so the pro sees the shape
   'Name: Maria Gruber\\nTel: +43 664 1112233\\nBetreff: Bad sanieren\\n1210 Wien',
+
+  /* Names and marks. The wordmark is set as `Service<span>Market</span>`, so
+     the parser sees each half as its own text node; "Stripe" is the payment
+     processor being named, which is a requirement of naming it. */
+  'Service', 'ServiceMarket ·', 'ServiceMarket · servicemarket.at', 'Stripe',
+
+  /* Statutory abbreviations on an AT/DE document. "UID" is the VAT
+     identification number and "USt" is the VAT itself; both are the wording
+     the invoice is legally required to carry, so they stay in German on the
+     document however the interface is set — the same reason ÖNORM numbers
+     stay untranslated in the catalogue's assumption notes. */
+  'UID:', '% USt',
 ]);
 
 const NOT_PROSE = [
@@ -69,6 +82,21 @@ const NOT_PROSE = [
   /^[\w.-]+@[\w.-]+$/,                 // an address
   /^\d+(\.\d+)?\s*(px|%|em|rem|ms|s|kg|m²|h|min)$/,
 ];
+
+/* Calls whose argument a person reads. Two shapes are matched: the literal
+   passed straight in, and the `?? 'fallback'` / `|| 'fallback'` that stands in
+   when the server sent no detail — which is precisely the path taken when the
+   network is down, so it is the string the pro is most likely to see. */
+const NOTIFIER = new RegExp(
+  '\\b(setError|setNotice|setMessage|setMsg|setStatus|setInfo|setWarning|'
+  /* `new Error(...)` is deliberately absent. A thrown message is read by a
+     developer in a stack trace; translating it would put the one string that
+     has to be greppable into four languages. */
+  + 'setSuccess|setHint|setFeedback|setBanner|setToast|toast|alert|confirm'
+  + ')\\s*\\(\\s*(?:'
+  + "'((?:[^'\\\\]|\\\\.){4,}?)'"                       // a literal argument
+  + "|[^)'\"`]*?(?:\\|\\||\\?\\?)\\s*'((?:[^'\\\\]|\\\\.){4,}?)'"  // a fallback
+  + ')', 'g');
 
 const walk = (dir, out = []) => {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -157,6 +185,7 @@ const isProse = (s) => {
 };
 
 const hardcoded = [];
+const parseFailures = [];
 for (const f of files) {
   const src = fs.readFileSync(f, 'utf8');
   const lines = src.split('\n');
@@ -169,11 +198,62 @@ for (const f of files) {
     for (const m of line.matchAll(/\b(placeholder|title|aria-label|alt)\s*=\s*\{\s*'([^']{2,})'\s*\}/g)) {
       if (isProse(m[2])) hardcoded.push({ ...at, kind: m[1], text: m[2] });
     }
-    // JSX text between tags on one line: >Some words<
-    for (const m of line.matchAll(/>\s*([^<>{}\n][^<>{}\n]*?)\s*</g)) {
-      if (isProse(m[1])) hardcoded.push({ ...at, kind: 'text', text: m[1] });
+    /* Prose that never reaches JSX. An error banner, a success notice and a
+       confirm dialog are read by exactly the same person as the label above
+       them, but they are built in a handler and handed to a state setter, so
+       the two rules above cannot see them. This was a real hole: the estimate
+       screen told a Turkish-speaking pro "Die Schätzung konnte nicht berechnet
+       werden" while every label around it was Turkish, and the audit printed a
+       clean bill. */
+    for (const m of line.matchAll(NOTIFIER)) {
+      const text = m[2] ?? m[3];
+      if (text && isProse(text)) hardcoded.push({ ...at, kind: m[1], text });
     }
   });
+
+  /* JSX text, from the parser rather than from a regex.
+     The rule this replaces was `>text<` on a single line, which is how JSX is
+     written only when it is short. Everything Prettier wrapped — every
+     paragraph, every button label long enough to break — sat on its own line
+     with no angle bracket beside it and was invisible. That was 89 strings on
+     the tradesperson's screens, including whole sentences, while the audit
+     reported none. A parser has no such blind spot: a JSXText node is a
+     JSXText node whatever the line breaks look like. */
+  let ast;
+  try {
+    ast = parse(src, {
+      sourceType: 'module',
+      plugins: ['jsx', 'classProperties', 'optionalChaining', 'nullishCoalescingOperator'],
+    });
+  } catch (e) {
+    console.error(`could not parse ${rel(f)}: ${e.message}`);
+    parseFailures.push(rel(f));
+    continue;
+  }
+  (function visit(n) {
+    if (!n || typeof n !== 'object') return;
+    if (Array.isArray(n)) { n.forEach(visit); return; }
+    if (n.type === 'JSXText') {
+      // JSX collapses runs of whitespace, so the string a person actually
+      // reads is the collapsed one — and that is what must be matched
+      // against the allow-list.
+      const v = n.value.replace(/\s+/g, ' ').trim();
+      if (isProse(v)) {
+        hardcoded.push({ file: rel(f), line: n.loc.start.line,
+                         audience: audience(rel(f)), kind: 'text', text: v });
+      }
+    }
+    for (const k in n) {
+      if (k === 'loc' || k === 'leadingComments' || k === 'trailingComments') continue;
+      visit(n[k]);
+    }
+  }(ast.program));
+}
+
+/* A file that will not parse is not a file with no strings in it. Failing
+   loudly here stops a syntax error from reading as a clean audit. */
+if (parseFailures.length) {
+  console.error(`\n${parseFailures.length} file(s) did not parse; the report above is incomplete.`);
 }
 
 // ── report ──────────────────────────────────────────────────────────────

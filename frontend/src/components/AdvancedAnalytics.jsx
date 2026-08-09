@@ -37,7 +37,7 @@ export default function AdvancedAnalytics({ t, planTier }) {
     return (
       <div className="card-lg mb-8" data-testid="adv-analytics-loading">
         <div className="h-40 flex items-center justify-center text-ink-muted text-sm">
-          Loading analytics…
+          {t('analytics_loading')}
         </div>
       </div>
     );

@@ -128,7 +128,7 @@ export default function PrivacySettings() {
         <div>
           <h2 className="font-headings font-bold text-ink text-lg">{t('pv_title')}</h2>
           <p className="text-xs text-ink-muted mt-0.5">
-            Manage your consent and exercise your data-protection rights at any time.
+            {t('pv_intro')}
           </p>
         </div>
       </div>
@@ -140,7 +140,7 @@ export default function PrivacySettings() {
           <div>
             <h3 className="font-semibold text-ink text-sm">{t('pv_marketing')}</h3>
             <p className="text-[11px] text-ink-muted mt-0.5">
-              Product updates, tips and news. Off by default. Withdraw anytime.
+              {t('pv_marketing_help')}
             </p>
           </div>
         </div>
@@ -161,11 +161,11 @@ export default function PrivacySettings() {
           data-testid="privacy-marketing-save"
         >
           {savingPrefs ? <Loader2 size={12} className="animate-spin" /> : null}
-          {savingPrefs ? 'Saving…' : 'Save preference'}
+          {savingPrefs ? t('pv_saving') : t('pv_save_pref')}
         </button>
         {prefsSaved && (
           <span className="inline-flex items-center gap-1 text-xs text-green-pos ml-3">
-            <CheckCircle size={12} /> Saved
+            <CheckCircle size={12} /> {t('pv_saved')}
           </span>
         )}
       </section>
@@ -177,7 +177,10 @@ export default function PrivacySettings() {
           <div>
             <h3 className="font-semibold text-ink text-sm">{t('pv_cookies')}</h3>
             <p className="text-[11px] text-ink-muted mt-0.5">
-              Currently: analytics {consent?.cookies_analytics ? 'on' : 'off'} · marketing {consent?.cookies_marketing ? 'on' : 'off'}
+              {t('pv_cookies_current', {
+                a: consent?.cookies_analytics ? t('pv_on') : t('pv_off'),
+                m: consent?.cookies_marketing ? t('pv_on') : t('pv_off'),
+              })}
             </p>
           </div>
         </div>

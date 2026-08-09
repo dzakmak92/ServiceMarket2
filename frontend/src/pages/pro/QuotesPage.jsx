@@ -76,11 +76,14 @@ export default function QuotesPage() {
       setJobs(j.jobs || []);
       setTemplates(tpl.templates || []);
     } catch (e) {
-      setError(e?.response?.data?.detail || 'Could not load quotes');
+      setError(e?.response?.data?.detail || t('quotes_err_load'));
     } finally {
       setLoading(false);
     }
-  }, [statusFilter]);
+    // `t` is read in the catch above. Leaving it out kept the closure built at
+    // mount, so an error raised after a language switch was announced in the
+    // old language.
+  }, [statusFilter, t]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -101,7 +104,7 @@ export default function QuotesPage() {
         if (tpl.assumptions) setAssumptions(tpl.assumptions);
       }
     } catch (e) {
-      setError(e?.response?.data?.detail || 'Could not load the template');
+      setError(e?.response?.data?.detail || t('quotes_err_template'));
     } finally {
       setLoadingTpl(false);
     }
@@ -149,7 +152,7 @@ export default function QuotesPage() {
       setTemplateId(''); setTier('standard');
       await load();
     } catch (e2) {
-      setError(e2?.response?.data?.detail || 'Could not create the quote');
+      setError(e2?.response?.data?.detail || t('quotes_err_create'));
     } finally {
       setSaving(false);
     }

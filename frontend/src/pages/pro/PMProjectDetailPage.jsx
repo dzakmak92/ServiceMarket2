@@ -483,7 +483,7 @@ function DiaryTab({ projectId, t }) {
     <div className="space-y-4" data-testid="pm-diary">
       {pending && (
         <div className="card text-sm text-ink-muted" data-testid="diary-queued">
-          Offline gespeichert — wird gesendet, sobald wieder Verbindung besteht.
+          {t('offline_queued')}
         </div>
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

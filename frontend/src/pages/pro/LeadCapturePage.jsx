@@ -138,7 +138,7 @@ export default function LeadCapturePage() {
       const jobId = data?.job?.id || data?.id;
       navigate(jobId ? `/projects/${jobId}` : '/projects');
     } catch (e2) {
-      setError(e2?.response?.data?.detail || 'Could not capture the lead');
+      setError(e2?.response?.data?.detail || t('lead_err_capture'));
     } finally {
       setSaving(false);
     }

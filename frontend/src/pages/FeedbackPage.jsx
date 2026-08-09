@@ -69,13 +69,13 @@ export default function FeedbackPage() {
         kind, subject, message,
         ...(kind === 'feedback' && rating > 0 ? { rating } : {}),
       });
-      setNotice('Thanks! We received your submission.');
+      setNotice(t('feedback_thanks'));
       setSubject('');
       setMessage('');
       setRating(0);
       setTimeout(() => setTab('mine'), 800);
     } catch (err) {
-      setNotice(err?.response?.data?.detail || 'Submission failed');
+      setNotice(err?.response?.data?.detail || t('err_submit_failed'));
     } finally {
       setBusy(false);
       setTimeout(() => setNotice(null), 4000);
@@ -204,7 +204,7 @@ export default function FeedbackPage() {
             ) : submissions.length === 0 ? (
               <div className="text-center py-12 text-ink-muted">
                 <MessageSquare size={32} className="mx-auto mb-2 opacity-50" />
-                You haven't submitted anything yet.
+                {t('feedback_none_yet')}
               </div>
             ) : (
               <ul className="divide-y divide-sm-border">

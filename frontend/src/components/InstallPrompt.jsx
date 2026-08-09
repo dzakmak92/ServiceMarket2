@@ -96,7 +96,7 @@ export default function InstallPrompt() {
           className="mt-3 w-full btn-primary text-sm py-2"
           data-testid="install-prompt-install-btn"
         >
-          Install App
+          {t('install_app')}
         </button>
       )}
     </div>
