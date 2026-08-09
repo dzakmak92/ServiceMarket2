@@ -88,3 +88,4 @@ assert not _unused, (
 # the rule that matters is that the default answer costs nothing, because every
 # market band in the catalogue was validated with no answers given.
 validate_questions(ALL_JOBS)
+

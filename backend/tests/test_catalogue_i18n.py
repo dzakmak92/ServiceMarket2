@@ -74,6 +74,25 @@ for kind, strings in SURFACES.items():
 print(f"  {'-' * 40}\n  {'all':16s} {done_total:4d} / {total:4d}"
       f"   {100 * done_total // total:3d}%")
 
+print("\n── every axis's help line has a translation, in its own table ──")
+# The axis help does not go through `catalogue_i18n`: it is keyed by axis
+# rather than by German text, so it lives in `AXIS_HELP_I18N` beside the
+# option labels it explains. That means the coverage count above cannot see
+# it, and two new axes shipped with a help line in German only. Checked here
+# instead.
+axis_gaps = []
+for kind, table in (("condition", cat["modifiers"]["condition_axes"]),
+                    ("access", cat["modifiers"]["access_axes"])):
+    for name, axis in table.items():
+        if not axis.get("help_de"):
+            continue
+        row = U.AXIS_HELP_I18N.get(f"{kind}.{name}") or {}
+        for lang in I.LANGS:
+            if not row.get(lang):
+                axis_gaps.append(f"{kind}.{name} has no {lang} help")
+check(not axis_gaps,
+      f"every axis help line is translated ({len(axis_gaps)}): {axis_gaps[:3]}")
+
 print("\n── the two questions asked on every job must be complete ──")
 # These are the most-read strings in the catalogue: every job asks both.
 missing_axis = sorted(SURFACES["axis text"] - DONE)
@@ -113,22 +132,25 @@ check(I.translate("Zustand der Fläche", "fr") == "Zustand der Fläche",
       "an unsupported language falls back rather than raising")
 
 print("\n── the survey endpoint actually carries the translation ──")
+# Mowing asks about the *growth*, not the ground: `flaeche` asks what has to be
+# cleared before you build on it, which is the wrong question for the job that
+# is the clearing. See the `bewuchs` axis.
 form = E.survey("garten.rasenmaehen")["form"]
 q = next(x for x in form if x["key"] == "condition")
-for lang, expect in (("en", "Condition of the ground"),
-                     ("tr", "Alanın durumu"),
-                     ("es", "Estado del terreno")):
+for lang, expect in (("en", "State of the growth"),
+                     ("tr", "Bitki örtüsünün durumu"),
+                     ("es", "Estado de la vegetación")):
     d = U.decorate_question(q, lang)
     check(d["label"] == expect, f"mowing asks about the ground in {lang}: {d['label']!r}")
     check(all(lbl for _v, lbl in d["options"]), f"and every option has a label in {lang}")
 
 de = U.decorate_question(q, "de")
-check(de["label_de"] == "Zustand der Fläche" and de["label"] == "Zustand der Fläche",
+check(de["label_de"] == "Zustand des Bewuchses" and de["label"] == "Zustand des Bewuchses",
       "German keeps both fields identical")
 # A quote already sent quotes the German. The screen that re-renders it in
 # another language still has to be able to show what was agreed.
 en = U.decorate_question(q, "en")
-check(en["label_de"] == "Zustand der Fläche",
+check(en["label_de"] == "Zustand des Bewuchses",
       "the German is kept alongside the translation, not replaced by it")
 
 print("\n── every skip size the estimator can name is a string we translate ──")

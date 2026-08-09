@@ -115,7 +115,7 @@ GARTEN_DEEP = [
           Q("hoehe", "Höhe", "choice", affects="variant",
             options=[("bis_150", "Bis 1,5 m"), ("bis_250", "1,5 bis 2,5 m"),
                      ("ueber_250", "Über 2,5 m")],
-            default="bis_250", note_if={"ueber_250": "absturzsicherung_norm"}),
+            default="bis_250", note_if={"ueber_250": "hoehenarbeit_sicherung"}),
           Q("seiten", "Schnitt", "choice", affects="variant",
             options=[("beidseitig", "Beidseitig und Oberkante"),
                      ("einseitig", "Nur eine Seite")],
@@ -154,7 +154,7 @@ GARTEN_DEEP = [
       # The permission question comes before the price question. Felling a
       # protected tree without a Bescheid is an administrative offence in both
       # markets and the fine lands on whoever cut it.
-      note_keys=["baumschutz_satzung", "versicherung", "stubben_extra"],
+      note_keys=["baumschutz_satzung", "faellung_haftung", "stubben_extra"],
       guided_form=[
           Q("anzahl", "Anzahl Bäume", "number", unit="Stk", affects="qty", default=1),
           Q("groesse", "Baumgröße", "choice", affects="variant",
@@ -399,7 +399,7 @@ GARTEN_DEEP = [
       setup_hours=(1.2, 2.2), typical_size=(6, 30),
       market_band_at=(90, 230), market_band_de=(90, 240),
       confidence="low", sources=SRC,
-      note_keys=["grenzabstand", "windklasse", "holzschutz_intervall"],
+      note_keys=["grenzabstand", "windlast_fest", "holzschutz_intervall"],
       guided_form=[
           Q("laenge", "Länge", "number", unit="lfm", affects="qty", default=12),
           Q("material", "Material", "choice", affects="variant",
@@ -421,13 +421,13 @@ GARTEN_DEEP = [
       setup_hours=(2.0, 3.5), typical_size=(6, 35),
       market_band_at=(190, 420), market_band_de=(190, 440),
       confidence="low", sources=SRC,
-      note_keys=["statik_pflicht", "unterbau_tragfaehig", "abtransport"],
+      note_keys=["unterbau_tragfaehig", "abtransport"],
       guided_form=[
           Q("flaeche", "Ansichtsfläche", "number", unit="m2", affects="qty", default=15),
           Q("funktion", "Funktion", "choice", affects="variant",
             options=[("gestaltung", "Gestaltung, frei stehend"),
                      ("stuetz", "Stützmauer, Geländesprung")],
-            default="gestaltung", note_if={"stuetz": "statik_pflicht"}),
+            default="gestaltung", note_if={"stuetz": "statik_stuetzmauer"}),
           Q_LEITUNGEN],
       operations=[
           Op("fundament", "Fundament herstellen", "m2", (0.55, 1.00),
@@ -489,7 +489,7 @@ GARTEN_DEEP = [
       setup_hours=(4.0, 8.0), typical_size=(1, 1), band_basis="total",
       market_band_at=(18000, 45000), market_band_de=(19000, 48000),
       confidence="low", sources=SRC,
-      note_keys=["statik_pflicht", "genehmigung_bau", "leitungen_im_boden"],
+      note_keys=["pool_untergrund", "genehmigung_bau", "leitungen_im_boden"],
       guided_form=[
           Q("groesse", "Beckengröße", "choice", affects="variant",
             options=[("klein", "Bis 6 x 3 m"), ("mittel", "6 x 3 bis 8 x 4 m"),

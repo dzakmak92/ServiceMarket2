@@ -80,6 +80,37 @@ CONDITION_AXES: dict[str, Axis] = {
         "renovierung_leer",
         "Was auf der Fläche steht, muss zuerst weg — das ist die Zeit."),
 
+    # `flaeche` above asks what has to be cleared before building something on
+    # the ground. That is the right question for paving, a fence or a pool, and
+    # the wrong one for the jobs that *are* the clearing: nobody mows a
+    # "Neuanlage, frei", and asking a gardener to place a hedge cut on a scale
+    # that starts at "newly laid" is the same category error as asking them
+    # whether the building is broom-clean. The levels here are the ones that
+    # actually decide how long maintenance takes — how far the growth has got
+    # since somebody last did it.
+    "bewuchs": Axis(
+        "Zustand des Bewuchses",
+        {"neubau": "Kurz, regelmäßig gepflegt",
+         "renovierung_leer": "Normal aufgewachsen",
+         "renovierung_bewohnt": "Hoch, länger nicht gemacht",
+         "altbau_bewohnt": "Verwildert, verholzt"},
+        "renovierung_leer",
+        "Je länger nichts gemacht wurde, desto mehr Schnittgut und desto "
+        "langsamer die Maschine."),
+
+    # Winter service is the one garden job where nothing grows. What decides
+    # the time is how much of the surface a machine can take and how much has
+    # to be done by hand — steps, kerbs, gateways, parked cars.
+    "raeumflaeche": Axis(
+        "Zustand der Räumfläche",
+        {"neubau": "Eben, frei, maschinell räumbar",
+         "renovierung_leer": "Überwiegend maschinell, einzelne Hindernisse",
+         "renovierung_bewohnt": "Verwinkelt, Stufen und Kanten",
+         "altbau_bewohnt": "Eng, überwiegend Handarbeit"},
+        "renovierung_leer",
+        "Was die Maschine nicht schafft, wird geschoben und gestreut — "
+        "von Hand."),
+
     # For work on the outside of a building. The driver is not what the flat
     # looks like but what has to be protected and worked around: plantings,
     # parked cars, balconies in use, windows that cannot be masked shut.
@@ -225,6 +256,18 @@ JOB_AXES: dict[str, tuple[str, str]] = {
     # ── Montage: mounted on the facade, worked from a ladder ──
     "montage.markise":             ("umfeld", "hoehe"),
     "fenster.markise":             ("umfeld", "hoehe"),
+
+    # ── Garten: maintenance is not construction ──
+    # These five are the jobs where the growth *is* the work. See `bewuchs`.
+    "garten.rasenmaehen":          ("bewuchs", "grundstueck"),
+    "garten.vertikutieren":        ("bewuchs", "grundstueck"),
+    "garten.laub":                 ("bewuchs", "grundstueck"),
+    "garten.hecke_schnitt":        ("bewuchs", "grundstueck"),
+    "garten.baumschnitt":          ("bewuchs", "grundstueck"),
+    # And the one where nothing grows at all: asking a snow-clearing contract
+    # whether the ground is "stark verwildert, Wurzelwerk" is the last of the
+    # questions nobody could answer.
+    "garten.winterdienst":         ("raeumflaeche", "grundstueck"),
 
     # ── Garten: the pool is a hole in the ground, not a planted area ──
     # Its own `aushub` and `leitungen` questions carry the ground; what the

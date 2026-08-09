@@ -33,6 +33,36 @@ LANGS = ("en", "tr", "es")
 # trade asks them in different words.
 
 AXES: dict[str, dict[str, str]] = {
+    'Zustand des Bewuchses': {
+        "en": 'State of the growth', "tr": 'Bitki örtüsünün durumu',
+        "es": 'Estado de la vegetación'},
+    'Kurz, regelmäßig gepflegt': {
+        "en": 'Short, regularly maintained', "tr": 'Kısa, düzenli bakımlı',
+        "es": 'Corta, con mantenimiento regular'},
+    'Normal aufgewachsen': {
+        "en": 'Normal growth', "tr": 'Normal büyümüş',
+        "es": 'Crecimiento normal'},
+    'Hoch, länger nicht gemacht': {
+        "en": 'Tall, not done for a while', "tr": 'Uzamış, bir süredir yapılmamış',
+        "es": 'Alta, sin cortar desde hace tiempo'},
+    'Verwildert, verholzt': {
+        "en": 'Overgrown and woody', "tr": 'Yabanileşmiş, odunlaşmış',
+        "es": 'Descuidada y leñosa'},
+    'Zustand der Räumfläche': {
+        "en": 'State of the area to clear', "tr": 'Temizlenecek alanın durumu',
+        "es": 'Estado de la superficie a despejar'},
+    'Eben, frei, maschinell räumbar': {
+        "en": 'Level, clear, machine-clearable', "tr": 'Düz, açık, makineyle temizlenebilir',
+        "es": 'Llana, despejada, despejable a máquina'},
+    'Überwiegend maschinell, einzelne Hindernisse': {
+        "en": 'Mostly by machine, a few obstacles', "tr": 'Ağırlıklı olarak makineyle, birkaç engel',
+        "es": 'Sobre todo a máquina, con algunos obstáculos'},
+    'Verwinkelt, Stufen und Kanten': {
+        "en": 'Awkward, with steps and kerbs', "tr": 'Girintili çıkıntılı, basamak ve kenarlar',
+        "es": 'Con recovecos, escalones y bordillos'},
+    'Eng, überwiegend Handarbeit': {
+        "en": 'Tight, mostly by hand', "tr": 'Dar, ağırlıklı olarak elle',
+        "es": 'Estrecha, sobre todo a mano'},
     # Question labels
     "Zustand des Objekts": {
         "en": "Condition of the property", "tr": "Nesnenin durumu",
@@ -3955,6 +3985,39 @@ QUOTE_LINES: dict[str, dict[str, str]] = {
 # What the pro forwards to a customer as the terms of the quote.
 
 NOTES: dict[str, dict[str, str]] = {
+    'Ab dieser Arbeitshöhe ist eine Absturzsicherung erforderlich. Ob Leiter, Hubarbeitsbühne oder Gerüst hängt von Standfläche und Dauer ab; Hubarbeitsbühne und Gerüst sind nicht im Angebot enthalten.': {
+        "en": 'Above this working height, fall protection is required. Whether that means a ladder, a mobile platform or a scaffold depends on the standing ground and the duration; a mobile platform and a scaffold are not included in the quote.', "tr": 'Bu çalışma yüksekliğinin üzerinde düşmeye karşı koruma gereklidir. Merdiven, hidrolik platform veya iskeleden hangisinin kullanılacağı zeminin durumuna ve süreye bağlıdır; hidrolik platform ve iskele teklife dahil değildir.',
+        "es": 'A partir de esta altura de trabajo se requiere protección anticaídas. Que sea escalera, plataforma elevadora o andamio depende de la superficie de apoyo y de la duración; la plataforma elevadora y el andamio no están incluidos en la oferta.'},
+    'Eine feste Wand nimmt die volle Windlast auf und kann nicht eingefahren werden. Pfosten und Fundamente sind auf die örtliche Windlast auszulegen; ab 180 cm Höhe ist ein größerer Fundamentquerschnitt erforderlich.': {
+        "en": 'A fixed screen takes the full wind load and cannot be retracted. Posts and foundations must be sized for the local wind load; from 180 cm high, a larger foundation section is required.', "tr": 'Sabit bir duvar rüzgâr yükünün tamamını taşır ve içeri alınamaz. Direkler ve temeller yerel rüzgâr yüküne göre boyutlandırılmalıdır; 180 cm yükseklikten itibaren daha büyük bir temel kesiti gerekir.',
+        "es": 'Una pared fija recibe toda la carga de viento y no puede recogerse. Los postes y las cimentaciones deben dimensionarse para la carga de viento local; a partir de 180 cm de altura se requiere una sección de cimentación mayor.'},
+    'Eine Stützmauer nimmt Erddruck auf. Ab etwa 1 m Höhe, bei Hanglage oder bei Belastung der Geländeoberkante ist eine statische Bemessung erforderlich. Sie ist nicht im Angebot enthalten und muss vor Arbeitsbeginn vorliegen.': {
+        "en": 'A retaining wall carries earth pressure. From roughly 1 m high, on a slope, or where the ground above it is loaded, a structural calculation is required. It is not part of the quote and must be available before work starts.', "tr": 'İstinat duvarı toprak basıncını taşır. Yaklaşık 1 m yükseklikten itibaren, eğimli arazide veya üst kotta yük olması hâlinde statik hesap gereklidir. Teklife dahil değildir ve işe başlamadan önce hazır olmalıdır.',
+        "es": 'Un muro de contención soporta el empuje del terreno. A partir de aproximadamente 1 m de altura, en ladera o cuando la coronación soporta cargas, se requiere un cálculo estructural. No está incluido en la oferta y debe estar disponible antes del inicio de los trabajos.'},
+    'Grubensohle, Magerbetonbett und Hinterfüllung erfolgen nach Herstellervorgabe. Bei drückendem Grundwasser, Hanglage oder nicht tragfähigem Boden ist eine gesonderte Bemessung erforderlich; sie ist nicht enthalten.': {
+        "en": "The excavation base, lean-concrete bed and backfill follow the manufacturer's specification. Where there is groundwater under pressure, a slope, or unsound soil, a separate calculation is required; it is not included.", "tr": 'Kazı tabanı, grobeton yatağı ve geri dolgu üretici talimatına göre yapılır. Basınçlı yeraltı suyu, eğimli arazi veya taşıma gücü yetersiz zemin hâlinde ayrı bir hesap gereklidir; dahil değildir.',
+        "es": 'La base de la excavación, la cama de hormigón de limpieza y el relleno se ejecutan según las indicaciones del fabricante. Con agua freática a presión, en ladera o con suelo no portante se requiere un cálculo aparte; no está incluido.'},
+    'Für Schäden an Gebäuden, Leitungen und Bepflanzung im Fallbereich besteht Haftpflichtversicherung. Der Fallbereich ist vor Arbeitsbeginn zu räumen; nicht entfernte Gegenstände sind nicht gedeckt.': {
+        "en": 'Damage to buildings, services and planting within the felling zone is covered by liability insurance. The felling zone must be cleared before work starts; items left in place are not covered.', "tr": 'Devrilme alanındaki binalara, hatlara ve bitkilere verilecek zararlar sorumluluk sigortası kapsamındadır. Devrilme alanı işe başlamadan önce boşaltılmalıdır; kaldırılmayan eşyalar kapsam dışıdır.',
+        "es": 'Los daños a edificios, conducciones y plantaciones dentro de la zona de caída están cubiertos por el seguro de responsabilidad civil. La zona de caída debe despejarse antes de comenzar; los objetos no retirados no están cubiertos.'},
+    'Der Heizkörper muss kalt sein und die Heizung während der Arbeiten und der Trocknung abgeschaltet bleiben. Entleeren oder Abmontieren ist nicht erforderlich und nicht enthalten.': {
+        "en": 'The radiator must be cold and the heating switched off during the work and while the paint dries. Draining or removing it is neither necessary nor included.', "tr": 'Radyatör soğuk olmalı ve çalışma ile kuruma süresince ısıtma kapalı kalmalıdır. Boşaltma veya sökme gerekli değildir ve dahil değildir.',
+        "es": 'El radiador debe estar frío y la calefacción apagada durante los trabajos y el secado. No es necesario vaciarlo ni desmontarlo, y no está incluido.'},
+    'Beistellung der Tapete durch den Auftraggeber ist möglich; der Materialanteil entfällt dann. Für Maßhaltigkeit, Chargengleichheit und ausreichende Menge beigestellter Ware wird nicht gehaftet.': {
+        "en": 'The client may supply the wallpaper, in which case the material element falls away. No liability is accepted for the dimensional accuracy, batch consistency or sufficiency of goods supplied by the client.', "tr": 'Duvar kâğıdının müşteri tarafından temin edilmesi mümkündür; bu durumda malzeme payı düşer. Müşteri tarafından temin edilen malın ölçü doğruluğu, parti aynılığı ve miktar yeterliliği için sorumluluk kabul edilmez.',
+        "es": 'El cliente puede aportar el papel pintado, en cuyo caso se descuenta la parte de material. No se asume responsabilidad por la exactitud dimensional, la homogeneidad de lote ni la cantidad suficiente del material aportado.'},
+    'Geölte Böden brauchen eine Nachpflege — je nach Beanspruchung nach 6 bis 12 Monaten, danach jährlich. Pflegeöl und Nachpflege sind nicht enthalten.': {
+        "en": 'Oiled floors need re-oiling — after six to twelve months depending on wear, and annually thereafter. The maintenance oil and the re-oiling are not included.', "tr": 'Yağlı zeminler bakım gerektirir — kullanıma bağlı olarak 6 ila 12 ay sonra, sonrasında yılda bir. Bakım yağı ve bakım uygulaması dahil değildir.',
+        "es": 'Los suelos aceitados necesitan mantenimiento: a los seis o doce meses según el uso, y después anualmente. El aceite de mantenimiento y su aplicación no están incluidos.'},
+    'Die Ausgleichsmasse muss vor dem Belag durchtrocknen — je nach Schichtdicke und Produkt 1 bis 7 Tage. Der Raum ist in dieser Zeit nicht begehbar und nicht belegreif.': {
+        "en": 'The levelling compound has to dry through before the covering goes down — one to seven days depending on thickness and product. The room cannot be walked on or covered during that time.', "tr": 'Tesviye şapı, kaplamadan önce tamamen kurumalıdır — katman kalınlığına ve ürüne göre 1 ila 7 gün. Bu süre boyunca oda ne kullanılabilir ne de kaplanabilir.',
+        "es": 'La masilla niveladora debe secar por completo antes de colocar el pavimento: de uno a siete días según el espesor y el producto. Durante ese tiempo la estancia no es transitable ni apta para revestir.'},
+    'In Gebäuden vor 1990 können Wand- und Deckenaufbauten, Rohrisolierungen, Schächte und Brandabschottungen asbesthaltig sein. Wird beim Öffnen Verdachtsmaterial angetroffen, werden die Arbeiten unterbrochen und eine Materialanalyse veranlasst. Analyse und Arbeiten nach TRGS 519 sind nicht im Angebot enthalten.': {
+        "en": 'In buildings from before 1990, wall and ceiling build-ups, pipe lagging, ducts and fire-stopping may contain asbestos. If suspect material is found on opening up, work stops and a material analysis is commissioned. The analysis and any work to TRGS 519 are not included in the quote.', "tr": "1990 öncesi binalarda duvar ve tavan katmanları, boru yalıtımları, şaftlar ve yangın durdurucular asbest içerebilir. Açma sırasında şüpheli malzemeye rastlanırsa işler durdurulur ve malzeme analizi yaptırılır. Analiz ve TRGS 519'a göre yapılacak işler teklife dahil değildir.",
+        "es": 'En edificios anteriores a 1990, los trasdosados de paredes y techos, los aislamientos de tuberías, los patinillos y los sellados cortafuegos pueden contener amianto. Si al abrir se encuentra material sospechoso, se interrumpen los trabajos y se encarga un análisis del material. El análisis y los trabajos según TRGS 519 no están incluidos en la oferta.'},
+    'Anstriche vor etwa 1960 können Blei enthalten. Trockenes Schleifen ist dann unzulässig; staubarme Verfahren sind nicht im Angebot enthalten.': {
+        "en": 'Paint from before about 1960 may contain lead. Dry sanding is then not permitted; low-dust methods are not included in the quote.', "tr": 'Yaklaşık 1960 öncesi boyalar kurşun içerebilir. Bu durumda kuru zımparalama yasaktır; az tozlu yöntemler teklife dahil değildir.',
+        "es": 'Las pinturas anteriores a 1960 aproximadamente pueden contener plomo. En ese caso no se permite el lijado en seco; los métodos de bajo polvo no están incluidos en la oferta.'},
     'Ohne funktionierendes Absperrventil muss der Steigstrang abgesperrt werden. Abstimmung mit der Hausverwaltung und Mehraufwand sind nicht enthalten.': {
         "en": 'Without a working shut-off valve the riser has to be isolated. Coordination with the building management and the extra work involved are not included.', "tr": 'Çalışır durumda bir kesme vanası yoksa ana kolonun kapatılması gerekir. Bina yönetimiyle koordinasyon ve ek iş yükü dahil değildir.',
         "es": 'Sin una llave de corte operativa hay que cerrar el montante. La coordinación con la administración de la finca y el sobrecoste no están incluidos.'},

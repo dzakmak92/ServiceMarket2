@@ -188,14 +188,14 @@ MALER_DEEP = [
       confidence="medium", sources=SRC,
       # Patterned wallpaper is the one Maler job where material dominates and
       # where Verschnitt is a real number rather than a rounding allowance.
-      note_keys=["verschnitt_muster", "untergrund_eben", "stoff_bauseits_moeglich"],
+      note_keys=["verschnitt_muster", "untergrund_eben", "tapete_bauseits_moeglich"],
       guided_form=[
           Q("ansatz", "Musteransatz", "choice", affects="variant",
             options=[("ohne", "Kein Ansatz / uni"), ("gerade", "Gerader Ansatz"),
                      ("versetzt", "Versetzter Ansatz")],
             default="gerade", note_if={"versetzt": "verschnitt_muster"}),
           Q("material_bauseits", "Tapete wird beigestellt", "bool", affects="variant",
-            default=False, note_if={"True": "stoff_bauseits_moeglich"}),
+            default=False, note_if={"True": "tapete_bauseits_moeglich"}),
           Q_UNTERGRUND, Q_MOEBEL],
       operations=[
           Op("vorbereiten", "Untergrund vorbereiten und grundieren", "m2", (0.035, 0.065)),
@@ -232,7 +232,7 @@ MALER_DEEP = [
       setup_hours=(0.4, 0.8), typical_size=(1, 5), band_basis="total",
       market_band_at=(60, 150), market_band_de=(60, 160),
       confidence="medium", sources=SRC,
-      note_keys=["anlage_entleeren", "trocknung_nutzung"],
+      note_keys=["heizkoerper_kalt", "trocknung_nutzung"],
       guided_form=[
           Q("anzahl", "Anzahl Heizkörper", "number", unit="Stk", affects="qty", default=1),
           Q("typ", "Bauart", "choice", affects="variant",
@@ -368,7 +368,7 @@ MALER_DEEP = [
           Q("hoehe", "Gebäudehöhe", "choice", affects="variant",
             options=[("bis_2", "Bis 2 Geschosse"), ("bis_4", "3 bis 4 Geschosse"),
                      ("ueber_4", "Mehr als 4 Geschosse")],
-            default="bis_2", note_if={"ueber_4": "absturzsicherung_norm"}),
+            default="bis_2", note_if={"ueber_4": "hoehenarbeit_sicherung"}),
           Q_GERUEST],
       operations=[
           Op("reinigen", "Fassade reinigen", "m2", (0.035, 0.070)),

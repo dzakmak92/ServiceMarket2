@@ -488,6 +488,19 @@ QTY_HELP: dict[str, dict[str, str]] = {
 # the two cannot drift apart. Only the translations are here.
 
 AXIS_HELP_I18N: dict[str, dict[str, str]] = {
+    "condition.bewuchs": {
+        "en": "The longer it has been left, the more cuttings there are and the "
+              "slower the machine goes.",
+        "tr": "Ne kadar uzun süre yapılmadıysa, o kadar çok kesim atığı olur ve "
+              "makine o kadar yavaşlar.",
+        "es": "Cuanto más tiempo lleve sin hacerse, más restos de corte hay y "
+              "más despacio va la máquina.",
+    },
+    "condition.raeumflaeche": {
+        "en": "Whatever the machine cannot reach is shovelled and gritted by hand.",
+        "tr": "Makinenin ulaşamadığı yerler elle küreklenir ve tuzlanır.",
+        "es": "Lo que no alcanza la máquina se palea y se esparce a mano.",
+    },
     "condition.gebaeude": {
         "en": "Occupied costs more than empty: covering up, tidying every day.",
         "tr": "Oturulan yer boş olandan pahalıdır: örtme, her gün toplama.",

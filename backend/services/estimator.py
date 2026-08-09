@@ -68,6 +68,35 @@ TIER_ORDER = {"basic": 0, "standard": 1, "premium": 2}
 SETUP_LABEL = "Anfahrt, Einrichten und Schutzmaßnahmen"
 DISPOSAL_LABEL = "Entsorgung inkl. Container"
 
+# Which asbestos note a pre-1990 build year attaches, by job. A job that is not
+# in here gets none: swapping a tap or lacquering a door in a 1975 flat
+# disturbs no building fabric, and the jobs that do take up an old floor or
+# tile bed carry `asbest_vor_1990` in their own `note_keys` already, on every
+# estimate, because for those the risk does not depend on the answer.
+ASBEST_BY_JOB: dict[str, str] = {
+    # Taking up a single old tile means taking up the bed it sits in, which is
+    # exactly what the adhesive note is about.
+    "fliesen.einzelne_ersetzen": "asbest_vor_1990",
+    # These open a wall, a floor or a duct to reach something behind it. What
+    # they can meet is lagging, panelling and fire-stopping, not floor glue.
+    "elektrik.steckdose": "asbest_bauteile_vor_1990",
+    "elektrik.wohnung_neuinstallation": "asbest_bauteile_vor_1990",
+    "sanitaer.rohrbruch": "asbest_bauteile_vor_1990",
+    "sanitaer.steigleitung": "asbest_bauteile_vor_1990",
+    "sanitaer.wanne_zu_dusche": "asbest_bauteile_vor_1990",
+    "sanitaer.bad_basis": "asbest_bauteile_vor_1990",
+    "sanitaer.wc_tauschen": "asbest_bauteile_vor_1990",
+    "sanitaer.waschtisch": "asbest_bauteile_vor_1990",
+}
+
+# Sanding or burning back old paint. `bleifarbe_vor_1960` was written for this
+# and then never attached to anything — the only note in the catalogue that no
+# answer could reach.
+BLEIFARBE_JOBS = {
+    "maler.tuer_lackieren", "maler.holzfenster_streichen",
+    "boden.parkett_schleifen",
+}
+
 # Answers that mean the work is not happening on an ordinary weekday. The
 # catalogue prices these off the Notdienst rate rather than an uplift, because
 # in both markets a call-out at night is sold as a different service, not the
@@ -800,8 +829,21 @@ def notes_for(job: dict, answers: Optional[dict] = None, *,
     except (KeyError, TypeError, ValueError):
         baujahr = None
     if baujahr:
+        # What a pre-1990 year means depends on what the job opens up. This
+        # used to be one line — any job that asks the year, any year under
+        # 1990, gets the floor-adhesive note — and the jobs that genuinely
+        # take up a covering already carry that note unconditionally. So the
+        # rule never fired anywhere it was right: it fired on thirteen job
+        # types that never touch a floor, telling a customer having a tap
+        # swapped that the adhesive under their floor covering may contain
+        # asbestos. An assumption on a quote is a term the customer is held
+        # to; a wrong one is worse than a missing one.
         if baujahr < 1990:
-            keys.append("asbest_vor_1990")
+            note = ASBEST_BY_JOB.get(job["key"])
+            if note:
+                keys.append(note)
+        if baujahr < 1960 and job["key"] in BLEIFARBE_JOBS:
+            keys.append("bleifarbe_vor_1960")
         if baujahr < 1970 and job["trade"] == "sanitaer":
             keys.append("bleirohre_vor_1970")
 

@@ -118,16 +118,39 @@ check(any(n["key"] == "nacht_zuschlag"
       "a call-out attaches the surcharge note")
 
 print("\n── notes ──")
-# Chosen because this job does not carry the asbestos note unconditionally —
+# Chosen because this job does not carry an asbestos note unconditionally —
 # tile removal does, so it could not show that the Baujahr trigger works.
+#
+# Which note it attaches is the point. The rule used to be "any job that asks
+# the year, any year under 1990, gets the floor-adhesive note", and the jobs
+# that genuinely take a floor up carry that note on every estimate anyway — so
+# the trigger only ever fired where it was wrong. A rewire opens walls and
+# meets lagging and panelling; it does not meet floor glue.
 elec = "elektrik.wohnung_neuinstallation"
 asb = E.estimate(elec, {"qty": 75, "baujahr": 1968})
-check(any(n["key"] == "asbest_vor_1990" for n in asb["notes"]),
-      "a pre-1990 building attaches the asbestos note")
+check(any(n["key"] == "asbest_bauteile_vor_1990" for n in asb["notes"]),
+      "a pre-1990 rewire is warned about wall build-ups and lagging")
+check(not any(n["key"] == "asbest_vor_1990" for n in asb["notes"]),
+      "and not about the adhesive under a floor covering it never lifts")
 check(asb["notes"][0]["severity"] == "critical", "critical notes sort first")
-check(not any(n["key"] == "asbest_vor_1990"
+check(not any(n["key"].startswith("asbest")
               for n in E.estimate(elec, {"qty": 75, "baujahr": 2015})["notes"]),
       "a 2015 building does not")
+# The jobs the year says nothing about. Swapping a tap in a 1975 flat disturbs
+# no building fabric, and an assumption on a quote is a term the customer is
+# held to.
+quiet = E.estimate("sanitaer.armatur", {"qty": 1, "baujahr": 1975})
+check(not any(n["key"].startswith("asbest") for n in quiet["notes"]),
+      "changing a tap in a 1975 flat is told nothing about asbestos")
+# `bleifarbe_vor_1960` was written for exactly this and then attached to
+# nothing — the only note in the catalogue no answer could reach.
+lead = E.estimate("maler.holzfenster_streichen", {"anzahl": 4, "baujahr": 1935})
+check(any(n["key"] == "bleifarbe_vor_1960" for n in lead["notes"]),
+      "sanding back pre-1960 paint warns about lead")
+check(not any(n["key"] == "bleifarbe_vor_1960"
+              for n in E.estimate("maler.holzfenster_streichen",
+                                  {"anzahl": 4, "baujahr": 1975})["notes"]),
+      "and 1975 paint does not")
 check(not any(n["key"] == "bleirohre_vor_1970" for n in asb["notes"]),
       "lead pipes are a plumbing note, not an electrician's")
 check(any(n["key"] == "bleirohre_vor_1970"
@@ -333,12 +356,25 @@ check(not wording,
 
 # The screenshot that started this: a lawn asked whether the building was
 # broom-clean, and the answer was worth up to +64 % of a €75 quote.
+#
+# Then it asked whether the lawn was a "Neuanlage, frei" — which is the right
+# question for paving or a fence, and the wrong one for the job that *is* the
+# clearing. Nobody mows a newly laid, empty site. Maintenance gets its own
+# vocabulary: how far the growth has got since somebody last did it.
 mow = E.survey("garten.rasenmaehen")["form"]
 mow_cond = next(q for q in mow if q["key"] == "condition")
-check(mow_cond["label_de"] == "Zustand der Fläche",
-      f"mowing asks about the lawn, not the building ({mow_cond['label_de']!r})")
-check([lbl for _v, lbl in mow_cond["options"]][0] == "Neuanlage, frei",
-      "and offers ground conditions as its cheapest case")
+check(mow_cond["label_de"] == "Zustand des Bewuchses",
+      f"mowing asks about the growth, not the building ({mow_cond['label_de']!r})")
+check([lbl for _v, lbl in mow_cond["options"]][0] == "Kurz, regelmäßig gepflegt",
+      "and offers a maintained lawn as its cheapest case")
+# Building on the ground still asks what has to be cleared off it first.
+pave = next(q for q in E.survey("garten.pflaster")["form"] if q["key"] == "condition")
+check(pave["label_de"] == "Zustand der Fläche",
+      f"paving still asks what is on the ground ({pave['label_de']!r})")
+# And the one garden job where nothing grows asks about neither.
+snow = next(q for q in E.survey("garten.winterdienst")["form"] if q["key"] == "condition")
+check(snow["label_de"] == "Zustand der Räumfläche",
+      f"winter service asks what it has to clear ({snow['label_de']!r})")
 
 # Every axis must offer the whole uplift vocabulary, or a pro would be unable
 # to reach a level the estimator can price.

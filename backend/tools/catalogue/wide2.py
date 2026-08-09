@@ -66,7 +66,7 @@ GARTEN = [
       setup_hours=(4.0, 8.0), typical_size=(1, 1),
       market_band_at=(18000, 45000), market_band_de=(19000, 48000),
       band_basis="total", confidence="low",
-      note_keys=["statik_pflicht", "genehmigung_bau", "leitungen_im_boden"],
+      note_keys=["pool_untergrund", "genehmigung_bau", "leitungen_im_boden"],
       operations=[
           Op("aushub", "Aushub und Abtransport", "Stk", (14, 26),
              debris_kg_per_unit=(40000, 70000)),

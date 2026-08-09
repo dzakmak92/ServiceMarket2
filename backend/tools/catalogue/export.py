@@ -242,7 +242,108 @@ NOTES = {
   # ── added when the last seven deep-trade jobs got guided forms ───────
   "vorwand_erforderlich": {"severity":"high","de":"Der Umbau von Stand-WC auf wandhängend erfordert eine Vorwandinstallation mit Spülkasten und tragendem Element. Fliesen-, Trockenbau- und Malerarbeiten sind nicht enthalten."},
   "fi_nachruesten": {"severity":"high","de":"Ohne FI-Schutzschalter entspricht die Anlage nicht dem Stand der Technik. Bei Eingriffen in den Verteiler ist die Nachrüstung erforderlich (ÖVE/ÖNORM E 8001, DIN VDE 0100-410) und wird gesondert angeboten."},
+
+  # ── replacing notes that were true of a different job ────────────────
+  #
+  # Each of these took the place of a note that was correct somewhere in the
+  # catalogue and wrong where it had been attached. A note that describes
+  # another trade's work is worse than no note: it is a written assumption
+  # the customer is held to, and the pro who sends it has implicitly claimed
+  # to have read it. The originals are all still in use where they belong.
+  #
+  # `absturzsicherung_norm` cites ÖNORM B 5371 / DIN 18065 — the geometry of
+  # stair balustrades, handrail heights and gap widths. Correct for an outdoor
+  # stair and a metalwork balustrade. On a 2.5 m hedge and a 4 m facade the
+  # question is not balustrade geometry, it is working at height.
+  "hoehenarbeit_sicherung": {"severity":"high","de":"Ab dieser Arbeitshöhe ist eine Absturzsicherung erforderlich. Ob Leiter, Hubarbeitsbühne oder Gerüst hängt von Standfläche und Dauer ab; Hubarbeitsbühne und Gerüst sind nicht im Angebot enthalten."},
+
+  # `windklasse` says the awning is to be retracted in a storm. A fixed
+  # privacy screen cannot be retracted; what it does is stand there and take
+  # the load.
+  "windlast_fest": {"severity":"medium","de":"Eine feste Wand nimmt die volle Windlast auf und kann nicht eingefahren werden. Pfosten und Fundamente sind auf die örtliche Windlast auszulegen; ab 180 cm Höhe ist ein größerer Fundamentquerschnitt erforderlich."},
+
+  # `statik_pflicht` is about intervening in a building's load-bearing
+  # elements. A free-standing garden wall is not one; the calculation it needs
+  # is for earth pressure, which is a different document.
+  "statik_stuetzmauer": {"severity":"critical","de":"Eine Stützmauer nimmt Erddruck auf. Ab etwa 1 m Höhe, bei Hanglage oder bei Belastung der Geländeoberkante ist eine statische Bemessung erforderlich. Sie ist nicht im Angebot enthalten und muss vor Arbeitsbeginn vorliegen."},
+
+  # Same note, on a pool. A GFK basin set into a garden touches no part of the
+  # building; what decides whether it can be built as quoted is the ground.
+  "pool_untergrund": {"severity":"high","de":"Grubensohle, Magerbetonbett und Hinterfüllung erfolgen nach Herstellervorgabe. Bei drückendem Grundwasser, Hanglage oder nicht tragfähigem Boden ist eine gesonderte Bemessung erforderlich; sie ist nicht enthalten."},
+
+  # `versicherung` is a removals note: it insures the customer's belongings in
+  # transit. On a felling the exposure is what the tree lands on.
+  "faellung_haftung": {"severity":"medium","de":"Für Schäden an Gebäuden, Leitungen und Bepflanzung im Fallbereich besteht Haftpflichtversicherung. Der Fallbereich ist vor Arbeitsbeginn zu räumen; nicht entfernte Gegenstände sind nicht gedeckt."},
+
+  # `anlage_entleeren` drains the heating system. That is what a plumber does
+  # to change a radiator, not what a painter does to lacquer one.
+  "heizkoerper_kalt": {"severity":"medium","de":"Der Heizkörper muss kalt sein und die Heizung während der Arbeiten und der Trocknung abgeschaltet bleiben. Entleeren oder Abmontieren ist nicht erforderlich und nicht enthalten."},
+
+  # `stoff_bauseits_moeglich` offers to let the customer supply the covering
+  # fabric — an upholsterer's arrangement, on a wallpapering job.
+  "tapete_bauseits_moeglich": {"severity":"low","de":"Beistellung der Tapete durch den Auftraggeber ist möglich; der Materialanteil entfällt dann. Für Maßhaltigkeit, Chargengleichheit und ausreichende Menge beigestellter Ware wird nicht gehaftet."},
+
+  # `holzschutz_intervall` is about weather-exposed timber outdoors. An oiled
+  # parquet floor indoors needs maintenance on a different schedule and for a
+  # different reason.
+  "oel_nachpflege": {"severity":"low","de":"Geölte Böden brauchen eine Nachpflege — je nach Beanspruchung nach 6 bis 12 Monaten, danach jährlich. Pflegeöl und Nachpflege sind nicht enthalten."},
+
+  # `trocknung_nutzung` talks about drying times between coats of paint.
+  # Levelling compound has no coats.
+  "ausgleich_trocknung": {"severity":"medium","de":"Die Ausgleichsmasse muss vor dem Belag durchtrocknen — je nach Schichtdicke und Produkt 1 bis 7 Tage. Der Raum ist in dieser Zeit nicht begehbar und nicht belegreif."},
+
+  # `asbest_vor_1990` is about the adhesive under a covering that is being
+  # taken up. A tradesperson chasing a wall for a socket or opening a floor to
+  # get at a burst pipe is exposed to a different set of materials, and telling
+  # that customer their floor adhesive may contain asbestos describes work that
+  # is not happening. See `notes_for` in the estimator.
+  "asbest_bauteile_vor_1990": {"severity":"critical","de":"In Gebäuden vor 1990 können Wand- und Deckenaufbauten, Rohrisolierungen, Schächte und Brandabschottungen asbesthaltig sein. Wird beim Öffnen Verdachtsmaterial angetroffen, werden die Arbeiten unterbrochen und eine Materialanalyse veranlasst. Analyse und Arbeiten nach TRGS 519 sind nicht im Angebot enthalten."},
 }
+
+# ── Notes belong to the job they describe ────────────────────────────────
+#
+# A note is a term the customer is held to, and the pro who sends the quote
+# has implicitly claimed to have read it. So a note that is true of a
+# different job is worse than a missing one — and there were eleven of them:
+# an awning's "retract it in a storm" on a fixed privacy screen, a stair
+# balustrade standard on hedge trimming, a removals firm's transit insurance
+# on a tree felling, "drain the heating system" on lacquering a radiator.
+#
+# There is no way to check meaning from here. What can be checked is the
+# vocabulary: a note whose distinctive words name a thing this job's trade
+# does not work on is at least worth a second look. The list below is the
+# result of that second look, so it is an allow-list of pairings a human has
+# read and accepted rather than a rule the generator can infer — new
+# combinations fail and have to be looked at once.
+NOTE_TRADE_WORDS = {
+    # word in the note text: the trades it can honestly appear in
+    "Markise":      {"fenster", "montage"},
+    "Rollrasen":    {"garten"},
+    "Estrich":      {"boden", "fliesen", "heizung", "abriss", "maurer"},
+    "Heizungsanlage": {"heizung", "sanitaer"},
+    "Bezugsstoff":  {"polster"},
+    "bewitterten":  {"maler", "garten", "dach"},
+    "Transportversicherung": {"umzug"},
+    "ÖNORM B 5371": {"metallbau", "garten", "trockenbau", "maurer"},
+    "Fahrzeug":     {"kfz", "fahrrad"},
+    "Anstrichen":   {"maler", "boden"},
+}
+_wrong = []
+for j in ALL_JOBS:
+    attached = set(j.note_keys or [])
+    for op in j.operations:
+        attached |= set(op.note_keys or [])
+    for q in j.guided_form:
+        attached |= set((q.note_if or {}).values())
+    for key in sorted(attached):
+        text = NOTES.get(key, {}).get("de", "")
+        for word, trades in NOTE_TRADE_WORDS.items():
+            if word in text and j.trade not in trades:
+                _wrong.append(f"{j.key} ({j.trade}) carries {key!r}, which says {word!r}")
+assert not _wrong, (
+    "notes attached to a job whose trade they do not describe — either the "
+    "note is on the wrong job or NOTE_TRADE_WORDS needs the trade adding:\n  "
+    + "\n  ".join(_wrong))
 
 out = {"version": 1, "countries": ["AT","DE"],
        "modifiers": {"condition_uplift": COND_UPLIFT, "condition_setup_add": COND_SETUP_ADD,

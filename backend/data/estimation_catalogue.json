@@ -89,6 +89,28 @@
         "default": "renovierung_leer",
         "help_de": "Was auf der Fläche steht, muss zuerst weg — das ist die Zeit."
       },
+      "bewuchs": {
+        "label_de": "Zustand des Bewuchses",
+        "options": {
+          "neubau": "Kurz, regelmäßig gepflegt",
+          "renovierung_leer": "Normal aufgewachsen",
+          "renovierung_bewohnt": "Hoch, länger nicht gemacht",
+          "altbau_bewohnt": "Verwildert, verholzt"
+        },
+        "default": "renovierung_leer",
+        "help_de": "Je länger nichts gemacht wurde, desto mehr Schnittgut und desto langsamer die Maschine."
+      },
+      "raeumflaeche": {
+        "label_de": "Zustand der Räumfläche",
+        "options": {
+          "neubau": "Eben, frei, maschinell räumbar",
+          "renovierung_leer": "Überwiegend maschinell, einzelne Hindernisse",
+          "renovierung_bewohnt": "Verwinkelt, Stufen und Kanten",
+          "altbau_bewohnt": "Eng, überwiegend Handarbeit"
+        },
+        "default": "renovierung_leer",
+        "help_de": "Was die Maschine nicht schafft, wird geschoben und gestreut — von Hand."
+      },
       "umfeld": {
         "label_de": "Umfeld am Gebäude",
         "options": {
@@ -1145,6 +1167,46 @@
     "fi_nachruesten": {
       "severity": "high",
       "de": "Ohne FI-Schutzschalter entspricht die Anlage nicht dem Stand der Technik. Bei Eingriffen in den Verteiler ist die Nachrüstung erforderlich (ÖVE/ÖNORM E 8001, DIN VDE 0100-410) und wird gesondert angeboten."
+    },
+    "hoehenarbeit_sicherung": {
+      "severity": "high",
+      "de": "Ab dieser Arbeitshöhe ist eine Absturzsicherung erforderlich. Ob Leiter, Hubarbeitsbühne oder Gerüst hängt von Standfläche und Dauer ab; Hubarbeitsbühne und Gerüst sind nicht im Angebot enthalten."
+    },
+    "windlast_fest": {
+      "severity": "medium",
+      "de": "Eine feste Wand nimmt die volle Windlast auf und kann nicht eingefahren werden. Pfosten und Fundamente sind auf die örtliche Windlast auszulegen; ab 180 cm Höhe ist ein größerer Fundamentquerschnitt erforderlich."
+    },
+    "statik_stuetzmauer": {
+      "severity": "critical",
+      "de": "Eine Stützmauer nimmt Erddruck auf. Ab etwa 1 m Höhe, bei Hanglage oder bei Belastung der Geländeoberkante ist eine statische Bemessung erforderlich. Sie ist nicht im Angebot enthalten und muss vor Arbeitsbeginn vorliegen."
+    },
+    "pool_untergrund": {
+      "severity": "high",
+      "de": "Grubensohle, Magerbetonbett und Hinterfüllung erfolgen nach Herstellervorgabe. Bei drückendem Grundwasser, Hanglage oder nicht tragfähigem Boden ist eine gesonderte Bemessung erforderlich; sie ist nicht enthalten."
+    },
+    "faellung_haftung": {
+      "severity": "medium",
+      "de": "Für Schäden an Gebäuden, Leitungen und Bepflanzung im Fallbereich besteht Haftpflichtversicherung. Der Fallbereich ist vor Arbeitsbeginn zu räumen; nicht entfernte Gegenstände sind nicht gedeckt."
+    },
+    "heizkoerper_kalt": {
+      "severity": "medium",
+      "de": "Der Heizkörper muss kalt sein und die Heizung während der Arbeiten und der Trocknung abgeschaltet bleiben. Entleeren oder Abmontieren ist nicht erforderlich und nicht enthalten."
+    },
+    "tapete_bauseits_moeglich": {
+      "severity": "low",
+      "de": "Beistellung der Tapete durch den Auftraggeber ist möglich; der Materialanteil entfällt dann. Für Maßhaltigkeit, Chargengleichheit und ausreichende Menge beigestellter Ware wird nicht gehaftet."
+    },
+    "oel_nachpflege": {
+      "severity": "low",
+      "de": "Geölte Böden brauchen eine Nachpflege — je nach Beanspruchung nach 6 bis 12 Monaten, danach jährlich. Pflegeöl und Nachpflege sind nicht enthalten."
+    },
+    "ausgleich_trocknung": {
+      "severity": "medium",
+      "de": "Die Ausgleichsmasse muss vor dem Belag durchtrocknen — je nach Schichtdicke und Produkt 1 bis 7 Tage. Der Raum ist in dieser Zeit nicht begehbar und nicht belegreif."
+    },
+    "asbest_bauteile_vor_1990": {
+      "severity": "critical",
+      "de": "In Gebäuden vor 1990 können Wand- und Deckenaufbauten, Rohrisolierungen, Schächte und Brandabschottungen asbesthaltig sein. Wird beim Öffnen Verdachtsmaterial angetroffen, werden die Arbeiten unterbrochen und eine Materialanalyse veranlasst. Analyse und Arbeiten nach TRGS 519 sind nicht im Angebot enthalten."
     }
   },
   "jobs": [
@@ -3060,7 +3122,7 @@
           "affects": "variant",
           "default": false,
           "note_if": {
-            "True": "stoff_bauseits_moeglich"
+            "True": "tapete_bauseits_moeglich"
           },
           "help_de": "",
           "uplift": {},
@@ -3185,7 +3247,7 @@
       "note_keys": [
         "verschnitt_muster",
         "untergrund_eben",
-        "stoff_bauseits_moeglich"
+        "tapete_bauseits_moeglich"
       ],
       "labour_variance": 2.65,
       "site_visit_required": false,
@@ -3608,7 +3670,7 @@
         }
       ],
       "note_keys": [
-        "anlage_entleeren",
+        "heizkoerper_kalt",
         "trocknung_nutzung"
       ],
       "labour_variance": 3.07,
@@ -4877,7 +4939,7 @@
           "affects": "variant",
           "default": "bis_2",
           "note_if": {
-            "ueber_4": "absturzsicherung_norm"
+            "ueber_4": "hoehenarbeit_sicherung"
           },
           "help_de": "",
           "uplift": {
@@ -9600,7 +9662,7 @@
       ],
       "note_keys": [
         "untergrund_eben",
-        "trocknung_nutzung"
+        "ausgleich_trocknung"
       ],
       "labour_variance": 2.75,
       "site_visit_required": true,
@@ -10544,7 +10606,7 @@
           "affects": "variant",
           "default": "versiegelung",
           "note_if": {
-            "oel": "holzschutz_intervall"
+            "oel": "oel_nachpflege"
           },
           "help_de": "",
           "uplift": {
@@ -10952,7 +11014,7 @@
       "segment": "Garten- & Landschaftsbau",
       "messy": false,
       "emergency_capable": false,
-      "condition_axis": "flaeche",
+      "condition_axis": "bewuchs",
       "access_axis": "grundstueck",
       "guided_form": [
         {
@@ -11153,7 +11215,7 @@
       "segment": "Garten- & Landschaftsbau",
       "messy": false,
       "emergency_capable": false,
-      "condition_axis": "flaeche",
+      "condition_axis": "bewuchs",
       "access_axis": "grundstueck",
       "guided_form": [
         {
@@ -11357,7 +11419,7 @@
       "segment": "Garten- & Landschaftsbau",
       "messy": false,
       "emergency_capable": false,
-      "condition_axis": "flaeche",
+      "condition_axis": "bewuchs",
       "access_axis": "grundstueck",
       "guided_form": [
         {
@@ -11524,7 +11586,7 @@
       "segment": "Garten- & Landschaftsbau",
       "messy": false,
       "emergency_capable": false,
-      "condition_axis": "flaeche",
+      "condition_axis": "bewuchs",
       "access_axis": "grundstueck",
       "guided_form": [
         {
@@ -11564,7 +11626,7 @@
           "affects": "variant",
           "default": "bis_250",
           "note_if": {
-            "ueber_250": "absturzsicherung_norm"
+            "ueber_250": "hoehenarbeit_sicherung"
           },
           "help_de": "",
           "uplift": {
@@ -11730,7 +11792,7 @@
       "segment": "Baumpflege",
       "messy": false,
       "emergency_capable": false,
-      "condition_axis": "flaeche",
+      "condition_axis": "bewuchs",
       "access_axis": "grundstueck",
       "guided_form": [
         {
@@ -12028,7 +12090,7 @@
       ],
       "note_keys": [
         "baumschutz_satzung",
-        "versicherung",
+        "faellung_haftung",
         "stubben_extra"
       ],
       "labour_variance": 4.84,
@@ -12139,7 +12201,7 @@
       "segment": "Garten- & Landschaftsbau",
       "messy": false,
       "emergency_capable": false,
-      "condition_axis": "flaeche",
+      "condition_axis": "raeumflaeche",
       "access_axis": "grundstueck",
       "guided_form": [
         {
@@ -14204,7 +14266,7 @@
       ],
       "note_keys": [
         "grenzabstand",
-        "windklasse",
+        "windlast_fest",
         "holzschutz_intervall"
       ],
       "labour_variance": 2.68,
@@ -14328,7 +14390,7 @@
           "affects": "variant",
           "default": "gestaltung",
           "note_if": {
-            "stuetz": "statik_pflicht"
+            "stuetz": "statik_stuetzmauer"
           },
           "help_de": "",
           "uplift": {
@@ -14379,7 +14441,6 @@
         }
       ],
       "note_keys": [
-        "statik_pflicht",
         "unterbau_tragfaehig",
         "abtransport"
       ],
@@ -15074,7 +15135,7 @@
         }
       ],
       "note_keys": [
-        "statik_pflicht",
+        "pool_untergrund",
         "genehmigung_bau",
         "leitungen_im_boden"
       ],

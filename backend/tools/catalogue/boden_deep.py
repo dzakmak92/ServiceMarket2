@@ -389,7 +389,7 @@ BODEN_DEEP = [
       setup_hours=(1.0, 1.8), typical_size=(15, 60),
       market_band_at=(12, 28), market_band_de=(12, 30),
       confidence="medium", sources=SRC_BO,
-      note_keys=["untergrund_eben", "trocknung_nutzung"],
+      note_keys=["untergrund_eben", "ausgleich_trocknung"],
       guided_form=[
           Q("hoehe", "Ausgleichshöhe", "choice", affects="variant",
             options=[("bis_5", "Bis 5 mm"), ("bis_15", "5 bis 15 mm"),
@@ -466,7 +466,7 @@ BODEN_DEEP = [
             default="stark"),
           Q("oberflaeche", "Neue Oberfläche", "choice", affects="variant",
             options=[("versiegelung", "Versiegelung"), ("oel", "Öl oder Hartwachs")],
-            default="versiegelung", note_if={"oel": "holzschutz_intervall"}),
+            default="versiegelung", note_if={"oel": "oel_nachpflege"}),
           Q_BAUJAHR],
       operations=[
           Op("vorbereiten", "Nägel versenken, Fugen kitten", "m2", (0.05, 0.10)),
