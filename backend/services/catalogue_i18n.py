@@ -4443,10 +4443,67 @@ NOTES: dict[str, dict[str, str]] = {
         "es": 'El precio cubre la colocación y el material de colocación (adhesivo, junta, aislante). Los azulejos o el pavimento no están incluidos y se facturan aparte.'},
 }
 
+
+# ── What the estimator writes, not the catalogue ────────────────────────
+#
+# Six of these never existed in estimation_catalogue.json: the estimator
+# composes them at calculation time — the setup position every quote opens
+# with, the disposal position, the skip size chosen by weight, the trade
+# names in the picker. The audit reads the catalogue, so it was blind to
+# them by construction, and they stayed German through five commits that
+# each reported full coverage. test_catalogue_i18n now walks a real
+# estimate as well as the catalogue, which is what makes that impossible
+# to repeat.
+
+ESTIMATE_STRINGS: dict[str, dict[str, str]] = {
+    'Anfahrt, Einrichten und Schutzmaßnahmen': {
+        "en": 'Travel, set-up and protective measures', "tr": 'Yol, hazırlık ve koruma önlemleri',
+        "es": 'Desplazamiento, preparación y medidas de protección'},
+    'Entsorgung inkl. Container': {
+        "en": 'Disposal including container', "tr": 'Bertaraf (konteyner dahil)',
+        "es": 'Retirada de residuos, contenedor incluido'},
+    'Big Bag (bis 1 t)': {
+        "en": 'Big bag (up to 1 t)', "tr": 'Big bag (1 tona kadar)',
+        "es": 'Big bag (hasta 1 t)'},
+    '3 m³ Mulde': {
+        "en": '3 m³ skip', "tr": '3 m³ konteyner',
+        "es": 'Contenedor de 3 m³'},
+    '7 m³ Mulde': {
+        "en": '7 m³ skip', "tr": '7 m³ konteyner',
+        "es": 'Contenedor de 7 m³'},
+    'Mehrere Mulden oder Abrollcontainer': {
+        "en": 'Several skips or a roll-off container', "tr": 'Birden fazla konteyner veya kancalı konteyner',
+        "es": 'Varios contenedores o un contenedor de gancho'},
+    'Maler': {
+        "en": 'Painting and decorating', "tr": 'Boyacılık',
+        "es": 'Pintura'},
+    'Fliesen': {
+        "en": 'Tiling', "tr": 'Fayans',
+        "es": 'Alicatado'},
+    'Elektrik': {
+        "en": 'Electrical', "tr": 'Elektrik',
+        "es": 'Electricidad'},
+    'Sanitär': {
+        "en": 'Plumbing and heating', "tr": 'Tesisat',
+        "es": 'Fontanería'},
+    'Garten': {
+        "en": 'Garden and grounds', "tr": 'Bahçe',
+        "es": 'Jardinería'},
+    'Reinigung': {
+        "en": 'Cleaning', "tr": 'Temizlik',
+        "es": 'Limpieza'},
+    'Montage / Allround': {
+        "en": 'Fitting and handyman', "tr": 'Montaj / Genel işler',
+        "es": 'Montaje / Multiservicios'},
+    'Material': {
+        "en": 'Material', "tr": 'Malzeme',
+        "es": 'Material'},
+}
+
 # Every table in this module, in the order a lookup should try them. Split by
 # what they describe rather than merged, so a translator can be handed one
 # section at a time and so the coverage test can report which part is short.
-TABLES: tuple[dict, ...] = (NOTES, QUOTE_LINES, OPTIONS, QUESTIONS, AXES, JOB_TITLES)
+TABLES: tuple[dict, ...] = (ESTIMATE_STRINGS, NOTES, QUOTE_LINES, OPTIONS, QUESTIONS, AXES, JOB_TITLES)
 
 
 def translate(text: str, lang: str = "de") -> str:

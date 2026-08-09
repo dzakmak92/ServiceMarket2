@@ -592,3 +592,71 @@ def decorate_question(q: dict, lang: str = "de") -> dict:
         effect = "note"
     out["price_effect"] = effect
     return out
+
+
+# The bullet that opens each assumption on a quote. German uses "•" and so does
+# every other language here; it is punctuation, not a word.
+_BULLET = "• "
+
+# When an operation is split into labour and material, the estimator writes the
+# material half as "<operation> — Material". That composite string is in no
+# table and never will be: it is one per operation, and the half that varies is
+# already translated. Split it, translate both ends, rejoin.
+_MATERIAL_SUFFIX = " — Material"
+
+
+def _line_text(description: str, lang: str) -> str:
+    t = catalogue_i18n.translate
+    if description.endswith(_MATERIAL_SUFFIX):
+        base = description[: -len(_MATERIAL_SUFFIX)]
+        return f"{t(base, lang)} — {t('Material', lang)}"
+    return t(description, lang)
+
+
+def localise_estimate(est: dict, lang: str = "de") -> dict:
+    """The same estimate with its German surfaces rendered in `lang`.
+
+    The estimator works in one language on purpose: it is the language the
+    catalogue is written in, and an arithmetic layer that had to pick a
+    language would be a layer that could get the price wrong by getting the
+    locale wrong. Translation belongs here, at the edge, where nothing is
+    computed from the text.
+
+    German is never thrown away. Every translated field is added *beside* the
+    German one — `description` next to `description_de`, `text` next to
+    `text_de` — because a quote is a document about what was agreed, and the
+    words that were agreed were German. A screen showing an English rendering
+    of a sent quote still has to be able to produce the original.
+
+    Returns a new dict. `est` is often the row that gets stored, and mutating
+    it here would persist a translation into the record of a German quote.
+    """
+    if lang == "de" or lang not in catalogue_i18n.LANGS:
+        return est
+    t = catalogue_i18n.translate
+
+    out = dict(est)
+    job = est.get("job")
+    if job:
+        out["job"] = {**job, "label": t(job.get("label_de") or "", lang)}
+
+    out["lines"] = [{**ln,
+                     "description_de": ln.get("description"),
+                     "description": _line_text(ln.get("description") or "", lang)}
+                    for ln in est.get("lines") or []]
+
+    # Not a line — a sentence on the debris panel. Translated all the same:
+    # "3 m³ Mulde" sitting under an English heading is the kind of half-language
+    # screen the whole exercise is meant to remove.
+    if est.get("container"):
+        out["container_de"] = est["container"]
+        out["container"] = t(est["container"], lang)
+
+    notes = [{**n, "text": t(n.get("text_de") or "", lang)}
+             for n in est.get("notes") or []]
+    out["notes"] = notes
+    # Rebuilt rather than translated as a block: `assumptions` is the notes
+    # joined, and translating the joined string would look for a table entry
+    # that is six paragraphs long and find nothing.
+    out["assumptions"] = "\n".join(_BULLET + n["text"] for n in notes)
+    return out

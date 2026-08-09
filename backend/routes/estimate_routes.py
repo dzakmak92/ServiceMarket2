@@ -105,6 +105,13 @@ class EstimateToQuoteIn(EstimateIn):
     # a customer choosing between options is not a customer choosing the
     # cheapest of eight quotes.
     all_tiers: bool = False
+    # The language of the *document*, which is a different question from the
+    # language of the screen. On /estimate, `lang` is a query parameter and
+    # means "render this for me"; here it is a field on the body, because what
+    # is written into `quotes` and `quote_lines` is what the customer will
+    # receive and what both sides are held to. It defaults to German, so a pro
+    # who never touches it produces exactly the document they produced before.
+    lang: str = Field(default="de", pattern="^(de|en|tr|es)$")
 
 
 async def _country_for(pro_id: str) -> str:
@@ -240,39 +247,57 @@ async def job_survey(job_key: str, lang: str = Query(default="de", pattern="^(de
     return out
 
 
+LANG_QUERY = Query(default="de", pattern="^(de|en|tr|es)$")
+
+
 @router.post("")
-async def compute(body: EstimateIn, user: dict = Depends(get_current_user)):
+async def compute(body: EstimateIn, lang: str = LANG_QUERY,
+                  user: dict = Depends(get_current_user)):
     """Answers in, estimate out. Creates nothing.
 
     Deliberately does not store the estimate: the screen recalculates on every
     keystroke, and saving here would write a row per digit typed. Storing is an
     explicit act — /save, or creating a quote.
+
+    `lang` renders the text and nothing else. The arithmetic never sees it: the
+    same answers give the same total in all four languages, which is the whole
+    reason translation happens here and not in the estimator.
     """
     pro_id = await require_pro_id(user)
     try:
-        return await _estimate(pro_id, body)
+        return catalogue_ui.localise_estimate(await _estimate(pro_id, body), lang)
     except LookupError as exc:
         raise HTTPException(404, str(exc)) from exc
 
 
 @router.post("/compare")
-async def compare_tiers(body: EstimateIn, user: dict = Depends(get_current_user)):
+async def compare_tiers(body: EstimateIn, lang: str = LANG_QUERY,
+                        user: dict = Depends(get_current_user)):
     """The same job at all three tiers, from one set of answers."""
     pro_id = await require_pro_id(user)
     try:
-        return {"tiers": {t: await _estimate(pro_id, body, tier=t)
-                          for t in ("basic", "standard", "premium")}}
+        return {"tiers": {
+            t: catalogue_ui.localise_estimate(await _estimate(pro_id, body, tier=t), lang)
+            for t in ("basic", "standard", "premium")}}
     except LookupError as exc:
         raise HTTPException(404, str(exc)) from exc
 
 
 @router.post("/save", status_code=201)
-async def save_estimate(body: SaveEstimateIn, user: dict = Depends(get_current_user)):
+async def save_estimate(body: SaveEstimateIn, lang: str = LANG_QUERY,
+                        user: dict = Depends(get_current_user)):
     """Keep an estimate without turning it into a quote.
 
     Worth its own endpoint because a job that was calculated and not quoted is
     real evidence. Learning only from work that was won would bias the model
     toward the jobs that were cheap enough to win.
+
+    What is stored is the German estimate, whatever `lang` says. The stored row
+    is evidence about how this business prices — it is read back by the
+    calibration, compared against other rows and exported — and a table whose
+    rows are in whichever language the pro happened to have selected that
+    afternoon is a table you cannot group by. The response is localised; the
+    record is not.
     """
     pro_id = await require_pro_id(user)
     try:
@@ -282,7 +307,8 @@ async def save_estimate(body: SaveEstimateIn, user: dict = Depends(get_current_u
     row = await estimates_repo.save(
         pro_id, result, job_id=body.job_id,
         calibration_applied=(result.get("calibration") or {}).get("hours_factor"))
-    return {"estimate_id": str(row["id"]), "estimate": result}
+    return {"estimate_id": str(row["id"]),
+            "estimate": catalogue_ui.localise_estimate(result, lang)}
 
 
 @router.get("/accuracy")
@@ -321,15 +347,27 @@ async def estimate_to_quote(body: EstimateToQuoteIn,
     difference between an estimate and a fixed-price trap when the substrate
     turns out to be rotten, and a quote that dropped them would be worse than
     one built by hand.
+
+    They are also the reason `body.lang` reaches the stored rows rather than
+    only the response. An assumption the customer cannot read is not an
+    assumption they agreed to: "Gerüst ist bauseits beizustellen" in front of a
+    customer who reads only English says nothing about who pays for the
+    scaffolding. So when a language is asked for, the positions and the
+    assumptions are written in it — the quote is the document, and the document
+    has one language.
     """
     pro_id = await require_pro_id(user)
     tiers = ("basic", "standard", "premium") if body.all_tiers else (body.tier,)
     try:
-        results = {t: await _estimate(pro_id, body, tier=t) for t in tiers}
+        results = {t: catalogue_ui.localise_estimate(
+            await _estimate(pro_id, body, tier=t), body.lang) for t in tiers}
     except LookupError as exc:
         raise HTTPException(404, str(exc)) from exc
 
     ref = results[tiers[-1]]
+    # The job title too. `label_de` is still on the payload, so falling back to
+    # it keeps a German quote byte-identical to what this endpoint built before.
+    job_title = ref["job"].get("label") or ref["job"]["label_de"]
 
     # No job named? Make one, from what the calculation already knows. It is a
     # lead until the quote is sent, which is exactly what it is.
@@ -337,7 +375,7 @@ async def estimate_to_quote(body: EstimateToQuoteIn,
     created_job = None
     if not job_id:
         created_job = await jobs_repo.create(pro_id, {
-            "title": body.title or ref["job"]["label_de"],
+            "title": body.title or job_title,
             "category": ref["job"]["trade"],
             "customer_id": body.customer_id,
             "mode": "simple",
@@ -345,7 +383,7 @@ async def estimate_to_quote(body: EstimateToQuoteIn,
         })
         job_id = str(created_job["id"])
     fields = {
-        "title": body.title or ref["job"]["label_de"],
+        "title": body.title or job_title,
         "assumptions": ref["assumptions"] or None,
         # Confidence travels with the document. A quote built from a `low`
         # entry should not look identical to one built from a corroborated
