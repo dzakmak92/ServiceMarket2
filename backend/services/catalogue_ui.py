@@ -24,9 +24,12 @@ chunked, what each group is called in four languages, which coloured zone it
 sits in, and which templates are shown in two groups at once. `group` in the
 catalogue cannot do any of this: every one of the 19 Maler templates carries
 the same group, "Maler & Tapezierer", so grouping by it produces one section
-containing everything. Only the seven trades with enough templates to need
-chunking have sections; below about ten a flat list is faster to read than a
-list with headings in it.
+containing everything.
+
+Thirteen of the twenty-two trades have sections — every trade with three
+templates or more. The eleven with one or two do not, and that is the whole
+of the remaining rule: two rows under two headings is not a grouping, it is a
+label repeated, and both rows are on one screen regardless.
 
 `test_sections.py` checks the shape of all of it: every template placed
 exactly once before cross-listing, every cross-listing pointing at a section
@@ -268,6 +271,76 @@ SECTIONS: dict[str, list[tuple[str, str, list[str]]]] = {
             "reinigung.graffiti", "reinigung.tiefgarage",
         ]),
     ],
+
+    # ── Trades below the "about ten templates" line ──────────────────────
+    #
+    # The rule this module documents is that a short list reads faster without
+    # headings, and it still holds for the eleven trades of one or two
+    # templates below: two rows under two headings is not a grouping, it is a
+    # label repeated, and both rows are on screen together anyway.
+    #
+    # From three templates up there is something to separate, so these get
+    # sections. Some groups hold a single template. That is not an accident —
+    # it is what says the one is not one of the others.
+
+    "boden": [
+        ("untergrund", "Untergrund vorbereiten", [
+            "boden.belag_entfernen", "boden.ausgleich",
+        ]),
+        ("verlegen", "Neuen Belag verlegen", [
+            "boden.laminat", "boden.vinyl", "boden.parkett", "boden.teppich",
+        ]),
+        ("aufarbeiten", "Vorhandenen Boden aufarbeiten", [
+            "boden.parkett_schleifen",
+        ]),
+    ],
+
+    "fenster": [
+        ("tauschen", "Fenster und Glas tauschen", [
+            "fenster.tausch", "glaser.scheibe",
+        ]),
+        ("beschattung", "Rollladen und Beschattung", [
+            "fenster.rolladen", "fenster.markise",
+        ]),
+    ],
+
+    "dach": [
+        ("flaeche", "Dachfläche", [
+            "dach.ziegel_umdecken", "dach.flachdach",
+        ]),
+        ("anschluesse", "Rinne und Kamin", [
+            "dach.rinne", "dach.kaminkehren",
+        ]),
+    ],
+
+    "heizung": [
+        ("erzeugen", "Wärme erzeugen", [
+            "heizung.waermepumpe", "heizung.kaminofen",
+        ]),
+        ("abgeben", "Wärme abgeben", [
+            "heizung.heizkoerper", "heizung.fussbodenheizung",
+        ]),
+    ],
+
+    "maurer": [
+        ("wand", "Wand öffnen und schließen", [
+            "maurer.durchbruch", "maurer.wand_mauern",
+        ]),
+        # `steinmetz.fensterbank`, not `maurer.fensterbank`: one of the three
+        # templates whose key comes from a neighbouring trade.
+        ("naturstein", "Naturstein", [
+            "steinmetz.fensterbank",
+        ]),
+    ],
+
+    "tischler": [
+        ("nach_mass", "Nach Maß gefertigt", [
+            "tischler.innentuer", "tischler.einbauschrank",
+        ]),
+        ("montieren", "Kaufmöbel montieren", [
+            "tischler.moebelmontage",
+        ]),
+    ],
 }
 
 # The heading each section gets in the other three languages. German is in
@@ -350,6 +423,42 @@ SECTION_LABELS: dict[str, dict[str, str]] = {
                         "es": "Viviendas, oficinas, interiores"},
     "reinigung.gebaeude": {"en": "Buildings and outdoor areas",
                            "tr": "Bina ve dış alanlar", "es": "Edificios y exteriores"},
+
+    "boden.untergrund": {"en": "Preparing the substrate", "tr": "Zemin hazırlığı",
+                         "es": "Preparar el soporte"},
+    "boden.verlegen": {"en": "Laying a new floor", "tr": "Yeni kaplama döşeme",
+                       "es": "Colocar el suelo nuevo"},
+    "boden.aufarbeiten": {"en": "Refinishing what is there",
+                          "tr": "Mevcut zemini yenileme",
+                          "es": "Renovar el suelo existente"},
+
+    "fenster.tauschen": {"en": "Replacing windows and glass",
+                         "tr": "Pencere ve cam değişimi",
+                         "es": "Cambiar ventanas y vidrio"},
+    "fenster.beschattung": {"en": "Shutters and shading",
+                            "tr": "Panjur ve gölgeleme",
+                            "es": "Persianas y protección solar"},
+
+    "dach.flaeche": {"en": "The roof surface", "tr": "Çatı yüzeyi",
+                     "es": "La superficie de cubierta"},
+    "dach.anschluesse": {"en": "Gutters and chimney", "tr": "Oluk ve baca",
+                         "es": "Canalones y chimenea"},
+
+    "heizung.erzeugen": {"en": "Producing heat", "tr": "Isı üretmek",
+                         "es": "Producir calor"},
+    "heizung.abgeben": {"en": "Emitting heat", "tr": "Isı vermek",
+                        "es": "Emitir calor"},
+
+    "maurer.wand": {"en": "Opening and closing walls", "tr": "Duvar açmak ve örmek",
+                    "es": "Abrir y cerrar muros"},
+    "maurer.naturstein": {"en": "Natural stone", "tr": "Doğal taş",
+                          "es": "Piedra natural"},
+
+    "tischler.nach_mass": {"en": "Made to measure", "tr": "Ölçüye göre üretim",
+                           "es": "Fabricado a medida"},
+    "tischler.montieren": {"en": "Fitting bought furniture",
+                           "tr": "Hazır mobilya montajı",
+                           "es": "Montar muebles comprados"},
 }
 
 # One line under a section heading naming what is in it, because a heading on
@@ -473,6 +582,60 @@ SECTION_SUBS: dict[str, dict[str, str]] = {
         "en": "Building envelope and common areas",
         "tr": "Bina kabuğu ve ortak alanlar",
         "es": "Envolvente y zonas comunes"},
+
+    "boden.untergrund": {
+        "de": "Alter Belag raus, Fläche eben", "en": "Old covering out, surface level",
+        "tr": "Eski kaplama çıkar, zemin düzlenir",
+        "es": "Fuera lo viejo, superficie a nivel"},
+    "boden.verlegen": {
+        "de": "Laminat, Vinyl, Parkett, Teppich",
+        "en": "Laminate, vinyl, parquet, carpet",
+        "tr": "Laminat, vinil, parke, halı",
+        "es": "Laminado, vinilo, parqué, moqueta"},
+    "boden.aufarbeiten": {
+        "de": "Schleifen statt tauschen", "en": "Sanding instead of replacing",
+        "tr": "Değiştirmek yerine zımparalamak",
+        "es": "Lijar en lugar de sustituir"},
+
+    "fenster.tauschen": {
+        "de": "Der Rahmen oder nur die Scheibe", "en": "The frame, or just the pane",
+        "tr": "Kasa veya sadece cam", "es": "El marco, o solo el vidrio"},
+    "fenster.beschattung": {
+        "de": "Nachgerüstet am fertigen Fenster",
+        "en": "Retrofitted to a finished window",
+        "tr": "Mevcut pencereye sonradan eklenir",
+        "es": "Añadido a una ventana ya instalada"},
+
+    "dach.flaeche": {
+        "de": "Eindeckung und Abdichtung", "en": "Covering and waterproofing",
+        "tr": "Kaplama ve su yalıtımı", "es": "Cubrición e impermeabilización"},
+    "dach.anschluesse": {
+        "de": "Was Wasser und Rauch ableitet",
+        "en": "What carries water and smoke away",
+        "tr": "Suyu ve dumanı uzaklaştıranlar", "es": "Lo que evacua agua y humo"},
+
+    "heizung.erzeugen": {
+        "de": "Die Quelle im Haus", "en": "The source in the building",
+        "tr": "Binadaki kaynak", "es": "La fuente en la vivienda"},
+    "heizung.abgeben": {
+        "de": "Was im Raum warm wird", "en": "What gets warm in the room",
+        "tr": "Odada ısınan kısım", "es": "Lo que se calienta en la estancia"},
+
+    "maurer.wand": {
+        "de": "Tragend oder nicht — immer Besichtigung",
+        "en": "Load-bearing or not, always a site visit",
+        "tr": "Taşıyıcı olsun olmasın, her zaman keşif",
+        "es": "Portante o no, siempre visita previa"},
+    "maurer.naturstein": {
+        "de": "Zuschnitt und Versatz", "en": "Cut and set",
+        "tr": "Kesim ve yerine koyma", "es": "Corte y colocación"},
+
+    "tischler.nach_mass": {
+        "de": "Gefertigt und montiert", "en": "Built and fitted",
+        "tr": "Üretilir ve monte edilir", "es": "Fabricado y montado"},
+    "tischler.montieren": {
+        "de": "Nach Aufwand", "en": "By the hour",
+        "tr": "Saat başı", "es": "Por horas"},
 }
 
 # ── Zones ───────────────────────────────────────────────────────────────
@@ -577,6 +740,11 @@ CROSS_LISTED: dict[str, dict[str, list[str]]] = {
     "reinigung": {
         # A window has two sides and is cleaned from both.
         "reinigung.fenster": ["innen"],
+    },
+    "boden": {
+        # Levelling is a job in its own right and the step somebody quoting a
+        # new floor must not leave out.
+        "boden.ausgleich": ["verlegen"],
     },
 }
 
