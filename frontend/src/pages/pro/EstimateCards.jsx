@@ -122,7 +122,9 @@ function Note({ note, tone = 'normal' }) {
 
 /** One template: a checkbox, and everything it needs once it is checked. */
 function Card({ job, state, onToggle, onOpen, onAnswer, t }) {
-  const checked = !!state;
+  // Ticked, which is not the same as on screen: a card can be open because
+  // somebody wanted to read it without putting it in the quote.
+  const checked = !!state?.checked;
   const est = state?.est;
   const open = state?.open;
   // Memoised so the empty-array fallback is not a new array on every
@@ -209,8 +211,19 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t }) {
           </span>
         ))}
         {state?.loading && <Loader2 size={14} className="animate-spin text-teal" />}
-        <ChevronDown size={14} aria-hidden="true"
-                     className={`text-ink-faint transition-transform ${open ? 'rotate-180' : ''}`} />
+        {/* The chevron is what people aim at to expand a row, so it has to be
+            the thing that expands it. It was decoration next to a title that
+            carried the click, which left the one control that looks like a
+            control doing nothing. Its own hit area, not a wider title button:
+            44 px of tappable target at the end of the row. */}
+        <button type="button" onClick={() => onOpen(job.key)}
+                aria-expanded={!!open} aria-label={`${lbl(job)} — ${t('est_details')}`}
+                data-testid={`estimate-expand-${job.key}`}
+                className="-my-2 -mr-1 shrink-0 px-1 py-2 rounded focus-visible:outline-none
+                           focus-visible:ring-4 focus-visible:ring-teal/30">
+          <ChevronDown size={14} aria-hidden="true"
+                       className={`text-ink-faint transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
       </div>
 
       {open && state && (
@@ -323,9 +336,10 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting }
   const { t } = useLang();
   const [picked, setPicked] = useState({});
 
-  /* Answers → estimate, one request per checked position. Debounced together
-     rather than per card: typing a quantity in one card must not fire five
-     requests for the four that did not change. */
+  /* Answers → estimate, one request per card that has a quantity — including
+     one only opened to be read, because the price is what somebody opened it
+     for. Debounced together rather than per card: typing a quantity in one
+     card must not fire five requests for the four that did not change. */
   const [tick, setTick] = useState(0);
   const bump = useCallback(() => setTick((n) => n + 1), []);
 
@@ -355,19 +369,27 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tick, lang]);
 
-  const toggle = async (key) => {
-    if (picked[key]) {
-      setPicked(({ [key]: _drop, ...rest }) => rest);
-      return;
-    }
-    // Accordion, not independent toggles. Two open cards is 940 px of the
-    // screen and the whole point of this layout is that the other rows and the
-    // running total stay visible while you work on one.
-    setPicked((cur) => {
-      const closed = Object.fromEntries(
-        Object.entries(cur).map(([k, v]) => [k, { ...v, open: false }]));
-      return { ...closed, [key]: { answers: {}, open: true, loading: true } };
-    });
+  /* An entry in `picked` is a card that is doing something — ticked, or open,
+     or both. `checked` is what puts a position in the quote; `open` is only
+     what is on screen. Keeping them apart is what lets somebody read a
+     template's options without silently adding it to the quote, which with the
+     unpriced-position gate would have locked the quote button on a row they
+     only looked at. */
+  const drop = (key) => setPicked(({ [key]: _gone, ...rest }) => rest);
+
+  /* Accordion, not independent toggles. Two open cards is 940 px of the screen
+     and the whole point of this layout is that the other rows and the running
+     total stay visible while you work on one. A card that is neither ticked
+     nor the one being opened has nothing left to keep, so it goes. */
+  const openOnly = (cur, key, patch) => {
+    const rest = Object.fromEntries(Object.entries(cur)
+      .filter(([k, v]) => k === key || v.checked)
+      .map(([k, v]) => [k, k === key ? v : { ...v, open: false }]));
+    return { ...rest, [key]: { ...(cur[key] || {}), ...patch } };
+  };
+
+  const load = async (key, init) => {
+    setPicked((cur) => openOnly(cur, key, { answers: {}, loading: true, ...init }));
     try {
       const { data } = await api.get(`/api/estimate/jobs/${key}`, { params: { lang } });
       /* Seed the form's own defaults — except the quantity, which is left
@@ -398,23 +420,32 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting }
       });
       bump();
     } catch {
-      setPicked(({ [key]: _drop, ...rest }) => rest);
+      drop(key);
     }
   };
 
-  const open = (key, what) => {
-    if (!picked[key]) return toggle(key);
-    if (what === 'notes') {
-      return setPicked((cur) => ({
-        ...cur, [key]: { ...cur[key], showNotes: !cur[key].showNotes },
-      }));
+  /** The checkbox: what goes in the quote. Ticking a fresh row opens it too. */
+  const toggle = (key) => {
+    const cur = picked[key];
+    if (!cur) return load(key, { checked: true, open: true });
+    if (!cur.checked) {
+      return setPicked((s) => ({ ...s, [key]: { ...s[key], checked: true } }));
     }
-    return setPicked((cur) => {
-      const opening = !cur[key].open;
-      const closed = Object.fromEntries(
-        Object.entries(cur).map(([k, v]) => [k, { ...v, open: false }]));
-      return { ...closed, [key]: { ...cur[key], open: opening } };
-    });
+    // Unticked: it stays on screen only while it is still open.
+    return cur.open
+      ? setPicked((s) => ({ ...s, [key]: { ...s[key], checked: false } }))
+      : drop(key);
+  };
+
+  /** The chevron and the title: what is on screen. Never ticks anything. */
+  const open = (key, what) => {
+    const cur = picked[key];
+    if (!cur) return load(key, { checked: false, open: true });
+    if (what === 'notes') {
+      return setPicked((s) => ({ ...s, [key]: { ...s[key], showNotes: !s[key].showNotes } }));
+    }
+    if (cur.open && !cur.checked) return drop(key);
+    return setPicked((s) => openOnly(s, key, { open: !s[key].open }));
   };
 
   const answer = (key, qk, value) => {
@@ -431,14 +462,14 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting }
     bump();
   };
 
-  const chosen = Object.entries(picked).filter(([, p]) => p.est);
+  const chosen = Object.entries(picked).filter(([, p]) => p.checked && p.est);
   const total = chosen.reduce((s, [, p]) => s + p.est.total_net[1], 0);
 
   /* Ticked, but no quantity typed yet, so it has no price and cannot go into
      the quote. Somebody who ticks a position means to send it — dropping it
      out of the total silently would hand them a quote that is short a line
      they thought they had added. Count it, name it, and hold the button. */
-  const pending = Object.entries(picked).filter(([, p]) => p.form && !hasQty(p));
+  const pending = Object.entries(picked).filter(([, p]) => p.checked && p.form && !hasQty(p));
 
   /* Order comes from the section, not from the job array. `sections_for`
      lists "what most people came for" first — a painter opens this for an
