@@ -75,6 +75,11 @@ const ALLOWED = new Set([
   /* The token kind, printed as an identifier in a table of share links
      beside a reference and an amount — a value, not a label. */
   'PAY-LINK',
+
+  /* The Austrian data protection authority's registered name. A person
+     lodging a complaint has to address it as it is registered, so this
+     stays German in every language — the same rule as UID and USt. */
+  'Österreichische Datenschutzbehörde',
 ]);
 
 const NOT_PROSE = [
@@ -117,8 +122,15 @@ const rel = (f) => path.relative(ROOT, f);
    is read by the operator, and a privacy policy is a legal instrument whose
    translation is a lawyer's call, not a developer's. The tradesperson- and
    customer-facing screens are the ones that must be complete. */
+/* `legal` is only the three files that ARE the legal instrument — the privacy
+   policy, the terms and the imprint. The forms that sit alongside them are not
+   legal text: they are a name field, an email field and a submit button that a
+   person uses to exercise an Art. 15–22 right, and somebody who cannot read
+   English cannot be asked to file that request in English. Those count as
+   `app` and must be zero like everything else. */
+const LEGAL_INSTRUMENTS = /\/pages\/legal\/(PrivacyPolicyPage|TermsPage|ImprintPage)\.jsx$/;
 const audience = (f) => (/\/(pages|components)\/admin\//.test(f) ? 'admin'
-  : /\/pages\/legal\//.test(f) ? 'legal'
+  : LEGAL_INSTRUMENTS.test(f) ? 'legal'
   : 'app');
 const files = walk(SRC).filter((f) => !SKIP_FILES.some((r) => r.test(f)));
 
@@ -283,6 +295,14 @@ if (json) {
     list.forEach((h) => { (byFile[h.file] ||= []).push(h); });
     const ranked = Object.entries(byFile).sort((a, z) => z[1].length - a[1].length);
     console.log(`\n── hardcoded [${aud}]: ${list.length} in ${ranked.length} files ──`);
+    if (aud === 'legal' && list.length) {
+      console.log('  (not a backlog. These three files are the legal instrument itself:');
+      console.log('   both the policy and the terms are marked "1.0-draft" pending counsel and');
+      console.log('   already promise a binding German version that does not exist, and the');
+      console.log('   imprint carries [to be filled] where §5 ECG requires the operator name,');
+      console.log('   address and trade authority. Translating an unreviewed instrument into');
+      console.log('   four languages multiplies it by four. Counsel first, then translate.)');
+    }
     ranked.slice(0, 20).forEach(([f, l]) => {
       console.log(`  ${f}  (${l.length})`);
       if (aud === 'app') l.slice(0, 5).forEach((h) =>

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useLang } from '../../contexts/LangContext';
 import api from '../../api/client';
 import LegalPageLayout from './LegalPageLayout';
 import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function RemovalPage() {
+  const { t } = useLang();
   const [form, setForm] = useState({ business_name: '', email: '', reason: '' });
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(null);
@@ -16,30 +18,28 @@ export default function RemovalPage() {
       const { data } = await api.post('/api/privacy/removal-request', form);
       setSuccess({ id: data.id, due_at: data.due_at });
     } catch (err) {
-      setError(err.response?.data?.detail || 'Could not submit request. Please email contact@servicemarket.at directly.');
+      setError(err.response?.data?.detail || t('dsr_err_submit'));
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <LegalPageLayout title="Removal Request" version="1.0" lastUpdated="28 February 2026">
+    <LegalPageLayout title={t('rem_title')} version="1.0" lastUpdated="28 February 2026">
       <p className="lead">
-        If you are a business owner whose details appear on ServiceMarket without your prior
-        signup, please use this form to request removal. We will process your request within 30 days.
+        {t('rem_lead')}
       </p>
       <p className="text-sm text-ink-muted">
-        Note: ServiceMarket primarily lists tradespersons who voluntarily registered. If your
-        business is listed because you registered an account, please log in and use the{' '}
-        <a href="/settings">Settings → Privacy</a> section to delete your account instead.
+        {t('rem_note', { link: '' })}{' '}
+        <a href="/settings">{t('rem_settings_link')}</a>
       </p>
 
       {success ? (
         <div className="rounded-[14px] border border-green-pos/30 bg-green-pos/5 p-5 text-center my-6" data-testid="removal-success">
           <CheckCircle size={32} className="text-green-pos mx-auto mb-2" />
-          <p className="font-semibold text-ink">Request received. Reference: <code>{success.id.slice(-8)}</code></p>
+          <p className="font-semibold text-ink">{t('rem_received')} <code>{success.id.slice(-8)}</code></p>
           <p className="text-sm text-ink-muted mt-1">
-            We will respond by <strong>{new Date(success.due_at).toLocaleDateString()}</strong> at the latest.
+            {t('rem_due', { date: new Date(success.due_at).toLocaleDateString() })}
           </p>
         </div>
       ) : (

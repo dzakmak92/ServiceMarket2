@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLang } from '../../contexts/LangContext';
 import Footer from '../../components/Footer';
 
 /**
@@ -6,6 +7,7 @@ import Footer from '../../components/Footer';
  * Long-form prose, narrow column, sticky table of contents on the side at lg+.
  */
 export default function LegalPageLayout({ title, version, lastUpdated, children, toc = [] }) {
+  const { t } = useLang();
   return (
     <div className="min-h-screen bg-cream flex flex-col" data-testid="legal-page-layout">
       <div className="flex-1">
@@ -13,7 +15,7 @@ export default function LegalPageLayout({ title, version, lastUpdated, children,
           <header className="mb-8">
             <h1 className="text-3xl sm:text-4xl font-headings font-bold text-ink">{title}</h1>
             <p className="text-xs text-ink-muted mt-2 font-mono">
-              Version {version} · Last updated {lastUpdated}
+              {t('legal_version')} {version} · {t('legal_updated')} {lastUpdated}
             </p>
           </header>
 
@@ -25,8 +27,8 @@ export default function LegalPageLayout({ title, version, lastUpdated, children,
 
             {/* TOC */}
             {toc.length > 0 && (
-              <nav className="hidden lg:block sticky top-24 self-start text-xs space-y-1.5" aria-label="Table of contents">
-                <p className="font-semibold uppercase tracking-wider text-ink-muted mb-2">Contents</p>
+              <nav className="hidden lg:block sticky top-24 self-start text-xs space-y-1.5" aria-label={t('legal_toc')}>
+                <p className="font-semibold uppercase tracking-wider text-ink-muted mb-2">{t('legal_contents')}</p>
                 {toc.map((item) => (
                   <a
                     key={item.id}

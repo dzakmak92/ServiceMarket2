@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLang } from '../../contexts/LangContext';
 import api from '../../api/client';
 import LegalPageLayout from './LegalPageLayout';
 import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
@@ -14,6 +15,7 @@ const REQUEST_TYPES = [
 ];
 
 export default function DataRightsPage() {
+  const { t } = useLang();
   const [form, setForm] = useState({
     name: '', email: '', request_type: 'access', details: '',
   });
@@ -28,27 +30,24 @@ export default function DataRightsPage() {
       const { data } = await api.post('/api/privacy/data-rights-request', form);
       setSuccess({ id: data.id, due_at: data.due_at });
     } catch (err) {
-      setError(err.response?.data?.detail || 'Could not submit request. Please email contact@servicemarket.at directly.');
+      setError(err.response?.data?.detail || t('dsr_err_submit'));
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <LegalPageLayout title="Data Subject Rights Request" version="1.0" lastUpdated="28 February 2026">
+    <LegalPageLayout title={t('dsr_title')} version="1.0" lastUpdated="28 February 2026">
       <p className="lead">
-        Use this form to exercise any of your GDPR rights (Articles 15-22). We respond within 30 days
-        of receipt — usually much sooner. You can also email{' '}
-        <a href="mailto:contact@servicemarket.at">contact@servicemarket.at</a> directly.
+        {t('dsr_lead', { mail: 'contact@servicemarket.at' })}
       </p>
 
       {success ? (
         <div className="rounded-[14px] border border-green-pos/30 bg-green-pos/5 p-5 text-center my-6" data-testid="data-rights-success">
           <CheckCircle size={32} className="text-green-pos mx-auto mb-2" />
-          <p className="font-semibold text-ink">Request received. Reference: <code>{success.id.slice(-8)}</code></p>
+          <p className="font-semibold text-ink">{t('dsr_received')} <code>{success.id.slice(-8)}</code></p>
           <p className="text-sm text-ink-muted mt-1">
-            We respond within <strong>30 days</strong> (by <strong>{new Date(success.due_at).toLocaleDateString()}</strong>{' '}
-            at the latest). Please monitor your inbox — including the spam folder.
+            {t('dsr_due', { date: new Date(success.due_at).toLocaleDateString() })}
           </p>
         </div>
       ) : (
@@ -73,10 +72,10 @@ export default function DataRightsPage() {
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               className="sm-input"
               data-testid="data-rights-email"
-              placeholder="The email you use on the Platform"
+              placeholder={t('dsr_email_hint')}
             />
             <p className="text-[10px] text-ink-muted mt-1">
-              We use this to verify your identity before disclosing personal data.
+              {t('dsr_verify_hint')}
             </p>
           </div>
 
@@ -102,7 +101,7 @@ export default function DataRightsPage() {
               onChange={(e) => setForm({ ...form, details: e.target.value })}
               className="sm-textarea"
               data-testid="data-rights-details"
-              placeholder="E.g. which records to correct, which processing you object to, etc."
+              placeholder={t('dsr_details_hint')}
             />
           </div>
 
@@ -126,11 +125,12 @@ export default function DataRightsPage() {
 
       <hr className="my-8" />
 
-      <h2>Supervisory authority</h2>
+      <h2>{t('dsr_authority')}</h2>
       <p>
-        If you believe we have mishandled your data, you have the right to lodge a complaint with
-        the Austrian Data Protection Authority:<br />
-        <strong>Österreichische Datenschutzbehörde</strong>, Barichgasse 40-42, 1030 Vienna —{' '}
+        {t('dsr_authority_body')}<br />
+        {/* The authority's own name stays in German — it is how the body is
+            registered and how a complaint must be addressed. */}
+        <strong>Österreichische Datenschutzbehörde</strong>{t('dsr_authority_addr')}{' '}
         <a href="https://www.dsb.gv.at" target="_blank" rel="noopener noreferrer">dsb.gv.at</a>.
       </p>
     </LegalPageLayout>
