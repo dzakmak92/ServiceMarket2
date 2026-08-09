@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import "@/App.css";
 
@@ -364,11 +364,29 @@ function AppShell() {
   );
 }
 
+/**
+ * Applies the language the account was created in.
+ *
+ * It has to live here rather than inside `LangProvider`, because the language
+ * provider wraps the auth one — the interface needs words before it knows who
+ * is looking at it. So the account's answer arrives later, and this carries it
+ * across. It renders nothing.
+ */
+function AccountLanguage() {
+  const { user } = useAuth();
+  const { adoptAccountLang } = useLang();
+  useEffect(() => {
+    if (user?.lang) adoptAccountLang(user.lang);
+  }, [user?.lang, adoptAccountLang]);
+  return null;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <LangProvider>
         <AuthProvider>
+          <AccountLanguage />
           <CookieConsentProvider>
             <AppShell />
             <Toaster position="top-right" richColors closeButton />

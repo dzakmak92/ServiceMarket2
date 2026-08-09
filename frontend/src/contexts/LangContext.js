@@ -10,6 +10,10 @@ const SUPPORTED = ['de', 'en', 'tr', 'es'];
 // The product is de-AT first. Defaulting to English put every Austrian and
 // German tradesperson — the whole target audience — into a language they did
 // not ask for, on a screen where the language switcher is in a menu.
+//
+// `sm_lang` means the person picked a language on *this device*, so it wins
+// over everything, including their account. Its absence is what lets
+// `adoptAccountLang` step in below.
 function initialLang() {
   const stored = localStorage.getItem('sm_lang');
   if (SUPPORTED.includes(stored)) return stored;
@@ -40,13 +44,32 @@ export function LangProvider({ children }) {
     localStorage.setItem('sm_lang', newLang);
   }, []);
 
+  /* The language the account was created in, applied when this device has no
+     opinion of its own.
+
+     Onboarding asks for a language on its very first screen and saves it to
+     the account — and nothing ever read it back. A tradesperson who chose
+     Turkish got Turkish only for as long as that browser kept its
+     localStorage: a new phone, a private window or a cleared cache put them
+     back into whatever their browser reported, which for the whole target
+     audience means German and for everyone else means English. They had
+     answered the question and the app forgot.
+
+     It does not overwrite `sm_lang`. Picking a language from the menu is a
+     statement about this device and stays one; this only fills the silence. */
+  const adoptAccountLang = useCallback((accountLang) => {
+    if (!SUPPORTED.includes(accountLang)) return;
+    if (localStorage.getItem('sm_lang')) return;
+    setLang((current) => (current === accountLang ? current : accountLang));
+  }, []);
+
   const t = useCallback((key, vars = {}) => {
     const str = translations[lang]?.[key] || translations.en?.[key] || key;
     return Object.entries(vars).reduce((acc, [k, v]) => acc.replace(`{${k}}`, v), str);
   }, [lang]);
 
   return (
-    <LangContext.Provider value={{ lang, changeLang, t }}>
+    <LangContext.Provider value={{ lang, changeLang, adoptAccountLang, t }}>
       {children}
     </LangContext.Provider>
   );
