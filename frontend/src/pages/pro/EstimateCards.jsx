@@ -170,7 +170,20 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section
   // render, which would make the summary below recompute continuously.
   const form = useMemo(() => state?.form || [], [state]);
   const qq = qtyQuestion(form);
-  const amount = est ? est.total_net[1] : null;
+  /* `lines_net`, not `total_net[1]`.
+   *
+   * The estimator returns two different things. `total_net` is a *range* —
+   * what the model says the work is worth, low to high — and `lines_net` is
+   * what the positions it wrote actually come to. Both are real and the
+   * estimator's own docstring says they are allowed to disagree.
+   *
+   * This screen showed the top of the range and then built the quote out of
+   * the positions, so a Wohnung priced at 3.387,74 € here arrived as a
+   * 2.247,81 € quote — a third lower, with nothing on screen to explain it.
+   * The number beside a tick-box that becomes a quote has to be the number
+   * the quote will carry. The range still has a place, but it is on the
+   * single-job page, which prints it as a guide beside the same `lines_net`. */
+  const amount = est ? est.lines_net : null;
 
   /* The answers worth repeating on a collapsed row: the ones that moved the
      price. `answers_applied` is the estimator's own list, so this cannot
@@ -522,7 +535,9 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting }
   };
 
   const chosen = Object.entries(picked).filter(([, p]) => p.checked && p.est);
-  const total = chosen.reduce((s, [, p]) => s + p.est.total_net[1], 0);
+  // Same figure as the cards, for the same reason: this bar sits directly
+  // above the button that creates the quote, so it is a promise about it.
+  const total = chosen.reduce((s, [, p]) => s + p.est.lines_net, 0);
 
   /* Ticked, but no quantity typed yet, so it has no price and cannot go into
      the quote. Somebody who ticks a position means to send it — dropping it
