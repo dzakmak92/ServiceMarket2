@@ -16,6 +16,16 @@ const t = {
     quote_verdict_open: 'Open',
     quote_verdict_won: 'Won',
     quote_verdict_lost: 'Lost',
+    // The two icon buttons on a quote row. They carry no visible label, so
+    // these strings are the whole of what a screen reader and a hover tooltip
+    // get — they have to name the destination, not the picture.
+    quote_row_edit: 'Open and edit',
+    // "Share", not "Copy link": the word every phone already uses for handing
+    // something to somebody. It hides that a draft is sent first and an
+    // already-sent quote only has its link copied — one gesture, because to
+    // the pro those are the same intention.
+    quote_row_share: 'Share with the customer',
+    quote_row_shared: 'Link copied',
     est_also_in: 'Also under {s}',
     est_n_templates: '{n} templates',
     est_details: 'Details',
@@ -1810,6 +1820,9 @@ const t = {
     quote_verdict_open: 'Offen',
     quote_verdict_won: 'Gewonnen',
     quote_verdict_lost: 'Verloren',
+    quote_row_edit: 'Öffnen und bearbeiten',
+    quote_row_share: 'Mit dem Kunden teilen',
+    quote_row_shared: 'Link kopiert',
     est_also_in: 'Auch unter {s}',
     est_n_templates: '{n} Vorlagen',
     est_details: 'Details',
@@ -3499,6 +3512,9 @@ const t = {
     quote_verdict_open: 'Açık',
     quote_verdict_won: 'Kazanıldı',
     quote_verdict_lost: 'Kaybedildi',
+    quote_row_edit: 'Aç ve düzenle',
+    quote_row_share: 'Müşteriyle paylaş',
+    quote_row_shared: 'Bağlantı kopyalandı',
     est_also_in: '{s} altında da var',
     est_n_templates: '{n} şablon',
     est_details: 'Ayrıntılar',
@@ -5120,6 +5136,9 @@ const t = {
     quote_verdict_open: 'Abierto',
     quote_verdict_won: 'Ganado',
     quote_verdict_lost: 'Perdido',
+    quote_row_edit: 'Abrir y editar',
+    quote_row_share: 'Compartir con el cliente',
+    quote_row_shared: 'Enlace copiado',
     est_also_in: 'También en {s}',
     est_n_templates: '{n} plantillas',
     est_details: 'Detalles',

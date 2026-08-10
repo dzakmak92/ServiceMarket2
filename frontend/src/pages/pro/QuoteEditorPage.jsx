@@ -4,9 +4,10 @@ import api from '../../api/client';
 import NumberField from '../../components/NumberField';
 import { useLang } from '../../contexts/LangContext';
 import { fmtEur } from '../../utils/money';
+import ConvertSheet from '../../components/pro/ConvertSheet';
 import {
   ArrowLeft, Loader2, Plus, Trash2, Save, FileDown, Send, Check, Ban,
-  AlertCircle, GitBranch, Copy,
+  AlertCircle, GitBranch, Copy, CalendarPlus,
 } from 'lucide-react';
 
 
@@ -50,6 +51,10 @@ export default function QuoteEditorPage() {
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [dirty, setDirty] = useState(false);
+  // Turning the quote into work. This used to live on the quotes list as a
+  // full-width amber bar on every row; the row is a summary now, so the sheet
+  // opens from here — the page you are on when you decide the work is real.
+  const [converting, setConverting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true); setError('');
@@ -363,6 +368,18 @@ export default function QuoteEditorPage() {
               <Send size={14} />{t('send')}
             </button>
           )}
+          {/* Accepting and planning are one decision — the sheet asks whether
+              it is a job or a project and books it — so this is the primary
+              action wherever a quote can still be won, and the way to schedule
+              one that already was. */}
+          {['sent', 'viewed', 'negotiating', 'accepted'].includes(quote.status) && (
+            <button type="button" className="btn-primary text-sm flex items-center gap-1"
+                    disabled={!!busy} onClick={() => setConverting(true)}
+                    data-testid="quote-editor-convert">
+              {quote.status === 'accepted' ? <CalendarPlus size={14} /> : <Check size={14} />}
+              {quote.status === 'accepted' ? t('conv_cta_plain') : t('conv_cta_accept')}
+            </button>
+          )}
           {['sent', 'viewed', 'negotiating'].includes(quote.status) && (
             <>
               <button type="button" className="btn-secondary text-sm flex items-center gap-1"
@@ -385,6 +402,14 @@ export default function QuoteEditorPage() {
           )}
         </div>
       </div>
+
+      {converting && (
+        <ConvertSheet
+          quote={quote}
+          onClose={() => setConverting(false)}
+          onDone={() => { setConverting(false); load(); }}
+        />
+      )}
     </div>
   );
 }

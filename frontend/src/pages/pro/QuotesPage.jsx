@@ -7,8 +7,8 @@ import { fmtEur } from '../../utils/money';
 import { fmtDate } from '../../utils/money';
 import ConvertSheet from '../../components/pro/ConvertSheet';
 import {
-  Loader2, Plus, X, Send, Check, Ban, FileText, AlertCircle, Trash2, Copy,
-  Calculator, ArrowRight, Layers, Hammer, Clock,
+  Loader2, Plus, X, Check, Ban, FileText, AlertCircle, Trash2,
+  Calculator, Clock, Pencil, Share2,
 } from 'lucide-react';
 
 
@@ -227,6 +227,9 @@ export default function QuotesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState(null);
+  // Which row just put a link on the clipboard. Cleared on a timer, because
+  // the confirmation is about the gesture, not about the quote.
+  const [shared, setShared] = useState(null);
 
   const [showForm, setShowForm] = useState(false);
   const [jobId, setJobId] = useState('');
@@ -337,9 +340,39 @@ export default function QuotesPage() {
     }
   };
 
+  /**
+   * Hand the quote to the customer.
+   *
+   * A draft has to be sent before there is anything to hand over, and `send`
+   * returns the token, so the two branches end in the same place: the
+   * customer's portal URL on the clipboard. `act` already does the sending and
+   * the copying; this only has to say which one applies and confirm it
+   * afterwards.
+   */
+  const share = async (q) => {
+    if (q.status === 'draft') {
+      if (!await act(q.id, 'send')) return;
+    } else if (q.share_token) {
+      try {
+        await navigator.clipboard.writeText(`${window.location.origin}/p/${q.share_token}`);
+      } catch {
+        // A denied clipboard is not an error worth a red banner, but it must
+        // not claim success either.
+        return;
+      }
+    } else {
+      return;
+    }
+    setShared(q.id);
+    setTimeout(() => setShared((cur) => (cur === q.id ? null : cur)), 2500);
+  };
+
+  // Returns whether it worked, so a caller can tell the difference between a
+  // link on the clipboard and a red banner.
   const act = async (id, path, body) => {
     setBusyId(id);
     setError('');
+    let ok = false;
     try {
       const { data } = await api.post(`/api/quotes/${id}/${path}`, body || {});
       // Sending returns the job's share token — the link the customer opens.
@@ -347,12 +380,14 @@ export default function QuotesPage() {
         const url = `${window.location.origin}/p/${data.share_token}`;
         try { await navigator.clipboard.writeText(url); } catch { /* not fatal */ }
       }
+      ok = true;
       await load();
     } catch (e) {
       setError(e?.response?.data?.detail || `Could not ${path} the quote`);
     } finally {
       setBusyId(null);
     }
+    return ok;
   };
 
   return (
@@ -543,13 +578,6 @@ export default function QuotesPage() {
           <WeekStrip quotes={quotes} t={t} />
           <div className="space-y-2.5" data-testid="quote-list">
             {quotes.map((q) => {
-              /* The one action that matters on a quote the customer has seen
-                 is what happens next. It leads, at full width and full size;
-                 everything else is secondary and sits on one row beneath it.
-                 A quote already converted says so instead of offering the
-                 button again. */
-              const answerable = ['sent', 'viewed', 'negotiating'].includes(q.status);
-              const convertible = answerable || q.status === 'accepted';
               /* Only a decided quote is tinted. An open one stays on paper:
                  those are the cards a pro actually reads, and they should have
                  the best contrast on the page. The tint then means "this one
@@ -595,16 +623,29 @@ export default function QuotesPage() {
                   );
                 })()}
 
-                {/* The outcome, and the way to set it.
+                {/* One row: the verdict, and the two things you do to a quote
+                    from a list.
 
-                    The control sits on `paper` even when the card is tinted:
+                    This row used to be four blocks tall — signal, verdict, a
+                    full-width amber call to action, then a wrap of secondary
+                    buttons — about 240 px per quote. The amber was the worst of
+                    it: on an accepted quote it shouted "Arbeit planen" at a
+                    decision already taken.
+
+                    A list row summarises; you act inside the quote. So the
+                    amber is gone and planning lives on the quote page, where
+                    the ConvertSheet now opens from. What stays on the row is
+                    the verdict and two icons, because those two are the things
+                    you genuinely do without opening anything. */}
+                <div className="mt-3 flex items-center gap-1.5">
+                {/* The control sits on `paper` even when the card is tinted:
                     it is the one thing here you can act on, and a control that
                     shares the card's fill stops reading as a control.
 
                     A decided quote's other two segments are disabled rather
                     than hidden — the verdict stays legible as one of three,
                     and nothing offers a transition the API would refuse. */}
-                <div className="mt-3 flex rounded-xl border border-sm-border bg-paper
+                <div className="flex-1 flex rounded-xl border border-sm-border bg-paper
                                 overflow-hidden" role="group"
                      aria-label={t('quote_verdict')} data-testid="quote-verdict">
                   {['open', 'won', 'lost'].map((v) => {
@@ -639,35 +680,45 @@ export default function QuotesPage() {
                   })}
                 </div>
 
-                {convertible && (
-                  <button type="button" onClick={() => setConverting(q)}
-                          data-testid="quote-convert"
-                          className="w-full min-h-[50px] mt-3 rounded-xl bg-amber text-on-amber
-                                     font-bold text-[15px] flex items-center justify-center gap-2">
-                    {answerable ? <Check size={17} /> : <ArrowRight size={17} />}
-                    {answerable ? t('conv_cta_accept') : t('conv_cta_plain')}
-                  </button>
-                )}
+                  {/* The pen goes to the same place the title does. It is not
+                      redundant with it: on a phone a bold heading does not
+                      announce itself as a link, and "where do I change this"
+                      was the question the row could not answer. */}
+                  <Link to={`/quotes/${q.id}`} data-testid="quote-edit"
+                        title={t('quote_row_edit')} aria-label={t('quote_row_edit')}
+                        className="shrink-0 min-h-[44px] min-w-[44px] rounded-xl border
+                                   border-sm-border bg-paper text-ink flex items-center
+                                   justify-center">
+                    <Pencil size={16} aria-hidden="true" />
+                  </Link>
 
-                <div className="flex flex-wrap gap-2 mt-2.5">
-                  {q.status === 'draft' && (
-                    <button className="min-h-[44px] px-3.5 rounded-xl border border-sm-border
-                                       bg-paper text-[14px] font-semibold flex items-center gap-1.5"
-                            disabled={busyId === q.id} onClick={() => act(q.id, 'send')}
-                            data-testid="quote-send">
-                      <Send size={15} />{t('send') || 'Senden'}
+                  {/* Share, singular. A draft has never been sent, so sharing
+                      it means sending it — that is what `send` does, and it
+                      hands back the token. An already-sent quote just has its
+                      link copied. Two backend calls, one intention, so one
+                      button; splitting them made the pro decide which verb the
+                      database wanted. */}
+                  {(q.status === 'draft' || q.share_token) && (
+                    <button type="button" data-testid="quote-share"
+                            disabled={busyId === q.id}
+                            title={t('quote_row_share')} aria-label={t('quote_row_share')}
+                            onClick={() => share(q)}
+                            className="shrink-0 min-h-[44px] min-w-[44px] rounded-xl border
+                                       border-sm-border bg-paper text-ink flex items-center
+                                       justify-center">
+                      {busyId === q.id
+                        ? <Loader2 size={16} className="animate-spin text-teal" />
+                        : <Share2 size={16} aria-hidden="true" />}
                     </button>
                   )}
-                  {q.share_token && (
-                    <button className="min-h-[44px] px-3.5 rounded-xl border border-sm-border
-                                       bg-paper text-[14px] font-semibold flex items-center gap-1.5"
-                            onClick={() => navigator.clipboard?.writeText(
-                              `${window.location.origin}/p/${q.share_token}`)}>
-                      <Copy size={15} />{t('copy_link') || 'Link kopieren'}
-                    </button>
-                  )}
-                  {busyId === q.id && <Loader2 size={16} className="animate-spin text-teal self-center" />}
                 </div>
+
+                {/* Copying to the clipboard is silent, and a silent button is
+                    indistinguishable from a broken one. */}
+                {shared === q.id && (
+                  <p className="text-[12px] text-teal font-semibold mt-1.5"
+                     role="status" data-testid="quote-shared">{t('quote_row_shared')}</p>
+                )}
               </div>
             );})}
           </div>

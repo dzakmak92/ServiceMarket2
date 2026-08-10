@@ -123,6 +123,15 @@ const PAIRS = [
   ['quote · verdict won segment', 'green-text', ['green-pos', 'paper', 0.14]],
   ['quote · verdict lost segment', 'red-text', ['red-warn', 'paper', 0.13]],
   ['quote · verdict inactive segment', 'ink.muted', 'paper'],
+  /* The two icon buttons on a quote row — pen and share. They carry no visible
+     label, so the glyph is the whole control and it has to be as readable as
+     text would have been. White face on every card, tinted or not. */
+  ['quote · row icon glyph', 'ink.DEFAULT', 'paper'],
+  /* The clipboard confirmation. It prints directly on the card, not on a
+     button, so it is measured on all three card surfaces. */
+  ['quote · link-copied on open card', 'teal.DEFAULT', 'paper'],
+  ['quote · link-copied on won card', 'teal.DEFAULT', ['green-pos', 'cream', 0.07]],
+  ['quote · link-copied on lost card', 'teal.DEFAULT', ['red-warn', 'cream', 0.07]],
   /* The two values the tokens exist for, on the surface they fail on without
      them — kept so a well-meaning revert is caught here rather than shipped. */
   ['quote · green as text on paper', 'green-text', 'paper'],
@@ -144,6 +153,17 @@ for (const [label, fg, bg] of PAIRS) {
    border nobody can see is a border that is not doing its job. */
 const hairline = ratio(rgb(hexOf('cream-deep')), rgb(hexOf('cream')));
 console.log(`\n  note tile hairline vs page          ${hairline.toFixed(2)}:1  (decoration, no AA minimum)`);
+
+/* What separates an icon button from a tinted quote card is its white face —
+   its `sm-border` hairline on a warm tint is around 1.06:1, i.e. nothing. Both
+   are printed because the pair is what makes the control visible, and if the
+   face ever stops separating there is no border underneath to save it. */
+for (const [name, tint] of [['won', ['green-pos', 'cream', 0.07]], ['lost', ['red-warn', 'cream', 0.07]]]) {
+  const surf = over(hexOf(tint[0]), hexOf(tint[1]), tint[2]);
+  console.log(`  note button face vs ${name.padEnd(5)} card    ` +
+              `${ratio(rgb(hexOf('paper')), surf).toFixed(2)}:1  face, ` +
+              `${ratio(rgb(hexOf('sm-border')), surf).toFixed(2)}:1  hairline`);
+}
 
 console.log('\n' + (fails ? `${fails} PAIR(S) BELOW AA` : 'ALL PASS'));
 process.exit(fails ? 1 : 0);
