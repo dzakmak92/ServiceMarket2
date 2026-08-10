@@ -3,11 +3,11 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import api from '../../api/client';
 import NumberField from '../../components/NumberField';
 import { useLang } from '../../contexts/LangContext';
-import { fmtEur } from '../../utils/money';
+import { fmtEur, fmtEur0, fmtNum, fmtDate } from '../../utils/money';
 import ConvertSheet from '../../components/pro/ConvertSheet';
 import {
   ArrowLeft, Loader2, Plus, Trash2, Save, FileDown, Send, Check, Ban,
-  AlertCircle, GitBranch, Copy, CalendarPlus,
+  AlertCircle, GitBranch, Copy, CalendarPlus, Pencil,
 } from 'lucide-react';
 
 
@@ -20,6 +20,19 @@ const BLANK_LINE = {
 // Anything else has to go through a revision, because a document the customer
 // has already decided on must not change under them.
 const EDITABLE = ['draft', 'sent', 'viewed', 'negotiating'];
+
+/* The document's own order. Labour first because it is what the customer
+   argues about, then what it is made of, then getting there, then the rest —
+   the order a written Angebot has used since before any of this was software.
+   A line's kind is now chosen by which section it is added to, so this list is
+   also the set of sections that can exist. */
+const KINDS = ['labor', 'material', 'travel', 'other'];
+
+/** What one line contributes. Deselected optional extras contribute nothing —
+ *  they are on the document as an offer, not as part of the price. */
+const lineNet = (l) => (l.is_optional && !l.is_selected ? 0
+  : Number(l.qty || 0) * (1 + Number(l.waste_factor || 0)) * Number(l.unit_price || 0)
+    * (1 - Number(l.discount_pct || 0) / 100));
 
 /**
  * One quote, editable.
@@ -55,6 +68,9 @@ export default function QuoteEditorPage() {
   // full-width amber bar on every row; the row is a summary now, so the sheet
   // opens from here — the page you are on when you decide the work is real.
   const [converting, setConverting] = useState(false);
+  // Index of the one line whose fields are open. One at a time on purpose:
+  // every line open at once is what made this screen a wall of inputs.
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true); setError('');
@@ -83,24 +99,41 @@ export default function QuoteEditorPage() {
     setDirty(true);
   };
 
+  // A new line lands in the section it was added from, and opens straight
+  // away — it has no description yet, so there is nothing to read and every
+  // reason to be typing.
+  const addLine = (kind) => {
+    setLines((ls) => {
+      setEditing(ls.length);
+      return [...ls, { ...BLANK_LINE, kind }];
+    });
+    setDirty(true);
+  };
+
   // Preview only, and net only. VAT depends on the customer — Kleinunternehmer,
   // §13b reverse charge, cross-border — and the client has no business
   // guessing at that, so the server's figures are shown once it has recomputed.
   const previewNet = useMemo(
     () => {
-      const lineNet = lines.reduce((sum, l) => {
-        if (l.is_optional && !l.is_selected) return sum;
-        const qty = Number(l.qty || 0) * (1 + Number(l.waste_factor || 0));
-        return sum + qty * Number(l.unit_price || 0) * (1 - Number(l.discount_pct || 0) / 100);
-      }, 0);
+      const net = lines.reduce((sum, l) => sum + lineNet(l), 0);
       /* The document discount belongs here too. Without it this screen showed
          the pro € 2.000,00 on a quote the customer would receive for
          € 1.600,00 — the two numbers that must never disagree, disagreeing by
          the size of the discount. */
-      return lineNet * (1 - Number(quote?.discount_pct || 0) / 100);
+      return net * (1 - Number(quote?.discount_pct || 0) / 100);
     },
     [lines, quote],
   );
+
+  /* The sections, in KINDS order, carrying the indices into `lines` so an edit
+     still writes to the right row. Only kinds with lines get a section: an
+     empty "MATERIAL — € 0,00" heading is a subtotal of nothing. */
+  const sections = useMemo(() => KINDS
+    .map((kind) => ({
+      kind,
+      rows: lines.map((l, i) => [l, i]).filter(([l]) => (l.kind || 'labor') === kind),
+    }))
+    .filter((s) => s.rows.length), [lines]);
 
   const payload = () => lines
     .filter((l) => (l.description || '').trim())
@@ -195,21 +228,28 @@ export default function QuoteEditorPage() {
         <div className="card-lg mb-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h1 className="font-headings font-bold text-ink text-xl truncate">
+              <h1 className="font-headings font-bold text-ink text-xl leading-tight">
                 {quote.title || quote.job_title || t('quote')}
               </h1>
-              <p className="text-sm text-ink-muted truncate">
-                {[quote.quote_number, quote.customer_name,
-                  quote.version > 1 ? `v${quote.version}` : null]
+              <p className="text-sm text-ink-muted">
+                {[quote.quote_number, quote.customer_name, `v${quote.version || 1}`]
                   .filter(Boolean).join(' · ')}
+              </p>
+              {/* When it was written and when it went out. The list has carried
+                  the created date since the dashboard work; opening the quote
+                  used to lose it, which is the wrong way round — this is the
+                  screen where "have they had it a fortnight?" gets asked. */}
+              <p className="text-sm text-ink-muted">
+                {t('quote_created_on', { d: fmtDate(quote.created_at) })}
+                {quote.sent_at ? ` · ${t('quote_sent_on', { d: fmtDate(quote.sent_at) })}` : ''}
               </p>
             </div>
             <div className="text-right shrink-0">
               <div className="font-headings font-bold text-ink text-lg">
-                {fmtEur(quote.gross_total)}
+                {fmtEur0(quote.gross_total)}
               </div>
               <div className="text-xs text-ink-muted">
-                {t('net')} {fmtEur(quote.net_total)}
+                {t('net')} {fmtEur0(quote.net_total)}
               </div>
             </div>
           </div>
@@ -230,126 +270,226 @@ export default function QuoteEditorPage() {
           </div>
         )}
 
-        <div className="space-y-2" data-testid="quote-editor-lines">
-          {lines.map((l, i) => (
-            <div key={l.id || i} className="card space-y-2" data-testid="quote-editor-line">
-              <div className="flex gap-2">
-                <select className="input w-28 text-sm" value={l.kind} disabled={!editable}
-                        onChange={(e) => setLine(i, 'kind', e.target.value)}>
-                  <option value="labor">{t('labor')}</option>
-                  <option value="material">{t('material')}</option>
-                  <option value="travel">{t('travel')}</option>
-                  <option value="other">{t('other')}</option>
-                </select>
-                <input className="input flex-1 text-sm" placeholder={t('description')}
-                       value={l.description || ''} disabled={!editable}
-                       onChange={(e) => setLine(i, 'description', e.target.value)} />
-                {editable && lines.length > 1 && (
-                  <button type="button" className="p-2 text-ink-muted hover:text-red-warn"
-                          aria-label={t('remove')}
-                          onClick={() => { setLines((ls) => ls.filter((_, x) => x !== i)); setDirty(true); }}>
-                    <Trash2 size={15} />
+        {/* The document, grouped the way a written Angebot is grouped, and one
+            line at a time under the pen.
+
+            Every line used to be open at once: five stacked cards of five
+            inputs each, so a three-position quote was a wall of twenty-odd
+            fields and the amounts — the thing anybody actually opens a quote
+            to check — were not on the screen at all, only their factors. Now a
+            line reads as a sentence with its own total, and editing is a
+            deliberate act on one row. */}
+        <div data-testid="quote-editor-lines">
+          {sections.map((sec) => (
+            <div key={sec.kind}>
+              <div className="flex items-baseline justify-between px-1 mt-4 mb-1.5">
+                <span className="text-[10px] font-extrabold uppercase tracking-[.12em]
+                                 text-ink-muted">{t(sec.kind)}</span>
+                {/* The subtotal is why the grouping is worth having: "wie viel
+                    davon ist Material" is a question with an answer now. */}
+                <span className="text-[13px] font-bold text-ink tabular-nums"
+                      data-testid={`quote-editor-subtotal-${sec.kind}`}>
+                  {fmtEur(sec.rows.reduce((s, [l]) => s + lineNet(l), 0))}
+                </span>
+              </div>
+
+              <div className="card !p-0 overflow-hidden">
+                {sec.rows.map(([l, i]) => {
+                  const open = editing === i;
+                  return (
+                    <div key={l.id || i} data-testid="quote-editor-line"
+                         className="border-b border-sm-border last:border-b-0">
+                      <div className="flex items-start gap-2.5 px-3.5 py-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[14px] font-bold text-ink leading-snug">
+                            {(l.description || '').trim() || t('description')}
+                          </div>
+                          {/* How the amount was arrived at, in the notation a
+                              quote is read in. Waste and discount only appear
+                              when they are not zero — a row of "0 %" on every
+                              line teaches nobody anything. */}
+                          <div className="text-[12px] text-ink-muted mt-0.5">
+                            {fmtNum(l.qty, 2)} {l.unit} × {fmtEur(l.unit_price)}
+                            {Number(l.waste_factor) > 0
+                              && ` · +${fmtNum(Number(l.waste_factor) * 100, 0)} % ${t('waste_short')}`}
+                            {Number(l.discount_pct) > 0
+                              && ` · −${fmtNum(l.discount_pct, 0)} %`}
+                          </div>
+                          {l.is_optional && (
+                            <div className="text-[11px] font-bold text-amber-text mt-0.5">
+                              {t('quote_line_optional')}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-[14px] font-bold text-ink tabular-nums shrink-0
+                                        pt-0.5">
+                          {fmtEur(lineNet(l))}
+                        </div>
+                        {editable && (
+                          <button type="button"
+                                  onClick={() => setEditing(open ? null : i)}
+                                  aria-expanded={open}
+                                  aria-label={t('quote_line_edit')}
+                                  title={t('quote_line_edit')}
+                                  data-testid={`quote-editor-pen-${i}`}
+                                  className={`shrink-0 min-h-[38px] min-w-[38px] rounded-[10px]
+                                              border flex items-center justify-center
+                                              ${open ? 'bg-teal/[.12] border-teal/40 text-teal'
+                                                     : 'border-sm-border bg-paper text-ink'}`}>
+                            <Pencil size={15} aria-hidden="true" />
+                          </button>
+                        )}
+                      </div>
+
+                      {open && (
+                        /* The fields sit on a tint of the brand teal so it is
+                           visible at a glance which parts of the row are the
+                           editable ones — the amount and the sentence above
+                           are computed, these five are typed. */
+                        <div className="px-3.5 pb-3.5 pt-1 space-y-2.5"
+                             data-testid={`quote-editor-fields-${i}`}>
+                          <label className="block">
+                            <span className="block text-[10px] font-extrabold uppercase
+                                             tracking-[.1em] text-ink-muted mb-1">
+                              {t('description')}
+                            </span>
+                            <input className="input text-sm w-full bg-teal/[.06] border-teal/25"
+                                   value={l.description || ''}
+                                   onChange={(e) => setLine(i, 'description', e.target.value)} />
+                          </label>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <label className="block">
+                              <span className="block text-[10px] font-extrabold uppercase
+                                               tracking-[.1em] text-ink-muted mb-1">{t('qty')}</span>
+                              <NumberField className="input text-sm w-full bg-teal/[.06] border-teal/25"
+                                           min={0} value={l.qty}
+                                           onChange={(v) => setLine(i, 'qty', v ?? '')} />
+                            </label>
+                            <label className="block">
+                              <span className="block text-[10px] font-extrabold uppercase
+                                               tracking-[.1em] text-ink-muted mb-1">{t('unit')}</span>
+                              <input className="input text-sm w-full bg-teal/[.06] border-teal/25"
+                                     value={l.unit || ''}
+                                     onChange={(e) => setLine(i, 'unit', e.target.value)} />
+                            </label>
+                            <label className="block">
+                              <span className="block text-[10px] font-extrabold uppercase
+                                               tracking-[.1em] text-ink-muted mb-1">
+                                {t('unit_price')}
+                              </span>
+                              <NumberField className="input text-sm w-full bg-teal/[.06] border-teal/25"
+                                           min={0} value={l.unit_price}
+                                           onChange={(v) => setLine(i, 'unit_price', v ?? '')} />
+                            </label>
+                            {/* The line discount had no control anywhere in the
+                                app before it had one here: it was in the blank
+                                line, in the preview arithmetic and in the save
+                                payload, so a quote could carry one and the pro
+                                could neither see why the figures did not
+                                multiply out nor remove it. */}
+                            <label className="block">
+                              <span className="block text-[10px] font-extrabold uppercase
+                                               tracking-[.1em] text-ink-muted mb-1">
+                                {t('line_discount_short')}
+                              </span>
+                              <NumberField className="input text-sm w-full bg-teal/[.06] border-teal/25"
+                                           min={0} max={100} title={t('line_discount')}
+                                           value={l.discount_pct}
+                                           data-testid={`quote-line-discount-${i}`}
+                                           onChange={(v) => setLine(i, 'discount_pct', v ?? '')} />
+                            </label>
+                          </div>
+                          {/* Verschnitt: 0.10 = 10 % extra material ordered.
+                              Below the four, because it is the one of the five
+                              that only some trades ever touch. */}
+                          <label className="block sm:w-1/4">
+                            <span className="block text-[10px] font-extrabold uppercase
+                                             tracking-[.1em] text-ink-muted mb-1">
+                              {t('waste_short')}
+                            </span>
+                            <NumberField className="input text-sm w-full bg-teal/[.06] border-teal/25"
+                                         min={0} max={1} title={t('waste_factor')}
+                                         value={l.waste_factor}
+                                         onChange={(v) => setLine(i, 'waste_factor', v ?? '')} />
+                          </label>
+                          <div className="flex items-center justify-between gap-3 pt-0.5">
+                            <label className="flex items-center gap-2 text-xs text-ink-muted">
+                              <input type="checkbox" checked={!!l.is_optional}
+                                     onChange={(e) => setLine(i, 'is_optional', e.target.checked)} />
+                              {t('quote_line_optional')}
+                            </label>
+                            {lines.length > 1 && (
+                              <button type="button"
+                                      className="text-xs font-semibold text-ink-muted
+                                                 hover:text-red-text flex items-center gap-1"
+                                      data-testid={`quote-editor-remove-${i}`}
+                                      onClick={() => {
+                                        setLines((ls) => ls.filter((_, x) => x !== i));
+                                        setEditing(null); setDirty(true);
+                                      }}>
+                                <Trash2 size={13} />{t('remove')}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {editable && (
+                  <button type="button"
+                          data-testid={`quote-editor-add-${sec.kind}`}
+                          onClick={() => addLine(sec.kind)}
+                          className="w-full min-h-[42px] text-[13px] font-bold text-teal
+                                     border-t border-sm-border flex items-center
+                                     justify-center gap-1.5">
+                    <Plus size={14} />{t('add_line')}
                   </button>
                 )}
               </div>
-              {/* Labelled, not placeholdered. On the create form these fields
-                  start empty so the placeholder reads as a label; here they
-                  arrive full, the placeholder never shows, and the row would
-                  be four unexplained numbers — 24, m2, 8.63, 0. */}
-              <div className="grid grid-cols-4 gap-2">
-                <label className="block">
-                  <span className="block text-[11px] text-ink-muted mb-0.5">{t('qty')}</span>
-                  <NumberField className="input text-sm w-full" min={0}
-                               value={l.qty} disabled={!editable}
-                               onChange={(v) => setLine(i, 'qty', v ?? '')} />
-                </label>
-                <label className="block">
-                  <span className="block text-[11px] text-ink-muted mb-0.5">{t('unit')}</span>
-                  <input className="input text-sm w-full" value={l.unit || ''} disabled={!editable}
-                         onChange={(e) => setLine(i, 'unit', e.target.value)} />
-                </label>
-                <label className="block">
-                  <span className="block text-[11px] text-ink-muted mb-0.5">{t('unit_price')}</span>
-                  <NumberField className="input text-sm w-full" min={0}
-                               value={l.unit_price} disabled={!editable}
-                               onChange={(v) => setLine(i, 'unit_price', v ?? '')} />
-                </label>
-                {/* Verschnitt: 0.10 = 10% extra material ordered. */}
-                <label className="block">
-                  <span className="block text-[11px] text-ink-muted mb-0.5">{t('waste_short')}</span>
-                  <NumberField className="input text-sm w-full" min={0} max={1}
-                               title={t('waste_factor')} value={l.waste_factor} disabled={!editable}
-                               onChange={(v) => setLine(i, 'waste_factor', v ?? '')} />
-                </label>
-                {/* The line discount had no control anywhere in the app. It
-                    was in the blank line, in the preview arithmetic and in
-                    the save payload — so a quote could carry one, the total
-                    would reflect it, and the pro could neither see why the
-                    figures did not multiply out nor remove it. */}
-                <label className="block">
-                  <span className="block text-[11px] text-ink-muted mb-0.5">
-                    {t('line_discount_short')}
-                  </span>
-                  <NumberField className="input text-sm w-full" min={0} max={100}
-                               title={t('line_discount')} value={l.discount_pct}
-                               disabled={!editable}
-                               data-testid={`quote-line-discount-${i}`}
-                               onChange={(v) => setLine(i, 'discount_pct', v ?? '')} />
-                </label>
-              </div>
-              <label className="flex items-center gap-2 text-xs text-ink-muted">
-                <input type="checkbox" checked={!!l.is_optional} disabled={!editable}
-                       onChange={(e) => setLine(i, 'is_optional', e.target.checked)} />
-                {t('quote_line_optional')}
-              </label>
             </div>
           ))}
 
-          {editable && (
-            <button type="button" className="btn-secondary w-full text-sm"
-                    onClick={() => { setLines((ls) => [...ls, { ...BLANK_LINE }]); setDirty(true); }}
-                    data-testid="quote-editor-add-line">
-              <Plus size={14} className="inline mr-1" />{t('add_line')}
-            </button>
-          )}
-        </div>
-
-        <div className="card mt-4">
-          {/* A document discount was invisible on this screen: it is set when
-              the quote is created and there is no field for it anywhere, so a
-              pro could neither see it nor remove it, while the customer's copy
-              was reduced by it. Shown here at least — an editable field needs
-              an endpoint that does not exist yet. */}
-          {Number(quote.discount_pct || 0) > 0 && (
-            <div className="flex items-center justify-between text-sm mb-2 pb-2
-                            border-b border-sm-border">
-              <span className="text-ink-muted">
-                {t('quote_doc_discount').replace('{pct}',
-                  String(Number(quote.discount_pct).toFixed(0)))}
-              </span>
-              <span className="font-bold text-amber-text" data-testid="quote-editor-discount">
-                −{fmtEur((dirty ? previewNet : Number(quote.net_total))
-                  / (1 - Number(quote.discount_pct) / 100)
-                  - (dirty ? previewNet : Number(quote.net_total)))}
-              </span>
+          {/* Kinds the document has no section for yet. A line's kind is chosen
+              by where it is added, which is why these have to exist: without
+              them a quote written with only labour could never gain a material
+              position at all. */}
+          {editable && KINDS.filter((k) => !sections.some((s) => s.kind === k)).length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-3">
+              {KINDS.filter((k) => !sections.some((s) => s.kind === k)).map((k) => (
+                <button key={k} type="button" onClick={() => addLine(k)}
+                        data-testid={`quote-editor-add-${k}`}
+                        className="min-h-[38px] px-3 rounded-[10px] border border-sm-border
+                                   bg-paper text-[13px] font-semibold text-ink
+                                   flex items-center gap-1.5">
+                  <Plus size={13} />{t(k)}
+                </button>
+              ))}
             </div>
           )}
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-ink-muted">{t('net_preview')}</span>
-            <span className="font-headings font-bold text-ink" data-testid="quote-editor-net">
-              {fmtEur(dirty ? previewNet : quote.net_total)}
-            </span>
-          </div>
         </div>
 
+        {/* A document discount was invisible on this screen: it is set when
+            the quote is created and there is no field for it anywhere, so a
+            pro could neither see it nor remove it, while the customer's copy
+            was reduced by it. Shown here at least — an editable field needs
+            an endpoint that does not exist yet. */}
+        {Number(quote.discount_pct || 0) > 0 && (
+          <div className="card mt-4 flex items-center justify-between text-sm">
+            <span className="text-ink-muted">
+              {t('quote_doc_discount').replace('{pct}',
+                String(Number(quote.discount_pct).toFixed(0)))}
+            </span>
+            <span className="font-bold text-amber-text" data-testid="quote-editor-discount">
+              −{fmtEur((dirty ? previewNet : Number(quote.net_total))
+                / (1 - Number(quote.discount_pct) / 100)
+                - (dirty ? previewNet : Number(quote.net_total)))}
+            </span>
+          </div>
+        )}
+
         <div className="flex flex-wrap gap-2 mt-4">
-          {editable && (
-            <button type="button" className="btn-primary text-sm flex items-center gap-1"
-                    disabled={!!busy || !dirty} onClick={save} data-testid="quote-editor-save">
-              {busy === 'save' ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-              {t('save')}
-            </button>
-          )}
           {revisable && (
             <button type="button" className="btn-secondary text-sm flex items-center gap-1"
                     disabled={!!busy} onClick={revise} data-testid="quote-editor-revise">
@@ -357,11 +497,6 @@ export default function QuoteEditorPage() {
               {t('quote_revise')}
             </button>
           )}
-          <button type="button" className="btn-secondary text-sm flex items-center gap-1"
-                  disabled={!!busy} onClick={openPdf} data-testid="quote-editor-pdf">
-            {busy === 'pdf' ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />}
-            {t('quote_pdf')}
-          </button>
           {quote.status === 'draft' && (
             <button type="button" className="btn-secondary text-sm flex items-center gap-1"
                     disabled={!!busy} onClick={() => act('send')} data-testid="quote-editor-send">
@@ -400,6 +535,56 @@ export default function QuoteEditorPage() {
               <Copy size={14} />{t('copy_link')}
             </button>
           )}
+        </div>
+      </div>
+
+      {/* The total and the two things done to a finished document, on a rail
+          that does not scroll away. The net figure used to be a card halfway
+          down a page of inputs, so on a five-position quote the number the
+          edits were being made *for* was off-screen while they were made.
+
+          Lifted clear of the mobile tab bar rather than sticking to the
+          viewport bottom, which would have put Speichern underneath it. */}
+      <div className="sticky bottom-[calc(56px+env(safe-area-inset-bottom))] md:bottom-0 z-30"
+           data-testid="quote-editor-bar">
+        <div className="max-w-3xl mx-auto px-4">
+          <div className="flex items-center justify-between gap-3 rounded-t-[16px]
+                          border border-b-0 border-sm-border bg-paper px-4 py-2.5
+                          shadow-[0_-3px_14px_rgba(26,58,82,.09)]">
+            <div className="min-w-0">
+              <p className="text-[10px] font-extrabold uppercase tracking-[.12em] text-ink-muted">
+                {t('net_preview')}
+              </p>
+              <p className="font-headings text-[19px] font-extrabold text-ink tabular-nums"
+                 data-testid="quote-editor-net">
+                {fmtEur(dirty ? previewNet : quote.net_total)}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button type="button" onClick={openPdf} disabled={!!busy}
+                      data-testid="quote-editor-pdf"
+                      className="min-h-[42px] px-3.5 rounded-xl border border-sm-border
+                                 bg-paper text-[13px] font-bold text-ink flex items-center gap-1.5">
+                {busy === 'pdf' ? <Loader2 size={14} className="animate-spin" />
+                                : <FileDown size={14} />}
+                {t('quote_pdf')}
+              </button>
+              {editable && (
+                /* Amber, and only here. This is the one action on the screen
+                   that is genuinely urgent — unsaved edits are lost edits —
+                   and it greys out the moment there is nothing to save. */
+                <button type="button" onClick={save} disabled={!!busy || !dirty}
+                        data-testid="quote-editor-save"
+                        className="min-h-[42px] px-4 rounded-xl bg-amber text-on-amber
+                                   text-[13px] font-bold flex items-center gap-1.5
+                                   disabled:opacity-45">
+                  {busy === 'save' ? <Loader2 size={14} className="animate-spin" />
+                                   : <Save size={14} />}
+                  {t('save')}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

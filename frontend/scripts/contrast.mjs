@@ -132,6 +132,17 @@ const PAIRS = [
   ['quote · link-copied on open card', 'teal.DEFAULT', 'paper'],
   ['quote · link-copied on won card', 'teal.DEFAULT', ['green-pos', 'cream', 0.07]],
   ['quote · link-copied on lost card', 'teal.DEFAULT', ['red-warn', 'cream', 0.07]],
+  /* The opened quote. Its editable fields sit on a tint of the brand teal so
+     it is visible which parts of a line are typed and which are computed —
+     which only works if what is typed into them stays as readable as it was
+     on white. */
+  ['quote · text in an editable field', 'ink.DEFAULT', ['teal.DEFAULT', 'paper', 0.06]],
+  ['quote · field label', 'ink.muted', 'paper'],
+  ['quote · line amount', 'ink.DEFAULT', 'paper'],
+  ['quote · section subtotal', 'ink.DEFAULT', 'paper'],
+  ['quote · add-position link', 'teal.DEFAULT', 'paper'],
+  ['quote · open pen glyph', 'teal.DEFAULT', ['teal.DEFAULT', 'paper', 0.12]],
+  ['quote · save on its amber', 'on-amber', 'amber.DEFAULT'],
   /* The two values the tokens exist for, on the surface they fail on without
      them — kept so a well-meaning revert is caught here rather than shipped. */
   ['quote · green as text on paper', 'green-text', 'paper'],

@@ -20,6 +20,9 @@ const t = {
     // these strings are the whole of what a screen reader and a hover tooltip
     // get — they have to name the destination, not the picture.
     quote_sig_superseded: 'Replaced by a newer version',
+    quote_created_on: 'Created {d}',
+    quote_sent_on: 'sent {d}',
+    quote_line_edit: 'Edit this position',
     quote_row_edit: 'Open and edit',
     // "Share", not "Copy link": the word every phone already uses for handing
     // something to somebody. It hides that a draft is sent first and an
@@ -1822,6 +1825,9 @@ const t = {
     quote_verdict_won: 'Gewonnen',
     quote_verdict_lost: 'Verloren',
     quote_sig_superseded: 'Durch eine neuere Version ersetzt',
+    quote_created_on: 'Erstellt {d}',
+    quote_sent_on: 'versendet {d}',
+    quote_line_edit: 'Diese Position bearbeiten',
     quote_row_edit: 'Öffnen und bearbeiten',
     quote_row_share: 'Mit dem Kunden teilen',
     quote_row_shared: 'Link kopiert',
@@ -3515,6 +3521,9 @@ const t = {
     quote_verdict_won: 'Kazanıldı',
     quote_verdict_lost: 'Kaybedildi',
     quote_sig_superseded: 'Daha yeni bir sürümle değiştirildi',
+    quote_created_on: '{d} tarihinde oluşturuldu',
+    quote_sent_on: '{d} tarihinde gönderildi',
+    quote_line_edit: 'Bu kalemi düzenle',
     quote_row_edit: 'Aç ve düzenle',
     quote_row_share: 'Müşteriyle paylaş',
     quote_row_shared: 'Bağlantı kopyalandı',
@@ -5140,6 +5149,9 @@ const t = {
     quote_verdict_won: 'Ganado',
     quote_verdict_lost: 'Perdido',
     quote_sig_superseded: 'Sustituido por una versión más nueva',
+    quote_created_on: 'Creado el {d}',
+    quote_sent_on: 'enviado el {d}',
+    quote_line_edit: 'Editar esta posición',
     quote_row_edit: 'Abrir y editar',
     quote_row_share: 'Compartir con el cliente',
     quote_row_shared: 'Enlace copiado',

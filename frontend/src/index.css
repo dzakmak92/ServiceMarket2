@@ -138,6 +138,41 @@
     @apply inline-flex items-center justify-center gap-2 rounded-full font-medium px-6 py-3 text-sm
            bg-red-warn text-paper hover:opacity-90 transition-colors duration-200;
   }
+  /* Also missing, and for the same reason as `.card`: sixteen buttons across
+   * seven pages ask for `btn-secondary` — revise, send, mark accepted, mark
+   * rejected, copy link, add line — and every one of them has been rendering
+   * as bare inline text with an icon, indistinguishable from a caption.
+   *
+   * It is `btn-ghost` with the disabled state the ghost forgot, rather than a
+   * new look: these two names have clearly always meant the same thing to
+   * whoever wrote the markup, and inventing a third secondary style to fit the
+   * word would put two different-looking "secondary" buttons side by side on
+   * the quote screen.
+   */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full font-medium px-6 py-3 text-sm
+           bg-paper text-ink border border-sm-border hover:bg-cream-soft transition-colors duration-200
+           focus:outline-none focus:ring-2 focus:ring-teal focus:ring-offset-2
+           disabled:opacity-50 disabled:pointer-events-none;
+  }
+  /* The small one, and it did not exist.
+   *
+   * `card-lg` and `card-md` were defined; plain `card` never was, and roughly
+   * twenty elements across nine pages have been asking for it — every error
+   * banner in the app, the customer and contract rows, the quotes week strip.
+   * A class nobody defined is not an error anywhere: they simply rendered as
+   * bare transparent divs with no padding, no border and no white, which on a
+   * cream page reads as loose text rather than as a card. It was found because
+   * a tinted field inside one of them came out beige: it was compositing over
+   * the page, because there was no card underneath it to composite over.
+   *
+   * Sized as the step below `card-md` — same corner, same hairline, one notch
+   * less padding. No hover shadow: unlike the other two, most of these are
+   * banners and rows rather than things you click.
+   */
+  .card {
+    @apply rounded-[14px] bg-paper border border-sm-border p-3.5;
+  }
   .card-lg {
     @apply rounded-[18px] bg-paper border border-sm-border transition-shadow duration-300 hover:shadow-lg p-6;
   }
