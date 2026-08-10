@@ -47,6 +47,51 @@ const VERDICT = {
 const VERDICT_OF = Object.fromEntries(
   Object.entries(VERDICT).flatMap(([k, v]) => v.of.map((st) => [st, k])));
 
+/**
+ * The one line under a quote that says what is going on with it.
+ *
+ * This is what the status badge could not be. A badge says "versendet"; this
+ * says "3× angesehen, keine Antwort" — which is the difference between knowing
+ * the state and knowing whether to pick up the phone. Every branch is built
+ * from a column the table already has: sent_at, first_viewed_at, viewed_count,
+ * decided_at, reject_reason, valid_until.
+ *
+ * Ordered by what would make somebody act. An expiring quote outranks an
+ * unanswered one, because the deadline is the thing that stops being fixable.
+ */
+function signal(q, t) {
+  // `fmtDate`, not toLocaleDateString: the latter takes the browser's
+  // locale, so an Austrian pro with an English browser got 8/5/2026 for
+  // the 5th of August.
+  const day = (d) => (d ? fmtDate(d) : '');
+  if (q.status === 'accepted' || q.status === 'converted') {
+    return { text: t('quote_sig_won', { d: day(q.decided_at) }), tone: 'text-green-text' };
+  }
+  if (q.status === 'rejected') {
+    const why = (q.reject_reason || '').trim();
+    return { text: why ? t('quote_sig_lost_why', { r: why }) : t('quote_sig_lost'),
+             tone: 'text-ink-muted' };
+  }
+  if (q.status === 'expired') {
+    return { text: t('quote_sig_expired'), tone: 'text-ink-muted' };
+  }
+  if (q.status === 'draft') {
+    return { text: t('quote_sig_draft'), tone: 'text-ink-muted' };
+  }
+  // Still out with the customer. Days left first — it is the only one with a
+  // deadline attached.
+  if (q.valid_until) {
+    const left = Math.ceil((new Date(q.valid_until) - Date.now()) / 86400000);
+    if (left <= 0) return { text: t('quote_sig_expired'), tone: 'text-red-text' };
+    if (left <= 5) return { text: t('quote_sig_expires', { n: left }), tone: 'text-red-text' };
+  }
+  if (q.viewed_count > 0) {
+    return { text: t('quote_sig_viewed', { n: q.viewed_count }), tone: 'text-amber-text' };
+  }
+  if (q.sent_at) return { text: t('quote_sig_unopened'), tone: 'text-ink-muted' };
+  return { text: t('quote_sig_sent'), tone: 'text-ink-muted' };
+}
+
 const STATUS_STYLE = {
   draft:      'bg-cream-dark text-ink-muted',
   sent:       'bg-teal/10 text-teal',
@@ -435,19 +480,19 @@ export default function QuotesPage() {
                     <div className="font-headings font-bold text-[17px] text-ink tabular-nums">
                       {fmtEur(q.gross_total)}
                     </div>
-                    {verdict === 'open' && (
-                      <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[12px] font-semibold ${STATUS_STYLE[q.status] || 'bg-cream-dark text-ink-muted'}`}>
-                        {t(`quote_status_${q.status}`) || q.status}
-                      </span>
-                    )}
+                    <div className="text-[12px] text-ink-muted mt-0.5">
+                      {t(`quote_status_${q.status}`) || q.status}
+                    </div>
                   </div>
                 </div>
 
-                {q.valid_until && ['sent', 'viewed', 'draft'].includes(q.status) && (
-                  <p className="text-[13px] text-ink-muted mt-1.5">
-                    {t('valid_until') || 'Gültig bis'}: {fmtDate(q.valid_until)}
-                  </p>
-                )}
+                {(() => {
+                  const sig = signal(q, t);
+                  return (
+                    <p className={`text-[13px] font-semibold mt-1.5 ${sig.tone}`}
+                       data-testid="quote-signal">{sig.text}</p>
+                  );
+                })()}
 
                 {/* The outcome, and the way to set it.
 
