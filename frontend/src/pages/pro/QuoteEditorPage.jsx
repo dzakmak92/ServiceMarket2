@@ -28,6 +28,12 @@ const EDITABLE = ['draft', 'sent', 'viewed', 'negotiating'];
    also the set of sections that can exist. */
 const KINDS = ['labor', 'material', 'travel', 'other'];
 
+/* The one button shape this screen uses below the document. Written once
+   because there are seven of them and they must not drift apart. */
+const CHIP = 'min-h-[38px] px-3 rounded-[10px] border text-[13px] font-semibold '
+  + 'inline-flex items-center gap-1.5 disabled:opacity-50';
+const CHIP_PLAIN = 'border-sm-border bg-paper text-ink';
+
 /** What one line contributes. Deselected optional extras contribute nothing —
  *  they are on the document as an offer, not as part of the price. */
 const lineNet = (l) => (l.is_optional && !l.is_selected ? 0
@@ -231,9 +237,13 @@ export default function QuoteEditorPage() {
               <h1 className="font-headings font-bold text-ink text-xl leading-tight">
                 {quote.title || quote.job_title || t('quote')}
               </h1>
+              {/* `job_number` too, and it is the one that is usually there:
+                  `quote_number` is null on every quote in the database, so
+                  this line read "v1" and nothing else. The list has always
+                  shown all three for exactly this reason. */}
               <p className="text-sm text-ink-muted">
-                {[quote.quote_number, quote.customer_name, `v${quote.version || 1}`]
-                  .filter(Boolean).join(' · ')}
+                {[quote.quote_number, quote.job_number, quote.customer_name,
+                  `v${quote.version || 1}`].filter(Boolean).join(' · ')}
               </p>
               {/* When it was written and when it went out. The list has carried
                   the created date since the dashboard work; opening the quote
@@ -332,10 +342,15 @@ export default function QuoteEditorPage() {
                                   aria-label={t('quote_line_edit')}
                                   title={t('quote_line_edit')}
                                   data-testid={`quote-editor-pen-${i}`}
+                                  /* Tinted whether or not it is open, as the
+                                     mockup draws it. A white square with a
+                                     hairline reads as one more cell in a row
+                                     of numbers; the wash is what says "this
+                                     one is a control". Open just deepens it. */
                                   className={`shrink-0 min-h-[38px] min-w-[38px] rounded-[10px]
-                                              border flex items-center justify-center
-                                              ${open ? 'bg-teal/[.12] border-teal/40 text-teal'
-                                                     : 'border-sm-border bg-paper text-ink'}`}>
+                                              border text-teal flex items-center justify-center
+                                              ${open ? 'bg-teal/[.16] border-teal/45'
+                                                     : 'bg-teal/[.07] border-teal/25'}`}>
                             <Pencil size={15} aria-hidden="true" />
                           </button>
                         )}
@@ -460,9 +475,7 @@ export default function QuoteEditorPage() {
               {KINDS.filter((k) => !sections.some((s) => s.kind === k)).map((k) => (
                 <button key={k} type="button" onClick={() => addLine(k)}
                         data-testid={`quote-editor-add-${k}`}
-                        className="min-h-[38px] px-3 rounded-[10px] border border-sm-border
-                                   bg-paper text-[13px] font-semibold text-ink
-                                   flex items-center gap-1.5">
+                        className={`${CHIP} ${CHIP_PLAIN}`}>
                   <Plus size={13} />{t(k)}
                 </button>
               ))}
@@ -489,39 +502,45 @@ export default function QuoteEditorPage() {
           </div>
         )}
 
+        {/* What is done to the document, as chips rather than pills.
+            `btn-secondary` is a full 48 px rounded-full button, and five of
+            them wrap into four rows on a phone — a block of shouting under a
+            document whose loudest thing should be its total. Same size and
+            shape as the "+ Anfahrt / + Sonstiges" chips above, because these
+            are the same weight of action. */}
         <div className="flex flex-wrap gap-2 mt-4">
-          {revisable && (
-            <button type="button" className="btn-secondary text-sm flex items-center gap-1"
-                    disabled={!!busy} onClick={revise} data-testid="quote-editor-revise">
-              {busy === 'revise' ? <Loader2 size={14} className="animate-spin" /> : <GitBranch size={14} />}
-              {t('quote_revise')}
-            </button>
-          )}
-          {quote.status === 'draft' && (
-            <button type="button" className="btn-secondary text-sm flex items-center gap-1"
-                    disabled={!!busy} onClick={() => act('send')} data-testid="quote-editor-send">
-              <Send size={14} />{t('send')}
-            </button>
-          )}
           {/* Accepting and planning are one decision — the sheet asks whether
-              it is a job or a project and books it — so this is the primary
-              action wherever a quote can still be won, and the way to schedule
-              one that already was. */}
+              it is a job or a project and books it — so this is the one chip
+              that is filled, wherever a quote can still be won, and the way to
+              schedule one that already was. */}
           {['sent', 'viewed', 'negotiating', 'accepted'].includes(quote.status) && (
-            <button type="button" className="btn-primary text-sm flex items-center gap-1"
+            <button type="button" className={`${CHIP} bg-teal text-paper border-teal`}
                     disabled={!!busy} onClick={() => setConverting(true)}
                     data-testid="quote-editor-convert">
               {quote.status === 'accepted' ? <CalendarPlus size={14} /> : <Check size={14} />}
               {quote.status === 'accepted' ? t('conv_cta_plain') : t('conv_cta_accept')}
             </button>
           )}
+          {revisable && (
+            <button type="button" className={`${CHIP} ${CHIP_PLAIN}`}
+                    disabled={!!busy} onClick={revise} data-testid="quote-editor-revise">
+              {busy === 'revise' ? <Loader2 size={14} className="animate-spin" /> : <GitBranch size={14} />}
+              {t('quote_revise')}
+            </button>
+          )}
+          {quote.status === 'draft' && (
+            <button type="button" className={`${CHIP} ${CHIP_PLAIN}`}
+                    disabled={!!busy} onClick={() => act('send')} data-testid="quote-editor-send">
+              <Send size={14} />{t('send')}
+            </button>
+          )}
           {['sent', 'viewed', 'negotiating'].includes(quote.status) && (
             <>
-              <button type="button" className="btn-secondary text-sm flex items-center gap-1"
+              <button type="button" className={`${CHIP} ${CHIP_PLAIN}`}
                       disabled={!!busy} onClick={() => act('accept')} data-testid="quote-editor-accept">
                 <Check size={14} />{t('mark_accepted')}
               </button>
-              <button type="button" className="btn-secondary text-sm flex items-center gap-1"
+              <button type="button" className={`${CHIP} ${CHIP_PLAIN}`}
                       disabled={!!busy} onClick={() => act('reject', { reason: '' })}
                       data-testid="quote-editor-reject">
                 <Ban size={14} />{t('mark_rejected')}
@@ -529,7 +548,7 @@ export default function QuoteEditorPage() {
             </>
           )}
           {quote.share_token && (
-            <button type="button" className="btn-secondary text-sm flex items-center gap-1"
+            <button type="button" className={`${CHIP} ${CHIP_PLAIN}`}
                     onClick={() => navigator.clipboard?.writeText(
                       `${window.location.origin}/p/${quote.share_token}`)}>
               <Copy size={14} />{t('copy_link')}

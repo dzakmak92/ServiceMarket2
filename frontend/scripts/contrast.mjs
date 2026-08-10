@@ -141,7 +141,11 @@ const PAIRS = [
   ['quote · line amount', 'ink.DEFAULT', 'paper'],
   ['quote · section subtotal', 'ink.DEFAULT', 'paper'],
   ['quote · add-position link', 'teal.DEFAULT', 'paper'],
-  ['quote · open pen glyph', 'teal.DEFAULT', ['teal.DEFAULT', 'paper', 0.12]],
+  /* The pen is tinted whether or not it is open — a white square in a row of
+     numbers does not read as a control — so both washes are measured. */
+  ['quote · pen glyph, closed', 'teal.DEFAULT', ['teal.DEFAULT', 'paper', 0.07]],
+  ['quote · pen glyph, open', 'teal.DEFAULT', ['teal.DEFAULT', 'paper', 0.16]],
+  ['quote · convert chip label', 'paper', 'teal.DEFAULT'],
   ['quote · save on its amber', 'on-amber', 'amber.DEFAULT'],
   /* The two values the tokens exist for, on the surface they fail on without
      them — kept so a well-meaning revert is caught here rather than shipped. */
