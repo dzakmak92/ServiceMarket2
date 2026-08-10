@@ -280,6 +280,26 @@ async def reject_quote(quote_id: str, body: RejectIn, user: dict = Depends(get_c
         raise HTTPException(404, str(e))
 
 
+@router.post("/{quote_id}/reopen")
+async def reopen_quote(quote_id: str, user: dict = Depends(get_current_user)):
+    """Undo a decision. See `quotes.reopen` for what is unwound and what is not.
+
+    409 rather than 400 when the job has already moved on: the request is
+    well-formed and the caller is allowed, the state of the world is what
+    refuses it, and the interface needs to tell the pro that rather than that
+    they did something wrong.
+    """
+    pro_id = await require_pro_id(user)
+    try:
+        return await repo.reopen(quote_id, pro_id=pro_id)
+    except LookupError as e:
+        raise HTTPException(404, str(e))
+    except PermissionError as e:
+        raise HTTPException(409, str(e))
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
 @router.post("/expire-stale")
 async def expire_stale(user: dict = Depends(get_current_user)):
     pro_id = await require_pro_id(user)

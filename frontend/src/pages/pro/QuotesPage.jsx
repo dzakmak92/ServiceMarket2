@@ -20,15 +20,21 @@ import {
  * are different things to a pro chasing an answer. This is the question the
  * list is scanned for.
  *
- * `to` is the endpoint that sets it. Note what is missing: there is no way
- * back. `accept` supersedes the losing tiers, moves the job to accepted and
- * learns the pro's rates from the lines; `reject` is one-way in the
- * repository too. So a decided quote shows its verdict and offers no path
- * back, rather than offering one that would fail at the API.
+ * `to` is the endpoint that sets it, and every one of the three is reachable
+ * from every other. A decision taken by tapping the wrong third of a control
+ * has to be undoable — `reopen` unwinds exactly what `accept` did: the
+ * superseded tiers come back, the job returns to `quoted`, and the rate
+ * samples the acceptance taught are deleted and the affected keys recomputed.
+ *
+ * The one refusal is on the server, where it belongs: a job whose work has
+ * already started cannot have its quote reopened, because that would say the
+ * work was never agreed while somebody is out doing it. That comes back as a
+ * 409 with a sentence to show.
  */
 const VERDICT = {
   open: {
     of: ['draft', 'sent', 'viewed', 'negotiating'],
+    to: 'reopen',
     fill: 'bg-teal/[.14] text-teal',
   },
   won: {
@@ -92,7 +98,100 @@ function signal(q, t) {
   return { text: t('quote_sig_sent'), tone: 'text-ink-muted' };
 }
 
+/**
+ * The week strip above the list.
+ *
+ * One continuous axis, so the gap between two marks is proportional to the
+ * days between them — a block-per-week layout makes the weeks louder by giving
+ * that up. Weeks are drawn *on* the axis: alternating bands, a divider that
+ * runs past the band top and bottom so the boundary is visible even where a
+ * mark sits on it, and a day tick per day.
+ *
+ * Whole ISO weeks, Monday to Sunday. Anchoring to "today minus 21 days" would
+ * put the boundary somewhere different every day and the KW labels would stop
+ * meaning anything.
+ *
+ * The point of drawing weeks rather than plotting the quotes alone: an empty
+ * week is a fact about the business, and a scatter of the quotes you have
+ * cannot show a week you made none in.
+ */
+function WeekStrip({ quotes, t }) {
+  const W = 358, PAD = 8, Y = 8, H = 28;
+  const day = 86400000;
+  const at = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+
+  const dated = quotes.filter((q) => q.created_at).map((q) => ({
+    q, d: at(q.created_at),
+  }));
+  if (dated.length < 2) return null;   // one mark on an axis is not a chart
+
+  const today = at(Date.now());
+  const monday = (x) => {
+    const m = new Date(x);
+    m.setDate(m.getDate() - ((m.getDay() + 6) % 7));
+    return m;
+  };
+  const first = monday(new Date(Math.min(...dated.map((x) => +x.d))));
+  const lastSun = new Date(monday(today)); lastSun.setDate(lastSun.getDate() + 6);
+  const weeks = Math.max(1, Math.round((+lastSun - +first) / (7 * day)));
+  const ndays = weeks * 7;
+  const inner = W - 2 * PAD, dw = inner / ndays;
+  const x = (i) => PAD + i * dw;
+  const idx = (d) => Math.round((+d - +first) / day);
+
+  /* ISO week number, and it has to be the real one: `KW 32` is a thing people
+     say to each other, so an approximation would be worse than no label. */
+  const kw = (d) => {
+    const a = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    a.setUTCDate(a.getUTCDate() + 4 - (a.getUTCDay() || 7));
+    return Math.ceil(((a - Date.UTC(a.getUTCFullYear(), 0, 1)) / day + 1) / 7);
+  };
+  const mark = (q) => (VERDICT_OF[q.status] === 'won' ? '#3b6f32'
+    : VERDICT_OF[q.status] === 'lost' ? '#4d6477'
+      : (+today - +at(q.created_at)) / day <= 7 ? '#2d6a7f' : '#ae3f4c');
+
+  const bands = [], labels = [];
+  for (let w = 0; w < weeks; w += 1) {
+    const mon = new Date(first); mon.setDate(mon.getDate() + w * 7);
+    const has = dated.some((z) => idx(z.d) >= w * 7 && idx(z.d) < w * 7 + 7);
+    if (w % 2 === 0) {
+      bands.push(<rect key={`b${w}`} x={x(w * 7)} y={Y} width={dw * 7} height={H}
+                       fill="#2d6a7f" fillOpacity=".05" />);
+    }
+    if (w) {
+      bands.push(<line key={`d${w}`} x1={x(w * 7)} y1={Y - 3} x2={x(w * 7)} y2={Y + H + 3}
+                       stroke="#1a3a52" strokeOpacity=".32" strokeWidth="1.5" />);
+    }
+    labels.push(
+      <text key={`l${w}`} x={x(w * 7) + dw * 3.5} y={Y + H + 14} textAnchor="middle"
+            fontSize="8.5" fontWeight="800"
+            /* An empty week's label is quieter but still text — it is how you
+               learn the week was empty — so it uses the palette's faintest
+               legal value rather than a grey picked to look dim. */
+            fill={has ? '#4d6477' : '#566c7e'}>KW {kw(mon)}</text>);
+  }
+
+  return (
+    <div className="card mb-3" style={{ padding: '10px 6px 6px' }} data-testid="quote-weeks">
+      <svg width="100%" viewBox={`0 0 ${W} ${Y + H + 20}`} role="img"
+           aria-label={t('quote_weeks_alt', { n: weeks })}>
+        {bands}
+        {Array.from({ length: ndays }, (_, i) => (
+          <line key={`t${i}`} x1={x(i) + dw / 2} y1={Y + H - 4} x2={x(i) + dw / 2} y2={Y + H}
+                stroke="#1a3a52" strokeOpacity=".18" strokeWidth="1" />
+        ))}
+        {dated.map(({ q, d }) => (
+          <circle key={q.id} cx={x(idx(d)) + dw / 2} cy={Y + H / 2} r="5.5"
+                  fill={mark(q)} stroke="#ffffff" strokeWidth="1.6" />
+        ))}
+        {labels}
+      </svg>
+    </div>
+  );
+}
+
 const STATUS_STYLE = {
+
   draft:      'bg-cream-dark text-ink-muted',
   sent:       'bg-teal/10 text-teal',
   viewed:     'bg-teal/20 text-teal',
@@ -440,6 +539,8 @@ export default function QuotesPage() {
             </p>
           </div>
         ) : (
+          <>
+          <WeekStrip quotes={quotes} t={t} />
           <div className="space-y-2.5" data-testid="quote-list">
             {quotes.map((q) => {
               /* The one action that matters on a quote the customer has seen
@@ -508,7 +609,9 @@ export default function QuotesPage() {
                      aria-label={t('quote_verdict')} data-testid="quote-verdict">
                   {['open', 'won', 'lost'].map((v) => {
                     const on = v === verdict;
-                    const reachable = verdict === 'open' && v !== 'open';
+                    // Every verdict is reachable from every other one. Only
+                    // the one already set is inert.
+                    const reachable = !on;
                     const Icon = { open: Clock, won: Check, lost: Ban }[v];
                     return (
                       <button key={v} type="button"
@@ -528,8 +631,7 @@ export default function QuotesPage() {
                               className={`flex-1 min-h-[44px] px-2 text-[13px] font-bold
                                           flex items-center justify-center gap-1.5
                                           border-r border-sm-border last:border-r-0
-                                          ${on ? VERDICT[v].fill : 'text-ink-muted'}
-                                          ${!reachable && !on ? 'opacity-45' : ''}`}>
+                                          ${on ? VERDICT[v].fill : 'text-ink-muted'}`}>
                         {on && <Icon size={14} aria-hidden="true" />}
                         {t(`quote_verdict_${v}`)}
                       </button>
@@ -569,6 +671,7 @@ export default function QuotesPage() {
               </div>
             );})}
           </div>
+          </>
         )}
       </div>
 

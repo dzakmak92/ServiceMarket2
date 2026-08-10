@@ -366,6 +366,73 @@ async def reject(quote_id: str, reason: str = "", *, pro_id: Optional[str] = Non
     return row
 
 
+async def reopen(quote_id: str, *, pro_id: Optional[str] = None) -> dict:
+    """Undo a decision: put a decided quote back to open.
+
+    The exact reverse of `accept`, because a one-way decision made by tapping
+    the wrong third of a control is a trap, not a safeguard. Everything
+    acceptance did is undone:
+
+      · the quote goes back to `sent` (or `draft` if it was never sent), and
+        `decided_at` and `reject_reason` are cleared;
+      · the sibling tiers it superseded come back — to `sent` if they were
+        sent, `draft` otherwise. Their prior status is not stored, and this is
+        the honest approximation: a quote with a `sent_at` was sent;
+      · the job returns to `quoted` and its contract amount is cleared;
+      · the rate samples the acceptance learned are deleted and the affected
+        keys recomputed. They are keyed by quote, so this is exact — the pro's
+        learned prices go back to what they were before the acceptance taught
+        them a price that turned out not to be real.
+
+    What it refuses: reopening a quote whose job has moved past `accepted`.
+    Once there is a booking, a timer or an invoice against the work, the
+    acceptance is not just a status — undoing it would say the work was never
+    agreed while somebody is out doing it. That case needs a Nachtrag or a
+    cancellation, both of which are decisions with consequences of their own.
+    """
+    async with pg.transaction() as con:
+        scope = " and pro_id = $2" if pro_id else ""
+        args = [quote_id] + ([pro_id] if pro_id else [])
+        q = await con.fetchrow(
+            f"select * from quotes where id = $1{scope} for update", *args)
+        if not q:
+            raise LookupError("Quote not found")
+        if q["status"] not in ("accepted", "rejected", "expired"):
+            raise ValueError(f"A {q['status']} quote is already open.")
+
+        if q["status"] == "accepted":
+            job = await con.fetchrow(
+                "select status from jobs where id = $1", q["job_id"])
+            if job and job["status"] not in ("accepted", "quoted", "lead"):
+                raise PermissionError(
+                    "The work on this job has already started — reopening the "
+                    "quote would say it was never agreed. Raise a Nachtrag or "
+                    "cancel the job instead.")
+            await con.execute(
+                "update quotes set status = case when sent_at is null "
+                "then 'draft'::quote_status else 'sent'::quote_status end "
+                "where group_id = $1 and id <> $2 and status = 'superseded'",
+                q["group_id"], quote_id)
+            await con.execute(
+                "update jobs set status = 'quoted', contract_amount = null "
+                "where id = $1 and status = 'accepted'", q["job_id"])
+            keys = [r["key"] for r in await con.fetch(
+                "delete from pro_rate_samples where quote_id = $1 returning key",
+                quote_id)]
+            for key in set(keys):
+                await rates_repo.recompute(con, str(q["pro_id"]), key)
+
+        row = await con.fetchrow(
+            "update quotes set status = case when sent_at is null "
+            "then 'draft'::quote_status else 'sent'::quote_status end, "
+            "decided_at = null, reject_reason = null "
+            "where id = $1 returning *", quote_id)
+
+    if row["customer_id"]:
+        await customers_repo.refresh_rollups(str(row["customer_id"]))
+    return dict(row)
+
+
 async def expire_stale(pro_id: Optional[str] = None) -> int:
     """Flip past-validity quotes to expired. Feeds the follow-up nudge."""
     sql = ("update quotes set status = 'expired' "

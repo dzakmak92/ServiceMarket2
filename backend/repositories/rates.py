@@ -84,6 +84,17 @@ async def learn_from_quote(con, pro_id: str, quote_id: str) -> int:
     return learned
 
 
+async def recompute(con, pro_id: str, key: str) -> None:
+    """Recompute one learned rate from whatever samples remain.
+
+    A public name for `_recompute`, for the one caller outside this module:
+    reopening an accepted quote deletes the samples it taught and has to put
+    the learned figure back to what the remaining evidence says. Without this
+    the pro keeps a price learned from an acceptance that was undone.
+    """
+    await _recompute(con, pro_id, key)
+
+
 async def _recompute(con, pro_id: str, key: str, *, label: Optional[str] = None,
                      unit: Optional[str] = None) -> None:
     if await con.fetchval(
