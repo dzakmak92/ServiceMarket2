@@ -19,6 +19,7 @@ const t = {
     // The two icon buttons on a quote row. They carry no visible label, so
     // these strings are the whole of what a screen reader and a hover tooltip
     // get — they have to name the destination, not the picture.
+    quote_sig_superseded: 'Replaced by a newer version',
     quote_row_edit: 'Open and edit',
     // "Share", not "Copy link": the word every phone already uses for handing
     // something to somebody. It hides that a draft is sent first and an
@@ -1820,6 +1821,7 @@ const t = {
     quote_verdict_open: 'Offen',
     quote_verdict_won: 'Gewonnen',
     quote_verdict_lost: 'Verloren',
+    quote_sig_superseded: 'Durch eine neuere Version ersetzt',
     quote_row_edit: 'Öffnen und bearbeiten',
     quote_row_share: 'Mit dem Kunden teilen',
     quote_row_shared: 'Link kopiert',
@@ -3512,6 +3514,7 @@ const t = {
     quote_verdict_open: 'Açık',
     quote_verdict_won: 'Kazanıldı',
     quote_verdict_lost: 'Kaybedildi',
+    quote_sig_superseded: 'Daha yeni bir sürümle değiştirildi',
     quote_row_edit: 'Aç ve düzenle',
     quote_row_share: 'Müşteriyle paylaş',
     quote_row_shared: 'Bağlantı kopyalandı',
@@ -5136,6 +5139,7 @@ const t = {
     quote_verdict_open: 'Abierto',
     quote_verdict_won: 'Ganado',
     quote_verdict_lost: 'Perdido',
+    quote_sig_superseded: 'Sustituido por una versión más nueva',
     quote_row_edit: 'Abrir y editar',
     quote_row_share: 'Compartir con el cliente',
     quote_row_shared: 'Enlace copiado',

@@ -81,6 +81,12 @@ function signal(q, t) {
   if (q.status === 'expired') {
     return { text: t('quote_sig_expired'), tone: 'text-ink-muted' };
   }
+  // Replaced by a newer version. Without this branch it fell through to the
+  // still-waiting cases below and announced "noch nicht geöffnet" about a
+  // document nobody was ever going to open.
+  if (q.status === 'superseded') {
+    return { text: t('quote_sig_superseded'), tone: 'text-ink-muted' };
+  }
   if (q.status === 'draft') {
     return { text: t('quote_sig_draft'), tone: 'text-ink-muted' };
   }
@@ -582,11 +588,16 @@ export default function QuotesPage() {
                  those are the cards a pro actually reads, and they should have
                  the best contrast on the page. The tint then means "this one
                  is finished", which is the fastest thing to scan for. */
-              const verdict = VERDICT_OF[q.status] || 'open';
-              const skin = VERDICT[verdict].card || 'bg-paper border-sm-border';
+              /* `superseded` is not a fourth outcome — it is a version a newer
+                 one replaced — and the server refuses to accept, reject or
+                 convert it. Showing it as "offen" claimed an answer was still
+                 wanted on a document nobody is looking at any more, so it gets
+                 no verdict at all; the status line already says "ersetzt". */
+              const verdict = VERDICT_OF[q.status] || (q.status === 'superseded' ? null : 'open');
+              const skin = (verdict && VERDICT[verdict].card) || 'bg-paper border-sm-border';
               return (
               <div key={q.id} className={`rounded-2xl border p-3.5 ${skin}`}
-                   data-testid="quote-row" data-verdict={verdict}>
+                   data-testid="quote-row" data-verdict={verdict || q.status}>
                 <div className="flex items-start justify-between gap-3">
                   {/* The whole row is the way in — opening a quote to read it,
                       change it, revise it or print it was not possible from
@@ -650,22 +661,34 @@ export default function QuotesPage() {
                      aria-label={t('quote_verdict')} data-testid="quote-verdict">
                   {['open', 'won', 'lost'].map((v) => {
                     const on = v === verdict;
-                    // Every verdict is reachable from every other one. Only
-                    // the one already set is inert.
-                    const reachable = !on;
+                    // Every verdict is reachable from every other one. The one
+                    // already set is inert, and a superseded quote has none of
+                    // the three to offer.
+                    const reachable = !on && verdict !== null;
                     const Icon = { open: Clock, won: Check, lost: Ban }[v];
                     return (
                       <button key={v} type="button"
                               disabled={!reachable || busyId === q.id}
-                              onClick={() => {
+                              onClick={async () => {
                                 if (!reachable) return;
-                                // Winning goes through the same sheet as the
-                                // amber call to action: accepting is also
-                                // scheduling the work, and two accepts that
-                                // do different things is a fork nobody asked
-                                // for. Losing is a plain transition.
-                                if (v === 'won') setConverting(q);
-                                else act(q.id, VERDICT[v].to, { reason: '' });
+                                // Winning goes through the sheet, because
+                                // accepting is also scheduling the work and
+                                // two accepts that do different things is a
+                                // fork nobody asked for. Losing is a plain
+                                // transition.
+                                if (v !== 'won') {
+                                  act(q.id, VERDICT[v].to, { reason: '' });
+                                  return;
+                                }
+                                // A rejected or expired quote can be neither
+                                // accepted nor converted — the server refuses
+                                // both — so winning one has to undo the
+                                // decision first. Without this the sheet
+                                // opened on a quote that could never take the
+                                // answer, and "Create the job" came back with
+                                // "A rejected quote cannot be converted."
+                                if (verdict === 'lost' && !await act(q.id, 'reopen')) return;
+                                setConverting(q);
                               }}
                               aria-pressed={on}
                               data-testid={`quote-verdict-${v}`}
