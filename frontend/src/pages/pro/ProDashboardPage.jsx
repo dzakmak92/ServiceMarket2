@@ -166,7 +166,7 @@ export default function ProDashboard() {
             value={`${successRate}%`}
             sub={t('dash_won_of', { won: acceptedQuotes, total: totalQuotes })}
             icon={TrendingUp}
-            color="text-green-pos"
+            color="text-green-text"
             bg="bg-green-pos/10"
           />
           <KpiCard
@@ -232,7 +232,7 @@ export default function ProDashboard() {
               </div>
               <p className="text-xs text-ink-muted mb-3">{t('dash_cashflow_desc')}</p>
               {cashflow?.overdue > 0 && (
-                <div className="flex items-center gap-2 bg-red-warn/10 border border-red-warn/20 rounded-xl px-3 py-1.5 mb-3 text-xs text-red-warn font-semibold">
+                <div className="flex items-center gap-2 bg-red-warn/10 border border-red-warn/20 rounded-xl px-3 py-1.5 mb-3 text-xs text-red-text font-semibold">
                   <AlertCircle size={12} /> {fmtEur(cashflow.overdue)} {t('dash_overdue_now')}
                 </div>
               )}

@@ -567,7 +567,7 @@ export default function ProSettingsPage() {
                               <CheckCircle2 size={11} /> {match.name} detected
                             </p>
                           ) : (
-                            <p className="text-xs text-green-pos mt-1 flex items-center gap-1">
+                            <p className="text-xs text-green-text mt-1 flex items-center gap-1">
                               <CheckCircle2 size={11} /> {t('set_valid_iban')}
                             </p>
                           );
@@ -1075,7 +1075,7 @@ function ChangePassword({ t }) {
               </div>
             ))}
           {msg && (
-            <p className={`text-xs ${msg.bad ? 'text-red-warn' : 'text-green-pos'}`}
+            <p className={`text-xs ${msg.bad ? 'text-red-warn' : 'text-green-text'}`}
                data-testid="change-password-msg">{msg.text}</p>
           )}
           <div className="flex gap-2">

@@ -10,14 +10,14 @@ import {
 const CO_BADGE = {
   draft: 'bg-ink-muted/15 text-ink-muted',
   sent: 'bg-amber/15 text-amber-deep',
-  approved: 'bg-green-pos/15 text-green-pos',
-  rejected: 'bg-red-warn/15 text-red-warn',
+  approved: 'bg-green-pos/15 text-green-text',
+  rejected: 'bg-red-warn/15 text-red-text',
   invoiced: 'bg-teal/15 text-teal',
 };
 const PAY_BADGE = {
   requested: 'bg-amber/15 text-amber-deep',
   client_marked_paid: 'bg-teal/15 text-teal',
-  paid: 'bg-green-pos/15 text-green-pos',
+  paid: 'bg-green-pos/15 text-green-text',
 };
 
 export default function BillingTab({ projectId, t }) {
@@ -44,7 +44,7 @@ export default function BillingTab({ projectId, t }) {
 
   return (
     <div className="space-y-6" data-testid="pm-billing-tab">
-      {err && <div className="card-lg bg-red-warn/5 border border-red-warn/30 text-red-warn text-sm flex items-center gap-2"><AlertCircle size={14} /> {err}</div>}
+      {err && <div className="card-lg bg-red-warn/5 border border-red-warn/30 text-red-text text-sm flex items-center gap-2"><AlertCircle size={14} /> {err}</div>}
       <ChangeOrdersSection projectId={projectId} cos={cos} reload={load} setErr={setErr} t={t} />
       <PaymentsSection projectId={projectId} pays={pays} reload={load} setErr={setErr} t={t} />
     </div>

@@ -30,7 +30,7 @@ import {
 function stage(days) {
   if (days <= 14) return { key: 'reminder', tone: 'bg-amber/15 text-amber-deep' };
   if (days <= 30) return { key: 'first', tone: 'bg-amber/25 text-amber-deep' };
-  return { key: 'second', tone: 'bg-red-warn/15 text-red-warn' };
+  return { key: 'second', tone: 'bg-red-warn/15 text-red-text' };
 }
 
 export default function OverduePage() {
@@ -112,7 +112,7 @@ export default function OverduePage() {
 
         {rows.length === 0 ? (
           <div className="card-lg text-center py-12" data-testid="overdue-empty">
-            <CheckCircle2 size={36} className="mx-auto text-green-pos mb-2" />
+            <CheckCircle2 size={36} className="mx-auto text-green-text mb-2" />
             <p className="text-ink font-medium">{t('overdue_none_title')}</p>
             <p className="text-ink-muted text-sm mt-1">{t('overdue_none_help')}</p>
             <Link to="/my-invoices" className="btn-ghost text-sm mt-4 inline-flex">
@@ -186,7 +186,7 @@ export default function OverduePage() {
                         <Eye size={12} /> {t('overdue_view')}
                       </Link>
                       <button onClick={() => markPaid(r)} disabled={busy === r.id}
-                              className="btn-ghost text-xs ml-auto text-green-pos"
+                              className="btn-ghost text-xs ml-auto text-green-text"
                               data-testid={`overdue-paid-${r.id}`}>
                         {busy === r.id
                           ? <Loader2 size={12} className="animate-spin" />

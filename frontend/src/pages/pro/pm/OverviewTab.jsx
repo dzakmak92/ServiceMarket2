@@ -114,7 +114,7 @@ export default function OverviewTab({ projectId, t, onJumpTab }) {
           <p className="text-[10px] uppercase font-bold text-ink-muted tracking-wider flex items-center gap-1">
             <TrendingUp size={10} /> {t('pm_overview_profit')}
           </p>
-          <p className={`text-2xl font-headings font-bold mt-0.5 ${profitPositive ? 'text-green-pos' : 'text-red-warn'}`}>
+          <p className={`text-2xl font-headings font-bold mt-0.5 ${profitPositive ? 'text-green-text' : 'text-red-warn'}`}>
             {fmtEur(pl.profit_eur)}
           </p>
           <p className="text-[11px] text-ink-muted mt-1">{t('pm_overview_margin')} {pl.margin_pct}%</p>
@@ -228,7 +228,7 @@ export default function OverviewTab({ projectId, t, onJumpTab }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="card-lg" data-testid="pm-overview-quote">
           <div className="flex items-center gap-2 mb-2">
-            <CheckCircle2 size={16} className="text-green-pos" />
+            <CheckCircle2 size={16} className="text-green-text" />
             <p className="text-xs uppercase font-bold text-ink-muted tracking-wider">{t('pm_overview_quote')}</p>
           </div>
           <p className="text-2xl font-headings font-bold text-ink">{fmtEur(quote.net_total)}</p>
@@ -264,7 +264,7 @@ export default function OverviewTab({ projectId, t, onJumpTab }) {
                   <Link to={`/my-invoices?q=${encodeURIComponent(inv.invoice_number)}`} className="font-mono text-xs text-teal hover:underline">{inv.invoice_number}</Link>
                   <div className="flex items-center gap-2">
                     <span className="text-ink font-medium">{fmtEur(inv.gross_total)}</span>
-                    <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full ${inv.payment_state === 'paid' ? 'bg-green-pos/15 text-green-pos' : 'bg-amber/15 text-amber-deep'}`}>{inv.payment_state}</span>
+                    <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full ${inv.payment_state === 'paid' ? 'bg-green-pos/15 text-green-text' : 'bg-amber/15 text-amber-deep'}`}>{inv.payment_state}</span>
                   </div>
                 </li>
               ))}

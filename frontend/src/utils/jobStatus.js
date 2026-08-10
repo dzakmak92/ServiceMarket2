@@ -20,8 +20,8 @@ export const STATUS_META = {
   accepted:    { i: CheckCircle,  cls: 'text-teal bg-teal/10',           dot: 'bg-teal',      key: 'pm_status_accepted' },
   scheduled:   { i: CalendarIcon, cls: 'text-amber-deep bg-amber/10',    dot: 'bg-amber',     key: 'pm_status_scheduled' },
   in_progress: { i: Clock,        cls: 'text-amber-deep bg-amber/10',    dot: 'bg-amber',     key: 'pm_status_in_progress' },
-  completed:   { i: CheckCircle,  cls: 'text-green-pos bg-green-pos/10', dot: 'bg-green-pos', key: 'pm_status_completed' },
-  invoiced:    { i: Receipt,      cls: 'text-green-pos bg-green-pos/10', dot: 'bg-green-pos', key: 'pm_status_invoiced' },
+  completed:   { i: CheckCircle,  cls: 'text-green-text bg-green-pos/10', dot: 'bg-green-pos', key: 'pm_status_completed' },
+  invoiced:    { i: Receipt,      cls: 'text-green-text bg-green-pos/10', dot: 'bg-green-pos', key: 'pm_status_invoiced' },
   closed:      { i: Archive,      cls: 'text-ink-muted bg-cream-deep',   dot: 'bg-ink-muted', key: 'pm_status_closed' },
   cancelled:   { i: Pause,        cls: 'text-ink-muted bg-cream-deep',   dot: 'bg-ink-muted', key: 'pm_status_cancelled' },
 };

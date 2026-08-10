@@ -65,7 +65,7 @@ export default function OnboardingClaimStep({ defaultQuery = '', t }) {
 
       {claimedNames.length > 0 && (
         <div className="mt-3 rounded-[14px] bg-green-50 border border-green-pos/30 p-3 flex items-start gap-2.5" data-testid="onboarding-claim-success">
-          <CheckCircle2 size={16} className="text-green-pos flex-shrink-0 mt-0.5" />
+          <CheckCircle2 size={16} className="text-green-text flex-shrink-0 mt-0.5" />
           <p className="text-xs text-ink leading-relaxed">
             {t('onb_claim_submitted').replace('{name}', claimedNames.join(', '))}
           </p>
@@ -109,7 +109,7 @@ export default function OnboardingClaimStep({ defaultQuery = '', t }) {
                 </p>
               </div>
               {b.claimed ? (
-                <span className="flex items-center gap-1 text-[11px] font-semibold text-green-pos flex-shrink-0">
+                <span className="flex items-center gap-1 text-[11px] font-semibold text-green-text flex-shrink-0">
                   <BadgeCheck size={13} /> {t('onb_claim_on')}
                 </span>
               ) : b.my_claim_status === 'pending' ? (

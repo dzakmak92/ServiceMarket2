@@ -181,7 +181,7 @@
   }
   .status-open {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide
-           bg-green-100 text-green-pos border border-green-200;
+           bg-green-100 text-green-text border border-green-200;
   }
   .status-in_progress {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide
@@ -379,7 +379,7 @@
   .status-pill.status-open { @apply bg-amber/10 text-amber-deep border-amber/30; }
   .status-pill.status-in_progress { @apply bg-teal/10 text-teal border-teal/30; }
   .status-pill.status-completed,
-  .status-pill.status-done { @apply bg-green-pos/10 text-green-pos border-green-pos/30; }
+  .status-pill.status-done { @apply bg-green-pos/10 text-green-text border-green-pos/30; }
   .status-pill.status-cancelled { @apply bg-red-50 text-red-warn border-red-200; }
   .status-pill.status-pending { @apply bg-cream-deep text-ink-soft border-sm-border; }
   .status-pill.status-active { @apply bg-teal/10 text-teal border-teal/30; }

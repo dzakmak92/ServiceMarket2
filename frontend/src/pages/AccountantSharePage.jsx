@@ -91,7 +91,7 @@ export default function AccountantSharePage() {
           </div>
           <div className={`card-lg p-4 ${Number(data.eur?.profit || 0) >= 0 ? 'bg-green-pos/5 border-green-pos/30' : 'bg-red-warn/5 border-red-warn/30'}`}>
             <p className="text-[10px] uppercase font-bold text-ink-muted tracking-wider flex items-center gap-1"><TrendingUp size={10} /> {t('accountant_profit')}</p>
-            <p className={`text-2xl font-headings font-bold ${Number(data.eur?.profit || 0) >= 0 ? 'text-green-pos' : 'text-red-warn'}`}>{fmtEur(data.eur?.profit)}</p>
+            <p className={`text-2xl font-headings font-bold ${Number(data.eur?.profit || 0) >= 0 ? 'text-green-text' : 'text-red-warn'}`}>{fmtEur(data.eur?.profit)}</p>
           </div>
         </div>
 

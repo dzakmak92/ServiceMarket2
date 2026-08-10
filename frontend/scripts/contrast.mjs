@@ -108,6 +108,25 @@ const PAIRS = [
   ['card · cross-listing chip on Innen', 'ink.muted', ['ink.DEFAULT', 'zone-in', 0.05]],
   ['card · cross-listing chip on Außen', 'ink.muted', ['ink.DEFAULT', 'zone-out', 0.05]],
   ['card · cross-listing chip on paper', 'ink.muted', ['ink.DEFAULT', 'paper', 0.05]],
+
+  /* The quotes list: a three-way verdict, and a card tinted once it is
+     decided. Green is why `green-text` exists — `green-pos` measures 4.15:1 on
+     plain white, so every green figure and every "accepted" badge in this app
+     was below AA until this row was added. It is the lightest of the three
+     brand colours, so the same opacity buys a deeper fill and it fails first
+     every time. Red needed the same for a tint of itself. */
+  ['quote · won card title', 'ink.DEFAULT', ['green-pos', 'cream', 0.07]],
+  ['quote · won card meta', 'ink.muted', ['green-pos', 'cream', 0.07]],
+  ['quote · lost card title', 'ink.DEFAULT', ['red-warn', 'cream', 0.07]],
+  ['quote · lost card meta', 'ink.muted', ['red-warn', 'cream', 0.07]],
+  ['quote · verdict open segment', 'teal.DEFAULT', ['teal.DEFAULT', 'paper', 0.14]],
+  ['quote · verdict won segment', 'green-text', ['green-pos', 'paper', 0.14]],
+  ['quote · verdict lost segment', 'red-text', ['red-warn', 'paper', 0.13]],
+  ['quote · verdict inactive segment', 'ink.muted', 'paper'],
+  /* The two values the tokens exist for, on the surface they fail on without
+     them — kept so a well-meaning revert is caught here rather than shipped. */
+  ['quote · green as text on paper', 'green-text', 'paper'],
+  ['quote · red as text on its own tint', 'red-text', ['red-warn', 'paper', 0.13]],
 ];
 
 let fails = 0;

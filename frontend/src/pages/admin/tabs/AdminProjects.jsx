@@ -128,7 +128,7 @@ export default function AdminProjects({ flash }) {
                   <td className="px-4 py-3 text-ink-muted">{proj.quote_count ?? 0}</td>
                   <td className="px-4 py-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      proj.status === 'open' ? 'bg-green-pos/10 text-green-pos' :
+                      proj.status === 'open' ? 'bg-green-pos/10 text-green-text' :
                       proj.status === 'in_progress' ? 'bg-amber/10 text-amber-deep' :
                       proj.status === 'completed' ? 'bg-teal/10 text-teal' : 'bg-cream-deep text-ink-muted'
                     }`}>{proj.status}</span>

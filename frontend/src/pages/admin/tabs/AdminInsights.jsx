@@ -7,9 +7,9 @@ import {
 
 const CATEGORY_META = {
   missing_features: { icon: Lightbulb, color: 'text-teal', bg: 'bg-teal/10', labelKey: 'insights_missing' },
-  problems: { icon: Bug, color: 'text-red-warn', bg: 'bg-red-warn/10', labelKey: 'insights_problems' },
+  problems: { icon: Bug, color: 'text-red-text', bg: 'bg-red-warn/10', labelKey: 'insights_problems' },
   nice_to_have: { icon: Star, color: 'text-amber-deep', bg: 'bg-amber/10', labelKey: 'insights_nice' },
-  praise: { icon: Heart, color: 'text-green-pos', bg: 'bg-green-pos/10', labelKey: 'insights_praise' },
+  praise: { icon: Heart, color: 'text-green-text', bg: 'bg-green-pos/10', labelKey: 'insights_praise' },
 };
 
 export default function AdminInsights({ flash }) {
@@ -106,7 +106,7 @@ export default function AdminInsights({ flash }) {
                 <div className="bg-red-warn h-full" style={{ width: `${sentiment.negative || 0}%` }} title={`Negative ${sentiment.negative}%`} />
               </div>
               <div className="flex justify-between text-[11px] mt-2">
-                <span className="text-green-pos font-semibold">▲ {sentiment.positive || 0}% {t('insights_positive')}</span>
+                <span className="text-green-text font-semibold">▲ {sentiment.positive || 0}% {t('insights_positive')}</span>
                 <span className="text-ink-muted">● {sentiment.neutral || 0}% {t('insights_neutral')}</span>
                 <span className="text-red-warn font-semibold">▼ {sentiment.negative || 0}% {t('insights_negative')}</span>
               </div>

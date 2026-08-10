@@ -8,18 +8,53 @@ import { fmtDate } from '../../utils/money';
 import ConvertSheet from '../../components/pro/ConvertSheet';
 import {
   Loader2, Plus, X, Send, Check, Ban, FileText, AlertCircle, Trash2, Copy,
-  Calculator, ArrowRight, Layers, Hammer,
+  Calculator, ArrowRight, Layers, Hammer, Clock,
 } from 'lucide-react';
 
+
+/**
+ * The three-way verdict the list is read by: offen, gewonnen, verloren.
+ *
+ * A rollup over the eight stored statuses, not a replacement for them — the
+ * fine status still shows as the badge, because "versendet" and "angesehen"
+ * are different things to a pro chasing an answer. This is the question the
+ * list is scanned for.
+ *
+ * `to` is the endpoint that sets it. Note what is missing: there is no way
+ * back. `accept` supersedes the losing tiers, moves the job to accepted and
+ * learns the pro's rates from the lines; `reject` is one-way in the
+ * repository too. So a decided quote shows its verdict and offers no path
+ * back, rather than offering one that would fail at the API.
+ */
+const VERDICT = {
+  open: {
+    of: ['draft', 'sent', 'viewed', 'negotiating'],
+    fill: 'bg-teal/[.14] text-teal',
+  },
+  won: {
+    of: ['accepted', 'converted'],
+    to: 'accept',
+    fill: 'bg-green-pos/[.14] text-green-text',
+    card: 'bg-green-pos/[.07] border-green-pos/25',
+  },
+  lost: {
+    of: ['rejected', 'expired'],
+    to: 'reject',
+    fill: 'bg-red-warn/[.13] text-red-text',
+    card: 'bg-red-warn/[.07] border-red-warn/25',
+  },
+};
+const VERDICT_OF = Object.fromEntries(
+  Object.entries(VERDICT).flatMap(([k, v]) => v.of.map((st) => [st, k])));
 
 const STATUS_STYLE = {
   draft:      'bg-cream-dark text-ink-muted',
   sent:       'bg-teal/10 text-teal',
   viewed:     'bg-teal/20 text-teal',
-  accepted:   'bg-green-pos/10 text-green-pos',
-  rejected:   'bg-red-warn/10 text-red-warn',
+  accepted:   'bg-green-pos/10 text-green-text',
+  rejected:   'bg-red-warn/10 text-red-text',
   expired:    'bg-amber/10 text-amber',
-  converted:  'bg-green-pos/20 text-green-pos',
+  converted:  'bg-green-pos/20 text-green-text',
   negotiating:'bg-amber/10 text-amber',
 };
 
@@ -369,9 +404,15 @@ export default function QuotesPage() {
                  button again. */
               const answerable = ['sent', 'viewed', 'negotiating'].includes(q.status);
               const convertible = answerable || q.status === 'accepted';
+              /* Only a decided quote is tinted. An open one stays on paper:
+                 those are the cards a pro actually reads, and they should have
+                 the best contrast on the page. The tint then means "this one
+                 is finished", which is the fastest thing to scan for. */
+              const verdict = VERDICT_OF[q.status] || 'open';
+              const skin = VERDICT[verdict].card || 'bg-paper border-sm-border';
               return (
-              <div key={q.id} className="rounded-2xl border border-sm-border bg-paper p-3.5"
-                   data-testid="quote-row">
+              <div key={q.id} className={`rounded-2xl border p-3.5 ${skin}`}
+                   data-testid="quote-row" data-verdict={verdict}>
                 <div className="flex items-start justify-between gap-3">
                   {/* The whole row is the way in — opening a quote to read it,
                       change it, revise it or print it was not possible from
@@ -394,9 +435,11 @@ export default function QuotesPage() {
                     <div className="font-headings font-bold text-[17px] text-ink tabular-nums">
                       {fmtEur(q.gross_total)}
                     </div>
-                    <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[12px] font-semibold ${STATUS_STYLE[q.status] || 'bg-cream-dark text-ink-muted'}`}>
-                      {t(`quote_status_${q.status}`) || q.status}
-                    </span>
+                    {verdict === 'open' && (
+                      <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[12px] font-semibold ${STATUS_STYLE[q.status] || 'bg-cream-dark text-ink-muted'}`}>
+                        {t(`quote_status_${q.status}`) || q.status}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -405,6 +448,49 @@ export default function QuotesPage() {
                     {t('valid_until') || 'Gültig bis'}: {fmtDate(q.valid_until)}
                   </p>
                 )}
+
+                {/* The outcome, and the way to set it.
+
+                    The control sits on `paper` even when the card is tinted:
+                    it is the one thing here you can act on, and a control that
+                    shares the card's fill stops reading as a control.
+
+                    A decided quote's other two segments are disabled rather
+                    than hidden — the verdict stays legible as one of three,
+                    and nothing offers a transition the API would refuse. */}
+                <div className="mt-3 flex rounded-xl border border-sm-border bg-paper
+                                overflow-hidden" role="group"
+                     aria-label={t('quote_verdict')} data-testid="quote-verdict">
+                  {['open', 'won', 'lost'].map((v) => {
+                    const on = v === verdict;
+                    const reachable = verdict === 'open' && v !== 'open';
+                    const Icon = { open: Clock, won: Check, lost: Ban }[v];
+                    return (
+                      <button key={v} type="button"
+                              disabled={!reachable || busyId === q.id}
+                              onClick={() => {
+                                if (!reachable) return;
+                                // Winning goes through the same sheet as the
+                                // amber call to action: accepting is also
+                                // scheduling the work, and two accepts that
+                                // do different things is a fork nobody asked
+                                // for. Losing is a plain transition.
+                                if (v === 'won') setConverting(q);
+                                else act(q.id, VERDICT[v].to, { reason: '' });
+                              }}
+                              aria-pressed={on}
+                              data-testid={`quote-verdict-${v}`}
+                              className={`flex-1 min-h-[44px] px-2 text-[13px] font-bold
+                                          flex items-center justify-center gap-1.5
+                                          border-r border-sm-border last:border-r-0
+                                          ${on ? VERDICT[v].fill : 'text-ink-muted'}
+                                          ${!reachable && !on ? 'opacity-45' : ''}`}>
+                        {on && <Icon size={14} aria-hidden="true" />}
+                        {t(`quote_verdict_${v}`)}
+                      </button>
+                    );
+                  })}
+                </div>
 
                 {convertible && (
                   <button type="button" onClick={() => setConverting(q)}
@@ -423,15 +509,6 @@ export default function QuotesPage() {
                             disabled={busyId === q.id} onClick={() => act(q.id, 'send')}
                             data-testid="quote-send">
                       <Send size={15} />{t('send') || 'Senden'}
-                    </button>
-                  )}
-                  {answerable && (
-                    <button className="min-h-[44px] px-3.5 rounded-xl border border-sm-border
-                                       bg-paper text-[14px] font-semibold flex items-center gap-1.5"
-                            disabled={busyId === q.id}
-                            onClick={() => act(q.id, 'reject', { reason: '' })}
-                            data-testid="quote-reject">
-                      <Ban size={15} />{t('mark_rejected') || 'Abgelehnt'}
                     </button>
                   )}
                   {q.share_token && (

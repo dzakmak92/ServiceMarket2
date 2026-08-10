@@ -73,7 +73,7 @@ export default function PaySuccessPage() {
         {phase === 'success' && (
           <div data-testid="pay-success-done">
             <div className="w-20 h-20 mx-auto rounded-full bg-green-pos/15 flex items-center justify-center mb-3">
-              <CheckCircle2 size={44} className="text-green-pos" />
+              <CheckCircle2 size={44} className="text-green-text" />
             </div>
             <h1 className="font-headings font-bold text-ink text-2xl">{t('pay_success_title')}</h1>
             <p className="text-sm text-ink-muted mt-1">{t('pay_success_body')}</p>

@@ -223,7 +223,7 @@ export default function AdminHeatmap({ flash }) {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <StatCard label="Total businesses" value={stats?.total ?? 0} testid="hm-admin-total" />
-        <StatCard label="Claimed" value={stats?.claimed ?? 0} accent="text-green-pos" testid="hm-admin-claimed" />
+        <StatCard label="Claimed" value={stats?.claimed ?? 0} accent="text-green-text" testid="hm-admin-claimed" />
         <StatCard label="Unclaimed" value={stats?.unclaimed ?? 0} accent="text-ink" testid="hm-admin-unclaimed" />
         <StatCard label="Pending claims" value={stats?.pending_claims ?? 0} accent="text-amber-deep" testid="hm-admin-pending" />
       </div>
@@ -253,7 +253,7 @@ export default function AdminHeatmap({ flash }) {
         </h3>
         {claims.length === 0 ? (
           <div className="card-lg text-center py-8 text-sm text-ink-muted flex flex-col items-center gap-2" data-testid="no-pending-claims">
-            <BadgeCheck size={22} className="text-green-pos" /> {t('adm_no_claims')}
+            <BadgeCheck size={22} className="text-green-text" /> {t('adm_no_claims')}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

@@ -18,7 +18,7 @@ const KINDS = [
 const STATUS_META = {
   open:         { label: 'Open', color: 'bg-amber/15 text-amber-deep' },
   in_progress:  { label: 'In Progress', color: 'bg-teal/15 text-teal' },
-  resolved:     { label: 'Resolved', color: 'bg-green-pos/15 text-green-pos' },
+  resolved:     { label: 'Resolved', color: 'bg-green-pos/15 text-green-text' },
   closed:       { label: 'Closed', color: 'bg-cream-deep text-ink-muted' },
 };
 

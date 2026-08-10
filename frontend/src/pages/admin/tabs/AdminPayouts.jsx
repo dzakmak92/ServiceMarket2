@@ -41,7 +41,7 @@ function ProPayoutCard({ p, onSettle, busy }) {
           <div className="flex items-center gap-2 mt-1">
             {p.iban ? (
               <button onClick={copyIban} className="text-[11px] font-mono text-ink-soft bg-cream-soft px-2 py-0.5 rounded-md flex items-center gap-1 hover:bg-cream-deep transition-colors" data-testid={`payout-iban-${p.pro_id}`}>
-                {p.iban} {copied ? <Check size={11} className="text-green-pos" /> : <Copy size={11} />}
+                {p.iban} {copied ? <Check size={11} className="text-green-text" /> : <Copy size={11} />}
               </button>
             ) : (
               <span className="text-[11px] text-red-warn">⚠ {t('adm_no_iban')}</span>
@@ -124,7 +124,7 @@ export default function AdminPayouts({ flash }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <StatCard icon={Banknote} label="Owed to pros" value={eur(summary?.total_owed)} accent="text-amber-deep" testid="payout-stat-owed" />
-        <StatCard icon={CheckCircle2} label="Settled (paid out)" value={eur(summary?.total_settled)} accent="text-green-pos" testid="payout-stat-settled" />
+        <StatCard icon={CheckCircle2} label="Settled (paid out)" value={eur(summary?.total_settled)} accent="text-green-text" testid="payout-stat-settled" />
         <StatCard icon={Percent} label="Your fees earned (1%)" value={eur(summary?.total_fees)} accent="text-teal" testid="payout-stat-fees" />
       </div>
 
@@ -133,7 +133,7 @@ export default function AdminPayouts({ flash }) {
         <h3 className="font-headings font-bold text-ink text-sm mb-3">{t('adm_outstanding_by')}</h3>
         {owedPros.length === 0 ? (
           <div className="card-lg text-center py-8 text-sm text-ink-muted flex flex-col items-center gap-2" data-testid="payout-none-owed">
-            <CheckCircle2 size={22} className="text-green-pos" /> {t('adm_nothing_owed')}
+            <CheckCircle2 size={22} className="text-green-text" /> {t('adm_nothing_owed')}
           </div>
         ) : (
           <div className="space-y-2">
@@ -173,7 +173,7 @@ export default function AdminPayouts({ flash }) {
                   </p>
                 </div>
                 <span className="text-sm font-semibold text-ink">{eur(r.amount_eur)}</span>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${r.status === 'settled' ? 'bg-green-pos/10 text-green-pos' : 'bg-amber/15 text-amber-deep'}`}>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${r.status === 'settled' ? 'bg-green-pos/10 text-green-text' : 'bg-amber/15 text-amber-deep'}`}>
                   {r.status}
                 </span>
               </div>

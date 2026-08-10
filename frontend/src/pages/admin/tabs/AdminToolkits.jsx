@@ -41,7 +41,7 @@ function ExplorerToggleCard({ t }) {
         />
       </div>
       <div className="flex items-center gap-4 mt-4 flex-wrap">
-        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${cfg.explorer_enabled ? 'bg-green-pos/15 text-green-pos' : 'bg-ink-muted/15 text-ink-muted'}`}
+        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${cfg.explorer_enabled ? 'bg-green-pos/15 text-green-text' : 'bg-ink-muted/15 text-ink-muted'}`}
               data-testid="admin-explorer-status">
           {cfg.explorer_enabled ? t('admin_explorer_on') : t('admin_explorer_off')}
         </span>
@@ -77,7 +77,7 @@ function ToolkitCard({ icon: Icon, name, data, accent, bundleSubs }) {
           </span>
           <h3 className="font-headings font-bold text-ink text-base">{name}</h3>
           {fullyBundled && (
-            <span className="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full bg-green-pos/15 text-green-pos"
+            <span className="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full bg-green-pos/15 text-green-text"
                   title={t('adm_bundled_hint')}
                   data-testid={`toolkit-card-${name.toLowerCase()}-bundled`}>
               {t('adm_bundled')}

@@ -17,7 +17,7 @@ const CATEGORIES = [
 const STATUS_META = {
   open:         { label: 'Open', color: 'bg-amber/15 text-amber-deep' },
   in_progress:  { label: 'In Progress', color: 'bg-teal/15 text-teal' },
-  resolved:     { label: 'Resolved', color: 'bg-green-pos/15 text-green-pos' },
+  resolved:     { label: 'Resolved', color: 'bg-green-pos/15 text-green-text' },
   closed:       { label: 'Closed', color: 'bg-cream-deep text-ink-muted' },
 };
 
@@ -97,8 +97,8 @@ function FeePanel({ jobId, flash }) {
                 <p className="text-[10px] text-ink-muted">{f.incurred_at ? new Date(f.incurred_at).toLocaleString() : '—'}</p>
               </div>
               <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full
-                ${f.status === 'paid' ? 'bg-green-pos/15 text-green-pos'
-                  : f.status === 'cancelled' ? 'bg-red-warn/15 text-red-warn'
+                ${f.status === 'paid' ? 'bg-green-pos/15 text-green-text'
+                  : f.status === 'cancelled' ? 'bg-red-warn/15 text-red-text'
                   : 'bg-amber/15 text-amber-deep'}`}>{f.status}</span>
             </div>
             {f.kind === 'contact_fee' && f.status !== 'cancelled' && editingId !== f.id && (
@@ -142,7 +142,7 @@ function FeePanel({ jobId, flash }) {
                   <button
                     onClick={() => apply(f, 'cancel')}
                     disabled={busy}
-                    className="text-xs font-bold uppercase tracking-wider px-2 py-1 rounded bg-red-warn/10 text-red-warn hover:bg-red-warn/20 disabled:opacity-50"
+                    className="text-xs font-bold uppercase tracking-wider px-2 py-1 rounded bg-red-warn/10 text-red-text hover:bg-red-warn/20 disabled:opacity-50"
                     data-testid={`fee-confirm-cancel-${f.id}`}
                   >{t('adm_cancel_fee')}</button>
                   <button
@@ -207,8 +207,8 @@ function JobDetailsPanel({ jobId, flash, onJobCancelled }) {
         <div className="flex items-center gap-2 flex-wrap">
           <p className="font-bold text-ink text-sm">{job.title}</p>
           <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full
-            ${job.status === 'cancelled' ? 'bg-red-warn/15 text-red-warn'
-              : job.status === 'completed' ? 'bg-green-pos/15 text-green-pos'
+            ${job.status === 'cancelled' ? 'bg-red-warn/15 text-red-text'
+              : job.status === 'completed' ? 'bg-green-pos/15 text-green-text'
               : 'bg-teal/15 text-teal'}`}>{job.status}</span>
         </div>
         <p className="text-xs text-ink-soft flex items-center gap-1">
@@ -234,7 +234,7 @@ function JobDetailsPanel({ jobId, flash, onJobCancelled }) {
             <button
               onClick={cancelJob}
               disabled={cancelling}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-bold uppercase tracking-wider bg-red-warn/10 text-red-warn hover:bg-red-warn/20 disabled:opacity-50"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-bold uppercase tracking-wider bg-red-warn/10 text-red-text hover:bg-red-warn/20 disabled:opacity-50"
               data-testid="admin-support-cancel-job"
             >
               {cancelling ? <Loader2 size={10} className="animate-spin" /> : <Ban size={10} />} {t('adm_cancel_job')}
@@ -262,7 +262,7 @@ function DetailDrawer({ item, onClose, onUpdate, flash }) {
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-headings font-bold text-ink text-lg">{item.subject}</h3>
             <StatusPill status={item.status} />
-            <span className="text-[10px] uppercase tracking-wider font-bold bg-red-warn/15 text-red-warn px-2 py-0.5 rounded-full">{item.category}</span>
+            <span className="text-[10px] uppercase tracking-wider font-bold bg-red-warn/15 text-red-text px-2 py-0.5 rounded-full">{item.category}</span>
           </div>
           <button onClick={onClose} className="p-1 rounded hover:bg-cream-deep" data-testid="support-detail-close"><X size={16} /></button>
         </div>
@@ -399,7 +399,7 @@ export default function AdminSupport({ flash }) {
                   </p>
                   <p className="text-sm text-ink-soft mt-1 line-clamp-2">{i.message}</p>
                 </div>
-                {i.admin_response && <CheckCircle size={14} className="text-green-pos flex-shrink-0 mt-1" />}
+                {i.admin_response && <CheckCircle size={14} className="text-green-text flex-shrink-0 mt-1" />}
               </li>
             ))}
           </ul>

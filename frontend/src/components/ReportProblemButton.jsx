@@ -73,7 +73,7 @@ export default function ReportProblemButton({
   const Trigger = variant === 'icon' ? (
     <button
       onClick={() => setOpen(true)}
-      className={`p-2 rounded-lg text-ink-muted hover:text-red-warn hover:bg-red-warn/10 transition-colors ${className}`}
+      className={`p-2 rounded-lg text-ink-muted hover:text-red-text hover:bg-red-warn/10 transition-colors ${className}`}
       title={t('rp_title')}
       data-testid={`${testidPrefix}-trigger`}
     >
@@ -82,7 +82,7 @@ export default function ReportProblemButton({
   ) : (
     <button
       onClick={() => setOpen(true)}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border border-red-warn/40 bg-red-warn/10 text-red-warn hover:bg-red-warn/15 transition-colors ${className}`}
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border border-red-warn/40 bg-red-warn/10 text-red-text hover:bg-red-warn/15 transition-colors ${className}`}
       data-testid={`${testidPrefix}-trigger`}
     >
       <AlertTriangle size={12} /> {t('report_problem')}
@@ -110,7 +110,7 @@ export default function ReportProblemButton({
             {done ? (
               <div className="text-center py-8" data-testid={`${testidPrefix}-success`}>
                 <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-green-pos/15 flex items-center justify-center">
-                  <AlertTriangle size={20} className="text-green-pos" />
+                  <AlertTriangle size={20} className="text-green-text" />
                 </div>
                 <p className="font-bold text-ink">{t('rp_filed')}</p>
                 <p className="text-sm text-ink-muted mt-1">{t('rp_filed_desc')}</p>

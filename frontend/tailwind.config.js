@@ -64,7 +64,18 @@ module.exports = {
         // Ten tokens removed, no new ones added. The measurements that used to
         // justify them now live where the classes are, in `utils/workflow.js`.
         'green-pos': '#4a8b3f',
+        // `green-pos` is a fill, and it fails as text everywhere it has been
+        // tried: 4.15:1 on plain white, which means every green figure and
+        // every "accepted" badge in this app has been below AA. This is the
+        // same hue darkened until it clears on the darkest surface it is put
+        // on — a 20 % tint of itself — and it is what `text-` classes must
+        // use. Exactly the arrangement `amber.DEFAULT` / `amber.text` already
+        // has, for exactly the same reason.
+        'green-text': '#3b6f32',
         'red-warn': '#c14655',
+        // The same, for red on a tint of itself: `red-warn` reads 4.17:1 on
+        // its own 10 % wash. Fine on paper, not fine on a coloured card.
+        'red-text': '#ae3f4c',
         'sm-border': '#f0e3c8',
         // The estimate picker groups its templates into Innen and Außen zones,
         // each a tinted panel. A card *inside* a panel has to be lighter than

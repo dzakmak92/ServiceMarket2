@@ -97,7 +97,7 @@ export default function TaxToolkitPage() {
         />
 
         {error && (
-          <div className="rounded-[14px] border border-red-warn/40 bg-red-warn/10 p-3 mb-4 text-sm text-red-warn flex items-center gap-2">
+          <div className="rounded-[14px] border border-red-warn/40 bg-red-warn/10 p-3 mb-4 text-sm text-red-text flex items-center gap-2">
             <AlertCircle size={14} /> {error}
           </div>
         )}
@@ -131,7 +131,7 @@ function DashboardTab({ year, t }) {
         <Tile icon={TrendingUp} colour="text-teal" label={t('tax_tile_revenue')} value={fmtEur(data.revenue_brutto)} />
         <Tile icon={Banknote} colour="text-amber" label={t('tax_tile_outstanding')} value={fmtEur(data.outstanding_brutto)} />
         <Tile icon={Hourglass} colour="text-ink" label={t('tax_tile_expenses')} value={fmtEur(data.expenses_brutto)} />
-        <Tile icon={Coins} colour="text-green-pos" label={t('tax_tile_profit')} value={fmtEur(data.profit_eur)} />
+        <Tile icon={Coins} colour="text-green-text" label={t('tax_tile_profit')} value={fmtEur(data.profit_eur)} />
       </div>
       <div className="card-lg">
         <p className="text-xs uppercase font-bold text-ink-muted tracking-wider mb-2">{t('tax_card_ustva_current')}</p>
@@ -271,7 +271,7 @@ function EurTab({ year, t }) {
             data.expenses.brutto and data.profit_eur — none of which exist on
             /api/tax/eur — so opening the tab threw on the first one and the
             error boundary took the whole Tax Toolkit down with it. */}
-        <Tile icon={TrendingUp} colour="text-green-pos" label={t('tax_revenue')}
+        <Tile icon={TrendingUp} colour="text-green-text" label={t('tax_revenue')}
               value={fmtEur(data.income_net)} />
         <Tile icon={Hourglass} colour="text-red-warn" label={t('tax_expenses')}
               value={fmtEur(data.expenses_net)} />
@@ -341,7 +341,7 @@ function MileageTab({ year, t }) {
             throwing. */}
         <Tile icon={TrendingUp} colour="text-ink" label={t('tax_estimated_km')}
               value={`${Math.round(Number(data.implied_km) || 0)} km`} />
-        <Tile icon={Coins} colour="text-green-pos" label={t('tax_mileage_total')}
+        <Tile icon={Coins} colour="text-green-text" label={t('tax_mileage_total')}
               value={fmtEur(data.total_net_eur)} />
       </div>
       <div className="card-lg">
@@ -720,7 +720,7 @@ function ReceiptsTab({ year, t }) {
                    onChange={attach} className="block w-full text-xs mt-1"
                    data-testid="tax-receipt-upload" />
             {form.filename && (
-              <span className="text-[11px] text-green-pos">✓ {form.filename}</span>
+              <span className="text-[11px] text-green-text">✓ {form.filename}</span>
             )}
             <span className="block text-[11px] text-ink-muted mt-1">{t('tax_upload_help')}</span>
           </label>

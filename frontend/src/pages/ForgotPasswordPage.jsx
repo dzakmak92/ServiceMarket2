@@ -101,7 +101,7 @@ export default function ForgotPasswordPage() {
             </form>
           ) : sent ? (
             <div className="text-center py-4" data-testid="forgot-sent">
-              <MailCheck size={32} className="mx-auto text-green-pos mb-3" />
+              <MailCheck size={32} className="mx-auto text-green-text mb-3" />
               <h1 className="font-headings font-bold text-ink text-xl">
                 {t('auth_forgot_sent_title')}
               </h1>

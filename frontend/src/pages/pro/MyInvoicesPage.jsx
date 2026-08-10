@@ -233,7 +233,7 @@ export default function MyInvoicesPage() {
         </div>
 
         {justCreatedId && (
-          <div className="rounded-[14px] border border-green-pos/40 bg-green-pos/10 p-3 mb-4 flex items-center gap-2 text-sm text-green-pos" data-testid="myinv-created-banner">
+          <div className="rounded-[14px] border border-green-pos/40 bg-green-pos/10 p-3 mb-4 flex items-center gap-2 text-sm text-green-text" data-testid="myinv-created-banner">
             <CheckCircle2 size={14} /> {t('myinv_created')}
           </div>
         )}
@@ -241,7 +241,7 @@ export default function MyInvoicesPage() {
         {/* ── Overview stats ────────────────────────────── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6" data-testid="myinv-stats-grid">
           <StatCard icon={TrendingUp} colour="text-teal" label={t('myinv_stat_issued_ytd')} value={fmtEur(stats.issued_brutto)} sub={`${stats.issued_count} ${t('myinv_invoices_short')}`} />
-          <StatCard icon={Banknote}   colour="text-green-pos" label={t('myinv_stat_paid_ytd')} value={fmtEur(stats.paid_brutto)} sub={`${stats.paid_count} ${t('myinv_invoices_short')}`} />
+          <StatCard icon={Banknote}   colour="text-green-text" label={t('myinv_stat_paid_ytd')} value={fmtEur(stats.paid_brutto)} sub={`${stats.paid_count} ${t('myinv_invoices_short')}`} />
           <StatCard icon={Hourglass}  colour="text-amber" label={t('myinv_stat_pending')} value={fmtEur(stats.pending_brutto)} sub={`${stats.pending_count} ${t('myinv_invoices_short')}`} />
           <StatCard icon={Receipt}    colour="text-ink"   label={t('myinv_stat_this_month')} value={fmtEur(stats.this_month_brutto)} sub={t('myinv_stat_this_month_sub')} />
         </div>
@@ -638,7 +638,7 @@ function InvoiceCard({ inv, busy, t, onPreview, onDownload, onShare, onMarkPaid,
     paid: 'status-done',
     issued: 'status-pending',
     partial: 'bg-amber/15 text-amber-deep border border-amber/40',
-    storno: 'bg-red-warn/10 text-red-warn border border-red-warn/30',
+    storno: 'bg-red-warn/10 text-red-text border border-red-warn/30',
     cancelled: 'bg-ink-muted/15 text-ink-muted border border-ink-muted/30 line-through',
     draft: 'bg-ink-muted/15 text-ink-muted border border-ink-muted/30',
   }[status] || 'status-pending';
@@ -753,7 +753,7 @@ function InvoiceCard({ inv, busy, t, onPreview, onDownload, onShare, onMarkPaid,
               <button
                 onClick={onMarkPaid}
                 disabled={busy}
-                className="inline-flex items-center gap-1 px-2.5 h-8 rounded-md text-xs font-bold border border-green-pos/40 bg-green-pos/5 text-green-pos hover:bg-green-pos/15 transition-colors"
+                className="inline-flex items-center gap-1 px-2.5 h-8 rounded-md text-xs font-bold border border-green-pos/40 bg-green-pos/5 text-green-text hover:bg-green-pos/15 transition-colors"
                 data-testid={`myinv-paid-${inv.id}`}
               >
                 <CheckCircle2 size={12} /> {t('myinv_btn_paid')}
@@ -761,7 +761,7 @@ function InvoiceCard({ inv, busy, t, onPreview, onDownload, onShare, onMarkPaid,
             </>
           )}
           {!isDraft && isFullyPaid && (
-            <span className="inline-flex items-center gap-1 px-2.5 h-8 text-xs font-bold text-green-pos">
+            <span className="inline-flex items-center gap-1 px-2.5 h-8 text-xs font-bold text-green-text">
               <CheckCircle2 size={12} /> {t('myinv_status_paid')}
             </span>
           )}
@@ -769,7 +769,7 @@ function InvoiceCard({ inv, busy, t, onPreview, onDownload, onShare, onMarkPaid,
             <button
               onClick={onStorno}
               disabled={busy}
-              className="inline-flex items-center justify-center w-8 h-8 rounded-md text-red-warn hover:bg-red-warn/10 transition-colors"
+              className="inline-flex items-center justify-center w-8 h-8 rounded-md text-red-text hover:bg-red-warn/10 transition-colors"
               title={t('myinv_btn_storno')}
               data-testid={`myinv-storno-${inv.id}`}
             >
@@ -971,7 +971,7 @@ function PaymentsModal({ invoice, onClose, reload, t }) {
           {/* Status summary */}
           <div className="grid grid-cols-3 gap-2">
             <div className="rounded-[10px] bg-cream-soft p-3"><p className="text-[10px] uppercase font-bold text-ink-muted">{t('myinv_brutto')}</p><p className="text-lg font-headings font-bold text-ink">{fmtEur(invoice.brutto_total)}</p></div>
-            <div className="rounded-[10px] bg-green-pos/10 p-3"><p className="text-[10px] uppercase font-bold text-ink-muted">{t('myinv_paid')}</p><p className="text-lg font-headings font-bold text-green-pos">{fmtEur(paidTotal)}</p></div>
+            <div className="rounded-[10px] bg-green-pos/10 p-3"><p className="text-[10px] uppercase font-bold text-ink-muted">{t('myinv_paid')}</p><p className="text-lg font-headings font-bold text-green-text">{fmtEur(paidTotal)}</p></div>
             <div className={`rounded-[10px] p-3 ${outstanding > 0 ? 'bg-amber/10' : 'bg-cream-soft'}`}><p className="text-[10px] uppercase font-bold text-ink-muted">{t('myinv_outstanding')}</p><p className={`text-lg font-headings font-bold ${outstanding > 0 ? 'text-amber-deep' : 'text-ink-muted'}`}>{fmtEur(outstanding)}</p></div>
           </div>
 
@@ -986,7 +986,7 @@ function PaymentsModal({ invoice, onClose, reload, t }) {
                 <button
                   onClick={togglePayLink}
                   disabled={busy}
-                  className={`text-[10px] uppercase font-bold px-2 py-1 rounded-full transition-colors ${payLink.enabled ? 'bg-green-pos/15 text-green-pos' : 'bg-cream-deep text-ink-muted hover:bg-cream-deep/70'}`}
+                  className={`text-[10px] uppercase font-bold px-2 py-1 rounded-full transition-colors ${payLink.enabled ? 'bg-green-pos/15 text-green-text' : 'bg-cream-deep text-ink-muted hover:bg-cream-deep/70'}`}
                   data-testid="myinv-paylink-toggle"
                 >
                   {busy ? <Loader2 size={10} className="animate-spin" /> : (payLink.enabled ? t('myinv_paylink_enabled') : t('myinv_paylink_disabled'))}
@@ -1062,8 +1062,8 @@ function PaymentsModal({ invoice, onClose, reload, t }) {
           )}
           {outstanding < 0.01 && (
             <div className="rounded-[10px] bg-green-pos/10 border border-green-pos/30 p-3 text-center">
-              <CheckCircle2 size={18} className="text-green-pos mx-auto mb-1" />
-              <p className="text-sm font-semibold text-green-pos">{t('myinv_fully_paid')}</p>
+              <CheckCircle2 size={18} className="text-green-text mx-auto mb-1" />
+              <p className="text-sm font-semibold text-green-text">{t('myinv_fully_paid')}</p>
             </div>
           )}
         </div>
@@ -1103,7 +1103,7 @@ function StornoModal({ invoice, onClose, reload, t }) {
         {done ? (
           <>
             <div className="rounded-[10px] bg-green-pos/10 border border-green-pos/30 p-3 mb-3">
-              <p className="text-sm font-semibold text-green-pos">{t('myinv_storno_issued')}</p>
+              <p className="text-sm font-semibold text-green-text">{t('myinv_storno_issued')}</p>
               <p className="text-xs text-ink-muted mt-1">{t('myinv_storno_issued_help').replace('{n}', done)}</p>
             </div>
             <button onClick={onClose} className="btn-primary text-sm w-full">{t('myinv_storno_close')}</button>

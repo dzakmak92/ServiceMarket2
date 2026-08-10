@@ -164,7 +164,7 @@ export default function PrivacySettings() {
           {savingPrefs ? t('pv_saving') : t('pv_save_pref')}
         </button>
         {prefsSaved && (
-          <span className="inline-flex items-center gap-1 text-xs text-green-pos ml-3">
+          <span className="inline-flex items-center gap-1 text-xs text-green-text ml-3">
             <CheckCircle size={12} /> {t('pv_saved')}
           </span>
         )}

@@ -271,7 +271,7 @@ export default function MonthBookingCalendar({ availability = [], bookings = [],
                   return (
                     <div
                       key={s}
-                      className="w-full flex items-center justify-center gap-1 px-1.5 py-1 rounded-md text-[10px] bg-red-warn/15 text-red-warn font-semibold line-through cursor-not-allowed"
+                      className="w-full flex items-center justify-center gap-1 px-1.5 py-1 rounded-md text-[10px] bg-red-warn/15 text-red-text font-semibold line-through cursor-not-allowed"
                       data-testid={`cal-slot-${s}`}
                       data-booked="true"
                       title={t('booking_booked_short') || 'Booked'}

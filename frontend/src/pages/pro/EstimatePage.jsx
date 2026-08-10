@@ -48,7 +48,7 @@ const txt = (o) => (o && (o.text || o.text_de)) || '';
 // before any component has a language — so holding German here would pin the
 // chip to German for the life of the bundle however the interface is set.
 const SEVERITY = {
-  critical: { cls: 'border-red-warn/40 bg-red-warn/5 text-red-warn', label: 'est_sev_critical' },
+  critical: { cls: 'border-red-warn/40 bg-red-warn/5 text-red-text', label: 'est_sev_critical' },
   high: { cls: 'border-amber-500/40 bg-amber-500/5 text-amber-700', label: 'est_sev_high' },
   medium: { cls: 'border-sm-border bg-cream text-ink', label: 'est_sev_note' },
   low: { cls: 'border-sm-border bg-cream text-ink-muted', label: 'est_sev_note' },
@@ -1008,7 +1008,7 @@ function OptionRows({ q, value, onPick, alts, t }) {
             <span className="flex-1 min-w-0 text-[15px] font-semibold leading-tight">{label}</span>
             {over ? (
               isBase
-                ? <span className="shrink-0 text-[12px] font-bold text-green-pos bg-green-pos/10
+                ? <span className="shrink-0 text-[12px] font-bold text-green-text bg-green-pos/10
                                    border border-green-pos/25 rounded-lg px-2 py-1">{t('est_opt_base')}</span>
                 : <span className="shrink-0 text-[14px] font-bold tabular-nums text-ink">{span}</span>
             ) : alt ? (
@@ -1061,7 +1061,7 @@ function Step({ n, title, sub, amount, amountMuted, done, open, onToggle, muted,
         <span aria-hidden="true"
               className={`w-7 h-7 rounded-[9px] grid place-items-center text-[14px] font-bold shrink-0
                           ${open ? 'bg-teal text-paper'
-                                 : done ? 'bg-green-pos/12 text-green-pos' : 'bg-cream-deep text-ink-muted'}`}>
+                                 : done ? 'bg-green-pos/12 text-green-text' : 'bg-cream-deep text-ink-muted'}`}>
           {done && !open ? '✓' : n}
         </span>
         <span className="flex-1 min-w-0">
@@ -1513,7 +1513,7 @@ function Positions({ result, overrides, setOverrides, t }) {
                   <span className="text-[14px] text-ink leading-snug min-w-0">
                     {l.description}
                     {l.rate_source === 'pro' && (
-                      <span className="ml-1.5 text-[11px] font-semibold text-green-pos">
+                      <span className="ml-1.5 text-[11px] font-semibold text-green-text">
                         {t('est_own_rate')}
                       </span>
                     )}

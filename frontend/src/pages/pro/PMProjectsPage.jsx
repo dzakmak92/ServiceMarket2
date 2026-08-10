@@ -146,7 +146,7 @@ export default function PMProjectsPage() {
           />
           <StatTile
             icon={CheckCircle}
-            iconCls="text-green-pos"
+            iconCls="text-green-text"
             label={t('pm_stat_done')}
             value={stats.done}
             data-testid="pm-stat-done"

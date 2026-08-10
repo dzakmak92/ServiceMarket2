@@ -291,7 +291,7 @@ export default function BillingPage() {
 
         {/* Global messages */}
         {info && (
-          <div className="flex items-center gap-2 text-green-pos bg-green-pos/10 rounded-[14px] p-3 mb-4 text-sm" data-testid="billing-info">
+          <div className="flex items-center gap-2 text-green-text bg-green-pos/10 rounded-[14px] p-3 mb-4 text-sm" data-testid="billing-info">
             <CheckCircle size={14} /> {info}
           </div>
         )}
@@ -466,7 +466,7 @@ export default function BillingPage() {
                   </div>
                   <div className="text-right">
                     <p className="font-bold text-ink">€{Number(txn.amount || 0).toFixed(2).replace('.', ',')}</p>
-                    <span className={`text-xs font-medium ${txn.payment_status === 'paid' ? 'text-green-pos' : txn.payment_status === 'unpaid' ? 'text-amber' : 'text-ink-muted'}`}>
+                    <span className={`text-xs font-medium ${txn.payment_status === 'paid' ? 'text-green-text' : txn.payment_status === 'unpaid' ? 'text-amber' : 'text-ink-muted'}`}>
                       {txn.payment_status === 'paid' ? '✓ Paid' : txn.payment_status === 'unpaid' ? 'Pending' : txn.payment_status}
                     </span>
                   </div>

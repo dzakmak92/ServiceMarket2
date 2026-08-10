@@ -235,8 +235,8 @@ export default function PMPublicStatusPage() {
                     <span className="text-ink">{fmtEur(c.net_amount)}</span>
                     <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full ${
                       c.status === 'rejected'
-                        ? 'bg-red-warn/15 text-red-warn'
-                        : 'bg-green-pos/15 text-green-pos'}`}>
+                        ? 'bg-red-warn/15 text-red-text'
+                        : 'bg-green-pos/15 text-green-text'}`}>
                       {t(`pm_co_status_${c.status}`)}
                     </span>
                   </span>
@@ -270,7 +270,7 @@ export default function PMPublicStatusPage() {
                     <span className="text-ink font-medium">{fmtEur(i.gross_total)}</span>
                     <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full ${
                       i.payment_state === 'paid'
-                        ? 'bg-green-pos/15 text-green-pos'
+                        ? 'bg-green-pos/15 text-green-text'
                         : 'bg-amber/15 text-amber-deep'}`}>
                       {t(`myinv_status_${i.payment_state}`)}
                     </span>
@@ -310,7 +310,7 @@ export default function PMPublicStatusPage() {
             </p>
           </div>
           {job.abnahme_at ? (
-            <p className="text-sm text-green-pos inline-flex items-center gap-1.5">
+            <p className="text-sm text-green-text inline-flex items-center gap-1.5">
               <CheckCircle2 size={14} />
               {t('portal_abnahme_signed')} {fmtDate(job.abnahme_at)}
               {job.abnahme_signed_by && ` · ${job.abnahme_signed_by}`}
@@ -430,7 +430,7 @@ function QuoteCard({ q, t, accepted, disabled, busy, onAccept, onReject }) {
       )}
 
       {accepted ? (
-        <p className="text-sm text-green-pos inline-flex items-center gap-1.5">
+        <p className="text-sm text-green-text inline-flex items-center gap-1.5">
           <CheckCircle2 size={14} /> {t('portal_quote_accepted')}
         </p>
       ) : (

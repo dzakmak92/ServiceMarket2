@@ -227,7 +227,7 @@ export default function ProHomePage() {
                     .filter(Boolean).join(' · ')}
                 </span>
                 <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full
-                                 bg-red-warn/10 text-red-warn">
+                                 bg-red-warn/10 text-red-text">
                   {worst.days_overdue} {t('days')}
                 </span>
               </span>

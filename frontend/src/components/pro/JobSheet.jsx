@@ -132,7 +132,7 @@ export default function JobSheet({ appt, onClose, onPrimary, t }) {
             </span>
           )}
           {urgent && (
-            <span className="rounded-full bg-red-warn/15 px-2.5 py-1 font-bold text-[0.65625rem] text-red-warn">
+            <span className="rounded-full bg-red-warn/15 px-2.5 py-1 font-bold text-[0.65625rem] text-red-text">
               {t('job_emergency')}
             </span>
           )}

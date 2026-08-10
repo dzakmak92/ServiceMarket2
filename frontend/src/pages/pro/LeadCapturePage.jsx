@@ -172,7 +172,7 @@ export default function LeadCapturePage() {
           </button>
           {parsed && (
             <p className="text-xs text-ink-muted mt-2 flex items-start gap-1">
-              <Check size={13} className="mt-0.5 text-green-pos shrink-0" />
+              <Check size={13} className="mt-0.5 text-green-text shrink-0" />
               {t('lead_parse_note')
                 || 'Vorschlag — bitte prüfen. Nicht erkannte Felder bleiben leer.'}
             </p>

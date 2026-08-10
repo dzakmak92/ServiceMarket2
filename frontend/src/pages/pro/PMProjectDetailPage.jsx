@@ -306,7 +306,7 @@ function MaterialsTab({ projectId, t }) {
         <div className="card-lg p-4"><p className="text-[10px] uppercase font-bold text-ink-muted">{t('pm_material_actual')}</p><p className="text-xl font-headings font-bold text-ink">{fmtEur(totals.actual)}</p></div>
         <div className="card-lg p-4">
           <p className="text-[10px] uppercase font-bold text-ink-muted">{t('pm_material_variance')}</p>
-          <p className={`text-xl font-headings font-bold ${totals.variance > 0 ? 'text-red-warn' : 'text-green-pos'}`}>{fmtEur(totals.variance)}</p>
+          <p className={`text-xl font-headings font-bold ${totals.variance > 0 ? 'text-red-warn' : 'text-green-text'}`}>{fmtEur(totals.variance)}</p>
         </div>
       </div>
 

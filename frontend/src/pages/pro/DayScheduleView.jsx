@@ -1357,7 +1357,7 @@ function CompletedSheet({ appt, hasToolkit, onInvoice, onUnlock, onClose, t }) {
       <div className="w-full bg-paper rounded-t-[20px] p-5 shadow-2xl"
            ref={panel} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start gap-3 mb-4">
-          <CheckCircle2 size={22} className="text-green-pos flex-none mt-0.5" />
+          <CheckCircle2 size={22} className="text-green-text flex-none mt-0.5" />
           <div className="flex-1">
             <p className="font-headings font-bold text-[0.9375rem] text-ink">
               {t('day_completed_title')}

@@ -44,7 +44,7 @@ export default function DataRightsPage() {
 
       {success ? (
         <div className="rounded-[14px] border border-green-pos/30 bg-green-pos/5 p-5 text-center my-6" data-testid="data-rights-success">
-          <CheckCircle size={32} className="text-green-pos mx-auto mb-2" />
+          <CheckCircle size={32} className="text-green-text mx-auto mb-2" />
           <p className="font-semibold text-ink">{t('dsr_received')} <code>{success.id.slice(-8)}</code></p>
           <p className="text-sm text-ink-muted mt-1">
             {t('dsr_due', { date: new Date(success.due_at).toLocaleDateString() })}

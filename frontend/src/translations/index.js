@@ -2,6 +2,10 @@ const t = {
   en: {
     est_one_more_note: '1 more note',
     est_qty: 'Quantity',
+    quote_verdict: 'Outcome',
+    quote_verdict_open: 'Open',
+    quote_verdict_won: 'Won',
+    quote_verdict_lost: 'Lost',
     est_also_in: 'Also under {s}',
     est_n_templates: '{n} templates',
     est_details: 'Details',
@@ -1782,6 +1786,10 @@ const t = {
   de: {
     est_one_more_note: '1 weiterer Hinweis',
     est_qty: 'Menge',
+    quote_verdict: 'Ergebnis',
+    quote_verdict_open: 'Offen',
+    quote_verdict_won: 'Gewonnen',
+    quote_verdict_lost: 'Verloren',
     est_also_in: 'Auch unter {s}',
     est_n_templates: '{n} Vorlagen',
     est_details: 'Details',
@@ -3457,6 +3465,10 @@ const t = {
   tr: {
     est_one_more_note: '1 not daha',
     est_qty: 'Miktar',
+    quote_verdict: 'Sonuç',
+    quote_verdict_open: 'Açık',
+    quote_verdict_won: 'Kazanıldı',
+    quote_verdict_lost: 'Kaybedildi',
     est_also_in: '{s} altında da var',
     est_n_templates: '{n} şablon',
     est_details: 'Ayrıntılar',
@@ -5064,6 +5076,10 @@ const t = {
   es: {
     est_one_more_note: '1 aviso más',
     est_qty: 'Cantidad',
+    quote_verdict: 'Resultado',
+    quote_verdict_open: 'Abierto',
+    quote_verdict_won: 'Ganado',
+    quote_verdict_lost: 'Perdido',
     est_also_in: 'También en {s}',
     est_n_templates: '{n} plantillas',
     est_details: 'Detalles',

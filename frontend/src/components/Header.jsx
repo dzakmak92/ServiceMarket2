@@ -222,7 +222,7 @@ export default function Header() {
                       </div>
                       <div className="px-4 py-2 border-b border-sm-border bg-cream-soft">
                         {permission === 'granted' ? (
-                          <span className="text-xs text-green-pos flex items-center gap-1.5">
+                          <span className="text-xs text-green-text flex items-center gap-1.5">
                             <BellRing size={12} /> {t('notif_browser_enabled')}
                           </span>
                         ) : permission === 'denied' ? (

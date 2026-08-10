@@ -14,7 +14,7 @@ const KIND_META = {
 const STATUS_META = {
   open:         { label: 'Open', color: 'bg-amber/15 text-amber-deep' },
   in_progress:  { label: 'In Progress', color: 'bg-teal/15 text-teal' },
-  resolved:     { label: 'Resolved', color: 'bg-green-pos/15 text-green-pos' },
+  resolved:     { label: 'Resolved', color: 'bg-green-pos/15 text-green-text' },
   closed:       { label: 'Closed', color: 'bg-cream-deep text-ink-muted' },
 };
 
@@ -186,7 +186,7 @@ export default function AdminFeedback({ flash }) {
                     <p className="text-xs text-ink-muted mt-0.5 truncate">{i.user_name} · {new Date(i.created_at).toLocaleDateString()}</p>
                     <p className="text-sm text-ink-soft mt-1 line-clamp-2">{i.message}</p>
                   </div>
-                  {i.admin_response && <CheckCircle size={14} className="text-green-pos flex-shrink-0 mt-1" />}
+                  {i.admin_response && <CheckCircle size={14} className="text-green-text flex-shrink-0 mt-1" />}
                 </li>
               );
             })}
