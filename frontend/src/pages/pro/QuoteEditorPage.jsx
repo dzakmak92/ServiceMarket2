@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import api from '../../api/client';
 import NumberField from '../../components/NumberField';
 import { useLang } from '../../contexts/LangContext';
 import { fmtEur, fmtEur0, fmtNum, fmtDate } from '../../utils/money';
 import ConvertSheet from '../../components/pro/ConvertSheet';
 import {
-  ArrowLeft, Loader2, Plus, Trash2, Save, FileDown, Send, Check, Ban,
-  AlertCircle, GitBranch, Copy, CalendarPlus, Pencil,
+  ArrowLeft, Loader2, Plus, Trash2, Save, FileDown, Check, Ban,
+  AlertCircle, CalendarPlus, Pencil,
 } from 'lucide-react';
 
 
@@ -50,18 +50,19 @@ const lineNet = (l) => (l.is_optional && !l.is_selected ? 0
  * different tap could not be answered without starting over, and nobody could
  * see the Angebot the customer was looking at.
  *
- * Two ways to change a quote, and the difference is the point:
+ * **Save** replaces the lines in place, and is the only way this screen
+ * changes a quote. It is allowed while the quote is still a conversation —
+ * draft, sent, viewed, negotiating — and refused once the customer has
+ * decided, because a document somebody has agreed to must not move under
+ * them. Changing an accepted quote is a Nachtrag, on the job.
  *
- *   · **Save** replaces the lines in place. Fine while the quote is still a
- *     conversation (draft, sent, viewed, negotiating).
- *   · **Revise** creates version N+1 and supersedes N. Both stay, so "which
- *     version did they agree to" always has an answer.
- *
- * An accepted quote allows neither — that is a Nachtrag, on the job.
+ * The backend also has `revise`, which creates version N+1 and supersedes N so
+ * both remain and "which version did they agree to" always has an answer. It
+ * had a button here and no longer does; the endpoint and the versioning are
+ * intact but nothing in the app reaches them.
  */
 export default function QuoteEditorPage() {
   const { quoteId } = useParams();
-  const navigate = useNavigate();
   const { t } = useLang();
 
   const [quote, setQuote] = useState(null);
@@ -173,20 +174,14 @@ export default function QuoteEditorPage() {
     setQuote(data); setDirty(false);
   });
 
-  // The new version has a new id, so this navigates rather than reloading —
-  // staying put would leave the pro editing the superseded document.
-  const revise = () => run('revise', async () => {
-    const { data } = await api.post(`/api/quotes/${quoteId}/revise`, { lines: payload() });
-    navigate(`/quotes/${data.id}`, { replace: true });
-  });
+  /* `revise` used to live here — POST /revise, which creates version N+1 and
+     supersedes N so an already-sent quote can be changed without overwriting
+     what the customer saw. Its button is gone, so the call is gone with it
+     rather than sitting unreachable. The endpoint and the versioning behind it
+     are untouched; nothing in the app reaches them now. */
 
   const act = (path, body) => run(path, async () => {
-    const { data } = await api.post(`/api/quotes/${quoteId}/${path}`, body || {});
-    if (path === 'send' && data?.share_token) {
-      try {
-        await navigator.clipboard.writeText(`${window.location.origin}/p/${data.share_token}`);
-      } catch { /* clipboard is a convenience, not the operation */ }
-    }
+    await api.post(`/api/quotes/${quoteId}/${path}`, body || {});
     await load();
   });
 
@@ -222,7 +217,6 @@ export default function QuoteEditorPage() {
   }
 
   const editable = EDITABLE.includes(quote.status);
-  const revisable = quote.status !== 'accepted' && quote.status !== 'superseded';
 
   return (
     <div className="min-h-screen bg-cream pb-28">
@@ -466,21 +460,14 @@ export default function QuoteEditorPage() {
             </div>
           ))}
 
-          {/* Kinds the document has no section for yet. A line's kind is chosen
-              by where it is added, which is why these have to exist: without
-              them a quote written with only labour could never gain a material
-              position at all. */}
-          {editable && KINDS.filter((k) => !sections.some((s) => s.kind === k)).length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-3">
-              {KINDS.filter((k) => !sections.some((s) => s.kind === k)).map((k) => (
-                <button key={k} type="button" onClick={() => addLine(k)}
-                        data-testid={`quote-editor-add-${k}`}
-                        className={`${CHIP} ${CHIP_PLAIN}`}>
-                  <Plus size={13} />{t(k)}
-                </button>
-              ))}
-            </div>
-          )}
+          {/* There is deliberately nothing here for a kind the quote has no
+              section for. Four "+ Anfahrt / + Sonstiges" chips sat under every
+              document for the sake of the rare quote that needs a kind it does
+              not already have, and they were noise on all the others. The
+              consequence, stated because it is a real one: a quote written with
+              only labour cannot gain a material line from this screen. Adding
+              such a line means calculating the position, which is where the
+              lines come from in the first place. */}
         </div>
 
         {/* A document discount was invisible on this screen: it is set when
@@ -521,19 +508,6 @@ export default function QuoteEditorPage() {
               {quote.status === 'accepted' ? t('conv_cta_plain') : t('conv_cta_accept')}
             </button>
           )}
-          {revisable && (
-            <button type="button" className={`${CHIP} ${CHIP_PLAIN}`}
-                    disabled={!!busy} onClick={revise} data-testid="quote-editor-revise">
-              {busy === 'revise' ? <Loader2 size={14} className="animate-spin" /> : <GitBranch size={14} />}
-              {t('quote_revise')}
-            </button>
-          )}
-          {quote.status === 'draft' && (
-            <button type="button" className={`${CHIP} ${CHIP_PLAIN}`}
-                    disabled={!!busy} onClick={() => act('send')} data-testid="quote-editor-send">
-              <Send size={14} />{t('send')}
-            </button>
-          )}
           {['sent', 'viewed', 'negotiating'].includes(quote.status) && (
             <>
               <button type="button" className={`${CHIP} ${CHIP_PLAIN}`}
@@ -546,13 +520,6 @@ export default function QuoteEditorPage() {
                 <Ban size={14} />{t('mark_rejected')}
               </button>
             </>
-          )}
-          {quote.share_token && (
-            <button type="button" className={`${CHIP} ${CHIP_PLAIN}`}
-                    onClick={() => navigator.clipboard?.writeText(
-                      `${window.location.origin}/p/${quote.share_token}`)}>
-              <Copy size={14} />{t('copy_link')}
-            </button>
           )}
         </div>
       </div>
