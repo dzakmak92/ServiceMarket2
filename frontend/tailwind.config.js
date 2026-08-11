@@ -89,6 +89,28 @@ module.exports = {
         // `bg-amber/[.09]`) because those genuinely do sit on `cream`.
         'zone-in': '#f8fafb',
         'zone-out': '#fefbf4',
+        // How long an open quote has been sitting: paper, then two deepenings
+        // of the brand teal over the cream page. Opaque for the same reason
+        // `zone-in` is — a Tailwind opacity utility composites over whatever
+        // is behind the element, and these have to be the colour teal becomes
+        // over *cream* regardless of what they are nested in.
+        //
+        // One hue at three strengths rather than orange-to-red, and that is
+        // the whole point: the orange and red that were tried first measured
+        // 1.05:1 apart in luminance — different hues, near-identical lightness
+        // — so "a week old" and "a fortnight old" were told apart by hue
+        // alone, which is the channel a colour-blind reader does not have and
+        // the first one to go in sunlight. These steps are 1.24:1 apart, so
+        // the ladder survives greyscale.
+        'age-warm': '#eae7da',
+        'age-hot': '#cbd2cb',
+        'age-warm-edge': '#d1d2ca',
+        'age-hot-edge': '#b2bdba',
+        // Text on those fills, each darkened until it clears AA on the step it
+        // sits on. `teal` itself still works on `age-warm` (4.87:1); the deeper
+        // step needs its own, and so does the meta line.
+        'age-hot-text': '#285e74',
+        'age-hot-meta': '#415a6e',
         // Shadcn system
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',

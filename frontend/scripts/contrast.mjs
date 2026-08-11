@@ -147,6 +147,20 @@ const PAIRS = [
   ['quote · pen glyph, open', 'teal.DEFAULT', ['teal.DEFAULT', 'paper', 0.16]],
   ['quote · convert chip label', 'paper', 'teal.DEFAULT'],
   ['quote · save on its amber', 'on-amber', 'amber.DEFAULT'],
+  /* The age of an open quote, in three steps of one hue. Every reading on the
+     two tinted steps is here because deepening a fill is exactly what pushes
+     text under AA, and these fills are deliberately deep — that is what makes
+     the steps tell each other apart in greyscale. */
+  ['age · title on the 7-day step', 'ink.DEFAULT', 'age-warm'],
+  ['age · title on the 14-day step', 'ink.DEFAULT', 'age-hot'],
+  ['age · meta on the 7-day step', 'ink.muted', 'age-warm'],
+  ['age · meta on the 14-day step', 'age-hot-meta', 'age-hot'],
+  ['age · days line on the 7-day step', 'teal.DEFAULT', 'age-warm'],
+  ['age · days line on the 14-day step', 'age-hot-text', 'age-hot'],
+  /* The controls keep a white face on every card, so their own labels are read
+     on paper — but the card has to still read as a card underneath them. */
+  ['age · verdict segment on a 14-day card', 'teal.DEFAULT', ['teal.DEFAULT', 'paper', 0.14]],
+
   /* The two dialogs: one says a quote now exists, the other asks before
      something stops existing. Both are the last thing read before an
      irreversible step, so neither gets to be approximately legible. */
@@ -172,6 +186,23 @@ for (const [label, fg, bg] of PAIRS) {
   const ok = r >= AA;
   if (!ok) fails += 1;
   console.log(`  ${ok ? 'ok  ' : 'FAIL'} ${label.padEnd(30)} ${r.toFixed(2)}:1`);
+}
+
+/* The age ladder has to work as a ladder, not just as three legal surfaces.
+   Its whole reason for existing is that the orange-and-red it replaced sat
+   1.05:1 apart — two hues, one lightness — so "a week" and "a fortnight" were
+   distinguishable only by colour. These steps carry no text between them and
+   so have no AA minimum, but if they ever stop separating in lightness the
+   design has quietly reverted. */
+console.log('\n── age ladder, step separation (not an AA test) ──');
+{
+  const steps = [['paper', 'age-warm'], ['age-warm', 'age-hot']];
+  for (const [a, b] of steps) {
+    const r = ratio(rgb(hexOf(a)), rgb(hexOf(b)));
+    console.log(`  ${r >= 1.15 ? 'ok  ' : 'THIN'} ${a} → ${b}`.padEnd(38) +
+                `${r.toFixed(2)}:1`);
+  }
+  console.log(`  note the orange/red ramp this replaced   1.05:1`);
 }
 
 /* The week strip's today line. It carries no text, so it has no AA minimum —

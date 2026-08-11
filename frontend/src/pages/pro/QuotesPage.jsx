@@ -54,6 +54,31 @@ const VERDICT_OF = Object.fromEntries(
   Object.entries(VERDICT).flatMap(([k, v]) => v.of.map((st) => [st, k])));
 
 /**
+ * How long an open quote has been sitting, in three steps.
+ *
+ * Only open quotes get one. Once a customer has said yes or no, how old the
+ * document is stops being a question anybody asks — and letting a decided
+ * quote take an age colour was what made the first attempt unreadable: a red
+ * "two weeks old" wash and a red "they said no" wash measured 1.04:1 apart,
+ * i.e. the same colour saying two different things on one screen.
+ *
+ * The steps are one hue deepening rather than orange-to-red. The orange and
+ * red tried first were 1.05:1 apart in luminance — told apart by hue alone,
+ * which fails in greyscale, in sunlight and for a colour-blind reader. These
+ * are 1.24:1 apart, so the order survives all three.
+ */
+const AGE = [
+  { after: 14, card: 'bg-age-hot border-age-hot-edge',
+    text: 'text-age-hot-text', meta: 'text-age-hot-meta' },
+  { after: 7, card: 'bg-age-warm border-age-warm-edge',
+    text: 'text-teal', meta: 'text-ink-muted' },
+];
+const ageOf = (q) => {
+  const days = Math.floor((Date.now() - new Date(q.created_at)) / 86400000);
+  return { days, step: q.created_at ? AGE.find((a) => days >= a.after) : null };
+};
+
+/**
  * The one line under a quote that says what is going on with it.
  *
  * This is what the status badge could not be. A badge says "versendet"; this
@@ -152,9 +177,19 @@ function WeekStrip({ quotes, t }) {
     a.setUTCDate(a.getUTCDate() + 4 - (a.getUTCDay() || 7));
     return Math.ceil(((a - Date.UTC(a.getUTCFullYear(), 0, 1)) / day + 1) / 7);
   };
-  const mark = (q) => (VERDICT_OF[q.status] === 'won' ? '#3b6f32'
-    : VERDICT_OF[q.status] === 'lost' ? '#4d6477'
-      : (+today - +at(q.created_at)) / day <= 7 ? '#2d6a7f' : '#ae3f4c');
+  /* The strip only ever shows open quotes now, so a mark says one thing: how
+     long this one has been waiting. It says it twice — darker *and* larger —
+     because the three colours are a single hue deepening and on an 11 px dot
+     hue alone is not a channel everybody has. The radii are a 47 % area step
+     apart, which also separates the oldest mark from the red today line it
+     tends to sit nearest. */
+  const AGE_MARK = [
+    { after: 14, fill: '#1a3a52', r: 6.6 },
+    { after: 7, fill: '#1f4d5e', r: 5.6 },
+    { after: -1, fill: '#2d6a7f', r: 4.6 },
+  ];
+  const mark = (q) => AGE_MARK.find(
+    (m) => (+today - +at(q.created_at)) / day >= m.after);
 
   const bands = [], labels = [];
   for (let w = 0; w < weeks; w += 1) {
@@ -197,8 +232,8 @@ function WeekStrip({ quotes, t }) {
         <line x1={todayX} y1={Y - 5} x2={todayX} y2={Y + H + 5}
               stroke="#c14655" strokeWidth="2.2" data-testid="quote-today" />
         {dated.map(({ q, d }) => (
-          <circle key={q.id} cx={x(idx(d)) + dw / 2} cy={Y + H / 2} r="5.5"
-                  fill={mark(q)} stroke="#ffffff" strokeWidth="1.6" />
+          <circle key={q.id} cx={x(idx(d)) + dw / 2} cy={Y + H / 2} r={mark(q).r}
+                  fill={mark(q).fill} stroke="#ffffff" strokeWidth="1.6" />
         ))}
         {labels}
       </svg>
@@ -237,7 +272,11 @@ export default function QuotesPage() {
   const { t } = useLang();
   const [quotes, setQuotes] = useState([]);
   const [jobs, setJobs] = useState([]);
-  const [statusFilter, setStatusFilter] = useState('');
+  /* Which of the three lists is on screen. The status dropdown this replaces
+     offered eight fine statuses and no counts, so it could tell you there were
+     "sent" quotes but never that anything was waiting. The fine status is still
+     on every card, where it belongs. */
+  const [tab, setTab] = useState('open');
   // Which quote is being turned into work. Null when the sheet is closed.
   const [converting, setConverting] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -251,6 +290,9 @@ export default function QuotesPage() {
   // open at a time without any closing logic.
   const [menu, setMenu] = useState(null);
   const [deleting, setDeleting] = useState(null);
+  // Which quote just changed tabs, so the list can say so. Cleared on a timer
+  // and by any further interaction.
+  const [moved, setMoved] = useState(null);
 
   const [showForm, setShowForm] = useState(false);
   const [jobId, setJobId] = useState('');
@@ -268,10 +310,12 @@ export default function QuotesPage() {
     setLoading(true);
     setError('');
     try {
-      const params = {};
-      if (statusFilter) params.status = statusFilter;
+      /* Everything, filtered in the browser. The tabs need all three counts to
+         put a number on themselves, and a server-side status filter can only
+         ever return one of the three — the other two would have to be guessed
+         or fetched separately. This is one list per pro, not a feed. */
       const [{ data: q }, { data: j }, { data: tpl }] = await Promise.all([
-        api.get('/api/quotes', { params }),
+        api.get('/api/quotes', { params: { limit: 200 } }),
         api.get('/api/jobs', { params: { limit: 100 } }).catch(() => ({ data: { jobs: [] } })),
         api.get('/api/templates').catch(() => ({ data: { templates: [] } })),
       ]);
@@ -286,9 +330,19 @@ export default function QuotesPage() {
     // `t` is read in the catch above. Leaving it out kept the closure built at
     // mount, so an error raised after a language switch was announced in the
     // old language.
-  }, [statusFilter, t]);
+  }, [t]);
 
   useEffect(() => { load(); }, [load]);
+
+  /* One pass, three lists. `superseded` belongs to none of the three — it is a
+     version a newer one replaced, not an outcome — so it appears under Offen,
+     where its own card already says "ersetzt" and offers no verdict. */
+  const byTab = useMemo(() => {
+    const out = { open: [], won: [], lost: [] };
+    quotes.forEach((q) => out[VERDICT_OF[q.status] || 'open'].push(q));
+    return out;
+  }, [quotes]);
+  const shown = byTab[tab];
 
   // Preview into the form rather than calling /apply directly: the pro sees
   // and edits every line before anything is created. A template is a starting
@@ -464,15 +518,32 @@ export default function QuotesPage() {
           </button>
         </div>
 
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-                className="input w-full mb-4" data-testid="quote-status-filter">
-          <option value="">{t('all_statuses') || 'Alle Status'}</option>
-          {/* The members of the quote_status enum. `converted` is not one —
-              filtering by it returned nothing — and `negotiating` and
-              `superseded` are real states the picker could not select. */}
-          {['draft', 'sent', 'viewed', 'negotiating', 'accepted', 'rejected', 'expired', 'superseded']
-            .map((s) => <option key={s} value={s}>{t(`quote_status_${s}`) || s}</option>)}
-        </select>
+        {/* Three lists, in the shape the cards use for the same three words.
+            One idiom on the page for "one of three", and the tab carries its
+            own verdict colour so the bar itself says which world you are in.
+
+            This replaces a dropdown of eight fine statuses that carried no
+            counts — it could tell you there were "versendet" quotes but never
+            that anything was waiting. The fine status is still on every card,
+            which is where it was being read from anyway. */}
+        <div className="flex rounded-xl border border-sm-border bg-paper overflow-hidden mb-3"
+             role="tablist" aria-label={t('quote_verdict')} data-testid="quote-tabs">
+          {['open', 'won', 'lost'].map((v) => {
+            const on = v === tab;
+            return (
+              <button key={v} type="button" role="tab" aria-selected={on}
+                      onClick={() => setTab(v)} data-testid={`quote-tab-${v}`}
+                      className={`flex-1 min-h-[52px] px-2 text-[13px] font-bold leading-tight
+                                  border-r border-sm-border last:border-r-0
+                                  ${on ? VERDICT[v].fill : 'text-ink-muted'}`}>
+                {t(`quote_verdict_${v}`)}
+                <span className="block text-[11px] font-semibold opacity-90">
+                  {byTab[v].length}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
         {error && (
           <div className="card mb-3 flex items-start gap-2 text-sm text-red-warn" data-testid="quote-error">
@@ -622,30 +693,71 @@ export default function QuotesPage() {
           <div className="flex justify-center py-10">
             <Loader2 size={26} className="text-teal animate-spin" />
           </div>
-        ) : quotes.length === 0 ? (
+        ) : shown.length === 0 ? (
           <div className="card-lg text-center py-10" data-testid="quote-empty">
             <FileText size={30} className="text-ink-muted mx-auto mb-2" />
-            <p className="font-headings font-bold text-ink">{t('no_quotes_yet') || 'Noch keine Angebote'}</p>
+            <p className="font-headings font-bold text-ink">
+              {quotes.length ? t(`quote_empty_${tab}`) : (t('no_quotes_yet') || 'Noch keine Angebote')}
+            </p>
             <p className="text-sm text-ink-muted mt-1">
-              {t('create_first_quote') || 'Erstellen Sie Ihr erstes Angebot.'}
+              {quotes.length ? t('quote_empty_other_tabs')
+                             : (t('create_first_quote') || 'Erstellen Sie Ihr erstes Angebot.')}
             </p>
           </div>
         ) : (
           <>
-          <WeekStrip quotes={quotes} t={t} />
+          {/* Only under Offen, and only the open quotes. The strip answers "how
+              long has this been sitting", which is a question about work still
+              waiting; on Gewonnen it would plot decisions already taken. Fed
+              the decided ones too, its axis would stretch across history nobody
+              is acting on and squeeze the marks that matter into one corner. */}
+          {tab === 'open' && <WeekStrip quotes={shown} t={t} />}
+
+          {/* Where it went. Not a toast that floats and fades — it sits in the
+              list, at the top, where the row used to be, and offers the two
+              things somebody wants next: go and look, or take it back. */}
+          {moved && (
+            <div className="card mb-2.5 flex items-center gap-3" role="status"
+                 data-testid="quote-moved">
+              <p className="flex-1 text-[13px] font-semibold text-ink">
+                {t('quote_moved', { v: t(`quote_verdict_${moved.to}`) })}
+              </p>
+              <button type="button" onClick={() => { setTab(moved.to); setMoved(null); }}
+                      data-testid="quote-moved-go"
+                      className="min-h-[38px] px-3 rounded-[10px] border border-sm-border
+                                 bg-paper text-[13px] font-bold text-teal">
+                {t('show')}
+              </button>
+              <button type="button" data-testid="quote-moved-undo"
+                      onClick={async () => {
+                        /* Undo is `reopen`, the same call the Offen segment
+                           makes — so this cannot drift from what that does,
+                           including the server's refusal when the job has
+                           already started. */
+                        if (await act(moved.id, 'reopen')) setMoved(null);
+                      }}
+                      className="min-h-[38px] px-3 rounded-[10px] border border-sm-border
+                                 bg-paper text-[13px] font-bold text-ink">
+                {t('undo')}
+              </button>
+            </div>
+          )}
           <div className="space-y-2.5" data-testid="quote-list">
-            {quotes.map((q) => {
-              /* Only a decided quote is tinted. An open one stays on paper:
-                 those are the cards a pro actually reads, and they should have
-                 the best contrast on the page. The tint then means "this one
-                 is finished", which is the fastest thing to scan for. */
+            {shown.map((q) => {
               /* `superseded` is not a fourth outcome — it is a version a newer
                  one replaced — and the server refuses to accept, reject or
                  convert it. Showing it as "offen" claimed an answer was still
                  wanted on a document nobody is looking at any more, so it gets
                  no verdict at all; the status line already says "ersetzt". */
               const verdict = VERDICT_OF[q.status] || (q.status === 'superseded' ? null : 'open');
-              const skin = (verdict && VERDICT[verdict].card) || 'bg-paper border-sm-border';
+              /* Open cards are washed by age, decided ones by their verdict.
+                 The two never appear together, because the tabs keep them on
+                 separate screens — which is the whole reason age can afford a
+                 colour at all. */
+              const { days, step } = ageOf(q);
+              const aged = verdict === 'open' ? step : null;
+              const skin = aged ? aged.card
+                : (verdict && VERDICT[verdict].card) || 'bg-paper border-sm-border';
               return (
               <div key={q.id} className={`rounded-2xl border p-3.5 ${skin}`}
                    data-testid="quote-row" data-verdict={verdict || q.status}>
@@ -663,7 +775,7 @@ export default function QuotesPage() {
                                     truncate group-hover:text-teal">
                       {q.title || q.job_title || (t('quote') || 'Angebot')}
                     </div>
-                    <div className="text-[13px] text-ink-muted truncate mt-0.5">
+                    <div className={`text-[13px] truncate mt-0.5 ${aged?.meta || 'text-ink-muted'}`}>
                       {[q.quote_number, q.customer_name, q.job_number].filter(Boolean).join(' · ')}
                     </div>
                   </Link>
@@ -671,7 +783,7 @@ export default function QuotesPage() {
                     <div className="font-headings font-bold text-[17px] text-ink tabular-nums">
                       {fmtEur(q.gross_total)}
                     </div>
-                    <div className="text-[12px] text-ink-muted mt-0.5">
+                    <div className={`text-[12px] mt-0.5 ${aged?.meta || 'text-ink-muted'}`}>
                       {t(`quote_status_${q.status}`) || q.status}
                     </div>
                   </div>
@@ -680,10 +792,18 @@ export default function QuotesPage() {
                 {(() => {
                   const sig = signal(q, t);
                   return (
-                    <p className={`text-[13px] font-semibold mt-1.5 ${sig.tone}`}
+                    <p className={`text-[13px] font-semibold mt-1.5 ${aged?.text || sig.tone}`}
                        data-testid="quote-signal">{sig.text}</p>
                   );
                 })()}
+
+                {/* How long, in words. The wash on its own is a mood; with the
+                    number beside it, it is a fact — and it is the only thing on
+                    the card teaching what the colour means. */}
+                {aged && (
+                  <p className={`text-[13px] font-semibold mt-0.5 ${aged.text}`}
+                     data-testid="quote-age">{t('quote_open_days', { n: days })}</p>
+                )}
 
                 {/* One row: the verdict, and the two things you do to a quote
                     from a list.
@@ -728,7 +848,13 @@ export default function QuotesPage() {
                                 // fork nobody asked for. Losing is a plain
                                 // transition.
                                 if (v !== 'won') {
-                                  act(q.id, VERDICT[v].to, { reason: '' });
+                                  // The quote leaves this tab the moment the
+                                  // verdict lands, so the row does not fade
+                                  // out — it is simply not here any more. Say
+                                  // where it went, or the tap reads as a bug.
+                                  if (await act(q.id, VERDICT[v].to, { reason: '' })) {
+                                    setMoved({ to: v, id: q.id, from: verdict });
+                                  }
                                   return;
                                 }
                                 // A rejected or expired quote can be neither
@@ -739,16 +865,28 @@ export default function QuotesPage() {
                                 // answer, and "Create the job" came back with
                                 // "A rejected quote cannot be converted."
                                 if (verdict === 'lost' && !await act(q.id, 'reopen')) return;
+                                // Winning goes through the sheet, so the move
+                                // is announced when the sheet finishes rather
+                                // than now — nothing has changed yet.
                                 setConverting(q);
                               }}
                               aria-pressed={on}
+                              aria-label={t(`quote_verdict_${v}`)}
+                              title={t(`quote_verdict_${v}`)}
                               data-testid={`quote-verdict-${v}`}
                               className={`flex-1 min-h-[44px] px-2 text-[13px] font-bold
                                           flex items-center justify-center gap-1.5
                                           border-r border-sm-border last:border-r-0
                                           ${on ? VERDICT[v].fill : 'text-ink-muted'}`}>
-                        {on && <Icon size={14} aria-hidden="true" />}
-                        {t(`quote_verdict_${v}`)}
+                        {/* The active verdict is named; the two you could
+                            switch to are their icon alone. Three words plus
+                            three icon buttons does not fit 390 px — "Verloren"
+                            was being clipped — and the words are redundant
+                            anyway now that the tab above says which list this
+                            is. The icons keep their own labels for anyone not
+                            reading by eye. */}
+                        <Icon size={14} aria-hidden="true" />
+                        {on && t(`quote_verdict_${v}`)}
                       </button>
                     );
                   })}
@@ -846,7 +984,12 @@ export default function QuotesPage() {
         <ConvertSheet
           quote={converting}
           onClose={() => setConverting(null)}
-          onDone={() => { setConverting(null); load(); }}
+            onDone={() => {
+            const q = converting;
+            setConverting(null);
+            setMoved({ to: 'won', id: q?.id, from: 'open' });
+            load();
+          }}
         />
       )}
 
