@@ -181,11 +181,21 @@ export default function ProHomePage() {
                                  leading-tight tracking-[-.022em]">
                   {t(s.labelKey)}
                 </span>
-                <span className="relative text-[11px] text-ink-muted leading-snug">
-                  {s.to
-                    ? `${n ?? 0} ${t(s.unitKey)}`
-                    : t('stage_soon')}
-                </span>
+                {/* A count, an invitation, or "coming soon" — in that order of
+                    preference, and never a count this tile cannot have. The
+                    invitation is teal and bold rather than muted grey, because
+                    it is the only line on the grid that is a thing to press
+                    rather than a thing to read. */}
+                {s.action ? (
+                  <span className="relative text-[11px] font-bold text-teal leading-snug
+                                   inline-flex items-center gap-1">
+                    {t(s.action)}<ArrowRight size={12} strokeWidth={2.6} aria-hidden="true" />
+                  </span>
+                ) : (
+                  <span className="relative text-[11px] text-ink-muted leading-snug">
+                    {s.to ? `${n ?? 0} ${t(s.unitKey)}` : t('stage_soon')}
+                  </span>
+                )}
               </>
             );
             const shell = `${s.fill} relative overflow-hidden rounded-2xl px-3.5 py-3

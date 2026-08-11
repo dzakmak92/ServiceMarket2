@@ -33,8 +33,22 @@ import {
 export const STAGES = [
   // ── links: den Auftrag gewinnen ──────────────────────────────────
   {
+    /* The one tile that is not a count.
+     *
+     * The other five hold something a pro has — quotes awaiting a reply, jobs
+     * in hand, visits ahead, invoices outstanding — and this one held `jobs
+     * where status = 'lead'`, labelled "zu kalkulieren". That counts enquiries
+     * arriving through the marketplace, so a pro who calculates work that was
+     * never an enquiry read "0 zu kalkulieren" next to five real figures, for
+     * ever. A zero that can only ever be zero is not a fact about the
+     * business, it is a fact about the query.
+     *
+     * `action` replaces the count line with an invitation. Nothing counts what
+     * this tile does, because calculating is a thing you start, not a pile you
+     * work through.
+     */
     key: 'kalkulation', to: '/estimate', icon: Calculator,
-    labelKey: 'stage_kalkulation', unitKey: 'stage_kalkulation_unit',
+    labelKey: 'stage_kalkulation', action: 'stage_kalkulation_go',
     fill: 'bg-paper text-ink border border-cream-deep',
     badge: 'bg-amber/15 text-amber-text',
   },

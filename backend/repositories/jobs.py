@@ -304,12 +304,21 @@ async def dashboard_counts(pro_id: str) -> dict:
     )
     out = {k: int(v or 0) for k, v in row.items()}
 
-    # Angebot lives in its own table. Only the ones the customer still has to
-    # answer count — a draft is the pro's own homework and an accepted quote
-    # has already become a job.
+    # Angebot lives in its own table: everything still open, which is the same
+    # four statuses the quotes list rolls up as "Offen".
+    #
+    # This counted only sent/viewed/negotiating, on the reasoning that a draft
+    # is the pro's own homework. That reasoning came from a time when drafts
+    # were rare. Every quote the app now creates — from the calculation screen,
+    # from a template, from the new-quote form — starts as a draft and stays
+    # one until it is shared, so the tile read 0 next to a list of four quotes
+    # and would have gone on doing so for ever.
+    #
+    # A draft is also the one that most needs the reminder: nobody is waiting
+    # on the customer, they are waiting on the pro.
     out["angebot"] = int(await pg.fetchval(
         "select count(*) from quotes where pro_id = $1 "
-        "and status in ('sent','viewed','negotiating')", pro_id) or 0)
+        "and status in ('draft','sent','viewed','negotiating')", pro_id) or 0)
 
     # Rechnung: money issued and not yet in the bank. Drafts are excluded —
     # an unissued invoice is not owed to anyone — and so are paid and
