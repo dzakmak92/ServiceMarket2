@@ -398,7 +398,8 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section
   );
 }
 
-export default function EstimateCards({ jobs, sections, lang, onQuote, quoting }) {
+export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
+                                        onSelection }) {
   const { t } = useLang();
   const [picked, setPicked] = useState({});
 
@@ -544,6 +545,28 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting }
      out of the total silently would hand them a quote that is short a line
      they thought they had added. Count it, name it, and hold the button. */
   const pending = Object.entries(picked).filter(([, p]) => p.checked && p.form && !hasQty(p));
+
+  /* Tell the page above what is on the table, so leaving the screen can offer
+     to keep it. The page owns the back button and this component owns the
+     ticks, and without this the back button cannot know there is anything to
+     lose.
+
+     Keyed on a signature rather than on `chosen`, which is a fresh array on
+     every render and would loop for ever. The answers are in the signature
+     because changing one changes the draft that would be saved. */
+  const positions = chosen.map(([key, p]) => ({
+    job_key: key, answers: p.answers, tier: 'standard',
+  }));
+  /* `pending.length` goes up too, and leaving that out is what made the first
+     version of this useless: a card ticked with no quantity yet has no
+     estimate, so it is not in `chosen` — and that is precisely the state a pro
+     is in halfway through, which is precisely when they hit back. */
+  const signature = JSON.stringify([positions, Math.round(total * 100), pending.length]);
+  useEffect(() => {
+    const [pos, , unpriced] = JSON.parse(signature);
+    onSelection?.(pos, total, unpriced);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signature]);
 
   /* Order comes from the section, not from the job array. `sections_for`
      lists "what most people came for" first — a painter opens this for an

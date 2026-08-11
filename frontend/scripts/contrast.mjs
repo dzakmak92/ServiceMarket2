@@ -147,6 +147,17 @@ const PAIRS = [
   ['quote · pen glyph, open', 'teal.DEFAULT', ['teal.DEFAULT', 'paper', 0.16]],
   ['quote · convert chip label', 'paper', 'teal.DEFAULT'],
   ['quote · save on its amber', 'on-amber', 'amber.DEFAULT'],
+  /* The two dialogs: one says a quote now exists, the other asks before
+     something stops existing. Both are the last thing read before an
+     irreversible step, so neither gets to be approximately legible. */
+  ['dialog · title', 'ink.DEFAULT', 'paper'],
+  ['dialog · body', 'ink.muted', 'paper'],
+  ['dialog · created tick', 'green-text', ['green-pos', 'paper', 0.15]],
+  ['dialog · teal button label', 'paper', 'teal.DEFAULT'],
+  ['dialog · delete button label', 'paper', 'red-warn'],
+  ['dialog · discard button label', 'red-text', 'paper'],
+  ['quote · delete row in menu', 'red-text', 'paper'],
+  ['quote · blocked delete row', 'ink.muted', 'paper'],
   /* The two values the tokens exist for, on the surface they fail on without
      them — kept so a well-meaning revert is caught here rather than shipped. */
   ['quote · green as text on paper', 'green-text', 'paper'],
@@ -162,6 +173,17 @@ for (const [label, fg, bg] of PAIRS) {
   if (!ok) fails += 1;
   console.log(`  ${ok ? 'ok  ' : 'FAIL'} ${label.padEnd(30)} ${r.toFixed(2)}:1`);
 }
+
+/* The week strip's today line. It carries no text, so it has no AA minimum —
+   but it is the only thing on that axis saying where you are standing, and a
+   rule nobody can pick out of a row of week dividers is not a marker. Measured
+   against both the card it is drawn on and the dividers it must not be
+   mistaken for. */
+console.log(`\n  note today line vs card             ` +
+            `${ratio(rgb(hexOf('red-warn')), rgb(hexOf('paper'))).toFixed(2)}:1  ` +
+            `(marker, no AA minimum)`);
+console.log(`  note today line vs week divider     ` +
+            `${ratio(rgb(hexOf('red-warn')), over(hexOf('ink.DEFAULT'), hexOf('paper'), 0.32)).toFixed(2)}:1`);
 
 /* The tile hairline is decoration — it separates a white card from a cream
    page and carries no text — so it has no minimum. Printed anyway, because a

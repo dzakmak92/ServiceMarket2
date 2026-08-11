@@ -300,6 +300,23 @@ async def reopen_quote(quote_id: str, user: dict = Depends(get_current_user)):
         raise HTTPException(400, str(e))
 
 
+@router.delete("/{quote_id}", status_code=204)
+async def delete_quote(quote_id: str, user: dict = Depends(get_current_user)):
+    """Delete a draft. See `quotes.delete_draft` for why only a draft.
+
+    409 for anything else, on the same reasoning as `reopen`: the request is
+    well-formed and the caller owns the quote — the state of the document is
+    what refuses it, and the sentence says so.
+    """
+    pro_id = await require_pro_id(user)
+    try:
+        await repo.delete_draft(quote_id, pro_id)
+    except LookupError as e:
+        raise HTTPException(404, str(e))
+    except PermissionError as e:
+        raise HTTPException(409, str(e))
+
+
 @router.post("/expire-stale")
 async def expire_stale(user: dict = Depends(get_current_user)):
     pro_id = await require_pro_id(user)

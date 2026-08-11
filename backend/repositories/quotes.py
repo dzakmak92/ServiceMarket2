@@ -666,3 +666,34 @@ async def convert(quote_id: str, pro_id: str, *, mode: str,
     if job and job.get("customer_id"):
         await customers_repo.refresh_rollups(str(job["customer_id"]))
     return dict(job)
+
+
+async def delete_draft(quote_id: str, pro_id: str) -> None:
+    """Delete a quote that was never sent.
+
+    Only a draft. A sent Angebot is a document the customer is holding, and an
+    accepted one is the basis of a job — neither can be made not to have
+    existed by tapping a bin in a list. Those get `rejected` or `expired`,
+    which is what the verdict control is for.
+
+    A hard delete, not a `deleted_at` flag, and that is a deliberate choice
+    rather than the lazy one. Every foreign key pointing at `quotes` already
+    says what should happen: `quote_lines` and `pro_rate_samples` cascade,
+    `quotes.supersedes_id` and `job_estimates.quote_id` go null. The last one
+    matters — the calculation that produced the draft survives it, which is
+    right, because the pro did do the sums even if the offer was binned.
+
+    A draft has never been seen by anybody outside this business, so there is
+    nothing an audit trail could be protecting.
+    """
+    async with pg.transaction() as con:
+        q = await con.fetchrow(
+            "select status from quotes where id = $1 and pro_id = $2 for update",
+            quote_id, pro_id)
+        if not q:
+            raise LookupError("Quote not found")
+        if q["status"] != "draft":
+            raise PermissionError(
+                "Only a draft can be deleted. This quote has already gone to "
+                "the customer — mark it lost instead.")
+        await con.execute("delete from quotes where id = $1", quote_id)

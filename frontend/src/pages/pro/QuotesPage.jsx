@@ -8,7 +8,7 @@ import { fmtDate } from '../../utils/money';
 import ConvertSheet from '../../components/pro/ConvertSheet';
 import {
   Loader2, Plus, X, Check, Ban, FileText, AlertCircle, Trash2,
-  Calculator, Clock, Pencil, Share2,
+  Calculator, Clock, Pencil, Share2, MoreHorizontal, FileDown,
 } from 'lucide-react';
 
 
@@ -177,6 +177,12 @@ function WeekStrip({ quotes, t }) {
             fill={has ? '#4d6477' : '#566c7e'}>KW {kw(mon)}</text>);
   }
 
+  /* Today. Without it the strip has no anchor at all — "how long ago" had to
+     be counted off the KW labels, which is the one thing the axis exists to
+     save you. Drawn past the band on both sides so it is still findable when
+     a quote was created today and its mark sits on the same pixel. */
+  const todayX = x(idx(today)) + dw / 2;
+
   return (
     <div className="card mb-3" style={{ padding: '10px 6px 6px' }} data-testid="quote-weeks">
       <svg width="100%" viewBox={`0 0 ${W} ${Y + H + 20}`} role="img"
@@ -186,6 +192,10 @@ function WeekStrip({ quotes, t }) {
           <line key={`t${i}`} x1={x(i) + dw / 2} y1={Y + H - 4} x2={x(i) + dw / 2} y2={Y + H}
                 stroke="#1a3a52" strokeOpacity=".18" strokeWidth="1" />
         ))}
+        {/* Under the marks, so a quote created today is not hidden by its own
+            date line, and over the bands so it is not lost in the wash. */}
+        <line x1={todayX} y1={Y - 5} x2={todayX} y2={Y + H + 5}
+              stroke="#c14655" strokeWidth="2.2" data-testid="quote-today" />
         {dated.map(({ q, d }) => (
           <circle key={q.id} cx={x(idx(d)) + dw / 2} cy={Y + H / 2} r="5.5"
                   fill={mark(q)} stroke="#ffffff" strokeWidth="1.6" />
@@ -236,6 +246,11 @@ export default function QuotesPage() {
   // Which row just put a link on the clipboard. Cleared on a timer, because
   // the confirmation is about the gesture, not about the quote.
   const [shared, setShared] = useState(null);
+  // Which row has its overflow menu open, and which quote is being confirmed
+  // for deletion. Both hold an id rather than a boolean so only one row can be
+  // open at a time without any closing logic.
+  const [menu, setMenu] = useState(null);
+  const [deleting, setDeleting] = useState(null);
 
   const [showForm, setShowForm] = useState(false);
   const [jobId, setJobId] = useState('');
@@ -371,6 +386,42 @@ export default function QuotesPage() {
     }
     setShared(q.id);
     setTimeout(() => setShared((cur) => (cur === q.id ? null : cur)), 2500);
+  };
+
+  // A new tab rather than a download: this gets checked on the phone before
+  // it goes out, and a forced download makes that two taps and a file manager.
+  const openPdf = async (id) => {
+    setBusyId(id);
+    try {
+      const r = await api.get(`/api/quotes/${id}/pdf`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([r.data], { type: 'application/pdf' }));
+      window.open(url, '_blank', 'noopener');
+      setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
+    } catch (e) {
+      setError(e?.response?.data?.detail || t('generic_error'));
+      window.scrollTo({ top: 0 });
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const destroy = async (q) => {
+    setBusyId(q.id);
+    setError('');
+    try {
+      await api.delete(`/api/quotes/${q.id}`);
+      setDeleting(null);
+      await load();
+    } catch (e) {
+      // The server refuses anything that is not a draft, and its sentence
+      // says why. Shown at the top, because the row it belongs to is about
+      // to be somewhere else in the list.
+      setDeleting(null);
+      setError(e?.response?.data?.detail || t('generic_error'));
+      window.scrollTo({ top: 0 });
+    } finally {
+      setBusyId(null);
+    }
   };
 
   // Returns whether it worked, so a caller can tell the difference between a
@@ -734,7 +785,49 @@ export default function QuotesPage() {
                         : <Share2 size={16} aria-hidden="true" />}
                     </button>
                   )}
+
+                  {/* Everything rare, behind one button. Deleting lives here
+                      rather than on the row because it is the one action on
+                      this screen that cannot be undone, and a bin sitting a
+                      thumb's width from the verdict control is a bin that gets
+                      pressed by accident. */}
+                  <button type="button" data-testid="quote-more"
+                          onClick={() => setMenu(menu === q.id ? null : q.id)}
+                          aria-expanded={menu === q.id}
+                          title={t('quote_row_more')} aria-label={t('quote_row_more')}
+                          className="shrink-0 min-h-[44px] min-w-[44px] rounded-xl border
+                                     border-sm-border bg-paper text-ink flex items-center
+                                     justify-center">
+                    <MoreHorizontal size={16} aria-hidden="true" />
+                  </button>
                 </div>
+
+                {menu === q.id && (
+                  <div className="mt-2 rounded-xl border border-sm-border bg-paper
+                                  overflow-hidden" data-testid="quote-menu">
+                    <button type="button" onClick={() => { setMenu(null); openPdf(q.id); }}
+                            data-testid="quote-menu-pdf"
+                            className="w-full min-h-[44px] px-3.5 text-left text-[14px]
+                                       font-semibold text-ink flex items-center gap-2
+                                       border-b border-sm-border">
+                      <FileDown size={15} />{t('quote_pdf')}
+                    </button>
+                    {/* Only a draft. A sent Angebot is a document the customer
+                        is holding — the row says so rather than hiding the
+                        option, because "why can I not delete this" is a
+                        question the screen should answer once. */}
+                    <button type="button" disabled={q.status !== 'draft'}
+                            data-testid="quote-menu-delete"
+                            onClick={() => { setMenu(null); setDeleting(q); }}
+                            className={`w-full min-h-[44px] px-3.5 text-left text-[14px]
+                                        font-semibold flex items-center gap-2
+                                        ${q.status === 'draft'
+                                          ? 'text-red-text' : 'text-ink-muted'}`}>
+                      <Trash2 size={15} />
+                      {q.status === 'draft' ? t('delete') : t('quote_delete_only_draft')}
+                    </button>
+                  </div>
+                )}
 
                 {/* Copying to the clipboard is silent, and a silent button is
                     indistinguishable from a broken one. */}
@@ -755,6 +848,46 @@ export default function QuotesPage() {
           onClose={() => setConverting(null)}
           onDone={() => { setConverting(null); load(); }}
         />
+      )}
+
+      {/* Deleting is the one thing on this screen with no undo, so it asks —
+          and it names the quote, because "are you sure?" on a list of six
+          drafts is not a question anybody can answer. */}
+      {deleting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-6
+                        bg-ink/40" role="dialog" aria-modal="true"
+             data-testid="quote-delete-dialog"
+             onClick={(e) => { if (e.target === e.currentTarget) setDeleting(null); }}>
+          <div className="w-full max-w-sm rounded-2xl bg-paper p-4 shadow-xl">
+            <p className="font-headings font-bold text-ink text-[17px]">
+              {t('quote_delete_title')}
+            </p>
+            <p className="text-[14px] text-ink-muted mt-1.5">
+              {t('quote_delete_body', {
+                q: deleting.title || deleting.job_title || t('quote'),
+                v: fmtEur(deleting.gross_total),
+              })}
+            </p>
+            <div className="flex gap-2 mt-4">
+              <button type="button" onClick={() => setDeleting(null)}
+                      data-testid="quote-delete-cancel"
+                      className="flex-1 min-h-[46px] rounded-xl border border-sm-border
+                                 bg-paper font-bold text-[14px] text-ink">
+                {t('cancel')}
+              </button>
+              <button type="button" onClick={() => destroy(deleting)}
+                      disabled={busyId === deleting.id}
+                      data-testid="quote-delete-confirm"
+                      className="flex-1 min-h-[46px] rounded-xl bg-red-warn text-paper
+                                 font-bold text-[14px] flex items-center justify-center gap-2">
+                {busyId === deleting.id
+                  ? <Loader2 size={15} className="animate-spin" />
+                  : <Trash2 size={15} />}
+                {t('delete')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

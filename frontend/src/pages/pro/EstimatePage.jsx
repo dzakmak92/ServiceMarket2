@@ -114,6 +114,15 @@ export default function EstimatePage() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
   const [createdQuote, setCreatedQuote] = useState(false);
+  // The quote that was just made, for the dialog that says so. Null until one
+  // exists, which is also what closes the dialog.
+  const [created, setCreated] = useState(null);
+  /* What is currently ticked in the card picker, reported up from it, and
+     whether we are asking about it on the way out. The picker owns the ticks
+     and this page owns the back button, so leaving with work on the table can
+     only be caught if the two know about each other. */
+  const [selection, setSelection] = useState({ positions: [], total: 0, unpriced: 0 });
+  const [leaving, setLeaving] = useState(false);
   const [accuracy, setAccuracy] = useState(null);
   const [showAccuracy, setShowAccuracy] = useState(false);
   const [calibrating, setCalibrating] = useState(false);
@@ -337,22 +346,35 @@ export default function EstimatePage() {
       and the rate card. This is the other case, and it is the more common one
       — a bathroom is tiling and plumbing and painting, and quoting it as three
       documents is something nobody does by hand. */
-  const createMultiQuote = async (positions) => {
+  const createMultiQuote = async (positions, { then = 'confirm' } = {}) => {
     setCreating(true); setError(''); setNotice('');
     try {
       const { data } = await api.post('/api/estimate/quote/multi', {
         positions, job_id: targetJob || null, lang,
       });
-      /* Go to the quote that was just made.
+      /* Report the outcome where the button is.
 
          This used to set a notice and stay put, and the notice renders at the
          top of the page while the button that triggers it is pinned to the
          bottom of a list that is around four thousand pixels tall. The quote
          was created every time — it just happened entirely off screen, so the
          only readable outcome of pressing "create quote" was that nothing
-         appeared to happen. Pressing it should show you the thing. */
-      const id = data?.quotes?.[0]?.id;
-      if (id) { navigate(`/quotes/${id}`); return data; }
+         appeared to happen.
+
+         It then navigated straight into the new quote, which fixed that but
+         skipped past the fact that a quote had been made at all. Now it says
+         so, in a dialog, and goes to the list when the pro is ready — except
+         on the way out of an abandoned calculation, where the draft is being
+         kept on the way to somewhere else and a second dialog would be one
+         more thing to dismiss. */
+      const q = data?.quotes?.[0];
+      if (q?.id && then === 'home') { navigate('/'); return data; }
+      if (q?.id) {
+        setCreated({ id: q.id, number: q.quote_number, net: q.net_total,
+                     n: positions.length });
+        api.get('/api/estimate/accuracy').then(({ data: a }) => setAccuracy(a)).catch(() => {});
+        return data;
+      }
       // No id came back, so there is nothing to navigate to and the notice is
       // the only thing left that can report the outcome.
       setNotice(t('est_multi_created', { n: positions.length }));
@@ -430,6 +452,12 @@ export default function EstimatePage() {
               type="button"
               onClick={() => {
                 if (selected) { setSelected(null); setResult(null); setNotice(''); }
+                // Leaving the picker with positions ticked is the case the
+                // pro loses work in: nothing here is stored until the quote
+                // is made, so back used to throw away an afternoon's ticking
+                // without a word. With nothing ticked it still just goes to
+                // the trade list, as before.
+                else if (selection.positions.length || selection.unpriced) setLeaving(true);
                 else navigate('/estimate');
               }}
               className="p-2 -ml-2 text-ink-muted hover:text-ink min-w-[44px] min-h-[44px]
@@ -483,7 +511,9 @@ export default function EstimatePage() {
                          <EstimateCards jobs={visible}
                                         sections={query.trim() ? null : sections}
                                         lang={lang} quoting={creating}
-                                        onQuote={createMultiQuote} />
+                                        onQuote={createMultiQuote}
+                                        onSelection={(positions, total, unpriced) =>
+                                          setSelection({ positions, total, unpriced })} />
                        ) : null} />
             {/* Accuracy and the rate card are expert tools, not the task. They
                 sat above the picker, so the first thing on the screen was
@@ -537,6 +567,89 @@ export default function EstimatePage() {
           </>
         )}
       </div>
+
+      {/* Leaving with positions ticked. Nothing on this screen is stored until
+          a quote is made, so back used to throw away an afternoon of ticking
+          without a word. It asks rather than saving silently: a calculation
+          abandoned after two taps becomes a draft nobody wants, and the quotes
+          list is where they would pile up. */}
+      {leaving && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-6 bg-ink/40"
+             role="dialog" aria-modal="true" data-testid="estimate-leave"
+             onClick={(e) => { if (e.target === e.currentTarget) setLeaving(false); }}>
+          <div className="w-full max-w-sm rounded-2xl bg-paper p-4 shadow-xl">
+            <p className="font-headings font-bold text-ink text-[17px]">
+              {t('est_leave_title')}
+            </p>
+            <p className="text-[14px] text-ink-muted mt-1.5">
+              {selection.positions.length
+                ? t('est_leave_body', { n: selection.positions.length,
+                                        v: fmtEur(selection.total) })
+                /* Ticked, but no quantity anywhere, so there is no price and
+                   nothing a quote could be made of. Offering "keep draft"
+                   here would either save an empty document or invent the
+                   quantities — say so instead. */
+                : t('est_leave_nothing', { n: selection.unpriced })}
+            </p>
+            <div className="flex gap-2 mt-4">
+              {selection.positions.length > 0 && (
+              <button type="button" disabled={creating}
+                      data-testid="estimate-leave-keep"
+                      onClick={async () => {
+                        // Straight home on success. The dialog has already
+                        // said the draft is being kept, so a second one
+                        // announcing it would be a thing to dismiss twice.
+                        const ok = await createMultiQuote(selection.positions,
+                                                          { then: 'home' });
+                        if (!ok) setLeaving(false);
+                      }}
+                      className="flex-1 min-h-[46px] rounded-xl bg-teal text-paper
+                                 font-bold text-[14px] flex items-center justify-center gap-2">
+                {creating ? <Loader2 size={15} className="animate-spin" /> : null}
+                {t('est_leave_keep')}
+              </button>
+              )}
+              <button type="button" disabled={creating}
+                      data-testid="estimate-leave-discard"
+                      onClick={() => { setLeaving(false); navigate('/'); }}
+                      className={`flex-1 min-h-[46px] rounded-xl font-bold text-[14px]
+                                  ${selection.positions.length
+                                    ? 'border border-red-warn/35 bg-paper text-red-text'
+                                    : 'bg-teal text-paper'}`}>
+                {selection.positions.length ? t('est_leave_discard') : t('est_leave_ok')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* The quote exists. Said here rather than by arriving somewhere new,
+          because "did that work?" is the question, and a screen you did not
+          ask for is not an answer to it. */}
+      {created && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-6 bg-ink/40"
+             role="dialog" aria-modal="true" data-testid="estimate-created">
+          <div className="w-full max-w-sm rounded-2xl bg-paper p-4 shadow-xl text-center">
+            <div className="w-11 h-11 rounded-full bg-green-pos/15 text-green-text
+                            flex items-center justify-center mx-auto mb-2.5">
+              <Check size={22} strokeWidth={2.6} />
+            </div>
+            <p className="font-headings font-bold text-ink text-[17px]">
+              {t('est_created_title')}
+            </p>
+            <p className="text-[14px] text-ink-muted mt-1.5">
+              {[created.number, t('est_created_net', { v: fmtEur(created.net) })]
+                .filter(Boolean).join(' · ')}
+            </p>
+            <button type="button" onClick={() => navigate('/quotes')}
+                    data-testid="estimate-created-go"
+                    className="w-full min-h-[46px] mt-4 rounded-xl bg-teal text-paper
+                               font-bold text-[14px]">
+              {t('est_created_go')}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
