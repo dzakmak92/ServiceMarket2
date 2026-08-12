@@ -111,6 +111,27 @@ module.exports = {
         // step needs its own, and so does the meta line.
         'age-hot-text': '#285e74',
         'age-hot-meta': '#415a6e',
+        // The job page's step chain. A step wears its own colour — green when
+        // it happened, teal when it is the next thing to do, amber while the
+        // timer runs — at two strengths: 25 % for the closed card and its
+        // header, 12 % for the opened body. Opaque for the same reason
+        // `zone-in` is: a Tailwind opacity utility composites over whatever is
+        // behind the element, and these have to be the colour the brand green
+        // becomes over *white* wherever the card is nested.
+        //
+        // 25 % is where it stopped: the dark ink still reads 10.1:1 there, but
+        // past 30 % the card starts to look like a warning panel rather than a
+        // step. The `-line` values are the same hue at 45 %, which is what a
+        // 1 px border needs to stay visible against the fill it encloses.
+        'step-done': '#d2e2cf',
+        'step-done-soft': '#e8f0e6',
+        'step-done-line': '#a9c9a2',
+        'step-now': '#cad9df',
+        'step-now-soft': '#e4edf0',
+        'step-now-line': '#9dbdc8',
+        'step-run': '#fce8c8',
+        'step-run-soft': '#fdf5e9',
+        'step-run-line': '#eccb92',
         // Shadcn system
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',

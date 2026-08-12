@@ -7,13 +7,13 @@ import { signedUrl } from '../../api/files';
 import { sendOrQueue, newId } from '../../offline/queue';
 import { useLang } from '../../contexts/LangContext';
 import {
-  ArrowLeft, Loader2, Plus, Trash2, Briefcase, KanbanSquare, Boxes, BookOpen, Share2,
+  ArrowLeft, Loader2, Plus, Trash2, KanbanSquare, Boxes, BookOpen, Share2,
   Copy, RefreshCw, ExternalLink, Save, LayoutDashboard, CalendarDays, UserPlus, X, Eye, Receipt,
   ScanBarcode, Camera, Image as ImageIcon, FileDown,
 } from 'lucide-react';
 import { statusLabel } from '../../utils/jobStatus';
 import ErrorBoundary from '../../components/ErrorBoundary';
-import OverviewTab from './pm/OverviewTab';
+import JobChain from './JobChain';
 import KanbanTab from './pm/KanbanTab';
 import GanttTab from './pm/GanttTab';
 import BillingTab from './pm/BillingTab';
@@ -43,6 +43,9 @@ export default function PMProjectDetailPage() {
   const [tab, setTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [exportOpen, setExportOpen] = useState(false);
+  /* Only for a `simple` job: the project tools are hidden until asked for,
+     and stay open for the rest of the visit once they are. */
+  const [tools, setTools] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -62,63 +65,90 @@ export default function PMProjectDetailPage() {
   if (loading) return <div className="min-h-screen bg-cream flex items-center justify-center"><Loader2 size={28} className="text-teal animate-spin" /></div>;
   if (!project) return null;
 
+  /* A two-hour visit to somebody's bathroom is not a project, and it used to
+     be shown one: seven tabs of Kanban, Gantt, materials, diary, billing and
+     sharing above a grid of € 0,00. The machinery is still one tap away for
+     the jobs that turn out to need it — it is just no longer the default for
+     the jobs that never will. */
+  const isProject = project.mode === 'project';
+  const showTabs = isProject || tools;
+
   return (
     <div className="min-h-screen bg-cream pb-24 md:pb-12">
-      <div className="page-container py-8 max-w-6xl">
-        <div className="mb-6">
-          <Link to="/projects" className="inline-flex items-center gap-1 text-xs text-ink-muted hover:text-teal mb-3" data-testid="pm-back">
-            <ArrowLeft size={12} /> {t('pm_back')}
-          </Link>
-          <div className="flex items-start justify-between gap-3 flex-wrap">
-            <div className="flex items-start gap-3 min-w-0">
-              <Briefcase size={26} className="text-teal mt-1 flex-shrink-0" />
-              <div className="min-w-0">
-                <h1 className="text-2xl font-headings font-bold text-ink truncate">{project.title}</h1>
-                <p className="text-ink-muted text-sm">
-                  {project.customer?.name || '—'} · {project.job_category} · {project.customer?.city || '—'}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {project.status === 'done' && (
-                <button
-                  onClick={() => setExportOpen(true)}
-                  className="btn-ghost text-xs"
-                  data-testid="pm-export-jobfile-btn"
-                >
-                  <FileDown size={14} /> {t('pm_export_jobfile')}
-                </button>
+      <div className="page-container py-6 max-w-3xl">
+        <div className="flex items-start gap-2 mb-4">
+          {/* The h1 that used to sit here is gone — the customer card is the
+              header now. What the bar still owes the reader is the job's own
+              name: without a customer the card cannot carry it, and the page
+              would then never say which job it is. */}
+          <span className="min-w-0">
+            <Link to="/projects" className="inline-flex items-center gap-1 text-xs text-ink-muted hover:text-teal" data-testid="pm-back">
+              <ArrowLeft size={12} /> {t('pm_back')}
+            </Link>
+            <span className="flex items-baseline gap-2 min-w-0">
+              <h1 className="text-[17px] font-headings font-bold text-ink truncate"
+                  data-testid="job-title">{project.title}</h1>
+              {project.job_number && (
+                <span className="text-[11px] text-ink-faint tabular-nums shrink-0">
+                  {project.job_number}
+                </span>
               )}
-              <ProjectStatusSelect project={project} reload={load} t={t} />
-            </div>
-          </div>
+            </span>
+          </span>
+          <span className="ml-auto flex items-center gap-2 shrink-0">
+            {project.status === 'done' && (
+              <button
+                onClick={() => setExportOpen(true)}
+                className="btn-ghost text-xs"
+                data-testid="pm-export-jobfile-btn"
+              >
+                <FileDown size={14} /> {t('pm_export_jobfile')}
+              </button>
+            )}
+            <ProjectStatusSelect project={project} reload={load} t={t} />
+          </span>
         </div>
 
         {/* Tab strip — horizontally scrollable on mobile with scroll-snap */}
-        <ScrollSnapTabStrip
-          tabs={TABS.map(({ key, labelKey }) => ({ key, label: t(labelKey) }))}
-          activeKey={tab}
-          onChange={setTab}
-          testidPrefix="pm-tab"
-          variant="pills"
-          className="mb-5"
-        />
+        {showTabs && (
+          <ScrollSnapTabStrip
+            tabs={TABS.map(({ key, labelKey }) => ({ key, label: t(labelKey) }))}
+            activeKey={tab}
+            onChange={setTab}
+            testidPrefix="pm-tab"
+            variant="pills"
+            className="mb-5"
+          />
+        )}
 
         {/* Boundary per tab, not per page: a tab that throws leaves the
             other six, the header and the navigation intact. Without one, a
             single bad field reference unmounted the whole app and the pro
             got a blank browser window. */}
-        <SwipeableTabPanel tabKeys={TABS.map((t2) => t2.key)} activeKey={tab} onChange={setTab}>
-          <ErrorBoundary t={t} key={tab}>
-            {tab === 'overview' && <OverviewTab projectId={id} t={t} onJumpTab={setTab} />}
-            {tab === 'kanban' && <KanbanTab projectId={id} t={t} />}
-            {tab === 'gantt' && <GanttTab projectId={id} t={t} />}
-            {tab === 'materials' && <MaterialsTab projectId={id} t={t} />}
-            {tab === 'diary' && <DiaryTab projectId={id} t={t} />}
-            {tab === 'billing' && <BillingTab projectId={id} t={t} />}
-            {tab === 'share' && <ShareTab project={project} reload={load} t={t} />}
+        <SwipeableTabPanel tabKeys={showTabs ? TABS.map((t2) => t2.key) : ['overview']}
+                           activeKey={showTabs ? tab : 'overview'} onChange={setTab}>
+          <ErrorBoundary t={t} key={showTabs ? tab : 'overview'}>
+            {(!showTabs || tab === 'overview') && (
+              <JobChain jobId={id} job={project} reload={load} t={t} />
+            )}
+            {showTabs && tab === 'kanban' && <KanbanTab projectId={id} t={t} />}
+            {showTabs && tab === 'gantt' && <GanttTab projectId={id} t={t} />}
+            {showTabs && tab === 'materials' && <MaterialsTab projectId={id} t={t} />}
+            {showTabs && tab === 'diary' && <DiaryTab projectId={id} t={t} />}
+            {showTabs && tab === 'billing' && <BillingTab projectId={id} t={t} />}
+            {showTabs && tab === 'share' && <ShareTab project={project} reload={load} t={t} />}
           </ErrorBoundary>
         </SwipeableTabPanel>
+
+        {!isProject && !tools && (
+          <p className="text-center text-[12px] text-ink-faint leading-relaxed mt-6">
+            {t('job_tools_hint')}{' '}
+            <button type="button" onClick={() => setTools(true)} data-testid="job-tools-show"
+                    className="font-bold text-teal underline underline-offset-2">
+              {t('job_tools_show')}
+            </button>
+          </p>
+        )}
       </div>
 
       <ExportJobFileModal
