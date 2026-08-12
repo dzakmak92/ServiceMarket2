@@ -285,8 +285,14 @@ async def dashboard_counts(pro_id: str) -> dict:
           count(*) filter (where status = 'lead')        as kalkulation,
           -- Auftrag: won and not yet finished. `completed` is excluded — that
           -- job's next step is an invoice, not the job list.
-          count(*) filter (where status in ('accepted','scheduled','in_progress'))
-                                                         as auftrag,
+          --
+          -- `mode = 'simple'` matters: without it a project in progress was
+          -- counted as an Auftrag *and* as a Projekt, so the two tiles
+          -- overlapped and their figures could not be added up. A project is
+          -- the bigger thing, not a kind of Auftrag, and each tile now counts
+          -- only what its own list shows.
+          count(*) filter (where status in ('accepted','scheduled','in_progress')
+                             and mode = 'simple')         as auftrag,
           -- Projekt: only the ones carrying the full PM toolkit.
           count(*) filter (where mode = 'project'
                              and status not in ('closed','cancelled'))

@@ -18,6 +18,12 @@ export default function PMProjectsPage() {
   // identical screen — two of six cards leading to the same place.
   const [params] = useSearchParams();
   const mode = params.get('mode');
+  /* Three lists out of one component, and the words have to follow. A page
+     headed "Aufträge" that counted "Aktive Projekte" and offered "Projekt aus
+     gewonnenem Auftrag erstellen" was telling the pro they were somewhere
+     else. `isProject` decides the vocabulary; nothing else on the page needs
+     to know which list it is. */
+  const isProject = mode === 'project';
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [needsToolkit, setNeedsToolkit] = useState(false);
@@ -122,11 +128,12 @@ export default function PMProjectsPage() {
           <div className="flex items-center gap-3">
             <Briefcase size={26} className="text-teal" />
             <div>
-              <h1 className="text-3xl font-headings font-bold text-ink">
-                {mode === 'project' ? t('nav_projects') : t('nav_jobs')}
+              <h1 className="text-3xl font-headings font-bold text-ink"
+                  data-testid="pm-list-title">
+                {isProject ? t('nav_projects') : t('nav_jobs')}
               </h1>
               <p className="text-ink-muted text-sm">
-                {mode === 'project' ? t('pm_only_projects') : t('pm_subtitle')}
+                {isProject ? t('pm_only_projects') : t('pm_jobs_subtitle')}
               </p>
             </div>
           </div>
@@ -140,7 +147,7 @@ export default function PMProjectsPage() {
           <StatTile
             icon={Clock}
             iconCls="text-amber-deep"
-            label={t('pm_stat_active')}
+            label={isProject ? t('pm_stat_active') : t('pm_stat_active_jobs')}
             value={stats.open}
             data-testid="pm-stat-active"
           />
@@ -156,7 +163,7 @@ export default function PMProjectsPage() {
             iconCls="text-teal"
             label={t('pm_stat_revenue')}
             value={fmtEur(stats.totalRevenue)}
-            sub={t('pm_stat_revenue_sub')}
+            sub={isProject ? t('pm_stat_revenue_sub') : t('pm_stat_revenue_sub_jobs')}
             data-testid="pm-stat-revenue"
           />
           <StatTile
@@ -164,12 +171,16 @@ export default function PMProjectsPage() {
             iconCls="text-amber"
             label={t('pm_stat_pipeline')}
             value={fmtEur(stats.totalPotential)}
-            sub={t('pm_stat_pipeline_sub')}
+            sub={isProject ? t('pm_stat_pipeline_sub') : t('pm_stat_pipeline_sub_jobs')}
             data-testid="pm-stat-pipeline"
           />
         </div>
 
-        {/* Bootstrap row */}
+        {/* Bootstrap row — project machinery, so only on the project list. On
+            the Aufträge list it read "Projekt aus gewonnenem Auftrag erstellen
+            — keine gewonnenen Aufträge vorhanden" directly above nine won
+            jobs, which is both the wrong offer and a false statement. */}
+        {isProject && (
         <div className="card-lg mb-5 border-l-4 border-teal" data-testid="pm-bootstrap">
           <p className="text-xs uppercase font-bold text-ink-muted tracking-wider mb-2 flex items-center gap-2"><Plus size={12} /> {t('pm_create_from_job')}</p>
           {eligibleJobs.length === 0 ? (
@@ -200,6 +211,7 @@ export default function PMProjectsPage() {
             </div>
           )}
         </div>
+        )}
 
         {/* Filters */}
         <div className="flex items-center gap-2 mb-3 flex-wrap" data-testid="pm-filters">
@@ -223,7 +235,9 @@ export default function PMProjectsPage() {
                 className={`text-[11px] px-2 py-1 rounded-[8px] transition-colors capitalize flex-shrink-0 whitespace-nowrap ${statusFilter === s ? 'bg-teal text-paper' : 'text-ink-muted hover:bg-cream-deep'}`}
                 data-testid={`pm-filter-${s}`}
               >
-                {s === 'all' ? t('pm_filter_all') : s === 'open' ? t('pm_stat_active') : s === 'done' ? t('pm_stat_done') : t(`pm_status_${s}`)}
+                {s === 'all' ? t('pm_filter_all')
+                  : s === 'open' ? (isProject ? t('pm_stat_active') : t('pm_stat_active_jobs'))
+                    : s === 'done' ? t('pm_stat_done') : t(`pm_status_${s}`)}
               </button>
             ))}
           </div>

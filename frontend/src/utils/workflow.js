@@ -59,7 +59,11 @@ export const STAGES = [
     badge: 'bg-amber/15 text-amber-text',
   },
   {
-    key: 'auftrag', to: '/projects', icon: Handshake,
+    /* `?mode=simple`, not the bare list. Without it this tile and the Projekt
+       tile both opened everything: a page headed "Aufträge" that counted
+       "Aktive Projekte" and listed both kinds together. A project is bigger
+       than an Auftrag and belongs on its own list. */
+    key: 'auftrag', to: '/projects?mode=simple', icon: Handshake,
     labelKey: 'stage_auftrag', unitKey: 'stage_auftrag_unit',
     fill: 'bg-paper text-ink border border-cream-deep',
     badge: 'bg-amber/15 text-amber-text',
