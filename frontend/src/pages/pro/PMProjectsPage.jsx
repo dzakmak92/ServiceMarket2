@@ -1,111 +1,152 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import {
-  Briefcase, Loader2, Plus, ChevronRight, CheckCircle, Clock,
-  TrendingUp, AlertTriangle, Search, Filter, Calendar as CalendarIcon,
+  Briefcase, Loader2, Search, Square, Navigation, Phone, FileText, Send,
+  CalendarClock, Calculator, Receipt, Plus,
 } from 'lucide-react';
-import { STATUS_META, OPEN, EARNED } from '../../utils/jobStatus';
-import { fmtEur } from '../../utils/money';
+import { stepStates, daysSince } from '../../utils/jobSteps';
+import { routeHref } from '../../utils/maps';
+import { telHref } from '../../utils/sms';
+import { moneyLocale } from '../../utils/money';
+import JobRing from '../../components/pro/JobRing';
+import JobCard from '../../components/pro/JobCard';
+import useJobAction from '../../hooks/useJobAction';
 
+/**
+ * Every job, in the two states a business cares about: what is running and
+ * what is still coming.
+ *
+ * What this replaces, measured at 390 px: 597 of the first 820 pixels — 73 %
+ * of the screen — went on a title, a subtitle listing project tools, four KPI
+ * tiles of which two read € 0,00, a search box and ten filter chips, four of
+ * them off the right edge. The first job row began below all of it and said
+ * "— · A-2026-0077": no customer, no date, no amount.
+ *
+ * Now: one ring that says how much work is in flight and where it is stuck,
+ * three tabs, and cards that carry the customer, the place, the money and the
+ * same five step dots the job page draws as five cards. The ring's slices map
+ * exactly onto the tabs — two overlapping classifications of the same pile is
+ * the fastest way to make an overview untrustworthy.
+ */
+
+const LIVE = ['accepted', 'scheduled', 'in_progress'];
+const PIPE = ['lead', 'quoted'];
+const DONE = ['completed'];
+
+const TABS = [
+  { key: 'live', statuses: LIVE, labelKey: 'ov_tab_live' },
+  { key: 'pipeline', statuses: PIPE, labelKey: 'ov_tab_pipeline' },
+  { key: 'done', statuses: DONE, labelKey: 'ov_tab_done' },
+];
+
+/* Above this many rows in one tab, the search box earns its 56 px. Below it,
+   scrolling is faster than typing and the field is just chrome. */
+const SEARCH_FROM = 8;
 
 export default function PMProjectsPage() {
   const { t } = useLang();
   const navigate = useNavigate();
-  // `?mode=project` narrows this to jobs carrying the full PM toolkit. Without
-  // it the Projekt tile and the Auftrag tile on the home screen landed on the
-  // identical screen — two of six cards leading to the same place.
+  // `?mode=project` narrows this to jobs carrying the full PM toolkit,
+  // `?mode=simple` to plain jobs. Without it the Projekt tile and the Auftrag
+  // tile on the home screen landed on the identical screen.
   const [params] = useSearchParams();
   const mode = params.get('mode');
-  /* Three lists out of one component, and the words have to follow. A page
-     headed "Aufträge" that counted "Aktive Projekte" and offered "Projekt aus
-     gewonnenem Auftrag erstellen" was telling the pro they were somewhere
-     else. `isProject` decides the vocabulary; nothing else on the page needs
-     to know which list it is. */
   const isProject = mode === 'project';
-  const [projects, setProjects] = useState([]);
+
+  const [jobs, setJobs] = useState([]);
+  const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [needsToolkit, setNeedsToolkit] = useState(false);
-
-  const [wonQuotes, setWonQuotes] = useState([]);
-  const [creating, setCreating] = useState(false);
-  const [pickJob, setPickJob] = useState('');
-
-  // Filter / search state
-  const [statusFilter, setStatusFilter] = useState('open');
+  const [tab, setTab] = useState('live');
   const [search, setSearch] = useState('');
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
-      // `jobs`, not `projects`. GET /api/jobs returns {jobs, total}; reading
-      // the wrong key made this list permanently empty regardless of filter.
-      // Filtered server-side: the endpoint has always accepted `mode` and
-      // nothing ever sent it.
-      const { data } = await api.get('/api/jobs', {
-        params: { limit: 200, ...(mode ? { mode } : {}) } });
-      setProjects(data.jobs || []);
+      /* Two requests, no new endpoint. The quotes are here because a job that
+         has been quoted carries no `contract_amount` yet — the column is only
+         filled on acceptance — so without them the offered slice of the ring
+         would always be zero. */
+      const [j, q] = await Promise.all([
+        api.get('/api/jobs', { params: { limit: 200, ...(mode ? { mode } : {}) } }),
+        api.get('/api/quotes', { params: { limit: 200 } }).catch(() => null),
+      ]);
+      setJobs(j.data.jobs || []);
+      setQuotes(q?.data?.quotes || []);
     } catch (e) {
       if (e?.response?.status === 402) setNeedsToolkit(true);
     } finally { setLoading(false); }
-  };
+  }, [mode]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); }, [mode]);
+  useEffect(() => { load(); }, [load]);
 
-  useEffect(() => {
-    if (needsToolkit) return;
-    // TODO(Phase 2): projects were seeded from won marketplace bids. The spine
-    // consolidation replaces this with "create a job for a customer" — until
-    // then the picker is empty.
-  }, [needsToolkit]);
+  const act = useJobAction({ t, onChanged: () => load() });
 
-  const eligibleJobs = useMemo(() => {
-    const existing = new Set(projects.map((p) => p.job_id));
-    return wonQuotes.filter((q) => !existing.has(q.job_id));
-  }, [wonQuotes, projects]);
-
-  const createProject = async () => {
-    if (!pickJob) return;
-    setCreating(true);
-    try {
-      const { data } = await api.post('/api/jobs', { job_id: pickJob });
-      setPickJob('');
-      await load();
-      if (data?.id) navigate(`/projects/${data.id}`);
-    } catch (e) {
-      console.error(e);
-    } finally { setCreating(false); }
-  };
-
-  // ─── Aggregate stats across all visible projects ───
-  const stats = useMemo(() => {
-    const acc = { open: 0, done: 0, totalRevenue: 0, totalPotential: 0 };
-    for (const p of projects) {
-      const rev = Number(p.contract_amount || 0);
-      if (EARNED.includes(p.status)) { acc.done += 1; acc.totalRevenue += rev; }
-      else if (OPEN.includes(p.status)) { acc.open += 1; acc.totalPotential += rev; }
+  /* Two maps out of one list: the quote a pipeline job is waiting on, and the
+     accepted one that says what a live job is worth. The second matters
+     because `jobs.contract_amount` is only filled on acceptance — a job that
+     was accepted through an older path can still be null there, and a ring
+     that then reports € 0 for four booked jobs is worse than no ring. */
+  /* Quotes are not filtered by mode, the job list is. Counting a quote whose
+     job is not on this screen made the ring claim € 250 offered above a
+     Pipeline tab that showed nothing — the one promise this ring makes is
+     that its total is what the three tabs contain. */
+  const mine = useMemo(() => new Set(jobs.map((j) => j.id)), [jobs]);
+  const sentFor = useMemo(() => {
+    const m = {};
+    for (const q of quotes) {
+      if (q.status === 'sent' && q.job_id && mine.has(q.job_id) && !m[q.job_id]) m[q.job_id] = q;
     }
-    return acc;
-  }, [projects]);
+    return m;
+  }, [quotes, mine]);
+  const wonFor = useMemo(() => {
+    const m = {};
+    for (const q of quotes) if (q.status === 'accepted' && q.job_id && !m[q.job_id]) m[q.job_id] = q;
+    return m;
+  }, [quotes]);
+  const worth = useCallback(
+    (j) => Number(j.contract_amount || wonFor[j.id]?.net_total || 0), [wonFor]);
 
-  const filtered = useMemo(() => {
-    let arr = projects;
-    if (statusFilter === 'open') arr = arr.filter((p) => OPEN.includes(p.status));
-    else if (statusFilter === 'done') arr = arr.filter((p) => EARNED.includes(p.status));
-    else if (statusFilter !== 'all') arr = arr.filter((p) => p.status === statusFilter);
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      arr = arr.filter((p) =>
-        (p.title || '').toLowerCase().includes(q) ||
-        (p.customer_name || '').toLowerCase().includes(q) ||
-        (p.job_number || '').toLowerCase().includes(q) ||
-        (p.category || '').toLowerCase().includes(q),
-      );
+  const amounts = useMemo(() => {
+    const a = { offered: 0, booked: 0, running: 0, done: 0 };
+    for (const q of quotes) {
+      if (q.status === 'sent' && mine.has(q.job_id)) a.offered += Number(q.net_total || 0);
     }
-    return arr;
-  }, [projects, statusFilter, search]);
+    for (const j of jobs) {
+      const v = worth(j);
+      if (j.status === 'in_progress') a.running += v;
+      else if (j.status === 'accepted' || j.status === 'scheduled') a.booked += v;
+      else if (j.status === 'completed') a.done += v;
+    }
+    return a;
+  }, [jobs, quotes, worth, mine]);
+  const total = amounts.offered + amounts.booked + amounts.running + amounts.done;
+
+  const buckets = useMemo(() => {
+    const b = { live: [], pipeline: [], done: [] };
+    for (const j of jobs) {
+      if (LIVE.includes(j.status)) b.live.push(j);
+      else if (PIPE.includes(j.status)) b.pipeline.push(j);
+      else if (DONE.includes(j.status)) b.done.push(j);
+    }
+    /* Live sorted by when it happens — a job with no date sinks. Pipeline
+       sorted by how long it has been waiting, oldest first, because that is
+       the one to chase. Done by how long the money has been sitting. */
+    b.live.sort((x, y) => (x.scheduled_start || '9999').localeCompare(y.scheduled_start || '9999'));
+    b.pipeline.sort((x, y) => (x.created_at || '').localeCompare(y.created_at || ''));
+    b.done.sort((x, y) => (x.completed_at || '').localeCompare(y.completed_at || ''));
+    return b;
+  }, [jobs]);
+
+  const rows = useMemo(() => {
+    const list = buckets[tab] || [];
+    const q = search.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter((j) => [j.title, j.customer_name, j.job_number, j.category]
+      .some((v) => (v || '').toLowerCase().includes(q)));
+  }, [buckets, tab, search]);
 
   if (needsToolkit) {
     return (
@@ -120,202 +161,222 @@ export default function PMProjectsPage() {
     );
   }
 
+  /* The app's locale, not the machine's: `undefined` printed
+     "Wednesday, August 12" on a German page. */
+  const today = new Date().toLocaleDateString(moneyLocale(),
+    { weekday: 'long', day: 'numeric', month: 'long' });
+
   return (
-    <div className="min-h-screen bg-cream pb-24 md:pb-12">
-      <div className="page-container py-8 max-w-6xl">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
-          <div className="flex items-center gap-3">
-            <Briefcase size={26} className="text-teal" />
-            <div>
-              <h1 className="text-3xl font-headings font-bold text-ink"
-                  data-testid="pm-list-title">
-                {isProject ? t('nav_projects') : t('nav_jobs')}
-              </h1>
-              <p className="text-ink-muted text-sm">
-                {isProject ? t('pm_only_projects') : t('pm_jobs_subtitle')}
-              </p>
-            </div>
-          </div>
-          <Link to="/schedule" className="btn-ghost text-sm" data-testid="pm-open-schedule">
-            <CalendarIcon size={15} /> {t('pm_schedule_title')}
+    <div className="min-h-screen bg-cream pb-28 md:pb-12">
+      <div className="page-container py-4 max-w-3xl">
+        <div className="flex items-center gap-2.5 mb-3">
+          <span className="w-10 h-10 rounded-[14px] bg-teal text-paper grid place-items-center shrink-0"
+                aria-hidden="true"><Briefcase size={19} /></span>
+          <span className="min-w-0">
+            <p className="text-[12px] text-ink-muted">{today}</p>
+            <h1 className="text-[17px] font-headings font-bold text-ink truncate"
+                data-testid="pm-list-title">
+              {isProject ? t('nav_projects') : t('nav_jobs')}
+            </h1>
+          </span>
+          <Link to="/schedule" className="ml-auto shrink-0 w-10 h-10 rounded-[13px] bg-paper
+                     border border-sm-border grid place-items-center text-ink-muted"
+                aria-label={t('pm_schedule_title')} data-testid="pm-open-schedule">
+            <CalendarClock size={17} />
           </Link>
         </div>
 
-        {/* KPI strip */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-          <StatTile
-            icon={Clock}
-            iconCls="text-amber-deep"
-            label={isProject ? t('pm_stat_active') : t('pm_stat_active_jobs')}
-            value={stats.open}
-            data-testid="pm-stat-active"
-          />
-          <StatTile
-            icon={CheckCircle}
-            iconCls="text-green-text"
-            label={t('pm_stat_done')}
-            value={stats.done}
-            data-testid="pm-stat-done"
-          />
-          <StatTile
-            icon={TrendingUp}
-            iconCls="text-teal"
-            label={t('pm_stat_revenue')}
-            value={fmtEur(stats.totalRevenue)}
-            sub={isProject ? t('pm_stat_revenue_sub') : t('pm_stat_revenue_sub_jobs')}
-            data-testid="pm-stat-revenue"
-          />
-          <StatTile
-            icon={AlertTriangle}
-            iconCls="text-amber"
-            label={t('pm_stat_pipeline')}
-            value={fmtEur(stats.totalPotential)}
-            sub={isProject ? t('pm_stat_pipeline_sub') : t('pm_stat_pipeline_sub_jobs')}
-            data-testid="pm-stat-pipeline"
-          />
-        </div>
-
-        {/* Bootstrap row — project machinery, so only on the project list. On
-            the Aufträge list it read "Projekt aus gewonnenem Auftrag erstellen
-            — keine gewonnenen Aufträge vorhanden" directly above nine won
-            jobs, which is both the wrong offer and a false statement. */}
-        {isProject && (
-        <div className="card-lg mb-5 border-l-4 border-teal" data-testid="pm-bootstrap">
-          <p className="text-xs uppercase font-bold text-ink-muted tracking-wider mb-2 flex items-center gap-2"><Plus size={12} /> {t('pm_create_from_job')}</p>
-          {eligibleJobs.length === 0 ? (
-            <p className="text-sm text-ink-muted">{t('pm_pick_job_none')}</p>
-          ) : (
-            <div className="flex items-center gap-2 flex-wrap">
-              <select
-                value={pickJob}
-                onChange={(e) => setPickJob(e.target.value)}
-                className="sm-select text-sm flex-1 min-w-[240px]"
-                data-testid="pm-pick-job"
-              >
-                <option value="">{t('pm_pick_job')}</option>
-                {eligibleJobs.map((q) => (
-                  <option key={q.job_id} value={q.job_id}>
-                    {q.job_title || `Job ${q.job_id.slice(-6)}`} · €{q.price}
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={createProject}
-                disabled={!pickJob || creating}
-                className="btn-primary text-sm"
-                data-testid="pm-create-project"
-              >
-                {creating ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} {t('pm_create_btn')}
-              </button>
-            </div>
-          )}
-        </div>
-        )}
-
-        {/* Filters */}
-        <div className="flex items-center gap-2 mb-3 flex-wrap" data-testid="pm-filters">
-          <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t('pm_search_ph')}
-              className="sm-input text-xs pl-8 w-full md:w-80"
-              data-testid="pm-search"
-            />
-          </div>
-          <div className="flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-hide flex-nowrap">
-            <Filter size={12} className="text-ink-muted flex-shrink-0" />
-            {['open', 'done', 'all', 'lead', 'quoted', 'accepted', 'scheduled', 'in_progress', 'invoiced', 'cancelled'].map((s) => (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                className={`text-[11px] px-2 py-1 rounded-[8px] transition-colors capitalize flex-shrink-0 whitespace-nowrap ${statusFilter === s ? 'bg-teal text-paper' : 'text-ink-muted hover:bg-cream-deep'}`}
-                data-testid={`pm-filter-${s}`}
-              >
-                {s === 'all' ? t('pm_filter_all')
-                  : s === 'open' ? (isProject ? t('pm_stat_active') : t('pm_stat_active_jobs'))
-                    : s === 'done' ? t('pm_stat_done') : t(`pm_status_${s}`)}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Projects list */}
         {loading ? (
-          <div className="flex justify-center py-10"><Loader2 size={24} className="text-teal animate-spin" /></div>
-        ) : filtered.length === 0 ? (
-          <div className="card-lg text-center py-10" data-testid="pm-empty">
-            <Briefcase size={36} className="mx-auto text-ink-muted mb-2" />
-            <p className="text-ink font-medium">{projects.length === 0 ? t('pm_empty_title') : t('pm_no_match_title')}</p>
-            <p className="text-ink-muted text-sm mt-1">{projects.length === 0 ? t('pm_empty_help') : t('pm_no_match_help')}</p>
+          <div className="flex justify-center py-14" data-testid="ov-loading">
+            <Loader2 size={24} className="text-teal animate-spin" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3" data-testid="pm-project-list">
-            {filtered.map((p) => <ProjectCard key={p.id} p={p} t={t} />)}
-          </div>
+          <>
+            <JobRing amounts={amounts} total={total} tab={tab} onPick={setTab} t={t} />
+
+            <div className="flex gap-1 rounded-full bg-cream-deep p-1 mb-3" role="tablist"
+                 data-testid="ov-tabs">
+              {TABS.map((tb) => (
+                <button key={tb.key} type="button" role="tab" aria-selected={tab === tb.key}
+                        onClick={() => setTab(tb.key)} data-testid={`ov-tab-${tb.key}`}
+                        className={`flex-1 min-h-[40px] rounded-full text-[12px] font-bold
+                                    ${tab === tb.key
+                          ? 'bg-paper text-teal-deep shadow-[0_1px_4px_rgba(26,58,82,.15)]'
+                          : 'text-ink-muted'}`}>
+                  {t(tb.labelKey)} · <b className="tabular-nums">{buckets[tb.key].length}</b>
+                </button>
+              ))}
+            </div>
+
+            {buckets[tab].length >= SEARCH_FROM && (
+              <label className="flex items-center gap-2 rounded-xl border border-sm-border bg-paper
+                                px-3 mb-3 min-h-[44px]">
+                <Search size={15} className="text-ink-muted shrink-0" aria-hidden="true" />
+                <input value={search} onChange={(e) => setSearch(e.target.value)}
+                       placeholder={t('pm_search_ph')} data-testid="ov-search"
+                       className="flex-1 bg-transparent text-[13px] outline-none min-w-0" />
+              </label>
+            )}
+
+            {tab === 'live' && <LiveList rows={rows} t={t} act={act} worth={worth} />}
+            {tab === 'pipeline' && <PipeList rows={rows} sentFor={sentFor} t={t} navigate={navigate} />}
+            {tab === 'done' && <DoneList rows={rows} t={t} navigate={navigate} worth={worth} />}
+          </>
         )}
       </div>
+
+      <Link to="/leads/new" data-testid="ov-new-job"
+            className="fixed right-4 bottom-[76px] md:bottom-8 z-30 flex items-center gap-1.5
+                       rounded-full bg-amber text-on-amber px-4 min-h-[48px] text-[13.5px]
+                       font-extrabold shadow-[0_6px_16px_rgba(26,58,82,.2)]">
+        <Plus size={17} /> {t('ov_new')}
+      </Link>
     </div>
   );
 }
 
-function StatTile({ icon: Icon, iconCls, label, value, sub, ...rest }) {
+
+/* ── the three lists ──────────────────────────────────────────────────── */
+
+function Empty({ text, testid }) {
   return (
-    <div className="card-lg p-4" {...rest}>
-      <div className="flex items-center gap-1.5 mb-1">
-        <Icon size={12} className={iconCls} />
-        <p className="text-[10px] uppercase font-bold text-ink-muted tracking-wider">{label}</p>
-      </div>
-      <p className="text-2xl font-headings font-bold text-ink">{value}</p>
-      {sub && <p className="text-[10px] text-ink-muted">{sub}</p>}
+    <p className="rounded-2xl border border-dashed border-sm-border bg-cream-soft px-4 py-6
+                  text-center text-[13px] text-ink-soft" data-testid={testid}>{text}</p>
+  );
+}
+
+/** When it happens, in the fewest words that are still true. */
+function whenLabel(job, t) {
+  const hhmm = (d) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  if (job.status === 'in_progress') {
+    const since = job.started_at ? new Date(job.started_at) : null;
+    return since ? t('ov_running_since', { t: hhmm(since) }) : t('job_running');
+  }
+  if (!job.scheduled_start) return t('job_not_scheduled');
+  const d = new Date(job.scheduled_start);
+  const days = -daysSince(d);
+  if (days === 0) return `${t('job_rel_today')} ${hhmm(d)}`;
+  if (days === 1) return `${t('job_rel_tomorrow')} ${hhmm(d)}`;
+  /* Built from 24-hour parts rather than toLocaleTimeString: the badge is
+     narrow, and "08:00 AM" in an English locale on a German page was both
+     wrong and two characters too long. */
+  return `${d.toLocaleDateString(moneyLocale(), { weekday: 'short', day: 'numeric', month: 'short' })} ${hhmm(d)}`;
+}
+
+/* Who and where. A job with no customer yet falls back to what it does have
+   — its number and trade — rather than leaving the line blank, which read as
+   a rendering fault. */
+function place(job) {
+  const who = [job.customer_name, job.site_city || job.customer_city].filter(Boolean).join(' · ');
+  return who || [job.job_number, job.category].filter(Boolean).join(' · ');
+}
+
+function LiveList({ rows, t, act, worth }) {
+  if (!rows.length) return <Empty text={t('ov_empty_live')} testid="ov-empty-live" />;
+  return (
+    <div data-testid="ov-list-live">
+      {rows.map((j) => {
+        const running = j.status === 'in_progress';
+        const tel = telHref(j.customer_phone);
+        const route = routeHref(j);
+        /* Only a running job has a next move worth a button here. For the
+           rest the card is a row to tap — the moves live on the job page,
+           where the server's transition table is known. */
+        const actions = running ? [
+          route && { key: 'route', label: t('day_route'), icon: Navigation, href: route, external: true },
+          tel && { key: 'call', label: t('day_call'), icon: Phone, href: `tel:${tel}` },
+          { key: 'finish', label: t('job_finish_do'), icon: Square, kind: 'amber',
+            onClick: () => act({ id: j.id, status: j.status }, 'complete') },
+        ].filter(Boolean) : [];
+        return (
+          <JobCard key={j.id} job={{ ...j, contract_amount: worth(j) }} states={stepStates(j)}
+                   tone={running ? 'run' : 'live'}
+                   meta={place(j)} badge={whenLabel(j, t)} badgeTone={running ? 'a' : 't'}
+                   actions={actions} testid={`ov-job-${j.id}`} />
+        );
+      })}
     </div>
   );
 }
 
-function ProjectCard({ p, t }) {
-  const meta = STATUS_META[p.status] || STATUS_META.lead;
-  const Icon = meta.i;
-  const revenue = Number(p.contract_amount || 0);
+function PipeList({ rows, sentFor, t, navigate }) {
+  if (!rows.length) return <Empty text={t('ov_empty_pipeline')} testid="ov-empty-pipeline" />;
+  const quoted = rows.filter((j) => j.status === 'quoted');
+  const leads = rows.filter((j) => j.status === 'lead');
   return (
-    <Link
-      to={`/projects/${p.id}`}
-      className="card-lg flex flex-col gap-3 hover:shadow-md hover:border-teal/40 transition-all relative"
-      data-testid={`pm-project-${p.id}`}
-    >
-      <div className="flex items-start gap-2">
-        <span className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${meta.dot}`} />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <h3 className="font-headings font-bold text-ink text-base truncate">{p.title}</h3>
-            <span className={`inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${meta.cls}`}>
-              <Icon size={10} /> {t(meta.key)}
-            </span>
-          </div>
-          <p className="text-xs text-ink-muted truncate mt-0.5">
-            {p.customer_name || '—'} · {p.job_number || p.category || '—'}
-          </p>
-        </div>
-      </div>
+    <div data-testid="ov-list-pipeline">
+      {quoted.length > 0 && (
+        <>
+          <Head text={t('ov_head_waiting')} n={quoted.length} testid="ov-head-waiting" />
+          {quoted.map((j) => {
+            const q = sentFor[j.id];
+            const age = daysSince(q?.sent_at || j.updated_at || j.created_at);
+            return (
+              <JobCard key={j.id} job={{ ...j, contract_amount: q?.net_total || j.contract_amount }}
+                       states={stepStates(j)} tone="pipe"
+                       meta={[place(j), q?.quote_number].filter(Boolean).join(' · ')}
+                       badge={age != null ? t('ov_days', { n: age }) : null}
+                       badgeTone={age != null && age >= 7 ? 'r' : 'w'}
+                       actions={[
+                         q && { key: 'pdf', label: t('job_quote_pdf'), icon: FileText,
+                                href: `/api/quotes/${q.id}/pdf`, external: true },
+                         q && { key: 'follow', label: t('ov_follow_up'), icon: Send, kind: 'primary',
+                                onClick: () => navigate(`/quotes/${q.id}`) },
+                       ].filter(Boolean)}
+                       testid={`ov-job-${j.id}`} />
+            );
+          })}
+        </>
+      )}
+      {leads.length > 0 && (
+        <>
+          <Head text={t('ov_head_noquote')} n={leads.length} testid="ov-head-noquote" />
+          {leads.map((j) => (
+            <JobCard key={j.id} job={j} states={stepStates(j)} tone="pipe"
+                     meta={[place(j), t('ov_asked', { n: daysSince(j.created_at) ?? 0 })]
+                       .filter(Boolean).join(' · ')}
+                     actions={[
+                       { key: 'visit', label: t('ov_site_visit'), icon: CalendarClock,
+                         onClick: () => navigate(`/projects/${j.id}`) },
+                       { key: 'calc', label: t('ov_calculate'), icon: Calculator, kind: 'primary',
+                         onClick: () => navigate('/estimate') },
+                     ]}
+                     testid={`ov-job-${j.id}`} />
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
 
-      <div className="flex items-end justify-between gap-2 border-t border-sm-border pt-3">
-        <div>
-          {revenue > 0 && (
-            <>
-              <p className="text-[10px] uppercase font-bold text-ink-muted tracking-wider">{t('pm_overview_revenue')}</p>
-              <p className="text-lg font-headings font-bold text-ink">{fmtEur(revenue)}</p>
-            </>
-          )}
-          {(p.site_city || p.customer_city) && (
-            <p className="text-[11px] text-ink-muted mt-1 inline-flex items-center gap-1">
-              <CalendarIcon size={10} /> {p.site_city || p.customer_city}
-            </p>
-          )}
-        </div>
-        <ChevronRight size={16} className="text-ink-muted flex-shrink-0" />
-      </div>
-    </Link>
+function DoneList({ rows, t, navigate, worth }) {
+  if (!rows.length) return <Empty text={t('ov_empty_done')} testid="ov-empty-done" />;
+  return (
+    <div data-testid="ov-list-done">
+      {rows.map((j) => {
+        const age = daysSince(j.completed_at);
+        return (
+          <JobCard key={j.id} job={{ ...j, contract_amount: worth(j) }} states={stepStates(j)}
+                   tone="done" meta={place(j)}
+                   badge={age != null ? t('ov_done_days', { n: age }) : null}
+                   badgeTone={age != null && age >= 3 ? 'r' : 'g'}
+                   actions={[{ key: 'bill', label: t('job_bill_create'), icon: Receipt,
+                               kind: 'primary', onClick: () => navigate(`/jobs/${j.id}/invoice`) }]}
+                   testid={`ov-job-${j.id}`} />
+        );
+      })}
+      <p className="text-[11.5px] text-ink-faint leading-relaxed text-center mt-3">
+        {t('ov_done_note')}
+      </p>
+    </div>
+  );
+}
+
+function Head({ text, n, testid }) {
+  return (
+    <p className="flex items-baseline gap-2 mt-3.5 mb-2 ml-0.5" data-testid={testid}>
+      <b className="text-[12px] font-extrabold uppercase tracking-[0.05em] text-ink-muted">{text}</b>
+      <span className="text-[12px] text-ink-faint tabular-nums">{n}</span>
+    </p>
   );
 }
