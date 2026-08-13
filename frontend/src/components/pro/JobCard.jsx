@@ -85,23 +85,29 @@ export default function JobCard({
   );
 }
 
+/* 16 px at stroke 1.9 — the same optical weight as the 12 px extrabold label
+   beside it. At 14 px and the default stroke the mark read as a smudge next to
+   the word rather than as its equal. */
 function ActionButton({ label, icon: Icon, href, external, onClick, kind, testid }) {
   const cls = `flex-1 min-h-[44px] flex items-center justify-center gap-1.5 rounded-xl
                text-[12px] font-extrabold border-[1.5px]
                ${kind === 'primary' ? 'bg-teal text-paper border-teal'
       : kind === 'amber' ? 'bg-amber text-on-amber border-amber'
         : 'bg-paper text-teal-deep border-step-now-line'}`;
+  const mark = Icon
+    ? <Icon size={16} strokeWidth={1.9} aria-hidden="true" className="shrink-0" />
+    : null;
   if (href) {
     return (
       <a href={href} data-testid={testid} className={cls}
          {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
-        {Icon && <Icon size={14} />} {label}
+        {mark} {label}
       </a>
     );
   }
   return (
     <button type="button" onClick={onClick} data-testid={testid} className={cls}>
-      {Icon && <Icon size={14} />} {label}
+      {mark} {label}
     </button>
   );
 }

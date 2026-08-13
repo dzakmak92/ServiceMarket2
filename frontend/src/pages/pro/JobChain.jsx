@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
-  Loader2, FileText, CalendarClock, Play, Square, Receipt, Link2, ExternalLink,
+  Loader2, FileText, CalendarClock, Play, Check, Receipt, Link2, ExternalLink,
 } from 'lucide-react';
 import api, { apiBase, formatError } from '../../api/client';
 import CustomerCard, { fmtWhen, relDay } from '../../components/pro/CustomerCard';
@@ -433,7 +433,7 @@ function FinishBody({ job, data, t, state, busy, can, status, onFinish }) {
       {!done && state !== 'wait' && can && (
         <>
           <Btn kind="amber" onClick={onFinish} disabled={busy} testid="job-finish-do">
-            {busy ? <Loader2 size={16} className="animate-spin" /> : <Square size={16} />}
+            {busy ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
             {t('job_finish_do')}
           </Btn>
           <p className="text-[12px] text-ink-faint leading-relaxed mt-2">{t('job_finish_help')}</p>

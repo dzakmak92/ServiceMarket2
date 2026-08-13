@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Check, ExternalLink, MapPin, Navigation, Phone, Play, Receipt, User, X,
+  Check, CornerUpRight, ExternalLink, MapPin, Phone, Play, Receipt, User, X,
 } from 'lucide-react';
 import { MIN, durationLabel, hhmm, toMs } from '../../utils/schedule';
 import { telHref } from '../../utils/sms';
@@ -168,7 +168,7 @@ export default function JobSheet({ appt, onClose, onPrimary, t }) {
             aria-disabled={!route}
             data-testid="job-sheet-route"
           >
-            <Navigation size={14} /> {t('day_route')}
+            <CornerUpRight size={14} /> {t('day_route')}
           </a>
           <a
             href={phone ? `tel:${phone}` : undefined}

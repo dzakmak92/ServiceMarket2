@@ -46,6 +46,26 @@ export const fmtEur0 = (v) =>
 export const fmtNum = (v, digits = 0) =>
   new Intl.NumberFormat(LOCALE, { maximumFractionDigits: digits }).format(Number(v || 0));
 
+/**
+ * An amount with the currency sign taken off — for a row of narrow money
+ * fields that say "€" once in the heading above them.
+ *
+ * Not `fmtNum`: in de-AT the currency formatter groups with a full stop
+ * ("€ 1.680") while the plain decimal formatter groups with a space
+ * ("1 540"), so a heading and a footer built from the two disagreed inside
+ * one card. Taking the sign off the currency parts keeps every figure on a
+ * screen grouped the same way.
+ */
+export const fmtEurBare = (v) =>
+  new Intl.NumberFormat(LOCALE, {
+    style: 'currency', currency: 'EUR',
+    minimumFractionDigits: 0, maximumFractionDigits: 0,
+  }).formatToParts(Number(v || 0))
+    .filter((p) => p.type !== 'currency')
+    .map((p) => p.value)
+    .join('')
+    .trim();
+
 /** A date, short. Em dash for nothing, so an empty cell is not a blank. */
 export const fmtDate = (v) => (v ? new Date(v).toLocaleDateString(LOCALE) : '—');
 

@@ -20,7 +20,7 @@ import useAppointments from '../../hooks/useAppointments';
 import useSheetModal from '../../hooks/useSheetModal';
 import {
   AlertTriangle, Car, Check, CheckCircle2, ChevronDown, ChevronUp, Copy, FileText,
-  Lock, MapPin, Phone, Navigation, Play, Plus, Receipt, User, X,
+  Lock, MapPin, Phone, CornerUpRight, Play, Plus, Receipt, User, X,
 } from 'lucide-react';
 
 /* 80 px per hour is not a taste call: a one-hour appointment has to hold its
@@ -206,7 +206,7 @@ function Block({ appt, top, height, running, progress, dragging, conflict,
                          ${routeHref(appt) ? '' : 'opacity-40 pointer-events-none'}`}
               data-testid="day-route"
             >
-              <Navigation size={13} /> {t('day_route')}
+              <CornerUpRight size={13} /> {t('day_route')}
             </a>
             <a
               href={phone ? `tel:${phone}` : undefined}

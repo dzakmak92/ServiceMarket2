@@ -3,8 +3,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import {
-  Briefcase, Loader2, Search, Square, Navigation, Phone, FileText, Send,
-  CalendarClock, Calculator, Receipt, Plus,
+  Briefcase, Loader2, Search, Check, CornerUpRight, Phone, FileText, Send,
+  CalendarClock, Calculator, Receipt,
 } from 'lucide-react';
 import { stepStates, daysSince } from '../../utils/jobSteps';
 import { routeHref } from '../../utils/maps';
@@ -29,6 +29,11 @@ import useJobAction from '../../hooks/useJobAction';
  * same five step dots the job page draws as five cards. The ring's slices map
  * exactly onto the tabs — two overlapping classifications of the same pile is
  * the fastest way to make an overview untrustworthy.
+ *
+ * There is no floating "+ Auftrag" button. `MobileNav` already carries `Neu`
+ * as its one accented entry, pointing at the same `/leads/new`: the same verb
+ * twice on one screen, and the floating copy sat on top of the last row of the
+ * list — which on the Läuft tab is a job with a live timer.
  */
 
 const LIVE = ['accepted', 'scheduled', 'in_progress'];
@@ -124,6 +129,18 @@ export default function PMProjectsPage() {
   }, [jobs, quotes, worth, mine]);
   const total = amounts.offered + amounts.booked + amounts.running + amounts.done;
 
+  /* What the total is counting, so the figure is a claim rather than a bare
+     number. Counted over the same rows the three tabs hold — a job that is
+     invoiced or cancelled is in neither the money nor the count. */
+  const counts = useMemo(() => {
+    const inTabs = jobs.filter((j) => LIVE.includes(j.status) || PIPE.includes(j.status)
+      || DONE.includes(j.status));
+    return {
+      jobs: inTabs.filter((j) => j.mode !== 'project').length,
+      projects: inTabs.filter((j) => j.mode === 'project').length,
+    };
+  }, [jobs]);
+
   const buckets = useMemo(() => {
     const b = { live: [], pipeline: [], done: [] };
     for (const j of jobs) {
@@ -192,7 +209,8 @@ export default function PMProjectsPage() {
           </div>
         ) : (
           <>
-            <JobRing amounts={amounts} total={total} tab={tab} onPick={setTab} t={t} />
+            <JobRing amounts={amounts} total={total} counts={counts} tab={tab}
+                     onPick={setTab} t={t} />
 
             <div className="flex gap-1 rounded-full bg-cream-deep p-1 mb-3" role="tablist"
                  data-testid="ov-tabs">
@@ -224,13 +242,6 @@ export default function PMProjectsPage() {
           </>
         )}
       </div>
-
-      <Link to="/leads/new" data-testid="ov-new-job"
-            className="fixed right-4 bottom-[76px] md:bottom-8 z-30 flex items-center gap-1.5
-                       rounded-full bg-amber text-on-amber px-4 min-h-[48px] text-[13.5px]
-                       font-extrabold shadow-[0_6px_16px_rgba(26,58,82,.2)]">
-        <Plus size={17} /> {t('ov_new')}
-      </Link>
     </div>
   );
 }
@@ -283,9 +294,9 @@ function LiveList({ rows, t, act, worth }) {
            rest the card is a row to tap — the moves live on the job page,
            where the server's transition table is known. */
         const actions = running ? [
-          route && { key: 'route', label: t('day_route'), icon: Navigation, href: route, external: true },
+          route && { key: 'route', label: t('day_route'), icon: CornerUpRight, href: route, external: true },
           tel && { key: 'call', label: t('day_call'), icon: Phone, href: `tel:${tel}` },
-          { key: 'finish', label: t('job_finish_do'), icon: Square, kind: 'amber',
+          { key: 'finish', label: t('job_finish_do'), icon: Check, kind: 'amber',
             onClick: () => act({ id: j.id, status: j.status }, 'complete') },
         ].filter(Boolean) : [];
         return (

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Phone, Navigation, MessageSquare } from 'lucide-react';
+import { Phone, CornerUpRight, MessageSquare } from 'lucide-react';
 import { telHref, smsHref } from '../../utils/sms';
 import { jobAddress, routeHref } from '../../utils/maps';
 import { fmtEur, moneyLocale } from '../../utils/money';
@@ -151,7 +151,7 @@ export default function CustomerCard({
           rather than becoming a button that does nothing. */}
       <div className="flex border-t border-sm-border">
         <Act href={tel} icon={Phone} label={t('day_call')} testid={`${testid}-call`} />
-        <Act href={route} icon={Navigation} label={t('day_route')} testid={`${testid}-route`}
+        <Act href={route} icon={CornerUpRight} label={t('day_route')} testid={`${testid}-route`}
              external />
         <Act href={sms} icon={MessageSquare} label={t('job_a_message')}
              testid={`${testid}-message`} />
