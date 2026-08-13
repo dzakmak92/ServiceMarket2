@@ -130,30 +130,31 @@ function signal(q, t) {
 }
 
 /**
- * The week strip above the list.
+ * The four-week strip above the list.
  *
- * One continuous axis, so the gap between two marks is proportional to the
- * days between them — a block-per-week layout makes the weeks louder by giving
- * that up. Weeks are drawn *on* the axis: alternating bands, a divider that
- * runs past the band top and bottom so the boundary is visible even where a
- * mark sits on it, and a day tick per day.
+ * One continuous axis, so the gap between two marks is the gap in days — a
+ * block-per-week layout makes the weeks louder by giving that up. Four whole
+ * ISO weeks, Monday to Sunday, ending with the week we are in: a window that
+ * grew with the oldest quote meant the strip changed scale every time an old
+ * one was decided, and the day-to-day comparison it exists for needs a scale
+ * that holds still.
  *
- * Whole ISO weeks, Monday to Sunday. Anchoring to "today minus 21 days" would
- * put the boundary somewhere different every day and the KW labels would stop
- * meaning anything.
+ * It is drawn as a line rather than as a band. At 24 units of height there is
+ * no room for a filled band, a day tick and a label; the label moves above the
+ * axis, the ticks go, and what is left is the one thing the strip is for —
+ * where the open quotes sit in the last month, and how far each is from today.
  *
- * The point of drawing weeks rather than plotting the quotes alone: an empty
- * week is a fact about the business, and a scatter of the quotes you have
- * cannot show a week you made none in.
+ * Anything older than the window is not dropped in silence: `outside` is
+ * counted and the caller prints it under the card. A strip that quietly
+ * omitted four waiting quotes would be a statement about the business that is
+ * not true.
  */
 function WeekStrip({ quotes, t }) {
-  const W = 358, PAD = 8, Y = 8, H = 28;
+  const W = 358, PAD = 8, H = 24, AXIS = 17;
   const day = 86400000;
   const at = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
 
-  const dated = quotes.filter((q) => q.created_at).map((q) => ({
-    q, d: at(q.created_at),
-  }));
+  const dated = quotes.filter((q) => q.created_at).map((q) => ({ q, d: at(q.created_at) }));
   if (dated.length < 2) return null;   // one mark on an axis is not a chart
 
   const today = at(Date.now());
@@ -162,13 +163,17 @@ function WeekStrip({ quotes, t }) {
     m.setDate(m.getDate() - ((m.getDay() + 6) % 7));
     return m;
   };
-  const first = monday(new Date(Math.min(...dated.map((x) => +x.d))));
-  const lastSun = new Date(monday(today)); lastSun.setDate(lastSun.getDate() + 6);
-  const weeks = Math.max(1, Math.round((+lastSun - +first) / (7 * day)));
-  const ndays = weeks * 7;
+  const WEEKS = 4;
+  const first = monday(today);
+  first.setDate(first.getDate() - 7 * (WEEKS - 1));
+
+  const ndays = WEEKS * 7;
   const inner = W - 2 * PAD, dw = inner / ndays;
   const x = (i) => PAD + i * dw;
   const idx = (d) => Math.round((+d - +first) / day);
+
+  const inside = dated.filter((z) => +z.d >= +first);
+  const outside = dated.length - inside.length;
 
   /* ISO week number, and it has to be the real one: `KW 32` is a thing people
      say to each other, so an approximation would be worse than no label. */
@@ -177,67 +182,75 @@ function WeekStrip({ quotes, t }) {
     a.setUTCDate(a.getUTCDate() + 4 - (a.getUTCDay() || 7));
     return Math.ceil(((a - Date.UTC(a.getUTCFullYear(), 0, 1)) / day + 1) / 7);
   };
-  /* The strip only ever shows open quotes now, so a mark says one thing: how
-     long this one has been waiting. It says it twice — darker *and* larger —
-     because the three colours are a single hue deepening and on an 11 px dot
-     hue alone is not a channel everybody has. The radii are a 47 % area step
-     apart, which also separates the oldest mark from the red today line it
-     tends to sit nearest. */
+  /* The strip only ever shows open quotes, so a mark says one thing: how long
+     this one has been waiting. It says it twice — darker *and* larger —
+     because the three colours are a single hue deepening, and on a mark this
+     small hue alone is not a channel everybody has. */
   const AGE_MARK = [
-    { after: 14, fill: '#1a3a52', r: 6.6 },
-    { after: 7, fill: '#1f4d5e', r: 5.6 },
-    { after: -1, fill: '#2d6a7f', r: 4.6 },
+    { after: 14, fill: '#1a3a52', r: 5 },
+    { after: 7, fill: '#1f4d5e', r: 4.4 },
+    { after: -1, fill: '#2d6a7f', r: 3.8 },
   ];
-  const mark = (q) => AGE_MARK.find(
-    (m) => (+today - +at(q.created_at)) / day >= m.after);
+  const age = (d) => AGE_MARK.find((m) => (+today - +d) / day >= m.after);
 
-  const bands = [], labels = [];
-  for (let w = 0; w < weeks; w += 1) {
-    const mon = new Date(first); mon.setDate(mon.getDate() + w * 7);
-    const has = dated.some((z) => idx(z.d) >= w * 7 && idx(z.d) < w * 7 + 7);
-    if (w % 2 === 0) {
-      bands.push(<rect key={`b${w}`} x={x(w * 7)} y={Y} width={dw * 7} height={H}
-                       fill="#2d6a7f" fillOpacity=".05" />);
-    }
-    if (w) {
-      bands.push(<line key={`d${w}`} x1={x(w * 7)} y1={Y - 3} x2={x(w * 7)} y2={Y + H + 3}
-                       stroke="#1a3a52" strokeOpacity=".32" strokeWidth="1.5" />);
-    }
-    labels.push(
-      <text key={`l${w}`} x={x(w * 7) + dw * 3.5} y={Y + H + 14} textAnchor="middle"
-            fontSize="8.5" fontWeight="800"
-            /* An empty week's label is quieter but still text — it is how you
-               learn the week was empty — so it uses the palette's faintest
-               legal value rather than a grey picked to look dim. */
-            fill={has ? '#4d6477' : '#566c7e'}>KW {kw(mon)}</text>);
+  /* One mark per day, not one per quote. Three quotes written on the same
+     Tuesday used to be three circles on the same pixel, and three white
+     strokes over each other make a blot that reads as a bigger, older mark
+     than any of them is. The day keeps the oldest one's weight, because that
+     is the one that needs chasing. */
+  const byDay = new Map();
+  for (const z of inside) {
+    const k = idx(z.d);
+    const m = age(z.d);
+    const prev = byDay.get(k);
+    if (!prev || m.r > prev.r) byDay.set(k, m);
   }
 
-  /* Today. Without it the strip has no anchor at all — "how long ago" had to
-     be counted off the KW labels, which is the one thing the axis exists to
-     save you. Drawn past the band on both sides so it is still findable when
-     a quote was created today and its mark sits on the same pixel. */
+  const labels = [], dividers = [];
+  for (let w = 0; w < WEEKS; w += 1) {
+    const mon = new Date(first); mon.setDate(mon.getDate() + w * 7);
+    labels.push(
+      <text key={`l${w}`} x={x(w * 7) + dw * 3.5} y="8" textAnchor="middle"
+            fontSize="8" fontWeight="800"
+            /* The week we are in is the one being read against; the three
+               behind it are context and step back a shade. */
+            fill={w === WEEKS - 1 ? '#4d6477' : '#566c7e'}>KW {kw(mon)}</text>);
+    if (w) {
+      dividers.push(
+        <line key={`d${w}`} x1={x(w * 7)} y1={AXIS - 5} x2={x(w * 7)} y2={AXIS + 5}
+              stroke="#1a3a52" strokeOpacity=".3" strokeWidth="1.3" />);
+    }
+  }
+
+  /* Today. Without it the strip has no anchor at all — "how long ago" would
+     have to be counted off the KW labels, which is the one thing the axis
+     exists to save you. Drawn past the axis on both sides so it is still
+     findable when a quote written today sits on the same pixel. */
   const todayX = x(idx(today)) + dw / 2;
 
   return (
-    <div className="card mb-3" style={{ padding: '10px 6px 6px' }} data-testid="quote-weeks">
-      <svg width="100%" viewBox={`0 0 ${W} ${Y + H + 20}`} role="img"
-           aria-label={t('quote_weeks_alt', { n: weeks })}>
-        {bands}
-        {Array.from({ length: ndays }, (_, i) => (
-          <line key={`t${i}`} x1={x(i) + dw / 2} y1={Y + H - 4} x2={x(i) + dw / 2} y2={Y + H}
-                stroke="#1a3a52" strokeOpacity=".18" strokeWidth="1" />
-        ))}
-        {/* Under the marks, so a quote created today is not hidden by its own
-            date line, and over the bands so it is not lost in the wash. */}
-        <line x1={todayX} y1={Y - 5} x2={todayX} y2={Y + H + 5}
-              stroke="#c14655" strokeWidth="2.2" data-testid="quote-today" />
-        {dated.map(({ q, d }) => (
-          <circle key={q.id} cx={x(idx(d)) + dw / 2} cy={Y + H / 2} r={mark(q).r}
-                  fill={mark(q).fill} stroke="#ffffff" strokeWidth="1.6" />
-        ))}
-        {labels}
-      </svg>
-    </div>
+    <>
+      <div className="card mb-2" style={{ padding: '6px 6px 4px' }} data-testid="quote-weeks">
+        <svg width="100%" viewBox={`0 0 ${W} ${H}`} role="img"
+             aria-label={t('quote_weeks_alt', { n: WEEKS })}>
+          {labels}
+          <line x1={PAD} y1={AXIS} x2={W - PAD} y2={AXIS} stroke="#1a3a52" strokeOpacity=".16"
+                strokeWidth="3" strokeLinecap="round" />
+          {dividers}
+          <line x1={todayX} y1={AXIS - 7} x2={todayX} y2={AXIS + 7}
+                stroke="#c14655" strokeWidth="2.2" data-testid="quote-today" />
+          {[...byDay.entries()].map(([k, m]) => (
+            <circle key={k} cx={x(k) + dw / 2} cy={AXIS} r={m.r} fill={m.fill}
+                    stroke="#ffffff" strokeWidth="1.6" />
+          ))}
+        </svg>
+      </div>
+      {outside > 0 && (
+        <p className="text-[11px] text-ink-faint text-center mb-3" data-testid="quote-weeks-older">
+          {t('quote_weeks_older', { n: outside })}
+        </p>
+      )}
+    </>
   );
 }
 

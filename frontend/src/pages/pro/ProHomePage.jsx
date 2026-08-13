@@ -6,6 +6,7 @@ import api from '../../api/client';
 import { Loader2, ArrowRight } from 'lucide-react';
 import { STAGES } from '../../utils/workflow';
 import { fmtEur, fmtDate } from '../../utils/money';
+import QuoteCarousel, { openQuotes } from '../../components/pro/QuoteCarousel';
 
 
 /**
@@ -40,7 +41,10 @@ export default function ProHomePage() {
       api.get('/api/profile/pro').catch(() => null),
       api.get('/api/jobs/counts').catch(() => null),
       api.get('/api/invoices/overdue').catch(() => null),
-      api.get('/api/quotes', { params: { status: 'sent', limit: 50 } }).catch(() => null),
+      /* No `status` filter: the endpoint takes one status and the card carries
+         four — the same four the Angebot tile counts, so the tile and the
+         card cannot disagree. Filtering happens in `openQuotes`. */
+      api.get('/api/quotes', { params: { limit: 200 } }).catch(() => null),
     ]);
     setProfile(p?.data || null);
     setCounts(c?.data || {});
@@ -52,12 +56,25 @@ export default function ProHomePage() {
   useEffect(() => { load(); }, [load]);
 
   /**
-   * What the hero says.
+   * The quotes the hero cycles through: every one that is out and unanswered,
+   * longest wait first.
    *
-   * Money that is late outranks a quote that is waiting, because one is owed
-   * and the other is only hoped for. If neither exists the hero must not sit
-   * there as a large empty box — it becomes a plain prompt to capture the
-   * next lead, which is the useful thing to do on a quiet morning.
+   * The card used to pick one thing out of three by rank — overdue money, then
+   * the oldest quote, then a prompt. It now carries only the open quotes,
+   * because that is the pile you work through in a sitting: one card, one
+   * customer, one "chase this". Late money has not been dropped; it keeps the
+   * Überfällig section further down, which names the same invoice and can list
+   * more than one of them.
+   */
+  const waiting = useMemo(() => openQuotes(quotes), [quotes]);
+
+  /**
+   * What the hero says when there is nothing to chase.
+   *
+   * With no open quote the carousel has nothing to carry, and an empty dark
+   * box is worse than none. The fallbacks are the two the card had before:
+   * the worst overdue invoice, and failing that a prompt to capture a lead —
+   * which is the useful thing to do on a quiet morning.
    */
   const focus = useMemo(() => {
     const worst = [...overdue].sort(
@@ -72,22 +89,6 @@ export default function ProHomePage() {
         to: '/overdue',
       };
     }
-    if (quotes.length) {
-      const oldest = [...quotes].sort(
-        (a, b) => new Date(a.sent_at || 0) - new Date(b.sent_at || 0))[0];
-      const days = oldest?.sent_at
-        ? Math.floor((Date.now() - new Date(oldest.sent_at)) / 86400000) : null;
-      return {
-        kind: 'quotes',
-        title: t('home_focus_quotes')
-          .replace('{n}', quotes.length)
-          .replace('{days}', days ?? 0),
-        amount: oldest?.gross_total ? fmtEur(oldest.gross_total) : null,
-        sub: [oldest?.customer_name, oldest?.title].filter(Boolean).join(' · '),
-        cta: t('home_focus_quotes_cta'),
-        to: `/quotes/${oldest?.id || ''}`,
-      };
-    }
     return {
       kind: 'idle',
       title: t('home_focus_idle'),
@@ -95,7 +96,7 @@ export default function ProHomePage() {
       cta: t('home_focus_idle_cta'),
       to: '/leads/new',
     };
-  }, [overdue, quotes, t]);
+  }, [overdue, t]);
 
   if (loading) {
     return (
@@ -121,6 +122,9 @@ export default function ProHomePage() {
         </header>
 
         {/* ── Als Nächstes ───────────────────────────────────────── */}
+        {waiting.length > 0 ? (
+          <QuoteCarousel quotes={waiting} t={t} />
+        ) : (
         <Link
           to={focus.to}
           className="block bg-teal-deep text-paper rounded-[18px] p-5 mt-1
@@ -148,6 +152,7 @@ export default function ProHomePage() {
             {focus.cta} <ArrowRight size={15} />
           </span>
         </Link>
+        )}
 
         {/* ── Auftragslauf ───────────────────────────────────────── */}
         <h2 className="text-[10.5px] uppercase tracking-[.12em] font-bold text-ink-muted
