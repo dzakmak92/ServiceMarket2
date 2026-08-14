@@ -150,9 +150,9 @@ export default function PMProjectDetailPage() {
 /* ──────────────────────────────────────────────
    The head.
 
-   TEMPORARY: three variants behind `?hd=1|2|3` so they can be looked at in
-   the real app rather than in a mock-up. Once one is chosen the other two go
-   and the switch with them.
+   3c is the chosen one and the default. The losing variants are still behind
+   `?hd=1|2|3|3a|3b` while the rest of the project page is being reworked; they
+   and the switch come out in one go at the end.
 
    All three drop the status control that used to sit on the right. It cost
    the title half its width — "ZZZ Bad-Sanierung F…" — to repeat something the
@@ -161,7 +161,7 @@ export default function PMProjectDetailPage() {
    foot of the chain rather than vanishing.
    ────────────────────────────────────────────── */
 function ProjectHead({ project, t, onExport }) {
-  const v = new URLSearchParams(window.location.search).get('hd') || '1';
+  const v = new URLSearchParams(window.location.search).get('hd') || '3c';
   const bleed = '-mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8';
   /* `/projects/:id` serves both shapes, so the bar must not call a two-hour
      bathroom visit a project. */
@@ -283,7 +283,12 @@ function ProjectHead({ project, t, onExport }) {
      Who the customer is and where the site is are not repeated here, because
      the first card of the chain is the customer card and says both, in full,
      forty pixels further down. A head that restates the card under it is a
-     head that costs height for nothing. */
+     head that costs height for nothing.
+
+     The kind word — Auftrag or Projekt — came off the right as well, and the
+     title took the sixty pixels. What tells the two apart is still on screen:
+     a project carries the tab strip directly under the bar and a simple job
+     does not. */
   if (tight === 3) {
     return (
       <header data-testid="pm-head" data-variant="3c">
@@ -292,10 +297,7 @@ function ProjectHead({ project, t, onExport }) {
             {back}
             <h1 className="text-[17px] font-headings font-bold leading-tight truncate min-w-0 text-paper"
                 data-testid="job-title">{project.title}</h1>
-            <span className="ml-auto flex items-center gap-3 shrink-0">
-              <span className="text-[11px] font-bold text-teal-tint uppercase tracking-[.08em]">{kind}</span>
-              {exportBtn}{num}
-            </span>
+            <span className="ml-auto flex items-center gap-3 shrink-0">{exportBtn}{num}</span>
           </div>
         </div>
       </header>
