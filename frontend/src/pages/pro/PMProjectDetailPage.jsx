@@ -278,9 +278,12 @@ function ProjectHead({ project, t, onExport }) {
     );
   }
 
-  /* 3c — only the name stays on teal. Who and where drop onto the cream
-     below, where the customer card repeats them anyway; the blue keeps the
-     one line that is unique to this page. The shortest of the three. */
+  /* 3c — the bar is the whole head: back, name, number. Nothing else.
+
+     Who the customer is and where the site is are not repeated here, because
+     the first card of the chain is the customer card and says both, in full,
+     forty pixels further down. A head that restates the card under it is a
+     head that costs height for nothing. */
   if (tight === 3) {
     return (
       <header data-testid="pm-head" data-variant="3c">
@@ -289,10 +292,12 @@ function ProjectHead({ project, t, onExport }) {
             {back}
             <h1 className="text-[17px] font-headings font-bold leading-tight truncate min-w-0 text-paper"
                 data-testid="job-title">{project.title}</h1>
-            <span className="ml-auto flex items-center gap-3 shrink-0">{exportBtn}{num}</span>
+            <span className="ml-auto flex items-center gap-3 shrink-0">
+              <span className="text-[11px] font-bold text-teal-tint uppercase tracking-[.08em]">{kind}</span>
+              {exportBtn}{num}
+            </span>
           </div>
         </div>
-        <p className="text-[12px] text-ink-muted mt-2">{[kind, where].filter(Boolean).join(' · ')}</p>
       </header>
     );
   }
