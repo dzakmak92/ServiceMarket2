@@ -134,9 +134,18 @@ export default function NotesStep({ jobId, t, onCount }) {
             ) : null}
           </p>
           {/* The note itself. The row it replaces printed the date and the
-              hours and left this out entirely. */}
-          <p className="text-[12.5px] mt-1 leading-snug whitespace-pre-wrap"
-             data-testid={`job-note-${it.row.id}-text`}>{it.row.text}</p>
+              hours and left this out entirely.
+
+              An entry with hours and nothing written is legitimate — a day
+              worked with nothing to report — and there are older rows with no
+              text at all, from when this form posted the wrong field name.
+              Both render as a card with a date and no content unless the
+              blank is given words. */}
+          <p className={`text-[12.5px] mt-1 leading-snug whitespace-pre-wrap
+                         ${it.row.text ? '' : 'text-ink-faint'}`}
+             data-testid={`job-note-${it.row.id}-text`}>
+            {it.row.text || t('job_notes_blank')}
+          </p>
         </div>
       )))}
 
