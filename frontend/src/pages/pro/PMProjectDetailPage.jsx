@@ -75,39 +75,9 @@ export default function PMProjectDetailPage() {
 
   return (
     <div className="min-h-screen bg-cream pb-24 md:pb-12">
-      <div className="page-container py-6 max-w-3xl">
-        <div className="flex items-start gap-2 mb-4">
-          {/* The h1 that used to sit here is gone — the customer card is the
-              header now. What the bar still owes the reader is the job's own
-              name: without a customer the card cannot carry it, and the page
-              would then never say which job it is. */}
-          <span className="min-w-0">
-            <Link to="/projects" className="inline-flex items-center gap-1 text-xs text-ink-muted hover:text-teal" data-testid="pm-back">
-              <ArrowLeft size={12} /> {t('pm_back')}
-            </Link>
-            <span className="flex items-baseline gap-2 min-w-0">
-              <h1 className="text-[17px] font-headings font-bold text-ink truncate"
-                  data-testid="job-title">{project.title}</h1>
-              {project.job_number && (
-                <span className="text-[11px] text-ink-faint tabular-nums shrink-0">
-                  {project.job_number}
-                </span>
-              )}
-            </span>
-          </span>
-          <span className="ml-auto flex items-center gap-2 shrink-0">
-            {project.status === 'done' && (
-              <button
-                onClick={() => setExportOpen(true)}
-                className="btn-ghost text-xs"
-                data-testid="pm-export-jobfile-btn"
-              >
-                <FileDown size={14} /> {t('pm_export_jobfile')}
-              </button>
-            )}
-            <ProjectStatusSelect project={project} reload={load} t={t} />
-          </span>
-        </div>
+      <div className="page-container py-0 max-w-3xl">
+        <ProjectHead project={project} t={t}
+                     onExport={() => setExportOpen(true)} />
 
         {/* Tab strip — horizontally scrollable on mobile with scroll-snap */}
         {showTabs && (
@@ -117,9 +87,10 @@ export default function PMProjectDetailPage() {
             onChange={setTab}
             testidPrefix="pm-tab"
             variant="pills"
-            className="mb-5"
+            className="mb-5 mt-4"
           />
         )}
+        {!showTabs && <div className="h-4" />}
 
         {/* Boundary per tab, not per page: a tab that throws leaves the
             other six, the header and the navigation intact. Without one, a
@@ -140,6 +111,20 @@ export default function PMProjectDetailPage() {
           </ErrorBoundary>
         </SwipeableTabPanel>
 
+        {/* The status control, at the foot of the chain rather than in the
+            head. The chain only ever moves forward; this is the one way to put
+            a job back a step when something was tapped too early, so removing
+            it from the head could not mean removing it from the page. Down
+            here it is where you already are when something is wrong, and it no
+            longer costs the title half its width. */}
+        {(!showTabs || tab === 'overview') && (
+          <div className="flex items-center gap-3 mt-6 rounded-2xl border border-sm-border
+                          bg-paper px-3.5 py-3" data-testid="pm-status-row">
+            <span className="text-[12px] text-ink-muted">{t('pm_status_row')}</span>
+            <span className="ml-auto"><ProjectStatusSelect project={project} reload={load} t={t} /></span>
+          </div>
+        )}
+
         {!isProject && !tools && (
           <p className="text-center text-[12px] text-ink-faint leading-relaxed mt-6">
             {t('job_tools_hint')}{' '}
@@ -158,6 +143,114 @@ export default function PMProjectDetailPage() {
         fileName={project.title || project.job_title}
       />
     </div>
+  );
+}
+
+
+/* ──────────────────────────────────────────────
+   The head.
+
+   TEMPORARY: three variants behind `?hd=1|2|3` so they can be looked at in
+   the real app rather than in a mock-up. Once one is chosen the other two go
+   and the switch with them.
+
+   All three drop the status control that used to sit on the right. It cost
+   the title half its width — "ZZZ Bad-Sanierung F…" — to repeat something the
+   chain below already shows in colour. The one thing it could do that the
+   chain cannot is move a job *backwards*, so it reappears as a line at the
+   foot of the chain rather than vanishing.
+   ────────────────────────────────────────────── */
+function ProjectHead({ project, t, onExport }) {
+  const v = new URLSearchParams(window.location.search).get('hd') || '1';
+  const bleed = '-mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8';
+  /* `/projects/:id` serves both shapes, so the bar must not call a two-hour
+     bathroom visit a project. */
+  const kind = t(project.mode === 'project' ? 'nav_projects_one' : 'nav_jobs_one');
+  /* `detail` builds the customer with `row_to_json(c.*)`, which asyncpg hands
+     back as *text* — so `project.customer` is a JSON string, not an object,
+     and `project.customer.name` is undefined. Reading it straight printed the
+     place with nobody in front of it. Parsed here rather than fixed in the
+     API, because changing the shape of a payload is not a change to make in
+     the middle of a design round; it belongs in its own commit. */
+  const customer = typeof project.customer === 'string'
+    ? (() => { try { return JSON.parse(project.customer); } catch { return null; } })()
+    : project.customer;
+  const where = [customer?.name,
+    [project.site_postal_code, project.site_city].filter(Boolean).join(' ')]
+    .filter(Boolean).join(' · ');
+  const back = (
+    <Link to="/projects" data-testid="pm-back"
+          className="inline-flex items-center justify-center w-8 h-8 -ml-1 rounded-full
+                     hover:bg-white/10 shrink-0">
+      <ArrowLeft size={18} />
+    </Link>
+  );
+  const num = project.job_number && (
+    <span className="text-[11.5px] tabular-nums text-teal-tint shrink-0">{project.job_number}</span>
+  );
+  const exportBtn = project.status === 'done' && (
+    <button onClick={onExport} data-testid="pm-export-jobfile-btn"
+            className="text-[11.5px] font-bold text-teal-tint underline underline-offset-2">
+      {t('pm_export_jobfile')}
+    </button>
+  );
+
+  /* 1 — a slim bar, the name on the page.
+     The bar carries only what has to survive scrolling; the h1 is a normal
+     page heading and can be as large as it deserves. */
+  if (v === '1') {
+    return (
+      <header data-testid="pm-head" data-variant="1">
+        <div className={`${bleed} bg-teal-deep text-paper flex items-center gap-2.5 py-2.5`}>
+          {back}
+          <b className="text-[13.5px] font-bold">{kind}</b>
+          <span className="ml-auto flex items-center gap-3">{exportBtn}{num}</span>
+        </div>
+        <h1 className="text-[22px] font-headings font-bold text-ink leading-tight mt-4"
+            data-testid="job-title">{project.title}</h1>
+        {where && <p className="text-[12px] text-ink-muted mt-0.5">{where}</p>}
+      </header>
+    );
+  }
+
+  /* 2 — the name in the bar.
+     One block instead of two, and the title is the first thing on the screen
+     rather than the third. It has to truncate to one line, which is the cost. */
+  if (v === '2') {
+    return (
+      <header data-testid="pm-head" data-variant="2">
+        <div className={`${bleed} bg-teal-deep text-paper py-3`}>
+          <div className="flex items-center gap-2.5">
+            {back}
+            <h1 className="text-[17px] font-headings font-bold truncate min-w-0 text-paper"
+                data-testid="job-title">{project.title}</h1>
+            <span className="ml-auto flex items-center gap-3 shrink-0">{exportBtn}{num}</span>
+          </div>
+        </div>
+        {where && <p className="text-[12px] text-ink-muted mt-3">{where}</p>}
+      </header>
+    );
+  }
+
+  /* 3 — the whole head is the block.
+     Back row, name and place all sit on teal, with a rounded foot so the
+     customer card reads as the next thing rather than as part of it. The
+     title gets two lines here, because nothing shares its row. */
+  return (
+    <header data-testid="pm-head" data-variant="3">
+      <div className={`${bleed} bg-teal-deep text-paper pt-2.5 pb-4 rounded-b-[20px]`}>
+        <div className="flex items-center gap-2.5">
+          {back}
+          <b className="text-[12px] font-bold text-teal-tint uppercase tracking-[.1em]">
+            {kind}
+          </b>
+          <span className="ml-auto flex items-center gap-3">{exportBtn}{num}</span>
+        </div>
+        <h1 className="text-[21px] font-headings font-bold leading-tight mt-2.5 pl-1 text-paper"
+            data-testid="job-title">{project.title}</h1>
+        {where && <p className="text-[12.5px] text-teal-tint mt-1 pl-1">{where}</p>}
+      </div>
+    </header>
   );
 }
 
