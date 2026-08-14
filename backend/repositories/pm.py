@@ -77,10 +77,49 @@ MATERIAL_FIELDS = {"name", "brand", "barcode", "qty", "unit", "planned_cost",
                    "received_at", "photos"}
 
 
-async def list_materials(pro_id: str, job_id: str) -> list[dict]:
+async def list_materials(pro_id: str, job_id: str) -> dict:
+    """The positions and what they add up to.
+
+    The totals used to be absent and the screen showed three tiles reading
+    € 0,00 above five priced positions — the route returned `{materials}` and
+    nothing else, so the client's `data.totals || {planned: 0, …}` fallback
+    was the only thing that ever ran. They are summed here rather than in the
+    browser because the same three figures belong on the chain, on the billing
+    step and in an export, and three places summing the same column is three
+    chances to disagree.
+
+    `actual_cost` is null until something is actually bought, which is not the
+    same as zero: `variance` therefore compares against what has been bought,
+    and `planned_open` says how much of the plan is still ahead. A single
+    "actual" figure without that split reads as a saving when it is only an
+    errand not yet run.
+    """
     await _guard(pro_id, job_id)
-    return await pg.fetch(
+    rows = await pg.fetch(
         "select * from job_materials where job_id = $1 order by created_at", job_id)
+    planned = actual = planned_bought = 0.0
+    bought = 0
+    for r in rows:
+        qty = float(r["qty"] or 0)
+        p = float(r["planned_cost"] or 0) * qty
+        planned += p
+        if r["actual_cost"] is not None:
+            actual += float(r["actual_cost"]) * qty
+            planned_bought += p
+            bought += 1
+    return {
+        "materials": rows,
+        "totals": {
+            "planned": round(planned, 2),
+            "actual": round(actual, 2),
+            # Against the plan for what is bought, so the number means
+            # "over or under on what I have actually paid for".
+            "variance": round(actual - planned_bought, 2),
+            "planned_open": round(planned - planned_bought, 2),
+            "count": len(rows),
+            "bought": bought,
+        },
+    }
 
 
 async def create_material(pro_id: str, job_id: str, data: dict) -> dict:
@@ -110,11 +149,22 @@ async def delete_material(pro_id: str, job_id: str, material_id: str) -> bool:
 
 
 # ── Diary ──────────────────────────────────────────────────────────────
-async def list_diary(pro_id: str, job_id: str) -> list[dict]:
+async def list_diary(pro_id: str, job_id: str) -> dict:
+    """The entries and the hours they add up to.
+
+    Same shape of hole as the materials totals: the route returned `{entries}`
+    with no `total_hours`, so the screen printed "Stunden gesamt 0.0 h" above
+    entries of 4.5 h and 7.5 h. Summed here for the same reason — the figure
+    is wanted on the chain and in the export as well.
+    """
     await _guard(pro_id, job_id)
-    return await pg.fetch(
+    rows = await pg.fetch(
         "select * from job_diary where job_id = $1 order by entry_date desc, created_at desc",
         job_id)
+    return {
+        "entries": rows,
+        "total_hours": round(sum(float(r["hours"] or 0) for r in rows), 2),
+    }
 
 
 async def add_diary(pro_id: str, job_id: str, data: dict) -> dict:

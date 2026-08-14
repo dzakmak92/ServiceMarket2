@@ -10,6 +10,7 @@ import StepCard, { Knot, Isle, Segment } from '../../components/pro/StepCard';
 import useJobAction from '../../hooks/useJobAction';
 import { fmtEur, fmtDate, fmtDateTime, moneyLocale } from '../../utils/money';
 import { statusLabel } from '../../utils/jobStatus';
+import ScheduleStep from './pm/ScheduleStep';
 import { stepStates } from '../../utils/jobSteps';
 
 /**
@@ -110,7 +111,14 @@ export default function JobChain({ jobId, job: shell, reload, t }) {
       value: job.scheduled_start
         ? fmtWhen(new Date(job.scheduled_start), null)
         : t('job_step_open'),
-      body: <ScheduleBody job={job} t={t} onSaved={refresh} />,
+      /* A project is placed against the day it lands in — the calendar shows
+         what is already booked, which is the thing three blank fields could
+         never say. A simple job keeps the three fields: it is usually being
+         booked while standing in the customer's hallway, and a month grid is
+         a lot of screen to agree on "Thursday morning". */
+      body: job.mode === 'project'
+        ? <ScheduleStep job={job} t={t} onSaved={refresh} />
+        : <ScheduleBody job={job} t={t} onSaved={refresh} />,
     },
     {
       key: 'work', title: t('job_step_work'),

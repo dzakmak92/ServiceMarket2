@@ -190,7 +190,7 @@ async def remove_task(job_id: str, task_id: str, user: dict = Depends(get_curren
 @router.get("/{job_id}/materials")
 async def materials(job_id: str, user: dict = Depends(get_current_user)):
     try:
-        return {"materials": await repo.list_materials(await require_pro_id(user), job_id)}
+        return await repo.list_materials(await require_pro_id(user), job_id)
     except LookupError as e:
         raise _nf(e)
 
@@ -231,7 +231,7 @@ async def remove_material(job_id: str, material_id: str, user: dict = Depends(ge
 @router.get("/{job_id}/diary")
 async def diary(job_id: str, user: dict = Depends(get_current_user)):
     try:
-        return {"entries": await repo.list_diary(await require_pro_id(user), job_id)}
+        return await repo.list_diary(await require_pro_id(user), job_id)
     except LookupError as e:
         raise _nf(e)
 
