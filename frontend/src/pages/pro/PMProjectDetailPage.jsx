@@ -232,10 +232,71 @@ function ProjectHead({ project, t, onExport }) {
     );
   }
 
-  /* 3 — the whole head is the block.
-     Back row, name and place all sit on teal, with a rounded foot so the
-     customer card reads as the next thing rather than as part of it. The
-     title gets two lines here, because nothing shares its row. */
+  /* 3 — the whole head is the block. Three heights of the same idea, behind
+     `?hd=3a|3b|3c`; `3` alone is the tallest, which is the one that was too
+     high. What comes out is vertical padding and rows, never the title. */
+  const tight = { '3a': 1, '3b': 2, '3c': 3 }[v] || 0;
+
+  /* 3a — the kicker row loses its own line: kind and number ride beside the
+     back arrow, the name follows immediately. Two rows instead of three. */
+  if (tight === 1) {
+    return (
+      <header data-testid="pm-head" data-variant="3a">
+        <div className={`${bleed} bg-teal-deep text-paper pt-1.5 pb-3 rounded-b-[18px]`}>
+          <div className="flex items-center gap-2">
+            {back}
+            <b className="text-[11px] font-bold text-teal-tint uppercase tracking-[.09em]">{kind}</b>
+            <span className="ml-auto flex items-center gap-3">{exportBtn}{num}</span>
+          </div>
+          <h1 className="text-[19px] font-headings font-bold leading-tight mt-1 pl-1 text-paper"
+              data-testid="job-title">{project.title}</h1>
+          {where && <p className="text-[12px] text-teal-tint mt-0.5 pl-1">{where}</p>}
+        </div>
+      </header>
+    );
+  }
+
+  /* 3b — the name shares the row with the arrow, and the place carries the
+     kind: "Projekt · Maria Gruber · 1030 Wien". One row of text is gone. */
+  if (tight === 2) {
+    return (
+      <header data-testid="pm-head" data-variant="3b">
+        <div className={`${bleed} bg-teal-deep text-paper py-2.5 rounded-b-[18px]`}>
+          <div className="flex items-center gap-2">
+            {back}
+            <h1 className="text-[18px] font-headings font-bold leading-tight min-w-0 text-paper"
+                data-testid="job-title">{project.title}</h1>
+            <span className="ml-auto flex items-center gap-3 shrink-0 self-start pt-1">
+              {exportBtn}{num}
+            </span>
+          </div>
+          <p className="text-[11.5px] text-teal-tint mt-0.5 pl-9">
+            {[kind, where].filter(Boolean).join(' · ')}
+          </p>
+        </div>
+      </header>
+    );
+  }
+
+  /* 3c — only the name stays on teal. Who and where drop onto the cream
+     below, where the customer card repeats them anyway; the blue keeps the
+     one line that is unique to this page. The shortest of the three. */
+  if (tight === 3) {
+    return (
+      <header data-testid="pm-head" data-variant="3c">
+        <div className={`${bleed} bg-teal-deep text-paper py-2.5 rounded-b-[18px]`}>
+          <div className="flex items-center gap-2">
+            {back}
+            <h1 className="text-[17px] font-headings font-bold leading-tight truncate min-w-0 text-paper"
+                data-testid="job-title">{project.title}</h1>
+            <span className="ml-auto flex items-center gap-3 shrink-0">{exportBtn}{num}</span>
+          </div>
+        </div>
+        <p className="text-[12px] text-ink-muted mt-2">{[kind, where].filter(Boolean).join(' · ')}</p>
+      </header>
+    );
+  }
+
   return (
     <header data-testid="pm-head" data-variant="3">
       <div className={`${bleed} bg-teal-deep text-paper pt-2.5 pb-4 rounded-b-[20px]`}>
@@ -253,7 +314,6 @@ function ProjectHead({ project, t, onExport }) {
     </header>
   );
 }
-
 
 // ──────────────────────────────────────────────
 // Status dropdown + hourly rate input
