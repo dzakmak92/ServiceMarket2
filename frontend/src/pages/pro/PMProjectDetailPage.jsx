@@ -148,36 +148,24 @@ export default function PMProjectDetailPage() {
 
 
 /* ──────────────────────────────────────────────
-   The head.
+   The head: back, name, number. Nothing else.
 
-   3c is the chosen one and the default. The losing variants are still behind
-   `?hd=1|2|3|3a|3b` while the rest of the project page is being reworked; they
-   and the switch come out in one go at the end.
+   The status control that used to sit on the right is gone. It cost the title
+   half its width — "ZZZ Bad-Sanierung F…" — to repeat something the chain
+   below already shows in colour. The one thing it could do that the chain
+   cannot is move a job *backwards*, so it reappears as a line at the foot of
+   the chain rather than vanishing.
 
-   All three drop the status control that used to sit on the right. It cost
-   the title half its width — "ZZZ Bad-Sanierung F…" — to repeat something the
-   chain below already shows in colour. The one thing it could do that the
-   chain cannot is move a job *backwards*, so it reappears as a line at the
-   foot of the chain rather than vanishing.
+   Who the customer is and where the site is are not repeated here either: the
+   first card of the chain is the customer card and says both, in full, forty
+   pixels further down. A head that restates the card under it is a head that
+   costs height for nothing.
+
+   The kind word — Auftrag or Projekt — came off the right as well, and the
+   title took the sixty pixels.
    ────────────────────────────────────────────── */
 function ProjectHead({ project, t, onExport }) {
-  const v = new URLSearchParams(window.location.search).get('hd') || '3c';
   const bleed = '-mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8';
-  /* `/projects/:id` serves both shapes, so the bar must not call a two-hour
-     bathroom visit a project. */
-  const kind = t(project.mode === 'project' ? 'nav_projects_one' : 'nav_jobs_one');
-  /* `detail` builds the customer with `row_to_json(c.*)`, which asyncpg hands
-     back as *text* — so `project.customer` is a JSON string, not an object,
-     and `project.customer.name` is undefined. Reading it straight printed the
-     place with nobody in front of it. Parsed here rather than fixed in the
-     API, because changing the shape of a payload is not a change to make in
-     the middle of a design round; it belongs in its own commit. */
-  const customer = typeof project.customer === 'string'
-    ? (() => { try { return JSON.parse(project.customer); } catch { return null; } })()
-    : project.customer;
-  const where = [customer?.name,
-    [project.site_postal_code, project.site_city].filter(Boolean).join(' ')]
-    .filter(Boolean).join(' · ');
   const back = (
     <Link to="/projects" data-testid="pm-back"
           className="inline-flex items-center justify-center w-8 h-8 -ml-1 rounded-full
@@ -195,128 +183,15 @@ function ProjectHead({ project, t, onExport }) {
     </button>
   );
 
-  /* 1 — a slim bar, the name on the page.
-     The bar carries only what has to survive scrolling; the h1 is a normal
-     page heading and can be as large as it deserves. */
-  if (v === '1') {
-    return (
-      <header data-testid="pm-head" data-variant="1">
-        <div className={`${bleed} bg-teal-deep text-paper flex items-center gap-2.5 py-2.5`}>
-          {back}
-          <b className="text-[13.5px] font-bold">{kind}</b>
-          <span className="ml-auto flex items-center gap-3">{exportBtn}{num}</span>
-        </div>
-        <h1 className="text-[22px] font-headings font-bold text-ink leading-tight mt-4"
-            data-testid="job-title">{project.title}</h1>
-        {where && <p className="text-[12px] text-ink-muted mt-0.5">{where}</p>}
-      </header>
-    );
-  }
-
-  /* 2 — the name in the bar.
-     One block instead of two, and the title is the first thing on the screen
-     rather than the third. It has to truncate to one line, which is the cost. */
-  if (v === '2') {
-    return (
-      <header data-testid="pm-head" data-variant="2">
-        <div className={`${bleed} bg-teal-deep text-paper py-3`}>
-          <div className="flex items-center gap-2.5">
-            {back}
-            <h1 className="text-[17px] font-headings font-bold truncate min-w-0 text-paper"
-                data-testid="job-title">{project.title}</h1>
-            <span className="ml-auto flex items-center gap-3 shrink-0">{exportBtn}{num}</span>
-          </div>
-        </div>
-        {where && <p className="text-[12px] text-ink-muted mt-3">{where}</p>}
-      </header>
-    );
-  }
-
-  /* 3 — the whole head is the block. Three heights of the same idea, behind
-     `?hd=3a|3b|3c`; `3` alone is the tallest, which is the one that was too
-     high. What comes out is vertical padding and rows, never the title. */
-  const tight = { '3a': 1, '3b': 2, '3c': 3 }[v] || 0;
-
-  /* 3a — the kicker row loses its own line: kind and number ride beside the
-     back arrow, the name follows immediately. Two rows instead of three. */
-  if (tight === 1) {
-    return (
-      <header data-testid="pm-head" data-variant="3a">
-        <div className={`${bleed} bg-teal-deep text-paper pt-1.5 pb-3 rounded-b-[18px]`}>
-          <div className="flex items-center gap-2">
-            {back}
-            <b className="text-[11px] font-bold text-teal-tint uppercase tracking-[.09em]">{kind}</b>
-            <span className="ml-auto flex items-center gap-3">{exportBtn}{num}</span>
-          </div>
-          <h1 className="text-[19px] font-headings font-bold leading-tight mt-1 pl-1 text-paper"
-              data-testid="job-title">{project.title}</h1>
-          {where && <p className="text-[12px] text-teal-tint mt-0.5 pl-1">{where}</p>}
-        </div>
-      </header>
-    );
-  }
-
-  /* 3b — the name shares the row with the arrow, and the place carries the
-     kind: "Projekt · Maria Gruber · 1030 Wien". One row of text is gone. */
-  if (tight === 2) {
-    return (
-      <header data-testid="pm-head" data-variant="3b">
-        <div className={`${bleed} bg-teal-deep text-paper py-2.5 rounded-b-[18px]`}>
-          <div className="flex items-center gap-2">
-            {back}
-            <h1 className="text-[18px] font-headings font-bold leading-tight min-w-0 text-paper"
-                data-testid="job-title">{project.title}</h1>
-            <span className="ml-auto flex items-center gap-3 shrink-0 self-start pt-1">
-              {exportBtn}{num}
-            </span>
-          </div>
-          <p className="text-[11.5px] text-teal-tint mt-0.5 pl-9">
-            {[kind, where].filter(Boolean).join(' · ')}
-          </p>
-        </div>
-      </header>
-    );
-  }
-
-  /* 3c — the bar is the whole head: back, name, number. Nothing else.
-
-     Who the customer is and where the site is are not repeated here, because
-     the first card of the chain is the customer card and says both, in full,
-     forty pixels further down. A head that restates the card under it is a
-     head that costs height for nothing.
-
-     The kind word — Auftrag or Projekt — came off the right as well, and the
-     title took the sixty pixels. What tells the two apart is still on screen:
-     a project carries the tab strip directly under the bar and a simple job
-     does not. */
-  if (tight === 3) {
-    return (
-      <header data-testid="pm-head" data-variant="3c">
-        <div className={`${bleed} bg-teal-deep text-paper py-2.5 rounded-b-[18px]`}>
-          <div className="flex items-center gap-2">
-            {back}
-            <h1 className="text-[17px] font-headings font-bold leading-tight truncate min-w-0 text-paper"
-                data-testid="job-title">{project.title}</h1>
-            <span className="ml-auto flex items-center gap-3 shrink-0">{exportBtn}{num}</span>
-          </div>
-        </div>
-      </header>
-    );
-  }
-
   return (
-    <header data-testid="pm-head" data-variant="3">
-      <div className={`${bleed} bg-teal-deep text-paper pt-2.5 pb-4 rounded-b-[20px]`}>
-        <div className="flex items-center gap-2.5">
+    <header data-testid="pm-head" data-variant="3c">
+      <div className={`${bleed} bg-teal-deep text-paper py-2.5 rounded-b-[18px]`}>
+        <div className="flex items-center gap-2">
           {back}
-          <b className="text-[12px] font-bold text-teal-tint uppercase tracking-[.1em]">
-            {kind}
-          </b>
-          <span className="ml-auto flex items-center gap-3">{exportBtn}{num}</span>
+          <h1 className="text-[17px] font-headings font-bold leading-tight truncate min-w-0 text-paper"
+              data-testid="job-title">{project.title}</h1>
+          <span className="ml-auto flex items-center gap-3 shrink-0">{exportBtn}{num}</span>
         </div>
-        <h1 className="text-[21px] font-headings font-bold leading-tight mt-2.5 pl-1 text-paper"
-            data-testid="job-title">{project.title}</h1>
-        {where && <p className="text-[12.5px] text-teal-tint mt-1 pl-1">{where}</p>}
       </div>
     </header>
   );
