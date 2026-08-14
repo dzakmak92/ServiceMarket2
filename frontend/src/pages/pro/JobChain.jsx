@@ -11,6 +11,10 @@ import useJobAction from '../../hooks/useJobAction';
 import { fmtEur, fmtDate, fmtDateTime, moneyLocale } from '../../utils/money';
 import { statusLabel } from '../../utils/jobStatus';
 import ScheduleStep from './pm/ScheduleStep';
+import TasksStep from './pm/TasksStep';
+import MaterialsStep from './pm/MaterialsStep';
+import NotesStep from './pm/NotesStep';
+import BillingStep from './pm/BillingStep';
 import { stepStates } from '../../utils/jobSteps';
 
 /**
@@ -47,6 +51,27 @@ export default function JobChain({ jobId, job: shell, reload, t }) {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(null);
   const [busy, setBusy] = useState(false);
+  /* Each project step reports its own headline figure up, so the shut card
+     can say "4 / 9" or "3 of 5 bought" without every step being mounted. */
+  const [counts, setCounts] = useState({});
+  /* Seeded from the overview payload the chain already loads, so a shut card
+     can say "4 / 9" without mounting the task list to find out. The step
+     itself overwrites this the moment it is opened, which is also the moment
+     it becomes the more current of the two. */
+  const seeded = useMemo(() => ({
+    tasks: data ? { done: data.tasks_done || 0, total: data.tasks_total || 0 } : null,
+    mats: data ? { count: data.materials_count || 0, bought: data.materials_bought || 0,
+      planned: data.pl?.materials_planned_eur || 0,
+      actual: data.pl?.materials_actual_eur || 0,
+      variance: 0, planned_open: 0 } : null,
+    /* `data.change_orders` is a money summary, not a list — counting its
+       length gave undefined, and reading it as one crashed the billing step.
+       The count has its own field. */
+    notes: data ? { hours: data.diary_hours || 0, cos: data.change_orders_count || 0 } : null,
+  }), [data]);
+  const countTasks = useCallback((v) => setCounts((c) => ({ ...c, tasks: v })), []);
+  const countMats = useCallback((v) => setCounts((c) => ({ ...c, mats: v })), []);
+  const countNotes = useCallback((v) => setCounts((c) => ({ ...c, notes: v })), []);
 
   const load = useCallback(async () => {
     try {
@@ -89,6 +114,32 @@ export default function JobChain({ jobId, job: shell, reload, t }) {
       </div>
     );
   }
+
+  /* `stepStates` answers for the five-step chain. The project chain has six,
+     and its middle three are not job statuses at all — they are lists that
+     fill up. Their state comes from how full they are, which is the only
+     honest source: a material list nobody has touched is not "done" because
+     the job happens to be in progress. */
+  const shown = { ...seeded, ...counts };
+
+  const stateAt = (i) => {
+    if (job.mode !== 'project') return states[i];
+    if (i === 0) return states[0];
+    if (i === 1) return states[1];
+    if (i === 2) {
+      const c = shown.tasks;
+      if (!c || !c.total) return states[2] === 'run' ? 'run' : 'wait';
+      if (c.done >= c.total) return 'done';
+      return c.done > 0 || states[2] === 'run' ? 'run' : 'wait';
+    }
+    if (i === 3) {
+      const c = shown.mats;
+      if (!c || !c.count) return 'wait';
+      return c.bought >= c.count ? 'done' : (c.bought > 0 ? 'run' : 'wait');
+    }
+    if (i === 4) return shown.notes?.hours || shown.notes?.cos ? 'done' : 'wait';
+    return states[4];
+  };
 
   const primary = async (action) => {
     setBusy(true);
@@ -145,6 +196,51 @@ export default function JobChain({ jobId, job: shell, reload, t }) {
     },
   ];
 
+  /* A project runs over weeks and has parts a two-hour job never has: a task
+     list, a material list, a diary and extras agreed on the way. Those are
+     three more steps, and they replace the single "work" step rather than
+     being added beside it — the work *is* the tasks. Marking the job finished
+     moves onto the billing step, which is where `POST /jobs/{id}/complete`
+     already puts it: done first, then the paperwork about it. */
+  const PROJECT_STEPS = [
+    STEPS[0],
+    STEPS[1],
+    {
+      key: 'tasks', title: t('job_step_tasks'),
+      value: shown.tasks?.total
+        ? `${shown.tasks.done} / ${shown.tasks.total}`
+        : t('job_step_open'),
+      body: <TasksStep jobId={jobId} t={t} onCount={countTasks} />,
+    },
+    {
+      key: 'mats', title: t('job_step_mats'),
+      value: shown.mats?.count
+        ? t('job_step_mats_v', { a: shown.mats.bought, b: shown.mats.count })
+        : t('job_step_open'),
+      body: <MaterialsStep jobId={jobId} t={t} onCount={countMats} />,
+    },
+    {
+      key: 'notes', title: t('job_step_notes'),
+      value: shown.notes?.hours
+        ? t('job_notes_h', { h: Number(shown.notes.hours).toFixed(1).replace('.', ',') })
+        : t('job_step_open'),
+      body: <NotesStep jobId={jobId} t={t} onCount={countNotes} />,
+    },
+    {
+      key: 'bill', title: t('job_step_bill'),
+      value: invoices.length ? fmtEur(pl.revenue_eur || 0) : fmtEur(job.contract_amount || 0),
+      body: (
+        /* It loads its own Nachträge and material totals rather than taking
+           them from the overview: the overview carries sums, and this step
+           needs the rows themselves — and it has to be right straight after
+           a Nachtrag was written one step above. */
+        <BillingStep jobId={jobId} job={job} invoices={invoices} t={t}
+                     onOpen={() => navigate(`/jobs/${jobId}/invoice`)} />
+      ),
+    },
+  ];
+  const CHAIN = job.mode === 'project' ? PROJECT_STEPS : STEPS;
+
   return (
     <div data-testid="job-chain">
       {/* The spine starts at the customer card — the customer is where the job
@@ -174,11 +270,11 @@ export default function JobChain({ jobId, job: shell, reload, t }) {
                         testid="job-customer" />
         </div>
 
-        {STEPS.map((s, i) => (
+        {CHAIN.map((s, i) => (
           <div key={s.key} className="relative mb-[22px] last:mb-0">
-            {i < STEPS.length - 1 && <Segment state={states[i]} />}
-            <Knot state={states[i]} n={i + 1} label={`job-step-${s.key}`} />
-            <StepCard state={states[i]} n={i + 1} title={s.title} value={s.value}
+            {i < CHAIN.length - 1 && <Segment state={stateAt(i)} />}
+            <Knot state={stateAt(i)} n={i + 1} label={`job-step-${s.key}`} />
+            <StepCard state={stateAt(i)} n={i + 1} title={s.title} value={s.value}
                       open={open === s.key} onToggle={() => toggle(s.key)}
                       testid={`job-step-${s.key}`}>
               {s.body}

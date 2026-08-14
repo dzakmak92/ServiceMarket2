@@ -353,17 +353,30 @@ async def overview(pro_id: str, job_id: str) -> dict:
     mat = await pg.fetchrow(
         """
         select coalesce(sum(planned_cost * qty), 0) as planned,
-               coalesce(sum(coalesce(actual_cost, planned_cost) * qty), 0) as actual
+               coalesce(sum(coalesce(actual_cost, planned_cost) * qty), 0) as actual,
+               -- Counted here as well as summed, so the shut step card on the
+               -- chain can say "3 of 5 bought" without mounting the whole
+               -- material list to find out.
+               count(*) as count,
+               count(*) filter (where actual_cost is not null) as bought
           from job_materials where job_id = $1
         """, job_id)
     time = await pg.fetchrow(
         "select coalesce(sum(seconds), 0) as s from job_time_logs "
         "where job_id = $1 and billable", job_id)
+    # Diary hours are not timer hours: one is what somebody wrote down at the
+    # end of a day, the other what a stopwatch measured. The chain shows the
+    # first on the notes step, so it has to come back separately rather than
+    # be read off `pl.labour_hours`.
+    diary = await pg.fetchrow(
+        "select coalesce(sum(hours), 0) as h, count(*) as n "
+        "from job_diary where job_id = $1", job_id)
     co = await pg.fetchrow(
         """
         select coalesce(sum(net_amount) filter (where status = 'approved'), 0) as approved,
                coalesce(sum(net_amount) filter (where status = 'invoiced'), 0) as invoiced,
-               count(*) filter (where status = 'sent') as pending
+               count(*) filter (where status = 'sent') as pending,
+               count(*) as n
           from change_orders where job_id = $1
         """, job_id)
     inv = await pg.fetchrow(
@@ -405,10 +418,14 @@ async def overview(pro_id: str, job_id: str) -> dict:
         "status::text as status, decided_at, sent_at, valid_until "
         "from quotes where job_id = $1 and status = 'accepted' "
         "order by decided_at desc nulls last limit 1", job_id)
+    # `cancelled_at` and `net_total` are on the list because the billing step
+    # settles the contract against what has already been invoiced: without the
+    # first, a cancelled Abschlag still counts as paid-for and locks the part
+    # of the contract it was meant to cover.
     invoices = await pg.fetch(
         "select id, invoice_number, type::text as type, status::text as status, "
-        "payment_state::text as payment_state, gross_total, outstanding, "
-        "issue_date, due_date from invoices "
+        "payment_state::text as payment_state, net_total, gross_total, outstanding, "
+        "cancelled_at, issue_date, due_date from invoices "
         "where job_id = $1 and status <> 'draft' order by issue_date, invoice_number",
         job_id)
 
@@ -442,6 +459,10 @@ async def overview(pro_id: str, job_id: str) -> dict:
             "margin_pct": round(profit / revenue * 100, 1) if revenue else 0.0,
         },
         "progress_pct": round(done / total * 100) if total else 0,
+        "materials_count": int(mat["count"] or 0),
+        "materials_bought": int(mat["bought"] or 0),
+        "diary_hours": float(diary["h"] or 0),
+        "diary_entries": int(diary["n"] or 0),
         "tasks_total": total,
         "tasks_done": done,
         "tasks": {"total": total, "done": done,
@@ -449,6 +470,7 @@ async def overview(pro_id: str, job_id: str) -> dict:
         "materials": {"planned": float(mat["planned"]), "actual": float(mat["actual"])},
         "time": {"billable_seconds": int(time["s"] or 0),
                  "billable_hours": round(int(time["s"] or 0) / 3600, 2)},
+        "change_orders_count": int(co["n"] or 0),
         "change_orders": {"approved_net": float(co["approved"]),
                           "invoiced_net": float(co["invoiced"]),
                           "pending": int(co["pending"])},
