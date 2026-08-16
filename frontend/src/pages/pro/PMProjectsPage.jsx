@@ -12,6 +12,8 @@ import { telHref } from '../../utils/sms';
 import { moneyLocale } from '../../utils/money';
 import JobRing from '../../components/pro/JobRing';
 import JobCard from '../../components/pro/JobCard';
+import JobSpan from '../../components/pro/JobSpan';
+import JobTabs from '../../components/pro/JobTabs';
 import useJobAction from '../../hooks/useJobAction';
 
 /**
@@ -49,6 +51,16 @@ const TABS = [
 /* Above this many rows in one tab, the search box earns its 56 px. Below it,
    scrolling is faster than typing and the field is just chrome. */
 const SEARCH_FROM = 8;
+
+/* The page reads on white, not on the brand cream: the ice-blue family the
+   cards are drawn in measured 1.17x against cream and 1.29x against white —
+   on the warm ground the accent was barely a shape. The two sibling lists keep
+   their own accent so a screenshot says which one you are on: Auftraege navy,
+   Projekte the brand teal-deep. Everything else about them is identical. */
+const SKIN = {
+  jobs: { accent: '#1e5490', tint: '#f2f6fa' },
+  projects: { accent: '#1f4d5e', tint: '#eef4f5' },
+};
 
 export default function PMProjectsPage() {
   const { t } = useLang();
@@ -157,6 +169,10 @@ export default function PMProjectsPage() {
     return b;
   }, [jobs]);
 
+  const tabCounts = useMemo(() => ({
+    live: buckets.live.length, pipeline: buckets.pipeline.length, done: buckets.done.length,
+  }), [buckets]);
+
   const rows = useMemo(() => {
     const list = buckets[tab] || [];
     const q = search.trim().toLowerCase();
@@ -183,11 +199,14 @@ export default function PMProjectsPage() {
   const today = new Date().toLocaleDateString(moneyLocale(),
     { weekday: 'long', day: 'numeric', month: 'long' });
 
+  const skin = isProject ? SKIN.projects : SKIN.jobs;
+
   return (
-    <div className="min-h-screen bg-cream pb-28 md:pb-12">
+    <div className="min-h-screen bg-paper pb-28 md:pb-12">
       <div className="page-container py-4 max-w-3xl">
         <div className="flex items-center gap-2.5 mb-3">
-          <span className="w-10 h-10 rounded-[14px] bg-teal text-paper grid place-items-center shrink-0"
+          <span className="w-10 h-10 rounded-[14px] text-paper grid place-items-center shrink-0"
+                style={{ background: skin.accent }}
                 aria-hidden="true"><Briefcase size={19} /></span>
           <span className="min-w-0">
             <p className="text-[12px] text-ink-muted">{today}</p>
@@ -197,7 +216,8 @@ export default function PMProjectsPage() {
             </h1>
           </span>
           <Link to="/schedule" className="ml-auto shrink-0 w-10 h-10 rounded-[13px] bg-paper
-                     border border-sm-border grid place-items-center text-ink-muted"
+                     border grid place-items-center text-ink-muted"
+                style={{ borderColor: '#dbe4ec' }}
                 aria-label={t('pm_schedule_title')} data-testid="pm-open-schedule">
             <CalendarClock size={17} />
           </Link>
@@ -210,25 +230,16 @@ export default function PMProjectsPage() {
         ) : (
           <>
             <JobRing amounts={amounts} total={total} counts={counts} tab={tab}
-                     onPick={setTab} t={t} />
+                     onPick={setTab} accent={skin.accent} tint={skin.tint} t={t} />
 
-            <div className="flex gap-1 rounded-full bg-cream-deep p-1 mb-3" role="tablist"
-                 data-testid="ov-tabs">
-              {TABS.map((tb) => (
-                <button key={tb.key} type="button" role="tab" aria-selected={tab === tb.key}
-                        onClick={() => setTab(tb.key)} data-testid={`ov-tab-${tb.key}`}
-                        className={`flex-1 min-h-[40px] rounded-full text-[12px] font-bold
-                                    ${tab === tb.key
-                          ? 'bg-paper text-teal-deep shadow-[0_1px_4px_rgba(26,58,82,.15)]'
-                          : 'text-ink-muted'}`}>
-                  {t(tb.labelKey)} · <b className="tabular-nums">{buckets[tb.key].length}</b>
-                </button>
-              ))}
-            </div>
+            <JobSpan jobs={jobs} accent={skin.accent} tint={skin.tint} t={t} />
+
+            <JobTabs tabs={TABS} tab={tab} counts={tabCounts} onPick={setTab}
+                     accent={skin.accent} t={t} />
 
             {buckets[tab].length >= SEARCH_FROM && (
-              <label className="flex items-center gap-2 rounded-xl border border-sm-border bg-paper
-                                px-3 mb-3 min-h-[44px]">
+              <label className="flex items-center gap-2 rounded-xl border bg-paper
+                                px-3 mb-3 min-h-[44px]" style={{ borderColor: '#dbe4ec' }}>
                 <Search size={15} className="text-ink-muted shrink-0" aria-hidden="true" />
                 <input value={search} onChange={(e) => setSearch(e.target.value)}
                        placeholder={t('pm_search_ph')} data-testid="ov-search"
@@ -236,9 +247,13 @@ export default function PMProjectsPage() {
               </label>
             )}
 
-            {tab === 'live' && <LiveList rows={rows} t={t} act={act} worth={worth} />}
-            {tab === 'pipeline' && <PipeList rows={rows} sentFor={sentFor} t={t} navigate={navigate} />}
-            {tab === 'done' && <DoneList rows={rows} t={t} navigate={navigate} worth={worth} />}
+            {/* Pulled in from the right so the cards do not run into the edge —
+                the spine already takes 53 px on the left. */}
+            <div className="pr-4">
+              {tab === 'live' && <LiveList rows={rows} t={t} act={act} worth={worth} accent={skin.accent} />}
+              {tab === 'pipeline' && <PipeList rows={rows} sentFor={sentFor} t={t} navigate={navigate} accent={skin.accent} />}
+              {tab === 'done' && <DoneList rows={rows} t={t} navigate={navigate} worth={worth} accent={skin.accent} />}
+            </div>
           </>
         )}
       </div>
@@ -258,7 +273,6 @@ function Empty({ text, testid }) {
 
 /** When it happens, in the fewest words that are still true. */
 function whenLabel(job, t) {
-  const hhmm = (d) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   if (job.status === 'in_progress') {
     const since = job.started_at ? new Date(job.started_at) : null;
     return since ? t('ov_running_since', { t: hhmm(since) }) : t('job_running');
@@ -274,6 +288,21 @@ function whenLabel(job, t) {
   return `${d.toLocaleDateString(moneyLocale(), { weekday: 'short', day: 'numeric', month: 'short' })} ${hhmm(d)}`;
 }
 
+const hhmm = (d) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+
+/* The spine beside a card: the day over the time, or a dash when the row has
+   no date at all. Short and numeric, because the column is 44 px wide — a
+   locale that spells the weekday out would wrap it. */
+function spineOf(value, { time = true } = {}) {
+  if (!value) return { top: '—' };
+  const d = new Date(value);
+  if (Number.isNaN(+d)) return { top: '—' };
+  return {
+    top: d.toLocaleDateString(moneyLocale(), { weekday: 'short', day: 'numeric' }),
+    bottom: time ? hhmm(d) : null,
+  };
+}
+
 /* Who and where. A job with no customer yet falls back to what it does have
    — its number and trade — rather than leaving the line blank, which read as
    a rendering fault. */
@@ -282,27 +311,40 @@ function place(job) {
   return who || [job.job_number, job.category].filter(Boolean).join(' · ');
 }
 
-function LiveList({ rows, t, act, worth }) {
+function LiveList({ rows, t, act, worth, accent }) {
   if (!rows.length) return <Empty text={t('ov_empty_live')} testid="ov-empty-live" />;
+  const now = Date.now();
   return (
     <div data-testid="ov-list-live">
-      {rows.map((j) => {
+      {rows.map((j, i) => {
         const running = j.status === 'in_progress';
+        const start = j.scheduled_start ? new Date(j.scheduled_start) : null;
+        /* Late is a fact about the clock, not about the status: both of the
+           live jobs on today's data are booked in the past. Saying "scheduled"
+           over a date that has been and gone is the one thing this list must
+           not do. */
+        const late = !!start && !running && +start < now;
         const tel = telHref(j.customer_phone);
         const route = routeHref(j);
-        /* Only a running job has a next move worth a button here. For the
-           rest the card is a row to tap — the moves live on the job page,
-           where the server's transition table is known. */
-        const actions = running ? [
+        /* Route and Call cost nothing to offer on any live job — they leave
+           the app rather than move the job, and a booked job is exactly the
+           one you want to drive to. Finishing is different: it flips status
+           and draws up an invoice, so it stays on the job that has actually
+           started, where the server's transition table agrees. */
+        const actions = [
           route && { key: 'route', label: t('day_route'), icon: CornerUpRight, href: route, external: true },
           tel && { key: 'call', label: t('day_call'), icon: Phone, href: `tel:${tel}` },
-          { key: 'finish', label: t('job_finish_do'), icon: Check, kind: 'amber',
+          running && { key: 'finish', label: t('job_finish_do'), icon: Check, kind: 'primary',
             onClick: () => act({ id: j.id, status: j.status }, 'complete') },
-        ].filter(Boolean) : [];
+        ].filter(Boolean);
         return (
           <JobCard key={j.id} job={{ ...j, contract_amount: worth(j) }} states={stepStates(j)}
-                   tone={running ? 'run' : 'live'}
-                   meta={place(j)} badge={whenLabel(j, t)} badgeTone={running ? 'a' : 't'}
+                   accent={accent} last={i === rows.length - 1}
+                   spine={{ ...spineOf(j.scheduled_start), tone: late ? '#c14655' : accent }}
+                   meta={place(j)}
+                   badge={running ? whenLabel(j, t)
+                     : late ? t('ov_overdue') : start ? t('job_step_sched') : t('job_not_scheduled')}
+                   badgeTone={running ? 'a' : late ? 'r' : 'w'}
                    actions={actions} testid={`ov-job-${j.id}`} />
         );
       })}
@@ -310,7 +352,7 @@ function LiveList({ rows, t, act, worth }) {
   );
 }
 
-function PipeList({ rows, sentFor, t, navigate }) {
+function PipeList({ rows, sentFor, t, navigate, accent }) {
   if (!rows.length) return <Empty text={t('ov_empty_pipeline')} testid="ov-empty-pipeline" />;
   const quoted = rows.filter((j) => j.status === 'quoted');
   const leads = rows.filter((j) => j.status === 'lead');
@@ -319,12 +361,14 @@ function PipeList({ rows, sentFor, t, navigate }) {
       {quoted.length > 0 && (
         <>
           <Head text={t('ov_head_waiting')} n={quoted.length} testid="ov-head-waiting" />
-          {quoted.map((j) => {
+          {quoted.map((j, i) => {
             const q = sentFor[j.id];
             const age = daysSince(q?.sent_at || j.updated_at || j.created_at);
             return (
               <JobCard key={j.id} job={{ ...j, contract_amount: q?.net_total || j.contract_amount }}
-                       states={stepStates(j)} tone="pipe"
+                       states={stepStates(j)} accent={accent}
+                       last={i === quoted.length - 1 && leads.length === 0}
+                       spine={spineOf(q?.sent_at || j.created_at, { time: false })}
                        meta={[place(j), q?.quote_number].filter(Boolean).join(' · ')}
                        badge={age != null ? t('ov_days', { n: age }) : null}
                        badgeTone={age != null && age >= 7 ? 'r' : 'w'}
@@ -342,8 +386,10 @@ function PipeList({ rows, sentFor, t, navigate }) {
       {leads.length > 0 && (
         <>
           <Head text={t('ov_head_noquote')} n={leads.length} testid="ov-head-noquote" />
-          {leads.map((j) => (
-            <JobCard key={j.id} job={j} states={stepStates(j)} tone="pipe"
+          {leads.map((j, i) => (
+            <JobCard key={j.id} job={j} states={stepStates(j)} accent={accent}
+                     last={i === leads.length - 1}
+                     spine={spineOf(j.created_at, { time: false })}
                      meta={[place(j), t('ov_asked', { n: daysSince(j.created_at) ?? 0 })]
                        .filter(Boolean).join(' · ')}
                      actions={[
@@ -360,15 +406,16 @@ function PipeList({ rows, sentFor, t, navigate }) {
   );
 }
 
-function DoneList({ rows, t, navigate, worth }) {
+function DoneList({ rows, t, navigate, worth, accent }) {
   if (!rows.length) return <Empty text={t('ov_empty_done')} testid="ov-empty-done" />;
   return (
     <div data-testid="ov-list-done">
-      {rows.map((j) => {
+      {rows.map((j, i) => {
         const age = daysSince(j.completed_at);
         return (
           <JobCard key={j.id} job={{ ...j, contract_amount: worth(j) }} states={stepStates(j)}
-                   tone="done" meta={place(j)}
+                   accent={accent} last={i === rows.length - 1}
+                   spine={spineOf(j.completed_at, { time: false })} meta={place(j)}
                    badge={age != null ? t('ov_done_days', { n: age }) : null}
                    badgeTone={age != null && age >= 3 ? 'r' : 'g'}
                    actions={[{ key: 'bill', label: t('job_bill_create'), icon: Receipt,

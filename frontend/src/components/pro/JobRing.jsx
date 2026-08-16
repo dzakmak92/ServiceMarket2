@@ -34,7 +34,7 @@ import { fmtEur0, fmtEurBare } from '../../utils/money';
  */
 
 export const RING_PARTS = [
-  { key: 'offered', tab: 'pipeline', color: '#f9e9cf', labelKey: 'ov_seg_offered', shortKey: 'ov_seg_offered_s' },
+  { key: 'offered', tab: 'pipeline', color: '#cddbe8', labelKey: 'ov_seg_offered', shortKey: 'ov_seg_offered_s' },
   { key: 'booked', tab: 'live', color: '#2d6a7f', labelKey: 'ov_seg_booked', shortKey: 'ov_seg_booked_s' },
   { key: 'running', tab: 'live', color: '#f5a623', labelKey: 'ov_seg_running', shortKey: 'ov_seg_running_s' },
   { key: 'done', tab: 'done', color: '#4a8b3f', labelKey: 'ov_seg_done', shortKey: 'ov_seg_done_s' },
@@ -51,11 +51,15 @@ function subline({ jobs, projects, t }) {
   return `${t('ov_ring_sub')} · ${parts.join(', ')}`;
 }
 
-export default function JobRing({ amounts, total, counts, tab, onPick, t }) {
+export default function JobRing({ amounts, total, counts, tab, onPick, accent, tint, t }) {
   /* Every slice gets a floor of 2 % once it has any money in it, so a job
      worth € 40 next to one worth € 6.400 is still a visible sliver rather
      than a hairline nobody can see or tap. The floors come out of the
      largest slice, which can afford them. */
+  /* Booked is the page's own colour — the ring, the Live circle and the card
+     rails all mean the same pile, and three shades of nearly-the-same would
+     read as three different things. */
+  const paint = (p) => (p.key === 'booked' ? accent : p.color);
   const sum = RING_PARTS.reduce((a, p) => a + Math.max(0, amounts[p.key] || 0), 0);
   const stops = [];
   let at = 0;
@@ -68,21 +72,25 @@ export default function JobRing({ amounts, total, counts, tab, onPick, t }) {
       if (pct > 0 && pct < 2) pct = 2;
       if (r.p.key === biggest.p.key) pct = Math.max(2, pct - lifted);
       if (pct <= 0) continue;
-      stops.push(`${r.p.color} ${at}% ${at + pct}%`);
+      stops.push(`${paint(r.p)} ${at}% ${at + pct}%`);
       at += pct;
     }
   }
   /* An empty ring on day one, not a hidden one: a business with nothing in
      hand should not get a different layout that rearranges itself the moment
      the first quote goes out. */
-  const bg = stops.length ? `conic-gradient(${stops.join(',')})` : '#f9e9cf';
+  const bg = stops.length ? `conic-gradient(${stops.join(',')})` : '#e6edf4';
 
+  /* Tinted above the rule, white below it: context on the tint, detail on the
+     white. The six-week card underneath splits the same way, so the two read
+     as one pair rather than as two unrelated panels. */
   return (
-    <div className="rounded-[18px] border border-sm-border bg-paper p-3.5 mb-3" data-testid="ov-ring">
-      <div className="flex items-center gap-3.5">
+    <div className="rounded-[18px] overflow-hidden mb-2.5" data-testid="ov-ring"
+         style={{ border: `1px solid ${accent}`, background: tint }}>
+      <div className="flex items-center gap-3.5 p-3.5">
         <div className="w-[88px] h-[88px] rounded-full shrink-0 grid place-items-center"
              style={{ background: bg }} aria-hidden="true">
-          <div className="w-16 h-16 rounded-full bg-paper" />
+          <div className="w-16 h-16 rounded-full" style={{ background: tint }} />
         </div>
         <div className="min-w-0 flex-1">
           <b className="block text-[26px] font-extrabold tracking-[-0.025em] leading-none tabular-nums
@@ -93,22 +101,21 @@ export default function JobRing({ amounts, total, counts, tab, onPick, t }) {
           </span>
         </div>
       </div>
-      <div className="flex mt-2.5 border-t border-sm-border pt-2">
+      <div className="flex bg-paper px-1 py-1.5" style={{ borderTop: `1px solid ${accent}` }}>
         {RING_PARTS.map((p) => (
           <button key={p.key} type="button" onClick={() => onPick?.(p.tab)}
                   data-testid={`ov-seg-${p.key}`} data-on={tab === p.tab ? 'yes' : 'no'}
                   aria-label={`${t(p.labelKey)} ${fmtEur0(amounts[p.key] || 0)}`}
-                  className={`flex-1 min-w-0 min-h-[42px] rounded-[9px] px-0.5 py-1
-                              border-r border-sm-border last:border-r-0
-                              ${tab === p.tab ? 'bg-step-now-soft' : ''}`}>
+                  className="flex-1 min-w-0 min-h-[42px] rounded-[9px] px-0.5 py-1
+                             border-r border-[#e0e7ee] last:border-r-0"
+                  style={tab === p.tab ? { background: tint } : undefined}>
             <span className="flex items-center justify-center gap-1 text-[9px] font-extrabold uppercase
                              tracking-[0.02em] text-ink-muted" aria-hidden="true">
-              <i className="w-[7px] h-[7px] rounded-full shrink-0" style={{ background: p.color }} />
+              <i className="w-[7px] h-[7px] rounded-full shrink-0" style={{ background: paint(p) }} />
               <span className="truncate">{t(p.shortKey)}</span>
             </span>
-            <b aria-hidden="true"
-               className={`block text-[14.5px] font-extrabold tabular-nums mt-[3px]
-                           ${tab === p.tab ? 'text-teal-deep' : 'text-ink'}`}>
+            <b aria-hidden="true" style={tab === p.tab ? { color: accent } : undefined}
+               className="block text-[14.5px] font-extrabold tabular-nums mt-[3px] text-ink">
               {fmtEurBare(amounts[p.key] || 0)}
             </b>
           </button>
