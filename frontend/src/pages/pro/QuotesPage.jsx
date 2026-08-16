@@ -1,13 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../api/client';
-import NumberField from '../../components/NumberField';
 import { useLang } from '../../contexts/LangContext';
 import { fmtEur } from '../../utils/money';
 import { fmtDate } from '../../utils/money';
 import ConvertSheet from '../../components/pro/ConvertSheet';
 import {
-  Loader2, Plus, X, Check, Ban, FileText, AlertCircle, Trash2,
+  Loader2, Check, Ban, FileText, AlertCircle, Trash2,
   Calculator, Clock, Pencil, Share2, MoreHorizontal, FileDown,
 } from 'lucide-react';
 
@@ -266,11 +265,6 @@ const STATUS_STYLE = {
   negotiating:'bg-amber/10 text-amber',
 };
 
-const BLANK_LINE = {
-  kind: 'labor', description: '', qty: 1, unit: 'pcs',
-  unit_price: 0, waste_factor: 0, discount_pct: 0,
-};
-
 /**
  * Quotes — the customer-facing document the whole product exists to produce.
  *
@@ -307,18 +301,6 @@ export default function QuotesPage() {
   // and by any further interaction.
   const [moved, setMoved] = useState(null);
 
-  const [showForm, setShowForm] = useState(false);
-  const [jobId, setJobId] = useState('');
-  const [title, setTitle] = useState('');
-  const [assumptions, setAssumptions] = useState('');
-  const [validUntil, setValidUntil] = useState('');
-  const [lines, setLines] = useState([{ ...BLANK_LINE }]);
-  const [saving, setSaving] = useState(false);
-  const [templates, setTemplates] = useState([]);
-  const [templateId, setTemplateId] = useState('');
-  const [tier, setTier] = useState('standard');
-  const [loadingTpl, setLoadingTpl] = useState(false);
-
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -327,14 +309,12 @@ export default function QuotesPage() {
          put a number on themselves, and a server-side status filter can only
          ever return one of the three — the other two would have to be guessed
          or fetched separately. This is one list per pro, not a feed. */
-      const [{ data: q }, { data: j }, { data: tpl }] = await Promise.all([
+      const [{ data: q }, { data: j }] = await Promise.all([
         api.get('/api/quotes', { params: { limit: 200 } }),
         api.get('/api/jobs', { params: { limit: 100 } }).catch(() => ({ data: { jobs: [] } })),
-        api.get('/api/templates').catch(() => ({ data: { templates: [] } })),
       ]);
       setQuotes(q.quotes || []);
       setJobs(j.jobs || []);
-      setTemplates(tpl.templates || []);
     } catch (e) {
       setError(e?.response?.data?.detail || t('quotes_err_load'));
     } finally {
@@ -357,76 +337,6 @@ export default function QuotesPage() {
   }, [quotes]);
   const shown = byTab[tab];
 
-  // Preview into the form rather than calling /apply directly: the pro sees
-  // and edits every line before anything is created. A template is a starting
-  // point, not a finished offer — the substrate is always different.
-  const applyTemplate = async (id, forTier) => {
-    setTemplateId(id);
-    if (!id) return;
-    setLoadingTpl(true);
-    setError('');
-    try {
-      const { data } = await api.get(`/api/templates/${id}/preview`, { params: { tier: forTier } });
-      if ((data.lines || []).length) setLines(data.lines);
-      const tpl = templates.find((x) => x.id === id);
-      if (tpl) {
-        if (!title) setTitle(tpl.name);
-        if (tpl.assumptions) setAssumptions(tpl.assumptions);
-      }
-    } catch (e) {
-      setError(e?.response?.data?.detail || t('quotes_err_template'));
-    } finally {
-      setLoadingTpl(false);
-    }
-  };
-
-  const setLine = (i, k, v) =>
-    setLines((ls) => ls.map((l, idx) => (idx === i ? { ...l, [k]: v } : l)));
-
-  // Preview only. Net of waste and line discount; VAT is deliberately absent
-  // because only the server knows the treatment for this customer.
-  const previewNet = useMemo(
-    () => lines.reduce((sum, l) => {
-      const qty = Number(l.qty || 0) * (1 + Number(l.waste_factor || 0));
-      const gross = qty * Number(l.unit_price || 0);
-      return sum + gross * (1 - Number(l.discount_pct || 0) / 100);
-    }, 0),
-    [lines]
-  );
-
-  const submit = async (e) => {
-    e.preventDefault();
-    const usable = lines.filter((l) => l.description.trim());
-    if (!jobId || usable.length === 0) return;
-    setSaving(true);
-    setError('');
-    try {
-      await api.post('/api/quotes', {
-        job_id: jobId,
-        tier,
-        title: title || undefined,
-        assumptions: assumptions || undefined,
-        valid_until: validUntil || undefined,
-        lines: usable.map((l, i) => ({
-          ...l,
-          position: i + 1,
-          qty: Number(l.qty) || 0,
-          unit_price: Number(l.unit_price) || 0,
-          waste_factor: Number(l.waste_factor) || 0,
-          discount_pct: Number(l.discount_pct) || 0,
-        })),
-      });
-      setShowForm(false);
-      setJobId(''); setTitle(''); setAssumptions(''); setValidUntil('');
-      setLines([{ ...BLANK_LINE }]);
-      setTemplateId(''); setTier('standard');
-      await load();
-    } catch (e2) {
-      setError(e2?.response?.data?.detail || t('quotes_err_create'));
-    } finally {
-      setSaving(false);
-    }
-  };
 
   /**
    * Hand the quote to the customer.
@@ -524,11 +434,17 @@ export default function QuotesPage() {
             </h1>
             <p className="text-sm text-ink-muted">{quotes.length} {t('quotes') || 'Angebote'}</p>
           </div>
-          <button type="button" onClick={() => setShowForm((s) => !s)}
-                  className="btn-primary flex items-center gap-2" data-testid="quote-new-btn">
-            {showForm ? <X size={16} /> : <Plus size={16} />}
-            {showForm ? (t('cancel') || 'Abbrechen') : (t('new_quote') || 'Neues Angebot')}
-          </button>
+          {/* A quote begins with what the work costs, not with an empty line
+              editor: the form this button used to unfold asked for a job, a
+              template and a tier before it would show a single figure, and the
+              answer to "what do I charge" was one small link buried inside it.
+              The estimator is that answer, and it ends by writing the quote —
+              so the button goes straight there. */}
+          <Link to="/estimate" className="btn-primary flex items-center gap-2"
+                data-testid="quote-new-btn">
+            <Calculator size={16} />
+            {t('new_quote') || 'Neues Angebot'}
+          </Link>
         </div>
 
         {/* Three lists, in the shape the cards use for the same three words.
@@ -564,143 +480,6 @@ export default function QuotesPage() {
           </div>
         )}
 
-        {showForm && (
-          <form onSubmit={submit} className="card-lg mb-4 space-y-3" data-testid="quote-form">
-            <select className="input w-full" required value={jobId}
-                    onChange={(e) => setJobId(e.target.value)} data-testid="quote-job">
-              <option value="">{t('select_job') || 'Auftrag wählen…'} *</option>
-              {jobs.map((j) => (
-                <option key={j.id} value={j.id}>
-                  {j.job_number ? `${j.job_number} · ` : ''}{j.title}
-                  {j.customer_name ? ` — ${j.customer_name}` : ''}
-                </option>
-              ))}
-            </select>
-            {jobs.length === 0 && (
-              <p className="text-xs text-ink-muted">
-                {t('no_jobs_for_quote') || 'Sie brauchen zuerst einen Auftrag.'}
-              </p>
-            )}
-
-            {/* The way in for someone who does not yet know what to charge.
-                Offered beside the template picker rather than buried in the
-                nav, because this is the moment the question comes up. */}
-            <Link to={`/estimate${jobId ? `?job=${jobId}` : ''}`}
-                  className="flex items-center gap-2 text-xs text-ink-muted hover:text-ink"
-                  data-testid="quote-to-estimate">
-              <Calculator size={13} />
-              {t('quote_via_estimate')
-                || 'Positionen aus der Schnellkalkulation berechnen lassen'}
-            </Link>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <select className="input" value={templateId}
-                      onChange={(e) => applyTemplate(e.target.value, tier)}
-                      data-testid="quote-template">
-                <option value="">{t('no_template') || 'Ohne Vorlage'}</option>
-                {templates.map((tp) => (
-                  <option key={tp.id} value={tp.id}>
-                    {tp.name}{tp.trade ? ` · ${tp.trade}` : ''}
-                  </option>
-                ))}
-              </select>
-              <select className="input" value={tier}
-                      onChange={(e) => { setTier(e.target.value); if (templateId) applyTemplate(templateId, e.target.value); }}
-                      data-testid="quote-tier">
-                <option value="basic">{t('tier_basic') || 'Basis'}</option>
-                <option value="standard">{t('tier_standard') || 'Standard'}</option>
-                <option value="premium">{t('tier_premium') || 'Premium'}</option>
-              </select>
-            </div>
-            {loadingTpl && (
-              <p className="text-xs text-ink-muted flex items-center gap-1">
-                <Loader2 size={12} className="animate-spin" />{t('loading_template') || 'Vorlage wird geladen…'}
-              </p>
-            )}
-            {templateId && !loadingTpl && (
-              <p className="text-xs text-ink-muted">
-                {t('template_editable_note')
-                  || 'Positionen aus der Vorlage — alles frei änderbar. Preise stammen aus Ihren eigenen Sätzen, sofern vorhanden.'}
-              </p>
-            )}
-
-            <input className="input w-full" placeholder={t('quote_title') || 'Titel'}
-                   value={title} onChange={(e) => setTitle(e.target.value)} />
-
-            <div className="space-y-2">
-              {lines.map((l, i) => (
-                <div key={i} className="rounded-lg border border-cream-dark p-2 space-y-2">
-                  <div className="flex gap-2">
-                    <select className="input w-28 text-sm" value={l.kind}
-                            onChange={(e) => setLine(i, 'kind', e.target.value)}>
-                      <option value="labor">{t('labor') || 'Arbeit'}</option>
-                      <option value="material">{t('material') || 'Material'}</option>
-                      <option value="travel">{t('travel') || 'Anfahrt'}</option>
-                      <option value="other">{t('other') || 'Sonstiges'}</option>
-                    </select>
-                    <input className="input flex-1 text-sm" placeholder={t('description') || 'Beschreibung'}
-                           value={l.description} onChange={(e) => setLine(i, 'description', e.target.value)} />
-                    {lines.length > 1 && (
-                      <button type="button" className="p-2 text-ink-muted hover:text-red-warn"
-                              onClick={() => setLines((ls) => ls.filter((_, x) => x !== i))}
-                              aria-label={t('remove') || 'Entfernen'}>
-                        <Trash2 size={15} />
-                      </button>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-4 gap-2">
-                    {/* NumberField, not type=number: Chromium refuses the comma
-                        and hands back the digits either side, so "2,5" arrived
-                        as 25 — ten times the quantity, saved without a word. */}
-                    <NumberField className="input text-sm" placeholder={t('qty') || 'Menge'}
-                                 min={0}
-                                 value={l.qty} onChange={(v) => setLine(i, 'qty', v ?? '')} />
-                    <input className="input text-sm" placeholder={t('unit') || 'Einheit'}
-                           value={l.unit} onChange={(e) => setLine(i, 'unit', e.target.value)} />
-                    <NumberField className="input text-sm" placeholder={t('unit_price') || '€/Einheit'}
-                                 min={0}
-                                 value={l.unit_price}
-                                 onChange={(v) => setLine(i, 'unit_price', v ?? '')} />
-                    {/* Verschnitt: 0.10 = 10% extra material ordered. */}
-                    <NumberField className="input text-sm" min={0} max={1}
-                                 title={t('waste_factor') || 'Verschnitt (0.10 = 10%)'}
-                                 placeholder={t('waste_short') || 'Verschnitt'}
-                                 value={l.waste_factor}
-                                 onChange={(v) => setLine(i, 'waste_factor', v ?? '')} />
-                  </div>
-                </div>
-              ))}
-              <button type="button" className="btn-secondary w-full text-sm"
-                      onClick={() => setLines((ls) => [...ls, { ...BLANK_LINE }])}
-                      data-testid="quote-add-line">
-                <Plus size={14} className="inline mr-1" />{t('add_line') || 'Position hinzufügen'}
-              </button>
-            </div>
-
-            {/* The caveat block that stops an optimistic estimate becoming a
-                fixed-price trap when the substrate turns out to be rotten. */}
-            <textarea className="input w-full" rows={2} value={assumptions}
-                      onChange={(e) => setAssumptions(e.target.value)}
-                      placeholder={t('assumptions') || 'Annahmen und Vorbehalte'} />
-
-            <div className="flex items-center gap-3">
-              <input className="input flex-1" type="date" value={validUntil}
-                     onChange={(e) => setValidUntil(e.target.value)}
-                     title={t('valid_until') || 'Gültig bis'} />
-              <div className="text-right">
-                <div className="text-xs text-ink-muted">{t('net_preview') || 'Netto (Vorschau)'}</div>
-                <div className="font-headings font-bold text-ink">{fmtEur(previewNet)}</div>
-              </div>
-            </div>
-
-            <button type="submit" className="btn-primary w-full"
-                    disabled={saving || !jobId || !lines.some((l) => l.description.trim())}
-                    data-testid="quote-save">
-              {saving ? <Loader2 size={16} className="animate-spin mx-auto" />
-                      : (t('create_quote') || 'Angebot erstellen')}
-            </button>
-          </form>
-        )}
 
         {loading ? (
           <div className="flex justify-center py-10">
