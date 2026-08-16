@@ -111,17 +111,36 @@ export default function JobCard({
 /* 44 × 44, round, no label. The name lives in `aria-label` and in the tooltip
    the title attribute gives a mouse — an icon-only control that changes state
    is the one place where "obvious to the designer" and "obvious to the user"
-   usually part company. */
-function ActionButton({ label, icon: Icon, href, external, onClick, kind, accent, testid }) {
-  const style = kind === 'primary' || kind === 'amber'
-    ? { background: '#2f6b28', borderColor: '#2f6b28', color: '#fff' }
-    : { background: '#fff', borderColor: '#9dbcd8', color: accent };
+   usually part company.
+ *
+ * A control with nothing to point at is drawn rather than dropped, so the three
+ * buttons stay in the same three places on every card. It is a real disabled
+ * button: out of the tab order, announced as unavailable, and its label says
+ * *why* — "Route — keine Adresse hinterlegt" is a thing a pro can act on,
+ * where a missing button is just a card that looks different from the one
+ * above it. */
+function ActionButton({ label, why, icon: Icon, href, external, onClick, kind, accent,
+  disabled, testid }) {
+  const style = disabled
+    ? { background: '#f7fafc', borderColor: '#dbe4ec', color: '#8aa4bb' }
+    : kind === 'primary' || kind === 'amber'
+      ? { background: '#2f6b28', borderColor: '#2f6b28', color: '#fff' }
+      : { background: '#fff', borderColor: '#9dbcd8', color: accent };
   const cls = 'w-11 h-11 shrink-0 grid place-items-center rounded-full border-[1.5px]';
   const mark = Icon ? <Icon size={19} strokeWidth={1.9} aria-hidden="true" /> : null;
+  const name = disabled && why ? `${label} — ${why}` : label;
+  if (disabled) {
+    return (
+      <button type="button" disabled data-testid={testid} data-disabled="yes"
+              className={cls} style={style} aria-label={name} title={name}>
+        {mark}
+      </button>
+    );
+  }
   if (href) {
     return (
       <a href={href} data-testid={testid} className={cls} style={style}
-         aria-label={label} title={label}
+         aria-label={name} title={name}
          {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
         {mark}
       </a>
@@ -129,7 +148,7 @@ function ActionButton({ label, icon: Icon, href, external, onClick, kind, accent
   }
   return (
     <button type="button" onClick={onClick} data-testid={testid} className={cls} style={style}
-            aria-label={label} title={label}>
+            aria-label={name} title={name}>
       {mark}
     </button>
   );

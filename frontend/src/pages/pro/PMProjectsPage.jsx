@@ -326,17 +326,23 @@ function LiveList({ rows, t, act, worth, accent }) {
         const late = !!start && !running && +start < now;
         const tel = telHref(j.customer_phone);
         const route = routeHref(j);
-        /* Route and Call cost nothing to offer on any live job — they leave
-           the app rather than move the job, and a booked job is exactly the
-           one you want to drive to. Finishing is different: it flips status
-           and draws up an invoice, so it stays on the job that has actually
-           started, where the server's transition table agrees. */
+        /* All three, on every live card, in the same three places — a card
+           that drops the buttons it cannot fill reads as a different kind of
+           card rather than as a job missing a phone number. Route and Call
+           leave the app rather than move the job, so they are offered on any
+           live job; finishing flips the status and draws up an invoice, so it
+           waits for the job that has actually started, where the server's
+           transition table agrees. What is greyed says why in its label. */
         const actions = [
-          route && { key: 'route', label: t('day_route'), icon: CornerUpRight, href: route, external: true },
-          tel && { key: 'call', label: t('day_call'), icon: Phone, href: `tel:${tel}` },
-          running && { key: 'finish', label: t('job_finish_do'), icon: Check, kind: 'primary',
-            onClick: () => act({ id: j.id, status: j.status }, 'complete') },
-        ].filter(Boolean);
+          { key: 'route', label: t('day_route'), icon: CornerUpRight, external: true,
+            ...(route ? { href: route } : { disabled: true, why: t('ov_no_address') }) },
+          { key: 'call', label: t('day_call'), icon: Phone,
+            ...(tel ? { href: `tel:${tel}` } : { disabled: true, why: t('ov_no_phone') }) },
+          { key: 'finish', label: t('job_finish_do'), icon: Check, kind: 'primary',
+            ...(running
+              ? { onClick: () => act({ id: j.id, status: j.status }, 'complete') }
+              : { disabled: true, why: t('ov_not_started') }) },
+        ];
         return (
           <JobCard key={j.id} job={{ ...j, contract_amount: worth(j) }} states={stepStates(j)}
                    accent={accent} last={i === rows.length - 1}
