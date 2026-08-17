@@ -77,6 +77,15 @@ module.exports = {
         // its own 10 % wash. Fine on paper, not fine on a coloured card.
         'red-text': '#ae3f4c',
         'sm-border': '#f0e3c8',
+        // The calculation page is the one white screen in the app, and white
+        // needs its own two tokens: `row` is the tint a list row is drawn in
+        // when there is no cream to sit on (1.06:1 — shape by tone, the same
+        // trick the ring uses), and `rule` is the hairline that replaces
+        // cream-deep as joinery there. `navy` is the estimator's accent, the
+        // same one the Aufträge list uses; it was hard-coded in three files.
+        row: '#f4f8fb',
+        rule: '#e3ebf3',
+        navy: { DEFAULT: '#1e5490', wedge: '#eaf2fa', edge: '#cfdeeb' },
         // The estimate picker groups its templates into Innen and Außen zones,
         // each a tinted panel. A card *inside* a panel has to be lighter than
         // the panel or it stops reading as a card at all — and it cannot be

@@ -217,9 +217,9 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section
   return (
     <div data-testid={`estimate-card-${tid}`}
          className={`rounded-[14px] border overflow-hidden transition-colors
-                     ${open ? 'border-teal shadow-[0_2px_10px_rgba(45,106,127,.10)] bg-paper'
-                            : checked ? (z?.picked || 'border-teal/25 bg-teal/[.03]')
-                                      : (z?.rest || 'border-cream-deep bg-paper')}`}>
+                     ${open ? 'border-navy shadow-[0_2px_10px_rgba(30,84,144,.10)] bg-paper'
+                            : checked ? (z?.picked || 'border-transparent bg-teal/[.07]')
+                                      : (z?.rest || 'border-transparent bg-row')}`}>
       <div className="flex items-center gap-2.5 px-3 py-2.5">
         <button type="button" onClick={() => onToggle(job.key, section)}
                 aria-pressed={checked} aria-label={lbl(job)}
@@ -293,7 +293,7 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section
       </div>
 
       {open && state && (
-        <div className="border-t border-cream-deep bg-cream-soft/40 px-3 py-3">
+        <div className="border-t border-rule bg-paper px-3 py-3">
           <div className="flex items-end gap-2">
             <label className="flex-1">
               <span className="block text-[9px] font-extrabold uppercase tracking-[.06em]
@@ -306,7 +306,7 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section
                 onChange={(e) => qq && onAnswer(job.key, qq.key, e.target.value)}
                 placeholder={unit(job.unit)}
                 data-testid={`estimate-qty-${tid}`}
-                className="w-full rounded-[9px] border border-sm-border bg-paper px-2.5 py-2
+                className="w-full rounded-[9px] border border-rule bg-paper px-2.5 py-2
                            text-right text-[13px] font-bold text-ink"
               />
             </label>
@@ -318,12 +318,12 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section
             <div className="flex-1">
               <span className="block text-[9px] font-extrabold uppercase tracking-[.06em]
                                text-ink-muted mb-1">€ / {unit(job.unit)}</span>
-              <div className="rounded-[9px] border border-sm-border bg-cream-soft px-2.5 py-2
+              <div className="rounded-[9px] border border-rule bg-row px-2.5 py-2
                               text-right text-[13px] font-bold text-ink-soft">
                 {est?.per_unit ? fmtEur(est.per_unit[1]) : '—'}
               </div>
             </div>
-            <div className="min-w-[86px] rounded-[9px] bg-teal/[.08] px-2.5 py-2 text-right">
+            <div className="min-w-[86px] rounded-[9px] bg-navy/[.09] px-2.5 py-2 text-right">
               <span className="block text-[13px] font-extrabold text-ink">
                 {amount != null ? fmtEur(amount) : '—'}
               </span>
@@ -348,7 +348,7 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section
                     <select
                       value={String(state.answers[q.key] ?? false)}
                       onChange={(e) => onAnswer(job.key, q.key, e.target.value === 'true')}
-                      className="w-full rounded-[9px] border border-sm-border bg-paper px-2.5 py-2
+                      className="w-full rounded-[9px] border border-rule bg-paper px-2.5 py-2
                                  text-[12px] text-ink">
                       <option value="false">{t('no')}</option>
                       <option value="true">{t('yes')}</option>
@@ -358,7 +358,7 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section
                       value={state.answers[q.key] ?? ''}
                       onChange={(e) => onAnswer(job.key, q.key, e.target.value)}
                       data-testid={`estimate-field-${tid}-${q.key}`}
-                      className="w-full rounded-[9px] border border-sm-border bg-paper px-2.5 py-2
+                      className="w-full rounded-[9px] border border-rule bg-paper px-2.5 py-2
                                  text-[12px] text-ink">
                       {(q.options || []).map(([v, l]) => (
                         <option key={String(v)} value={String(v)}>{l}</option>

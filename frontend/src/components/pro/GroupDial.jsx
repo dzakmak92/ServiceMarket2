@@ -26,11 +26,16 @@ import React, { useMemo } from 'react';
  * Geometry is fixed in a 354-wide viewBox and scales with the container. The
  * band is 62–128 and the hole is 124 px across; every figure in this file was
  * measured against those two numbers rather than guessed.
+ *
+ * The wedge fill is a step deeper than the page's other tints — #eaf2fa, not
+ * #f2f6fa. At #f2f6fa the fill measures 1.09:1 against white and 1.01:1
+ * against the cream this page used to be, which is to say it was not a fill at
+ * all and the ring was six hairlines.
  */
 
 const NAVY = '#1e5490';
-const TINT = '#f2f6fa';
-const LINE = '#dbe4ec';
+const TINT = '#eaf2fa';
+const LINE = '#cfdeeb';
 const MUT = '#4d6477';
 const RING = '#dce7f2';
 const GO = '#2f6b28';
