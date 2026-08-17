@@ -4,6 +4,7 @@ import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import NumberField from '../../components/NumberField';
 import EstimateCards from './EstimateCards';
+import GroupDial from '../../components/pro/GroupDial';
 import { fmtEur0 as fmtEur, fmtEur as fmtEur2, fmtNum as fmtNumRaw } from '../../utils/money';
 
 import {
@@ -80,6 +81,10 @@ export default function EstimatePage() {
      and for the seventeen trades small enough to read as a flat list. */
   const [sections, setSections] = useState(null);
   const [query, setQuery] = useState('');
+  /* Which group the dial has open. Null means "the first one" and is resolved
+     against `sections` at render, because the trade can change under this
+     state and a key from the previous trade would open nothing. */
+  const [group, setGroup] = useState(null);
 
   const [selected, setSelected] = useState(null);   // survey payload
   const [answers, setAnswers] = useState({});
@@ -181,8 +186,10 @@ export default function EstimatePage() {
   }, [trade]);
 
   /* Reset the search when the trade changes, so leaving and re-entering a
-     category does not show a filtered list with the box apparently empty. */
-  useEffect(() => { setQuery(''); }, [trade]);
+     category does not show a filtered list with the box apparently empty.
+     The open group goes with it: Maler's "fassade" is not a group Fliesen
+     has, and carrying it across would open an empty dial. */
+  useEffect(() => { setQuery(''); setGroup(null); }, [trade]);
 
   const visible = useMemo(() => {
     if (!trade) return [];
@@ -194,6 +201,35 @@ export default function EstimatePage() {
     return mine.filter((j) => `${lbl(j)} ${j.label_de}`.toLowerCase().includes(q)
                            || j.key.toLowerCase().includes(q));
   }, [jobs, trade, query]);
+
+  /* The dial's wedges, and which one is open.
+   *
+   * A search turns the dial off rather than filtering it: typing "fassade"
+   * should find the template wherever it lives, and a dial that narrowed to
+   * one wedge while the list narrowed underneath it would be saying the same
+   * thing twice. Nine of the twenty-two trades have no sections at all and
+   * get no dial, which is the existing flat list unchanged.
+   *
+   * `count` is the number of rows the wedge opens, cross-listings included —
+   * the same rows the list below will show. It is deliberately not the
+   * trade's distinct total, which the heading above already carries.
+   */
+  const dial = useMemo(() => {
+    if (!trade || query.trim() || !sections || sections.length < 2) return null;
+    const have = new Set(visible.map((j) => j.key));
+    const wedges = sections
+      .map((s) => ({
+        key: s.key,
+        label: (lang !== 'de' && s.labels?.[lang]) || s.label_de,
+        count: s.job_keys.filter((k) => have.has(k)).length,
+      }))
+      .filter((s) => s.count);
+    return wedges.length >= 2 ? wedges : null;
+  }, [trade, query, sections, visible, lang]);
+
+  /* Resolved, not stored: `group` can name a section that this trade does not
+     have, or one whose templates have all been retired. */
+  const openGroup = (dial && dial.some((w) => w.key === group) ? group : dial?.[0]?.key) || null;
 
   const openJob = async (key) => {
     setError('');
@@ -510,9 +546,18 @@ export default function EstimatePage() {
                        query={query} setQuery={setQuery}
                        onPickTrade={(k) => navigate(`/estimate/${k}`)}
                        onPick={openJob} t={t} lang={lang}
+                       dial={dial && (
+                         <div className="mb-3 -mx-1" data-testid="estimate-dial">
+                           <GroupDial groups={dial} value={openGroup} onChange={setGroup}
+                                      label={t('est_groups')}
+                                      promise={t('est_promise_lead')}
+                                      seconds={t('est_promise_time')} />
+                         </div>
+                       )}
                        cards={trade ? (
                          <EstimateCards jobs={visible}
                                         sections={query.trim() ? null : sections}
+                                        only={dial ? openGroup : null}
                                         lang={lang} quoting={creating}
                                         onQuote={createMultiQuote}
                                         onSelection={(positions, total, unpriced) =>
@@ -658,7 +703,7 @@ export default function EstimatePage() {
 }
 
 function JobPicker({ meta, jobs, trade, sections, query, setQuery,
-                    onPickTrade, onPick, t, lang, cards }) {
+                    onPickTrade, onPick, t, lang, cards, dial }) {
   const trades = meta?.trades || [];
 
   // ── /estimate — the seven trades ──────────────────────────────────
@@ -735,6 +780,13 @@ function JobPicker({ meta, jobs, trade, sections, query, setQuery,
           </button>
         )}
       </label>
+
+      {/* The dial, where the trade has groups and nothing has been typed. It
+          replaces the stack of headings the list used to open with: nineteen
+          templates under six headings is a page you scroll past, and the same
+          nineteen behind six wedges is a page where the first thing you do is
+          choose. `EstimateCards` draws only the open group's rows. */}
+      {dial}
 
       {/* The rows themselves. Nineteen templates that differ only in their
           wording is a list nobody scans — they read it top to bottom or give

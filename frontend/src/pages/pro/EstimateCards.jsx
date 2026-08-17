@@ -399,7 +399,7 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section
 }
 
 export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
-                                        onSelection }) {
+                                        onSelection, only = null }) {
   const { t } = useLang();
   const [picked, setPicked] = useState({});
 
@@ -599,6 +599,24 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
       .filter((s) => s.rows.length)
     : [{ key: '_all', label: '', sub: '', zone: null, also: {}, rows: jobs }];
 
+  /* How many distinct templates each zone holds, counted before the dial's
+     filter is applied. The zone heading is a statement about the zone — Innen
+     holds sixteen — and computing it from what is on screen would make it say
+     three the moment a wedge is open. */
+  const zoneTotal = new Map();
+  groups.forEach((sec) => {
+    if (!sec.zone) return;
+    const seen = zoneTotal.get(sec.zone) || new Set();
+    sec.rows.forEach((j) => seen.add(j.key));
+    zoneTotal.set(sec.zone, seen);
+  });
+
+  /* `only` is the dial's open wedge. Filtered here rather than upstream so
+     `secLabel` above still holds every section's name: a cross-listing notice
+     on a card in the open group has to name the other group it appears in,
+     and that group is not being rendered. */
+  const shown = only ? groups.filter((s) => s.key === only) : groups;
+
   /* Consecutive sections sharing a zone become one panel. Runs, not a group-by:
      a zone drawn twice down the page is two panels of one colour, and colour
      that repeats in two places stops saying where you are. The backend lists a
@@ -606,7 +624,7 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
      being true this renders it as two panels rather than silently reordering
      the sections behind the pro's back. */
   const bands = [];
-  groups.forEach((sec) => {
+  shown.forEach((sec) => {
     const last = bands[bands.length - 1];
     if (last && last.zone === sec.zone && sec.zone) last.secs.push(sec);
     else bands.push({ zone: sec.zone, label: sec.zoneLabel, secs: [sec] });
@@ -619,7 +637,8 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
         /* Distinct templates, not rows. Summing row counts would tell a
            painter the Innen zone holds seventeen templates when it holds
            fifteen and shows two of them twice. */
-        const n = new Set(band.secs.flatMap((x) => x.rows.map((j) => j.key))).size;
+        const n = (zoneTotal.get(band.zone)
+          || new Set(band.secs.flatMap((x) => x.rows.map((j) => j.key)))).size;
         return (
           <div key={`${band.zone || '_'}${bi}`}
                data-testid={band.zone ? `estimate-zone-${band.zone}` : undefined}
