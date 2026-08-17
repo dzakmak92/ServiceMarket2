@@ -632,7 +632,23 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
 
   return (
     <>
-      {bands.map((band, bi) => {
+      {/* With the dial on, the rows follow it with nothing in between: the
+          dial already names the open group and says how many are in it, so a
+          zone panel and a section heading under it are the same sentence
+          twice and 90 px of it. The zone tint goes with them — a band of
+          colour round one group says nothing, because there is nothing on
+          screen for it to be a different colour from. */}
+      {only && bands.flatMap((band) => band.secs).map((sec) => (
+        <div key={sec.key} className="space-y-1.5">
+          {sec.rows.map((j) => (
+            <Card key={`${sec.key}/${j.key}`} job={j} state={picked[j.key]} t={t}
+                  zone={null} alsoIn={sec.also?.[j.key]} section={sec.key}
+                  onToggle={toggle} onOpen={open} onAnswer={answer} />
+          ))}
+        </div>
+      ))}
+
+      {!only && bands.map((band, bi) => {
         const z = ZONE[band.zone];
         /* Distinct templates, not rows. Summing row counts would tell a
            painter the Innen zone holds seventeen templates when it holds
