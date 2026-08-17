@@ -217,9 +217,9 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section
   return (
     <div data-testid={`estimate-card-${tid}`}
          className={`rounded-[14px] border overflow-hidden transition-colors
-                     ${open ? 'border-teal shadow-[0_2px_10px_rgba(45,106,127,.10)] bg-paper'
-                            : checked ? (z?.picked || 'border-teal/25 bg-teal/[.03]')
-                                      : (z?.rest || 'border-cream-deep bg-paper')}`}>
+                     ${open ? 'border-navy shadow-[0_2px_10px_rgba(30,84,144,.10)] bg-paper'
+                            : checked ? (z?.picked || 'border-transparent bg-teal/[.07]')
+                                      : (z?.rest || 'border-transparent bg-row')}`}>
       <div className="flex items-center gap-2.5 px-3 py-2.5">
         <button type="button" onClick={() => onToggle(job.key, section)}
                 aria-pressed={checked} aria-label={lbl(job)}
@@ -293,7 +293,7 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section
       </div>
 
       {open && state && (
-        <div className="border-t border-cream-deep bg-cream-soft/40 px-3 py-3">
+        <div className="border-t border-rule bg-paper px-3 py-3">
           <div className="flex items-end gap-2">
             <label className="flex-1">
               <span className="block text-[9px] font-extrabold uppercase tracking-[.06em]
@@ -306,7 +306,7 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section
                 onChange={(e) => qq && onAnswer(job.key, qq.key, e.target.value)}
                 placeholder={unit(job.unit)}
                 data-testid={`estimate-qty-${tid}`}
-                className="w-full rounded-[9px] border border-sm-border bg-paper px-2.5 py-2
+                className="w-full rounded-[9px] border border-rule bg-paper px-2.5 py-2
                            text-right text-[13px] font-bold text-ink"
               />
             </label>
@@ -318,12 +318,12 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section
             <div className="flex-1">
               <span className="block text-[9px] font-extrabold uppercase tracking-[.06em]
                                text-ink-muted mb-1">€ / {unit(job.unit)}</span>
-              <div className="rounded-[9px] border border-sm-border bg-cream-soft px-2.5 py-2
+              <div className="rounded-[9px] border border-rule bg-row px-2.5 py-2
                               text-right text-[13px] font-bold text-ink-soft">
                 {est?.per_unit ? fmtEur(est.per_unit[1]) : '—'}
               </div>
             </div>
-            <div className="min-w-[86px] rounded-[9px] bg-teal/[.08] px-2.5 py-2 text-right">
+            <div className="min-w-[86px] rounded-[9px] bg-navy/[.09] px-2.5 py-2 text-right">
               <span className="block text-[13px] font-extrabold text-ink">
                 {amount != null ? fmtEur(amount) : '—'}
               </span>
@@ -348,7 +348,7 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section
                     <select
                       value={String(state.answers[q.key] ?? false)}
                       onChange={(e) => onAnswer(job.key, q.key, e.target.value === 'true')}
-                      className="w-full rounded-[9px] border border-sm-border bg-paper px-2.5 py-2
+                      className="w-full rounded-[9px] border border-rule bg-paper px-2.5 py-2
                                  text-[12px] text-ink">
                       <option value="false">{t('no')}</option>
                       <option value="true">{t('yes')}</option>
@@ -358,7 +358,7 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section
                       value={state.answers[q.key] ?? ''}
                       onChange={(e) => onAnswer(job.key, q.key, e.target.value)}
                       data-testid={`estimate-field-${tid}-${q.key}`}
-                      className="w-full rounded-[9px] border border-sm-border bg-paper px-2.5 py-2
+                      className="w-full rounded-[9px] border border-rule bg-paper px-2.5 py-2
                                  text-[12px] text-ink">
                       {(q.options || []).map(([v, l]) => (
                         <option key={String(v)} value={String(v)}>{l}</option>
@@ -399,7 +399,7 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section
 }
 
 export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
-                                        onSelection }) {
+                                        onSelection, only = null }) {
   const { t } = useLang();
   const [picked, setPicked] = useState({});
 
@@ -599,6 +599,24 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
       .filter((s) => s.rows.length)
     : [{ key: '_all', label: '', sub: '', zone: null, also: {}, rows: jobs }];
 
+  /* How many distinct templates each zone holds, counted before the dial's
+     filter is applied. The zone heading is a statement about the zone — Innen
+     holds sixteen — and computing it from what is on screen would make it say
+     three the moment a wedge is open. */
+  const zoneTotal = new Map();
+  groups.forEach((sec) => {
+    if (!sec.zone) return;
+    const seen = zoneTotal.get(sec.zone) || new Set();
+    sec.rows.forEach((j) => seen.add(j.key));
+    zoneTotal.set(sec.zone, seen);
+  });
+
+  /* `only` is the dial's open wedge. Filtered here rather than upstream so
+     `secLabel` above still holds every section's name: a cross-listing notice
+     on a card in the open group has to name the other group it appears in,
+     and that group is not being rendered. */
+  const shown = only ? groups.filter((s) => s.key === only) : groups;
+
   /* Consecutive sections sharing a zone become one panel. Runs, not a group-by:
      a zone drawn twice down the page is two panels of one colour, and colour
      that repeats in two places stops saying where you are. The backend lists a
@@ -606,7 +624,7 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
      being true this renders it as two panels rather than silently reordering
      the sections behind the pro's back. */
   const bands = [];
-  groups.forEach((sec) => {
+  shown.forEach((sec) => {
     const last = bands[bands.length - 1];
     if (last && last.zone === sec.zone && sec.zone) last.secs.push(sec);
     else bands.push({ zone: sec.zone, label: sec.zoneLabel, secs: [sec] });
@@ -614,12 +632,29 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
 
   return (
     <>
-      {bands.map((band, bi) => {
+      {/* With the dial on, the rows follow it with nothing in between: the
+          dial already names the open group and says how many are in it, so a
+          zone panel and a section heading under it are the same sentence
+          twice and 90 px of it. The zone tint goes with them — a band of
+          colour round one group says nothing, because there is nothing on
+          screen for it to be a different colour from. */}
+      {only && bands.flatMap((band) => band.secs).map((sec) => (
+        <div key={sec.key} className="space-y-1.5">
+          {sec.rows.map((j) => (
+            <Card key={`${sec.key}/${j.key}`} job={j} state={picked[j.key]} t={t}
+                  zone={null} alsoIn={sec.also?.[j.key]} section={sec.key}
+                  onToggle={toggle} onOpen={open} onAnswer={answer} />
+          ))}
+        </div>
+      ))}
+
+      {!only && bands.map((band, bi) => {
         const z = ZONE[band.zone];
         /* Distinct templates, not rows. Summing row counts would tell a
            painter the Innen zone holds seventeen templates when it holds
            fifteen and shows two of them twice. */
-        const n = new Set(band.secs.flatMap((x) => x.rows.map((j) => j.key))).size;
+        const n = (zoneTotal.get(band.zone)
+          || new Set(band.secs.flatMap((x) => x.rows.map((j) => j.key)))).size;
         return (
           <div key={`${band.zone || '_'}${bi}`}
                data-testid={band.zone ? `estimate-zone-${band.zone}` : undefined}

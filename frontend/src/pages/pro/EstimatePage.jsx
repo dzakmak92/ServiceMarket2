@@ -4,11 +4,13 @@ import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import NumberField from '../../components/NumberField';
 import EstimateCards from './EstimateCards';
+import GroupDial from '../../components/pro/GroupDial';
+import TradeCarousel from '../../components/pro/TradeCarousel';
 import { fmtEur0 as fmtEur, fmtEur as fmtEur2, fmtNum as fmtNumRaw } from '../../utils/money';
 
 import {
   Loader2, AlertTriangle, ArrowLeft, Calculator, FileText,
-  Trash2, Clock, Package, Info, MapPin, TrendingUp, Bookmark, Search, X,
+  Trash2, Clock, Package, Info, MapPin, TrendingUp, Bookmark,
   RefreshCw, Coins, Pencil, RotateCcw, Check, Layers,
   Paintbrush, Grid3x3, Zap, Droplet, Sprout, SprayCan, Wrench, Hammer,
 } from 'lucide-react';
@@ -79,7 +81,11 @@ export default function EstimatePage() {
   /* How this trade's templates are chunked, from the API. Null for a search
      and for the seventeen trades small enough to read as a flat list. */
   const [sections, setSections] = useState(null);
-  const [query, setQuery] = useState('');
+
+  /* Which group the dial has open. Null means "the first one" and is resolved
+     against `sections` at render, because the trade can change under this
+     state and a key from the previous trade would open nothing. */
+  const [group, setGroup] = useState(null);
 
   const [selected, setSelected] = useState(null);   // survey payload
   const [answers, setAnswers] = useState({});
@@ -123,6 +129,11 @@ export default function EstimatePage() {
      only be caught if the two know about each other. */
   const [selection, setSelection] = useState({ positions: [], total: 0, unpriced: 0 });
   const [leaving, setLeaving] = useState(false);
+  /* Where the pro was going when the guard stopped them. Back goes home, as
+     it always has; the trade carousel goes to the trade they tapped, and
+     sending them home instead would be the guard losing their place on top of
+     what it is already asking about. */
+  const [leaveTo, setLeaveTo] = useState('/');
   const [accuracy, setAccuracy] = useState(null);
   const [showAccuracy, setShowAccuracy] = useState(false);
   const [calibrating, setCalibrating] = useState(false);
@@ -180,20 +191,59 @@ export default function EstimatePage() {
     return () => { live = false; };
   }, [trade]);
 
-  /* Reset the search when the trade changes, so leaving and re-entering a
-     category does not show a filtered list with the box apparently empty. */
-  useEffect(() => { setQuery(''); }, [trade]);
+  /* Maler's "fassade" is not a group Fliesen has, so the open group cannot
+     survive a change of trade — it would open an empty dial. */
+  useEffect(() => { setGroup(null); }, [trade]);
 
   const visible = useMemo(() => {
     if (!trade) return [];
-    const mine = jobs.filter((j) => j.trade === trade);
-    const q = query.trim().toLowerCase();
-    if (!q) return mine;
-    // Searched against both: a pro reading the app in Turkish types the
-    // Turkish name, and one who learned the trade in German types the German.
-    return mine.filter((j) => `${lbl(j)} ${j.label_de}`.toLowerCase().includes(q)
-                           || j.key.toLowerCase().includes(q));
-  }, [jobs, trade, query]);
+    return jobs.filter((j) => j.trade === trade);
+  }, [jobs, trade]);
+
+  /* The dial's wedges, and which one is open.
+   *
+   * A search turns the dial off rather than filtering it: typing "fassade"
+   * should find the template wherever it lives, and a dial that narrowed to
+   * one wedge while the list narrowed underneath it would be saying the same
+   * thing twice. Nine of the twenty-two trades have no sections at all and
+   * get no dial, which is the existing flat list unchanged.
+   *
+   * `count` is the number of rows the wedge opens, cross-listings included —
+   * the same rows the list below will show. It is deliberately not the
+   * trade's distinct total, which the heading above already carries.
+   */
+  const dial = useMemo(() => {
+    if (!trade || !sections || sections.length < 2) return null;
+    const have = new Set(visible.map((j) => j.key));
+    const wedges = sections
+      .map((s) => ({
+        key: s.key,
+        label: (lang !== 'de' && s.labels?.[lang]) || s.label_de,
+        count: s.job_keys.filter((k) => have.has(k)).length,
+      }))
+      .filter((s) => s.count);
+    return wedges.length >= 2 ? wedges : null;
+  }, [trade, sections, visible, lang]);
+
+  /* Resolved, not stored: `group` can name a section that this trade does not
+     have, or one whose templates have all been retired. */
+  const openGroup = (dial && dial.some((w) => w.key === group) ? group : dial?.[0]?.key) || null;
+
+  /**
+   * Leaving the picker with positions ticked.
+   *
+   * Nothing on this screen is stored until a quote is made, so navigating away
+   * throws an afternoon's ticking away without a word. Both exits — the back
+   * arrow and the trade carousel — go through here, because a guard that
+   * covers one of two doors is a guard that is going to be reported as data
+   * loss on the other. `onDiscard` is where the pro ends up if they choose to
+   * lose the work, which is not always where the tap was pointing: back has
+   * always dropped them home rather than at the trade list.
+   */
+  const leave = (to, onDiscard = to) => {
+    if (selection.positions.length || selection.unpriced) { setLeaveTo(onDiscard); setLeaving(true); }
+    else navigate(to);
+  };
 
   const openJob = async (key) => {
     setError('');
@@ -446,45 +496,57 @@ export default function EstimatePage() {
     );
   }
 
+  /* White, not the app's cream. The ring's unselected wedges are a cool
+     near-white; on cream they measure 1.01:1 against the page, so the fill
+     does nothing and the shape is carried entirely by a 1 px hairline. That is
+     why this screen never looked like its drawing. It is the one page in the
+     app that is not cream, and the row treatment below pays for it. */
   return (
-    <div className="min-h-screen bg-cream pb-24">
+    <div className="min-h-screen bg-paper pb-24">
       <div className="max-w-4xl mx-auto px-4 pt-6">
-        <div className="flex items-center gap-3 mb-4">
-          {(selected || trade) && (
-            <button
-              type="button"
-              onClick={() => {
-                if (selected) { setSelected(null); setResult(null); setNotice(''); }
-                // Leaving the picker with positions ticked is the case the
-                // pro loses work in: nothing here is stored until the quote
-                // is made, so back used to throw away an afternoon's ticking
-                // without a word. With nothing ticked it still just goes to
-                // the trade list, as before.
-                else if (selection.positions.length || selection.unpriced) setLeaving(true);
-                else navigate('/estimate');
-              }}
-              className="p-2 -ml-2 text-ink-muted hover:text-ink min-w-[44px] min-h-[44px]
-                         flex items-center justify-center"
-              aria-label={t('back')}
-              data-testid="estimate-back"
-            >
-              <ArrowLeft size={18} />
+        {/* Inside a trade the heading is the trade, and it is a control. A
+            page title reading "Kalkulation" over a subtitle reading "Maler ·
+            19 Vorlagen" spent the top of the screen saying what the screen
+            was, to somebody who had just tapped Maler to get here. The survey
+            keeps the plain heading: there the title is the job, and the trade
+            circles would be offering to leave a form half-answered. */}
+        {trade && !selected ? (
+          <div className="mb-3">
+            <button type="button" onClick={() => leave('/estimate', '/')}
+                    className="flex items-center gap-1.5 -ml-2 px-2 min-h-[44px]
+                               text-ink-muted hover:text-ink font-bold text-[13px]"
+                    data-testid="estimate-back">
+              <ArrowLeft size={16} />
+              {t('est_all_trades')}
             </button>
-          )}
-          <div className="flex-1">
-            <h1 className="font-headings font-bold text-ink text-2xl">
-              {t('estimate') || 'Schnellkalkulation'}
-            </h1>
-            <p className="text-sm text-ink-muted">
-              {selected
-                ? selected.job.group
-                : trade
-                  ? `${(meta?.trades || []).find((x) => x.key === trade)?.label || trade}`
-                    + ` · ${visible.length} ${t('est_templates')}`
-                  : t('est_pick_trade')}
-            </p>
+            <TradeCarousel trades={meta?.trades || []} value={trade}
+                           onChange={(k) => leave(`/estimate/${k}`)}
+                           label={t('est_pick_trade')} unit={t('est_templates')} />
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center gap-3 mb-4">
+            {selected && (
+              <button
+                type="button"
+                onClick={() => { setSelected(null); setResult(null); setNotice(''); }}
+                className="p-2 -ml-2 text-ink-muted hover:text-ink min-w-[44px] min-h-[44px]
+                           flex items-center justify-center"
+                aria-label={t('back')}
+                data-testid="estimate-back"
+              >
+                <ArrowLeft size={18} />
+              </button>
+            )}
+            <div className="flex-1">
+              <h1 className="font-headings font-bold text-ink text-2xl">
+                {t('estimate') || 'Schnellkalkulation'}
+              </h1>
+              <p className="text-sm text-ink-muted">
+                {selected ? selected.job.group : t('est_pick_trade')}
+              </p>
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="card mb-3 flex items-start gap-2 text-sm text-red-warn" data-testid="estimate-error">
@@ -506,13 +568,24 @@ export default function EstimatePage() {
         {!selected ? (
           <>
             <JobPicker meta={meta} jobs={visible} trade={trade}
-                       sections={query.trim() ? null : sections}
-                       query={query} setQuery={setQuery}
+                       sections={sections}
                        onPickTrade={(k) => navigate(`/estimate/${k}`)}
                        onPick={openJob} t={t} lang={lang}
+                       dial={dial && (
+                         /* No card. It had one to lift the ring off the
+                            cream; the page is white now, so a white card on it
+                            would be a border drawn round nothing. */
+                         <div className="mb-3 -mx-1" data-testid="estimate-dial">
+                           <GroupDial groups={dial} value={openGroup} onChange={setGroup}
+                                      label={t('est_groups')}
+                                      promise={t('est_promise_lead')}
+                                      seconds={t('est_promise_time')} />
+                         </div>
+                       )}
                        cards={trade ? (
                          <EstimateCards jobs={visible}
-                                        sections={query.trim() ? null : sections}
+                                        sections={sections}
+                                        only={dial ? openGroup : null}
                                         lang={lang} quoting={creating}
                                         onQuote={createMultiQuote}
                                         onSelection={(positions, total, unpriced) =>
@@ -614,7 +687,7 @@ export default function EstimatePage() {
               )}
               <button type="button" disabled={creating}
                       data-testid="estimate-leave-discard"
-                      onClick={() => { setLeaving(false); navigate('/'); }}
+                      onClick={() => { setLeaving(false); navigate(leaveTo); }}
                       className={`flex-1 min-h-[46px] rounded-xl font-bold text-[14px]
                                   ${selection.positions.length
                                     ? 'border border-red-warn/35 bg-paper text-red-text'
@@ -657,8 +730,8 @@ export default function EstimatePage() {
   );
 }
 
-function JobPicker({ meta, jobs, trade, sections, query, setQuery,
-                    onPickTrade, onPick, t, lang, cards }) {
+function JobPicker({ meta, jobs, trade, sections,
+                    onPickTrade, onPick, t, lang, cards, dial }) {
   const trades = meta?.trades || [];
 
   // ── /estimate — the seven trades ──────────────────────────────────
@@ -715,26 +788,17 @@ function JobPicker({ meta, jobs, trade, sections, query, setQuery,
 
   return (
     <div data-testid="estimate-job-list">
-      <label className="flex items-center gap-2 bg-paper border border-sm-border rounded-xl
-                        px-3 py-2 mb-3 focus-within:ring-4 focus-within:ring-teal/25">
-        <Search size={15} className="text-ink-faint shrink-0" aria-hidden="true" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={t('est_search_ph')}
-          aria-label={t('est_search_ph')}
-          className="flex-1 min-w-0 bg-transparent text-sm text-ink placeholder:text-ink-faint
-                     outline-none"
-          data-testid="estimate-search"
-        />
-        {query && (
-          <button type="button" onClick={() => setQuery('')}
-                  aria-label={t('clear')} data-testid="estimate-search-clear"
-                  className="text-ink-faint hover:text-ink shrink-0">
-            <X size={14} />
-          </button>
-        )}
-      </label>
+      {/* The search box is gone. It was the only way to reach a template
+          without knowing which group it is filed under, and the two
+          cross-listed Maler templates are filed under two — so this is a real
+          capability removed, not a tidy-up. If it comes back it belongs in the
+          bar as an icon rather than as a 50 px field above the ring.
+
+          The dial takes its place: nineteen templates under six headings is a
+          page you scroll past, and the same nineteen behind six wedges is a
+          page where the first thing you do is choose. `EstimateCards` draws
+          only the open group's rows. */}
+      {dial}
 
       {/* The rows themselves. Nineteen templates that differ only in their
           wording is a list nobody scans — they read it top to bottom or give
@@ -746,7 +810,7 @@ function JobPicker({ meta, jobs, trade, sections, query, setQuery,
 
       {jobs.length === 0 && (
         <p className="text-sm text-ink-muted text-center py-8" data-testid="estimate-empty">
-          {query.trim() ? t('est_no_match', { q: query.trim() }) : t('est_no_templates')}
+          {t('est_no_templates')}
         </p>
       )}
     </div>
