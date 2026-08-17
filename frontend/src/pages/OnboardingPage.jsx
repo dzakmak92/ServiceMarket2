@@ -4,20 +4,36 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLang } from '../contexts/LangContext';
 import api, { formatError } from '../api/client';
 import { COUNTRIES, isKnownCity, searchCities } from '../data/cities';
+import TradeMark from '../components/TradeMark';
 import {
   ChevronRight, ChevronLeft, CheckCircle2, Upload, FileText, Loader2,
   AlertCircle, MapPin, CloudSun, Award, Search, Plus, Check, ShieldCheck, Landmark,
 } from 'lucide-react';
 
-/* The four steps, and what the bar reads on each. The numbers are given
-   rather than derived: a bar that starts at 25 % makes step one feel like
-   nothing has happened, and the point of the first number is to say the
-   account already exists — signing up was the first move, not this. */
+/* The five steps and what the bar reads on each. Even fifths — the trade
+   step made it five screens, and 20/40/60/80/100 is the reading the bar was
+   given rather than one derived from the count, so adding a sixth later is a
+   deliberate renumbering rather than a silent shift under everybody. */
 const STEPS = [
-  { key: 'lang', pct: 40 },
-  { key: 'where', pct: 60 },
+  { key: 'lang', pct: 20 },
+  { key: 'where', pct: 40 },
+  { key: 'trades', pct: 60 },
   { key: 'business', pct: 80 },
   { key: 'docs', pct: 100 },
+];
+
+/* The seven the estimator offers, in the order it offers them, with the value
+   `pro_profiles.service_categories` has always used. No new column: the
+   marketplace's word for a trade and the estimator's word for it name the same
+   trade, and the settings page already edits this list. */
+const TRADES = [
+  { cat: 'painting', key: 'maler', n: 19 },
+  { cat: 'tiling', key: 'fliesen', n: 13 },
+  { cat: 'electrical', key: 'elektrik', n: 17 },
+  { cat: 'plumbing', key: 'sanitaer', n: 20 },
+  { cat: 'gardening', key: 'garten', n: 20 },
+  { cat: 'home_cleaning', key: 'reinigung', n: 9 },
+  { cat: 'handyman', key: 'montage', n: 11 },
 ];
 
 /* Only the languages the app is actually translated into. Offering one it is
@@ -34,7 +50,11 @@ export default function OnboardingPage() {
   const { t, lang, changeLang } = useLang();
   const navigate = useNavigate();
 
-  const [step, setStep] = useState(0);   // 0=language 1=where 2=business 3=documents
+  const [step, setStep] = useState(0);   // 0=lang 1=where 2=trades 3=business 4=docs
+  /* At least one, and no default: a preselected trade is a guess the pro then
+     has to notice and undo, and the whole point of the step is that they say
+     it themselves. */
+  const [trades, setTrades] = useState([]);
   const [country, setCountry] = useState('AT');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -72,9 +92,16 @@ export default function OnboardingPage() {
      the profile is reviewed afterwards either way. They can be added in
      settings whenever the pro has them to hand. */
   const docsValid = () => !!form.licence_file_id;
-  const allValid = () => whereValid() && businessValid();
+  /* At least one trade. The step exists to make the estimator show the right
+     catalogue; letting it through empty would leave the pro on a screen with
+     nothing on it and no idea why. */
+  const tradesValid = () => trades.length > 0;
 
-  const stepValid = (i) => (i === 1 ? whereValid() : i === 2 ? businessValid() : true);
+  const allValid = () => whereValid() && tradesValid() && businessValid();
+
+  const stepValid = (i) => (i === 1 ? whereValid()
+    : i === 2 ? tradesValid()
+      : i === 3 ? businessValid() : true);
 
   // ──────────────────────────────────────────────
   // File upload (Gewerbeschein, Versicherung, Meisterbrief)
@@ -141,6 +168,7 @@ export default function OnboardingPage() {
         meister_file_id: form.meister_file_id || undefined,
         service_center_lat: coords?.lat,
         service_center_lng: coords?.lng,
+        trades,
       });
       await refreshUser();
       navigate('/dashboard', { replace: true });
@@ -345,7 +373,64 @@ export default function OnboardingPage() {
               town is prefilled from step two but stays editable: a business
               registered in one place and working out of another is ordinary,
               and the invoice must show the registered one. */}
+          {/* Which trades. Rows rather than tiles: seven of them and the
+              Weiter button fit one screen this way, the count sits beside the
+              name without shrinking it, and a checkbox is the one control
+              everybody already reads as "more than one allowed". */}
           {step === 2 && (
+            <>
+              <h2 className="font-headings font-bold text-ink text-lg">
+                {t('onboarding_trades_title')}
+              </h2>
+              <p className="text-ink-muted text-sm">{t('onboarding_trades_subtitle')}</p>
+
+              <div className="flex flex-col gap-1.5" data-testid="onboarding-trades">
+                {TRADES.map((tr) => {
+                  const picked = trades.includes(tr.cat);
+                  return (
+                    <button
+                      key={tr.cat} type="button" role="checkbox" aria-checked={picked}
+                      data-testid={`onboarding-trade-${tr.key}`}
+                      onClick={() => { setError(''); setTrades((xs) => (picked
+                        ? xs.filter((x) => x !== tr.cat) : [...xs, tr.cat])); }}
+                      className={`flex items-center gap-2.5 min-h-[52px] rounded-xl border-[1.5px]
+                                  px-2.5 py-2 text-left transition-colors
+                                  ${picked ? 'border-teal bg-teal/[.07]' : 'border-sm-border bg-paper'}`}
+                    >
+                      <span className={`w-[30px] h-[30px] rounded-[9px] shrink-0 grid place-items-center
+                                        ${picked ? 'bg-teal/15' : 'bg-cream-deep'}`}>
+                        <TradeMark trade={tr.key}
+                                   className={picked ? 'text-teal' : 'text-ink-muted'} />
+                      </span>
+                      <span className="flex-1 min-w-0">
+                        <b className="block text-[13px] font-extrabold text-ink truncate">
+                          {t(`trade_${tr.key}`)}
+                        </b>
+                        <em className="block not-italic text-[10.5px] text-ink-muted">
+                          {t('est_templates_n', { n: tr.n })}
+                        </em>
+                      </span>
+                      <span aria-hidden="true"
+                            className={`w-6 h-6 rounded-[7px] border-[1.5px] shrink-0 grid place-items-center
+                                        ${picked ? 'bg-teal border-teal text-paper' : 'border-sm-border'}`}>
+                        {picked && <Check size={13} strokeWidth={3} />}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <p className="text-[11.5px] text-ink-muted" data-testid="onboarding-trades-count">
+                {t('onboarding_trades_count', {
+                  n: trades.length,
+                  v: TRADES.filter((x) => trades.includes(x.cat))
+                    .reduce((a, x) => a + x.n, 0),
+                })}
+              </p>
+            </>
+          )}
+
+          {step === 3 && (
             <>
               <h2 className="font-headings font-bold text-ink text-lg">
                 {t('onboarding_pro_details_title')}
@@ -401,7 +486,7 @@ export default function OnboardingPage() {
           )}
 
           {/* ── STEP 4 — documents ─────────────────────────────────── */}
-          {step === 3 && (
+          {step === 4 && (
             <>
               <h2 className="font-headings font-bold text-ink text-lg">{t('onboarding_docs_title')}</h2>
               <p className="text-ink-muted text-sm">{t('onboarding_docs_subtitle')}</p>
@@ -483,7 +568,8 @@ export default function OnboardingPage() {
                 onClick={() => {
                   if (!stepValid(step)) {
                     return setError(step === 1 ? t('onboarding_pick_city')
-                                               : t('onboarding_fill_required'));
+                      : step === 2 ? t('onboarding_pick_trade')
+                        : t('onboarding_fill_required'));
                   }
                   setError(''); setStep((x) => x + 1);
                 }}

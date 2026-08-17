@@ -80,6 +80,19 @@ class ResetPasswordIn(BaseModel):
     new_password: str = Field(min_length=8)
 
 
+# The seven the estimator offers, mapped onto the vocabulary
+# `pro_profiles.service_categories` has held since the first migration. Every
+# one of the seven has a home there already, which is why this step needs no
+# new column: the marketplace's word for the trade and the estimator's word for
+# it are the same trade.
+TRADE_TO_CATEGORY = {
+    "maler": "painting", "fliesen": "tiling", "elektrik": "electrical",
+    "sanitaer": "plumbing", "garten": "gardening", "reinigung": "home_cleaning",
+    "montage": "handyman",
+}
+ONBOARDING_TRADES = frozenset(TRADE_TO_CATEGORY.values())
+
+
 class OnboardingIn(BaseModel):
     country: str = Field(default="AT", pattern="^[A-Z]{2}$")
     name: Optional[str] = None
@@ -106,6 +119,11 @@ class OnboardingIn(BaseModel):
     # typed is enough to resolve a town from later.
     service_center_lat: Optional[float] = Field(default=None, ge=-90, le=90)
     service_center_lng: Optional[float] = Field(default=None, ge=-180, le=180)
+    # The trades the pro works in, chosen on the third step. Stored in the
+    # column that already exists for this — `pro_profiles.service_categories`,
+    # which the settings page has always read and written — rather than in a
+    # new one. Optional so a client that predates the step still finishes.
+    trades: Optional[list[str]] = None
     turnstile_token: Optional[str] = None
 
 
@@ -485,9 +503,10 @@ async def onboarding(data: OnboardingIn, request: Request,
                                       business_address, business_postal_code,
                                       business_city,
                                       service_center_lat, service_center_lng,
-                                      meister_file_id, meister_status)
+                                      meister_file_id, meister_status,
+                                      service_categories)
             values ($1::uuid, $2, $3, $4, 'pending', $5, $6, $7, $7,
-                    $8, $9, $10, $11, $12, $13, $14)
+                    $8, $9, $10, $11, $12, $13, $14, $15)
             on conflict (user_id) do update
               set business_name = excluded.business_name,
                   contact_person = excluded.contact_person,
@@ -503,7 +522,14 @@ async def onboarding(data: OnboardingIn, request: Request,
                   service_center_lng = coalesce(excluded.service_center_lng,
                                                 pro_profiles.service_center_lng),
                   meister_file_id = excluded.meister_file_id,
-                  meister_status = excluded.meister_status
+                  meister_status = excluded.meister_status,
+                  -- Never emptied by a client that does not send the field:
+                  -- an older app finishing onboarding must not wipe a choice
+                  -- the pro made in Settings.
+                  service_categories = case
+                    when array_length(excluded.service_categories, 1) is null
+                      then pro_profiles.service_categories
+                    else excluded.service_categories end
             """,
             user["id"], data.company_name.strip(), data.contact_person.strip(),
             data.licence_file_id, data.insurance_file_id,
@@ -511,6 +537,9 @@ async def onboarding(data: OnboardingIn, request: Request,
             data.address.strip(), data.postal_code.strip(), data.city.strip(),
             data.service_center_lat, data.service_center_lng,
             data.meister_file_id,
-            "pending" if data.meister_file_id else "missing")
+            "pending" if data.meister_file_id else "missing",
+            # Only the trades the estimator knows about. A client is not
+            # trusted to name a category the catalogue has never heard of.
+            [t for t in (data.trades or []) if t in ONBOARDING_TRADES])
 
     return await load_user(user["id"])
