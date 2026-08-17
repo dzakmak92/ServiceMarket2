@@ -137,9 +137,12 @@ export default function EstimatePage() {
     let live = true;
     (async () => {
       try {
+        /* `lang` on both. Neither call sent it, so the trade tiles and every
+           template row came back German whatever the interface was set to —
+           an English page with a German list on it. */
         const [{ data: m }, { data: j }] = await Promise.all([
-          api.get('/api/estimate/catalogue'),
-          api.get('/api/estimate/jobs'),
+          api.get('/api/estimate/catalogue', { params: { lang } }),
+          api.get('/api/estimate/jobs', { params: { lang } }),
         ]);
         if (!live) return;
         setMeta(m);
@@ -159,11 +162,11 @@ export default function EstimatePage() {
       }
     })();
     return () => { live = false; };
-    /* `t` is read only in the catch. Adding it to the deps would refetch on
-       every language switch to change a message nobody is looking at; the
-       load runs once and the error text is resolved when it fires. */
+    /* `lang` is in the deps and `t` is not. Switching language has to refetch,
+       because the trade names and the template titles are server strings; the
+       error text in the catch is resolved when it fires and needs no reload. */
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [lang]);
 
   /* The section layout comes from the server, which is where the mapping
      lives — the catalogue's own `group` cannot do this: all 19 Maler
@@ -171,7 +174,7 @@ export default function EstimatePage() {
   useEffect(() => {
     if (!trade) { setSections(null); return undefined; }
     let live = true;
-    api.get('/api/estimate/jobs', { params: { trade } })
+    api.get('/api/estimate/jobs', { params: { trade, lang } })
       .then(({ data }) => { if (live) setSections(data.sections || null); })
       .catch(() => { if (live) setSections(null); });
     return () => { live = false; };
@@ -1867,7 +1870,7 @@ function RateCard({ rates, open, onToggle, onSave, onReset }) {
               : t('est_prices_many', { n: rates.length })}
           </p>
           <span className="text-xs text-ink-muted">
-            {manual > 0 ? `${manual} selbst gesetzt` : 'alle gelernt'}
+            {manual > 0 ? t('est_rates_manual', { n: manual }) : t('est_rates_learned')}
           </span>
         </div>
       </button>

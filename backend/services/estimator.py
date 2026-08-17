@@ -59,6 +59,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Optional
 
+from services import catalogue_i18n
+
 logger = logging.getLogger(__name__)
 
 CATALOGUE_PATH = Path(__file__).resolve().parent.parent / "data" / "estimation_catalogue.json"
@@ -1008,7 +1010,7 @@ def _shared_choice(key: str, name: str, axis: dict) -> dict:
     }
 
 
-def meta() -> dict:
+def meta(lang: str = "de") -> dict:
     """The catalogue's shape, for building pickers without shipping all of it.
 
     Counts describe what is on offer, not what is in the file. A picker that
@@ -1042,7 +1044,13 @@ def meta() -> dict:
                          key=lambda g: g["group"]),
         # In OFFERED_TRADES order, not alphabetical: the order is a product
         # decision about which trades lead, and sorting would discard it.
-        "trades": [{"key": k, "label": TRADE_LABELS.get(k, k), "count": counts.get(k, 0)}
+        # Translated here rather than in the route: the label is a catalogue
+        # string like every other one, and a caller that forgot to translate it
+        # is exactly how the picker ended up German under an English heading.
+        "trades": [{"key": k,
+                    "label": catalogue_i18n.translate(TRADE_LABELS.get(k, k), lang),
+                    "label_de": TRADE_LABELS.get(k, k),
+                    "count": counts.get(k, 0)}
                    for k in OFFERED_TRADES if counts.get(k)],
         "conditions": list(cat["modifiers"]["condition_uplift"]),
         "access": list(cat["modifiers"]["access_uplift"]),

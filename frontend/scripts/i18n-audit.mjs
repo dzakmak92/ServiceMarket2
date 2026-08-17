@@ -274,9 +274,49 @@ for (const f of files) {
      JSXText node whatever the line breaks look like. */
   const ast = asts.get(f);
   if (!ast) continue;
-  (function visit(n) {
+  (function visit(n, parent) {
     if (!n || typeof n !== 'object') return;
-    if (Array.isArray(n)) { n.forEach(visit); return; }
+    if (Array.isArray(n)) { n.forEach((c) => visit(c, parent)); return; }
+    /* A string rendered from inside an expression container is read by exactly
+       the same person as the JSXText beside it, and until this branch existed
+       the audit could not see one. `{manual > 0 ? `${manual} selbst gesetzt`
+       : 'alle gelernt'}` sat on the estimator's price panel in German under an
+       English heading and the audit printed a clean bill.
+
+       Only containers in *child* position: an attribute's container holds
+       class names, ids and handlers, none of which anybody reads. */
+    if (n.type === 'JSXExpressionContainer'
+        && (parent?.type === 'JSXElement' || parent?.type === 'JSXFragment')) {
+      (function strings(m) {
+        if (!m || typeof m !== 'object') return;
+        if (Array.isArray(m)) { m.forEach(strings); return; }
+        /* Stop at nested JSX. A child container often holds a whole element —
+           `{open && <div className="mb-5">…</div>}` — and descending into it
+           would report that element's class names as prose. The outer visitor
+           reaches the element itself, so nothing is lost by stopping here. */
+        if (m.type === 'JSXElement' || m.type === 'JSXFragment'
+            || m.type === 'JSXAttribute') return;
+        /* A class list assembled in a variable inside the container, e.g.
+           `const cls = `h-10 rounded-[10px] …`` in a `.map` body. It reads as
+           prose to `isProse` and is read by nobody. */
+        const cssish = (v) => /(?:^|\s)(?:h|w|p|m|px|py|pt|pb|pl|pr|mt|mb|ml|mr|gap|text|bg|border|rounded|flex|grid|items|justify|font|leading|tracking|shadow|ring|opacity|min|max|inset|top|left|right|bottom|z|overflow|space|divide|transition|hover:|focus:|group-)-\[?[\w.[\]/%-]+/.test(v);
+        if (m.type === 'StringLiteral' && isProse(m.value) && !cssish(m.value)) {
+          hardcoded.push({ file: rel(f), line: m.loc.start.line,
+                           audience: audience(rel(f)), kind: 'rendered', text: m.value });
+        }
+        if (m.type === 'TemplateLiteral') {
+          const flat = m.quasis.map((q) => q.value.cooked).join(' ').replace(/\s+/g, ' ').trim();
+          if (isProse(flat) && !cssish(flat)) {
+            hardcoded.push({ file: rel(f), line: m.loc.start.line,
+                             audience: audience(rel(f)), kind: 'rendered', text: flat });
+          }
+        }
+        for (const k in m) {
+          if (k === 'loc' || k === 'leadingComments' || k === 'trailingComments') continue;
+          strings(m[k]);
+        }
+      }(n.expression));
+    }
     if (n.type === 'JSXText') {
       // JSX collapses runs of whitespace, so the string a person actually
       // reads is the collapsed one — and that is what must be matched
@@ -289,9 +329,9 @@ for (const f of files) {
     }
     for (const k in n) {
       if (k === 'loc' || k === 'leadingComments' || k === 'trailingComments') continue;
-      visit(n[k]);
+      visit(n[k], n);
     }
-  }(ast.program));
+  }(ast.program, null));
 }
 
 /* A file that will not parse is not a file with no strings in it. Failing

@@ -217,14 +217,19 @@ async def _estimate(pro_id: str, body: "EstimateIn", *, tier: Optional[str] = No
 
 
 @router.get("/catalogue")
-async def get_catalogue(user: dict = Depends(get_current_user)):
+async def get_catalogue(lang: str = Query(default="de", pattern="^(de|en|tr|es)$"),
+                        user: dict = Depends(get_current_user)):
     """Shape of the catalogue — groups, trades, the shared answer vocabularies.
 
     Enough to build a picker without shipping 94 job types and 119 notes to a
     phone that only needs one of them.
+
+    `lang` is not optional in practice. Without it this route answered in German
+    whatever the interface was set to, and the trade grid — the estimator's
+    first screen — read *Maler · Fliesen · Sanitär* under an English heading.
     """
     await require_pro_id(user)
-    return estimator.meta()
+    return estimator.meta(lang)
 
 
 @router.get("/jobs")

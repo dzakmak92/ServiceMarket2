@@ -207,3 +207,46 @@ print("\n" + ("ALL PASS" if not fails else f"{len(fails)} FAILURE(S)"))
 for f in fails:
     print("  · " + f)
 sys.exit(1 if fails else 0)
+
+
+# ── The trade grid, which is the estimator's first screen ───────────────
+#
+# `/estimate/catalogue` took no `lang` at all and `TRADE_LABELS` was German
+# only, so an English-speaking pro got an English heading, an English search
+# box and English counts over seven German tiles. The 1,453 strings behind that
+# grid were translated; the seven words on it were not, and those seven are the
+# ones you see first. These three assertions are what stops it coming back.
+def test_every_trade_label_is_translated():
+    """Asked through `translate`, not against one table.
+
+    All seven were already in ESTIMATE_STRINGS — the words were never the
+    problem. Asserting against a particular table would pass while the screen
+    stayed German, which is exactly what happened here.
+    """
+    from services import catalogue_i18n as I
+    from services.estimator import TRADE_LABELS
+
+    missing = {}
+    for german in TRADE_LABELS.values():
+        gaps = [lg for lg in I.LANGS if I.translate(german, lg) == german]
+        if gaps:
+            missing[german] = gaps
+    assert not missing, f"trade labels with no translation: {missing}"
+
+
+def test_meta_answers_in_the_language_it_was_asked_in():
+    from services import estimator as E
+
+    de = {t["key"]: t["label"] for t in E.meta("de")["trades"]}
+    en = {t["key"]: t["label"] for t in E.meta("en")["trades"]}
+    assert de, "no trades on offer — the rest of this test proves nothing"
+    same = [k for k in de if de[k] == en.get(k)]
+    assert not same, f"still German when asked for English: {same}"
+
+
+def test_meta_keeps_the_german_alongside():
+    """The German is what a quote was agreed in, so it stays on the payload."""
+    from services import estimator as E
+
+    for row in E.meta("en")["trades"]:
+        assert row["label_de"], f"{row['key']} lost its German label"

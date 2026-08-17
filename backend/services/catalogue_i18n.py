@@ -4572,6 +4572,8 @@ ESTIMATE_STRINGS: dict[str, dict[str, str]] = {
 # Every table in this module, in the order a lookup should try them. Split by
 # what they describe rather than merged, so a translator can be handed one
 # section at a time and so the coverage test can report which part is short.
+
+
 TABLES: tuple[dict, ...] = (ESTIMATE_STRINGS, NOTES, QUOTE_LINES, OPTIONS, QUESTIONS, AXES, JOB_TITLES)
 
 
