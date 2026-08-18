@@ -198,13 +198,40 @@ export default function EstimatePage() {
 
   /* The section layout comes from the server, which is where the mapping
      lives — the catalogue's own `group` cannot do this: all 19 Maler
-     templates share the group "Maler & Tapezierer". */
+     templates share the group "Maler & Tapezierer".
+
+     Cached per trade and per language, and the other six prefetched once the
+     first one has arrived. Seven small responses bought once means switching
+     trade redraws from memory instead of waiting on a round trip, which is
+     the difference between the ring changing and the ring disappearing and
+     coming back. */
+  /* The cache holds promises, not values. A value would need a second
+     "in flight" set to stop the prefetch and a switch racing each other into
+     two requests; a promise is both the claim and the result. An already
+     resolved one settles in a microtask, before the browser paints, so a
+     cached trade draws in the same frame as the tap. */
+  const secCache = useRef({});
+  const [sectionsFor, setSectionsFor] = useState(null);
+  const loadSections = useCallback((key, tradeKey) => {
+    if (!(key in secCache.current)) {
+      secCache.current[key] = api
+        .get('/api/estimate/jobs', { params: { trade: tradeKey, lang } })
+        .then(({ data }) => data.sections || null)
+        .catch(() => { delete secCache.current[key]; return null; });
+    }
+    return secCache.current[key];
+  }, [lang]);
+
   useEffect(() => {
-    if (!trade) { setSections(null); return undefined; }
+    if (!trade) { setSections(null); setSectionsFor(null); return undefined; }
     let live = true;
-    api.get('/api/estimate/jobs', { params: { trade, lang } })
-      .then(({ data }) => { if (live) setSections(data.sections || null); })
-      .catch(() => { if (live) setSections(null); });
+    loadSections(`${trade}|${lang}`, trade).then((secs) => {
+      /* `sectionsFor` is what stops a stale layout being drawn against new
+         jobs. Maler's six groups filtered by Fliesen's job keys come to zero
+         wedges, which is the ring vanishing for one frame — the thing this
+         whole arrangement exists to prevent. */
+      if (live) { setSections(secs); setSectionsFor(trade); }
+    });
     return () => { live = false; };
     /* `lang` is read in the request and so it belongs here. It was left out
        when the language was added to this call, which made the lint rule warn
@@ -213,8 +240,20 @@ export default function EstimatePage() {
        build that happened to be clean. Refetching on a language change is
        cheap and this list is small; the alternative, dropping `lang` from the
        request, would mean reasoning about which fields of the response are
-       language-dependent every time somebody reads a new one from it. */
-  }, [trade, lang]);
+       language-dependent every time somebody reads a new one from it.
+       `loadSections` is memoised on `lang`, so listing it changes nothing at
+       runtime and keeps the rule quiet — which matters, because a warning is
+       a build failure on Vercel and this is the exact effect that caused the
+       last one. */
+  }, [trade, lang, loadSections]);
+
+  /* The other six, quietly, so the first switch is as instant as the second.
+     Fired only after the current trade's own layout is in, so it never
+     competes with the request the screen is actually waiting on. */
+  useEffect(() => {
+    if (!sectionsFor || !meta?.trades?.length) return;
+    for (const tr of meta.trades) loadSections(`${tr.key}|${lang}`, tr.key);
+  }, [sectionsFor, meta, lang, loadSections]);
 
   /* Maler's "fassade" is not a group Fliesen has, so the open group cannot
      survive a change of trade — it would open an empty dial. */
@@ -238,6 +277,10 @@ export default function EstimatePage() {
    * trade's distinct total, which the heading above already carries.
    */
   const dial = useMemo(() => {
+    /* `sectionsFor !== trade` means the layout on hand belongs to the trade
+       we just left. Drawing it would filter its groups by the new trade's job
+       keys, get zero wedges, and blink the ring out for a frame. */
+    if (sectionsFor !== trade) return null;
     if (!trade || !sections || sections.length < 2) return null;
     const have = new Set(visible.map((j) => j.key));
     const wedges = sections
@@ -248,7 +291,7 @@ export default function EstimatePage() {
       }))
       .filter((s) => s.count);
     return wedges.length >= 2 ? wedges : null;
-  }, [trade, sections, visible, lang]);
+  }, [trade, sections, sectionsFor, visible, lang]);
 
   /* Resolved, not stored: `group` can name a section that this trade does not
      have, or one whose templates have all been retired. */
@@ -528,7 +571,11 @@ export default function EstimatePage() {
      app that is not cream, and the row treatment below pays for it. */
   return (
     <div className="min-h-screen bg-paper pb-24">
-      <div className="max-w-4xl mx-auto px-4 pt-6">
+      {/* pt-2, not pt-6. The cream app bar is a banner with its own weight;
+          24 px of white under it before the back link read as the page not
+          having started yet, and it pushed the trade row and the ring down for
+          nothing. */}
+      <div className="max-w-4xl mx-auto px-4 pt-2">
         {/* Inside a trade the heading is the trade, and it is a control. A
             page title reading "Kalkulation" over a subtitle reading "Maler ·
             19 Vorlagen" spent the top of the screen saying what the screen
@@ -600,7 +647,7 @@ export default function EstimatePage() {
             <JobPicker jobs={visible}
                        sections={sections}
                        onPick={openJob} t={t} lang={lang}
-                       dial={dial && (
+                       dial={dial ? (
                          /* No card. It had one to lift the ring off the
                             cream; the page is white now, so a white card on it
                             would be a border drawn round nothing. */
@@ -610,7 +657,17 @@ export default function EstimatePage() {
                                       promise={t('est_promise_lead')}
                                       seconds={t('est_promise_time')} />
                          </div>
-                       )}
+                       ) : sectionsFor !== trade ? (
+                         /* Only ever seen on the first visit to a trade, and
+                            only for as long as one request takes — every
+                            later switch draws from the cache in the same
+                            frame. It is here so that first request cannot
+                            pull the list up and drop it again: the aspect
+                            ratio is the ring's own 354 x 288, so the space it
+                            holds is exactly the space the ring will take. */
+                         <div className="mb-3 -mx-1 aspect-[354/288]"
+                              data-testid="estimate-dial-pending" aria-hidden="true" />
+                       ) : null}
                        cards={trade ? (
                          <EstimateCards jobs={visible}
                                         sections={sections}
@@ -620,17 +677,26 @@ export default function EstimatePage() {
                                         onSelection={(positions, total, unpriced) =>
                                           setSelection({ positions, total, unpriced })} />
                        ) : null} />
-            {/* Accuracy and the rate card are expert tools, not the task. They
-                sat above the picker, so the first thing on the screen was
-                never the thing the pro came to do. Below it now — still
-                reachable, and both endpoints still have a caller. */}
-            <div className="mt-6 space-y-2">
+            {/* The learned-rates card is off this screen. It is an expert
+                tool — a list of the hourly and unit rates the app has inferred
+                from accepted quotes, with an override on each — and it was the
+                last thing under a page whose job is "pick a template and get a
+                number". Nobody scrolling past nineteen templates is looking
+                for it, and having it there made the screen end on machinery.
+
+                Not deleted: `RateCard`, `saveRate` and `resetRate` are intact
+                and `/api/profile/pro/rates` is still fetched, because the
+                learned rate is still what the estimate is priced with — the
+                per-position override inside an open template reads the same
+                data. Only the panel is gone, so it can come back behind a
+                control on the settings screen without being rebuilt.
+
+                Accuracy stays. It answers "should I trust this number", which
+                is a question about the thing the screen just produced. */}
+            <div className="mt-6">
               <AccuracyCard data={accuracy} open={showAccuracy}
                             onToggle={() => setShowAccuracy((o) => !o)}
                             onRecalibrate={recalibrate} calibrating={calibrating} />
-              <RateCard rates={rates} open={showRates}
-                        onToggle={() => setShowRates((o) => !o)}
-                        onSave={saveRate} onReset={resetRate} />
             </div>
           </>
         ) : (

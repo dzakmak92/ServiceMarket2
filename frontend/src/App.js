@@ -131,9 +131,14 @@ function AppShell() {
           app on an uncaught render error, so a single bad field reference —
           `monthly_fees` coming back as a list and being handed to toFixed —
           left a tradesperson looking at a blank browser window with no way
-          back but the back button. Keyed on the path so navigating away
-          clears it. */}
-      <ErrorBoundary t={t} key={location.pathname}>
+          back but the back button.
+
+          `resetKey`, not `key`. As a key this remounted every screen in the
+          app on every navigation, parameter changes included, which is what
+          made switching trade on the calculation page tear the page down and
+          rebuild it. The boundary clears itself on the path changing instead;
+          see the note in ErrorBoundary.jsx. */}
+      <ErrorBoundary t={t} resetKey={location.pathname}>
       <Routes>
         <Route path="/auth" element={<AuthRoute />} />
         {/* Public by necessity: the person using these is locked out. Both

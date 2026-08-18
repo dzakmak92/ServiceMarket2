@@ -13,6 +13,17 @@ import { AlertTriangle, RefreshCw } from 'lucide-react';
  * Deliberately plain: no error reporting service, no stack trace on screen.
  * The message says what happened and offers the two things that actually
  * help — reload, and go back — in the user's language where a `t` is passed.
+ *
+ * **`resetKey` rather than `key`.** App.js used to mount this as
+ * `<ErrorBoundary key={location.pathname}>` so that navigating away from a
+ * crashed screen cleared the error. It did — by throwing away and rebuilding
+ * the entire route tree on *every* URL change, including a change of route
+ * parameter. Switching trade on the calculation page (`/estimate/maler` →
+ * `/estimate/fliesen`) unmounted the page, reset its state, refetched the
+ * whole catalogue and flashed a full-screen spinner: measured, five API calls
+ * and roughly 80 ms with nothing on the screen. Clearing on a prop change does
+ * the same job for the case it was for and costs nothing on the case it was
+ * not.
  */
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -22,6 +33,15 @@ export default class ErrorBoundary extends React.Component {
 
   static getDerivedStateFromError(error) {
     return { error };
+  }
+
+  componentDidUpdate(prev) {
+    /* Navigated somewhere else while showing an error — drop it and let the
+       new screen try. Guarded on `this.state.error` so a normal navigation
+       does not set state at all. */
+    if (this.state.error && prev.resetKey !== this.props.resetKey) {
+      this.setState({ error: null });
+    }
   }
 
   componentDidCatch(error, info) {
