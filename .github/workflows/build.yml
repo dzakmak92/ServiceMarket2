@@ -1,0 +1,39 @@
+# Runs the deploy build, exactly as Vercel runs it.
+#
+# This exists because of a failure nobody could see. Vercel sets CI=true, and
+# create-react-app treats every ESLint warning as an error when it is set — so
+# a single `react-hooks/exhaustive-deps` warning, which builds fine locally and
+# prints "Compiled with warnings", failed the production build. Deploys kept
+# failing while main kept moving, and the site went on serving the last build
+# that happened to be clean. Nothing in the repository said so.
+#
+# The command below is copied from vercel.json's buildCommand and has to stay
+# copied from it. If that line changes, change this one.
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # No lockfile in frontend/, so no dependency cache to key on — the
+          # install is slower than it needs to be and that is the honest state
+          # of the repo rather than something to paper over here.
+          node-version: '22'
+      - name: npm install
+        working-directory: frontend
+        run: npm install
+      - name: build with CI=true, as Vercel does
+        working-directory: frontend
+        env:
+          CI: 'true'
+          GENERATE_SOURCEMAP: 'false'
+        run: npm run build

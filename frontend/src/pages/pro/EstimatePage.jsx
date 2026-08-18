@@ -189,7 +189,15 @@ export default function EstimatePage() {
       .then(({ data }) => { if (live) setSections(data.sections || null); })
       .catch(() => { if (live) setSections(null); });
     return () => { live = false; };
-  }, [trade]);
+    /* `lang` is read in the request and so it belongs here. It was left out
+       when the language was added to this call, which made the lint rule warn
+       — and a warning is a build failure on Vercel, where CI is set. Every
+       deploy from that commit onward failed, so the site kept serving the last
+       build that happened to be clean. Refetching on a language change is
+       cheap and this list is small; the alternative, dropping `lang` from the
+       request, would mean reasoning about which fields of the response are
+       language-dependent every time somebody reads a new one from it. */
+  }, [trade, lang]);
 
   /* Maler's "fassade" is not a group Fliesen has, so the open group cannot
      survive a change of trade — it would open an empty dial. */
