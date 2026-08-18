@@ -31,11 +31,16 @@ const PATHS = {
   ),
   elektrik: <path d="M18 3 7 18h7l-2 11 11-15h-7z" />,
   sanitaer: <path d="M16 3s9 9.5 9 15a9 9 0 0 1-18 0c0-5.5 9-15 9-15z" />,
+  /* Two leaves off a stem. The first draft hung both leaves from the same
+     point at the bottom, which made a 24 × 15 shape where the other six
+     average 23.9 tall — 63 % of the height, and next to them it read as a
+     smaller icon rather than a different one. Staggering the leaves up the
+     stem gives 24 × 25, within 5 % of the rest. */
   garten: (
     <>
-      <path d="M16 29c0-8 5-14 12-15 0 8-5 14-12 15z" />
-      <path d="M16 29C16 21 11 15 4 14c0 8 5 14 12 15z" />
-      <path d="M16 29V17" />
+      <path d="M16 17c0-7 5-12 12-13 0 7-5 12-12 13z" />
+      <path d="M16 26c0-7-5-12-12-13 0 7 5 12 12 13z" />
+      <path d="M16 29V14" />
     </>
   ),
   reinigung: (

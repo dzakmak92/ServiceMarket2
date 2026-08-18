@@ -4543,8 +4543,12 @@ ESTIMATE_STRINGS: dict[str, dict[str, str]] = {
     'Mehrere Mulden oder Abrollcontainer': {
         "en": 'Several skips or a roll-off container', "tr": 'Birden fazla konteyner veya kancalı konteyner',
         "es": 'Varios contenedores o un contenedor de gancho'},
+    # The trade names are picker labels first: seven cards, four of them
+    # 77.5 px wide. German is one word each; English was a phrase each
+    # ("Painting and decorating"), which wrapped to three lines and forced the
+    # whole row down to 10.5 px. Shortened to the noun the card is asking for.
     'Maler': {
-        "en": 'Painting and decorating', "tr": 'Boyacılık',
+        "en": 'Painting', "tr": 'Boyacılık',
         "es": 'Pintura'},
     'Fliesen': {
         "en": 'Tiling', "tr": 'Fayans',
@@ -4553,17 +4557,14 @@ ESTIMATE_STRINGS: dict[str, dict[str, str]] = {
         "en": 'Electrical', "tr": 'Elektrik',
         "es": 'Electricidad'},
     'Sanitär': {
-        "en": 'Plumbing and heating', "tr": 'Tesisat',
+        "en": 'Plumbing', "tr": 'Tesisat',
         "es": 'Fontanería'},
     'Garten': {
-        "en": 'Garden and grounds', "tr": 'Bahçe',
+        "en": 'Garden', "tr": 'Bahçe',
         "es": 'Jardinería'},
     'Reinigung': {
         "en": 'Cleaning', "tr": 'Temizlik',
         "es": 'Limpieza'},
-    'Montage / Allround': {
-        "en": 'Fitting and handyman', "tr": 'Montaj / Genel işler',
-        "es": 'Montaje / Multiservicios'},
     'Material': {
         "en": 'Material', "tr": 'Malzeme',
         "es": 'Material'},

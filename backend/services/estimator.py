@@ -187,18 +187,24 @@ _FOLD = str.maketrans({"ä": "a", "ö": "o", "ü": "u", "ß": "s",
 # one goes on working and reprints correctly. Only the picker is narrowed.
 #
 # Widening this list is the whole change needed to offer a trade again.
+# Reinigung last, deliberately. The picker draws these four-then-three, and
+# cleaning is the one a tradesperson reaches for least often — it belongs at the
+# end of the second row rather than in the middle of it.
 OFFERED_TRADES = (
-    "maler", "fliesen", "elektrik", "sanitaer", "garten", "reinigung", "montage",
+    "maler", "fliesen", "elektrik", "sanitaer", "garten", "montage", "reinigung",
 )
 
-# What to call them. The catalogue keys are terse and two of them read badly on
-# their own: `elektrik` is the trade but `Elektriker` is the person, and
-# `montage` covers four different groups, which is why it is named for the
-# range rather than the word.
+# What to call them. The catalogue keys are terse and `elektrik` is the trade
+# where `Elektriker` is the person, so the label is not just the key title-cased.
+#
+# `montage` was "Montage / Allround" — the range rather than the word, because
+# it covers four groups. On the picker that was a card 77.5 px wide holding a
+# 17-character name with a slash in it: it wrapped to three lines and the slash
+# orphaned. "Montage" is what the card can hold and what the trade is called.
 TRADE_LABELS = {
     "maler": "Maler", "fliesen": "Fliesen", "elektrik": "Elektrik",
-    "sanitaer": "Sanitär", "garten": "Garten", "reinigung": "Reinigung",
-    "montage": "Montage / Allround",
+    "sanitaer": "Sanitär", "garten": "Garten", "montage": "Montage",
+    "reinigung": "Reinigung",
 }
 
 

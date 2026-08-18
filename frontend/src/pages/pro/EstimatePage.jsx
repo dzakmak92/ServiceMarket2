@@ -5,7 +5,7 @@ import { useLang } from '../../contexts/LangContext';
 import NumberField from '../../components/NumberField';
 import EstimateCards from './EstimateCards';
 import GroupDial from '../../components/pro/GroupDial';
-import TradeCarousel from '../../components/pro/TradeCarousel';
+import TradeRow from '../../components/pro/TradeRow';
 import { fmtEur0 as fmtEur, fmtEur as fmtEur2, fmtNum as fmtNumRaw } from '../../utils/money';
 
 import {
@@ -527,9 +527,9 @@ export default function EstimatePage() {
               <ArrowLeft size={16} />
               {t('est_all_trades')}
             </button>
-            <TradeCarousel trades={meta?.trades || []} value={trade}
-                           onChange={(k) => leave(`/estimate/${k}`)}
-                           label={t('est_pick_trade')} unit={t('est_templates')} />
+            <TradeRow trades={meta?.trades || []} value={trade}
+                      onChange={(k) => leave(`/estimate/${k}`)}
+                      label={t('est_pick_trade')} unit={t('est_templates')} />
           </div>
         ) : (
           <div className="flex items-center gap-3 mb-4">
