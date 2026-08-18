@@ -12,21 +12,11 @@ import {
   Loader2, AlertTriangle, ArrowLeft, Calculator, FileText,
   Trash2, Clock, Package, Info, MapPin, TrendingUp, Bookmark,
   RefreshCw, Coins, Pencil, RotateCcw, Check, Layers,
-  Paintbrush, Grid3x3, Zap, Droplet, Sprout, SprayCan, Wrench, Hammer,
 } from 'lucide-react';
 
 /* The estimator writes hours and square metres with one decimal;
    money.js defaults to none. */
 const fmtNum = (v, d = 1) => fmtNumRaw(v, d);
-
-// One icon per offered trade. Keyed on the catalogue's own trade keys, so a
-// trade added to OFFERED_TRADES on the server shows up here with the Hammer
-// fallback rather than an empty tile.
-const TRADE_ICON = {
-  maler: Paintbrush, fliesen: Grid3x3, elektrik: Zap, sanitaer: Droplet,
-  garten: Sprout, reinigung: SprayCan, montage: Wrench,
-};
-
 
 const TIERS = ['basic', 'standard', 'premium'];
 const TIER_LABEL = { basic: 'Basis', standard: 'Standard', premium: 'Premium' };
@@ -70,10 +60,11 @@ export default function EstimatePage() {
   const [params] = useSearchParams();
   const [meta, setMeta] = useState(null);
   const [jobs, setJobs] = useState([]);
-  // The trade lives in the URL, not in component state. `/estimate` is the
-  // seven cards; `/estimate/maler` is that trade's templates. That makes each
-  // card a real link — the back button works, the page can be shared, and a
-  // reload does not throw the pro back to the start.
+  // The trade lives in the URL, not in component state: `/estimate/maler` is
+  // Maler's templates. That makes every trade a real address — the back button
+  // works, the page can be shared, and a reload does not throw the pro back to
+  // the start. `/estimate` itself is now only a doorway; see the redirect
+  // below.
   const navigate = useNavigate();
   const { trade = '' } = useParams();
   const [loading, setLoading] = useState(true);
@@ -86,6 +77,32 @@ export default function EstimatePage() {
      against `sections` at render, because the trade can change under this
      state and a key from the previous trade would open nothing. */
   const [group, setGroup] = useState(null);
+
+  /* `/estimate` is a doorway, not a screen.
+     
+     It used to be a grid of seven cards under "Kalkulation · Wofür rechnen
+     Sie?" — a whole screen whose only job was to get you to the next one. The
+     seven trades are now a row on the working screen, so there is nothing left
+     for this address to show and it forwards to a trade instead.
+
+     `replace: true` matters: without it, going back from `/estimate/maler`
+     lands on `/estimate`, which forwards straight to `/estimate/maler` again,
+     and the back button never escapes the estimator.
+
+     Which trade: the last one used on this device, because a tiler opens this
+     to price tiling. Falling back to the first offered rather than to a
+     hardcoded `maler`, so hiding a trade on the server cannot send anybody to
+     an address with nothing at it. */
+  useEffect(() => {
+    if (trade || !meta?.trades?.length) return;
+    const last = localStorage.getItem('est_trade');
+    const known = meta.trades.some((x) => x.key === last);
+    navigate(`/estimate/${known ? last : meta.trades[0].key}`, { replace: true });
+  }, [trade, meta, navigate]);
+
+  useEffect(() => {
+    if (trade) localStorage.setItem('est_trade', trade);
+  }, [trade]);
 
   const [selected, setSelected] = useState(null);   // survey payload
   const [answers, setAnswers] = useState({});
@@ -520,12 +537,17 @@ export default function EstimatePage() {
             circles would be offering to leave a form half-answered. */}
         {trade && !selected ? (
           <div className="mb-3">
-            <button type="button" onClick={() => leave('/estimate', '/')}
+            {/* This said "Alle Gewerke" and went to `/estimate`. Both halves
+                stopped being true at once: every trade is on the screen right
+                below it, and `/estimate` now forwards back to here, so the
+                link was a loop as well as a lie. It goes home instead — the
+                estimator still needs one way out that is not the tab bar. */}
+            <button type="button" onClick={() => leave('/')}
                     className="flex items-center gap-1.5 -ml-2 px-2 min-h-[44px]
                                text-ink-muted hover:text-ink font-bold text-[13px]"
                     data-testid="estimate-back">
               <ArrowLeft size={16} />
-              {t('est_all_trades')}
+              {t('back')}
             </button>
             <TradeRow trades={meta?.trades || []} value={trade}
                       onChange={(k) => leave(`/estimate/${k}`)}
@@ -575,9 +597,8 @@ export default function EstimatePage() {
 
         {!selected ? (
           <>
-            <JobPicker meta={meta} jobs={visible} trade={trade}
+            <JobPicker jobs={visible}
                        sections={sections}
-                       onPickTrade={(k) => navigate(`/estimate/${k}`)}
                        onPick={openJob} t={t} lang={lang}
                        dial={dial && (
                          /* No card. It had one to lift the ring off the
@@ -738,44 +759,13 @@ export default function EstimatePage() {
   );
 }
 
-function JobPicker({ meta, jobs, trade, sections,
-                    onPickTrade, onPick, t, lang, cards, dial }) {
-  const trades = meta?.trades || [];
-
-  // ── /estimate — the seven trades ──────────────────────────────────
-  if (!trade) {
-    return (
-      <div className="grid grid-cols-2 gap-2.5" data-testid="estimate-trades">
-        {trades.map((tr, i) => {
-          const Icon = TRADE_ICON[tr.key] || Hammer;
-          // The last card spans both columns when the count is odd, so the
-          // grid never ends on a lone half-width card.
-          const wide = trades.length % 2 === 1 && i === trades.length - 1;
-          return (
-            <button
-              key={tr.key} type="button" onClick={() => onPickTrade(tr.key)}
-              data-testid={`estimate-trade-${tr.key}`}
-              className={`${wide ? 'col-span-2 min-h-[88px]' : 'min-h-[104px]'}
-                          relative overflow-hidden text-left bg-paper border border-sm-border
-                          rounded-[18px] px-3.5 py-3.5 flex flex-col justify-end gap-0.5
-                          hover:border-teal/40 transition-colors
-                          focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal/30`}
-            >
-              <Icon size={64} strokeWidth={1.5} aria-hidden="true"
-                    className="absolute -right-1.5 -top-1 opacity-[.16] text-teal
-                               pointer-events-none" />
-              <span className="relative font-headings font-bold text-[15.5px] tracking-[-.022em]">
-                {tr.label}
-              </span>
-              <span className="relative text-[11.5px] text-ink-muted">
-                {tr.count} {t('est_templates')}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    );
-  }
+function JobPicker({ jobs, sections, onPick, t, lang, cards, dial }) {
+  /* The seven-card grid that used to stand here is gone. It was a whole screen
+     whose only job was to get you to the next one: you read "Kalkulation ·
+     Wofür rechnen Sie?", tapped a card, and only then saw anything you could
+     price. The seven trades now sit as a row above the dial on the screen that
+     does the work, so that first tap buys a trade *and* a group instead of
+     just a trade — and `/estimate` sends you straight there. */
 
   // ── /estimate/:trade — that trade's templates ─────────────────────
   //
