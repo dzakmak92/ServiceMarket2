@@ -62,9 +62,12 @@ export default function InstallPrompt() {
 
   if (!show) return null;
 
+  /* Positioned by the stack in App.js rather than by itself. This used to be
+     `fixed bottom-20`, and so is the update banner, which put the two of them
+     on exactly the same 20 px of screen whenever both had something to say. */
   return (
     <div
-      className="fixed bottom-20 left-3 right-3 md:left-auto md:right-6 md:max-w-sm z-[300] bg-paper border border-sm-border rounded-2xl shadow-2xl p-4"
+      className="pointer-events-auto bg-paper border border-sm-border rounded-2xl shadow-2xl p-4"
       data-testid="install-prompt"
     >
       <div className="flex items-start justify-between gap-3">

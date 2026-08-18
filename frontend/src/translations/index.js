@@ -1,5 +1,12 @@
 const t = {
   en: {
+    // The "a new build is deployed" banner. `upd_body` names the cost of
+    // saying yes, because the button reloads the page and a half-built
+    // calculation does not survive that.
+    upd_title: 'A new version is available',
+    upd_body: 'Reload to switch to it. Anything you have not saved yet will be lost.',
+    upd_confirm: 'Reload now',
+    upd_later: 'Later',
     est_one_more_note: '1 more note',
     est_qty: 'Quantity',
     quote_verdict: 'Outcome',
@@ -1834,6 +1841,10 @@ const t = {
   },
 
   de: {
+    upd_title: 'Eine neue Version ist verfügbar',
+    upd_body: 'Neu laden, um zu wechseln. Noch nicht gespeicherte Eingaben gehen dabei verloren.',
+    upd_confirm: 'Jetzt neu laden',
+    upd_later: 'Später',
     est_one_more_note: '1 weiterer Hinweis',
     est_qty: 'Menge',
     quote_verdict: 'Ergebnis',
@@ -3556,6 +3567,10 @@ const t = {
   },
 
   tr: {
+    upd_title: 'Yeni bir sürüm mevcut',
+    upd_body: 'Geçmek için sayfayı yeniden yükleyin. Henüz kaydetmediğiniz her şey kaybolur.',
+    upd_confirm: 'Şimdi yeniden yükle',
+    upd_later: 'Daha sonra',
     est_one_more_note: '1 not daha',
     est_qty: 'Miktar',
     quote_verdict: 'Sonuç',
@@ -5210,6 +5225,10 @@ const t = {
   },
 
   es: {
+    upd_title: 'Hay una versión nueva disponible',
+    upd_body: 'Recarga para cambiar a ella. Se perderá todo lo que aún no hayas guardado.',
+    upd_confirm: 'Recargar ahora',
+    upd_later: 'Más tarde',
     est_one_more_note: '1 aviso más',
     est_qty: 'Cantidad',
     quote_verdict: 'Resultado',

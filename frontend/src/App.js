@@ -7,11 +7,12 @@ import api from "./api/client";
 import { startAutoFlush } from "./offline/queue";
 import { LangProvider, useLang } from "./contexts/LangContext";
 import ErrorBoundary from "./components/ErrorBoundary";
-import { CookieConsentProvider } from "./contexts/CookieConsentContext";
+import { CookieConsentProvider, useCookieConsent } from "./contexts/CookieConsentContext";
 
 import Header from "./components/Header";
 import MobileNav from "./components/MobileNav";
 import InstallPrompt from "./components/InstallPrompt";
+import UpdatePrompt from "./components/UpdatePrompt";
 import AuthPage from "./pages/AuthPage";
 import OnboardingPage from "./pages/OnboardingPage";
 
@@ -359,7 +360,35 @@ function AppShell() {
       </ErrorBoundary>
 
       {showChrome && <MobileNav />}
-      {showChrome && <InstallPrompt />}
+
+      {showChrome && <BottomPrompts />}
+    </div>
+  );
+}
+
+/**
+ * The bottom-left stack: install nudge, then update banner.
+ *
+ * Three separate components were each positioning themselves `fixed bottom-20`
+ * — the cookie banner, the install prompt and the update banner — so whenever
+ * two of them had something to say they were drawn on the same strip of screen.
+ * The update banner is the one with the highest z-index, which meant it landed
+ * on top of the cookie banner and covered the accept buttons of a legal gate.
+ *
+ * These two now share one column so they stack instead of overlapping, and the
+ * column yields entirely while the cookie banner is up: consent is a gate, it
+ * is answered once, and nothing may sit over it. `pointer-events-none` on the
+ * column keeps the gap between the cards from swallowing taps meant for the
+ * page underneath; each card turns them back on for itself.
+ */
+function BottomPrompts() {
+  const { bannerVisible } = useCookieConsent();
+  if (bannerVisible) return null;
+  return (
+    <div className="fixed bottom-20 left-3 right-3 md:left-auto md:right-6 md:max-w-sm
+                    z-[300] flex flex-col gap-2 pointer-events-none">
+      <InstallPrompt />
+      <UpdatePrompt />
     </div>
   );
 }
