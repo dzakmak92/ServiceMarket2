@@ -217,13 +217,26 @@ export default function GroupDial({ groups, value, onChange, label, promise, sec
           <g key={g.key} role="button" tabIndex={0}
              aria-pressed={on} aria-label={`${g.label}, ${g.count}`}
              data-testid={`group-dial-${g.key}`}
-             className="cursor-pointer focus-visible:outline-none"
+             /* `focus-visible:outline-none` alone was not enough: a tap on a
+                phone leaves the wedge focused and the browser draws its own
+                black box round the group's bounding rectangle, which on a
+                pie slice is a rectangle over the neighbouring wedges. The
+                outline is off for every focus state and replaced below by a
+                ring that follows the wedge itself. */
+             className="group cursor-pointer outline-none
+                        [-webkit-tap-highlight-color:transparent]"
              onClick={() => onChange(g.key)}
              onKeyDown={(e) => {
                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange(g.key); }
              }}>
             <path d={wedgePath(RI, RO, g.s0 + 0.02, g.s1 - 0.02)}
                   fill={on ? NAVY : TINT} stroke={on ? NAVY : LINE} strokeWidth="1" />
+            {/* The keyboard's focus ring, drawn on the wedge rather than on
+                the box around it. Invisible to a pointer, which is what
+                took the black rectangle off the phone. */}
+            <path d={wedgePath(RI, RO, g.s0 + 0.02, g.s1 - 0.02)}
+                  fill="none" stroke="#2d6a7f" strokeWidth="2.5"
+                  className="opacity-0 group-focus-visible:opacity-100 pointer-events-none" />
             {lines.map((ln, li) => (
               <text key={li} x={g.px.toFixed(1)} y={(top + li * lead).toFixed(1)}
                     textAnchor="middle" fontSize={px} fontWeight="800" fill={ink}>
