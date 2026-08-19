@@ -167,7 +167,23 @@ function fit(text, mid) {
   return { px, lines: [`${String(text).slice(0, per)}…`] };
 }
 
-export default function GroupDial({ groups, value, onChange, label, promise, seconds }) {
+/**
+ * `opaque` and `crop` exist for the swipe carousel and change nothing when
+ * they are left off.
+ *
+ * `opaque` paints a white disc under the wedges. The dial is drawn with a
+ * transparent ground, which is invisible until a second dial sits behind it —
+ * then the neighbour's wedges read straight through the middle of the open
+ * one. It is the ring's own outer radius plus five, so it covers the band and
+ * nothing more.
+ *
+ * `crop` narrows the viewBox to the ink. The ring occupies x 49–305 of a
+ * 354-wide box, so 49 px of either side is blank: a neighbour peeking past the
+ * edge of the pane would show empty card before it showed any dial. 177 is the
+ * centre of both boxes, which is what lets the two be positioned the same way.
+ */
+export default function GroupDial({ groups, value, onChange, label, promise, seconds,
+                                    opaque = false, crop = false }) {
   const n = groups.length;
 
   const wedges = useMemo(() => {
@@ -186,8 +202,9 @@ export default function GroupDial({ groups, value, onChange, label, promise, sec
   }, [groups, n]);
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto block" role="group"
-         aria-label={label} data-testid="group-dial">
+    <svg viewBox={crop ? `49 0 256 ${H}` : `0 0 ${W} ${H}`} className="w-full h-auto block"
+         role="group" aria-label={label} data-testid="group-dial">
+      {opaque && <circle cx={CX} cy={CY} r={RO + 5} fill="#fff" />}
       {wedges.map((g) => {
         const on = g.key === value;
         const ink = on ? '#fff' : MUT;
@@ -223,18 +240,23 @@ export default function GroupDial({ groups, value, onChange, label, promise, sec
         );
       })}
 
-      {/* The hole: the claim, over a ring drawn to the same fraction. */}
-      <path d={arcPath(54, -Math.PI / 2, Math.PI * 1.18)} fill="none"
-            stroke={RING} strokeWidth="3" strokeLinecap="round" />
-      <path d={arcPath(54, -Math.PI / 2, -Math.PI / 2 + Math.PI * 1.32)} fill="none"
-            stroke={GO} strokeWidth="3" strokeLinecap="round" />
-      <text x={CX} y={CY - 8} textAnchor="middle" fontSize="10.5" fontWeight="700"
-            letterSpacing=".6" fill={MUT}>
-        {promise}
-      </text>
-      <text x={CX} y={CY + 16} textAnchor="middle" fontSize="20" fontWeight="800" fill={NAVY}>
-        {seconds}
-      </text>
+      {/* The hole: the claim, over a ring drawn to the same fraction.
+          Tagged so the swipe carousel can fade it on its own — it travels
+          with this dial, but at half size its lead line is about 4.8 px and
+          has to be off rather than illegible. */}
+      <g data-dial-hub>
+        <path d={arcPath(54, -Math.PI / 2, Math.PI * 1.18)} fill="none"
+              stroke={RING} strokeWidth="3" strokeLinecap="round" />
+        <path d={arcPath(54, -Math.PI / 2, -Math.PI / 2 + Math.PI * 1.32)} fill="none"
+              stroke={GO} strokeWidth="3" strokeLinecap="round" />
+        <text x={CX} y={CY - 8} textAnchor="middle" fontSize="10.5" fontWeight="700"
+              letterSpacing=".6" fill={MUT}>
+          {promise}
+        </text>
+        <text x={CX} y={CY + 16} textAnchor="middle" fontSize="20" fontWeight="800" fill={NAVY}>
+          {seconds}
+        </text>
+      </g>
     </svg>
   );
 }

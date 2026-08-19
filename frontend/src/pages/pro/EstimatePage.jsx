@@ -5,6 +5,7 @@ import { useLang } from '../../contexts/LangContext';
 import NumberField from '../../components/NumberField';
 import EstimateCards from './EstimateCards';
 import GroupDial from '../../components/pro/GroupDial';
+import DialSwipe from '../../components/pro/DialSwipe';
 import TradeRow from '../../components/pro/TradeRow';
 import { fmtEur0 as fmtEur, fmtEur as fmtEur2, fmtNum as fmtNumRaw } from '../../utils/money';
 
@@ -250,9 +251,18 @@ export default function EstimatePage() {
   /* The other six, quietly, so the first switch is as instant as the second.
      Fired only after the current trade's own layout is in, so it never
      competes with the request the screen is actually waiting on. */
+  const [secsBy, setSecsBy] = useState({});
   useEffect(() => {
-    if (!sectionsFor || !meta?.trades?.length) return;
-    for (const tr of meta.trades) loadSections(`${tr.key}|${lang}`, tr.key);
+    if (!sectionsFor || !meta?.trades?.length) return undefined;
+    let live = true;
+    for (const tr of meta.trades) {
+      /* The same promise the open trade waited on: already resolved for it,
+         one request each for the rest, and nothing is fetched twice. */
+      loadSections(`${tr.key}|${lang}`, tr.key).then((secs) => {
+        if (live) setSecsBy((m) => (m[tr.key] === secs ? m : { ...m, [tr.key]: secs }));
+      });
+    }
+    return () => { live = false; };
   }, [sectionsFor, meta, lang, loadSections]);
 
   /* Maler's "fassade" is not a group Fliesen has, so the open group cannot
@@ -292,6 +302,39 @@ export default function EstimatePage() {
       .filter((s) => s.count);
     return wedges.length >= 2 ? wedges : null;
   }, [trade, sections, sectionsFor, visible, lang]);
+
+  /* The same reduction the open dial does, for any trade whose layout is in.
+     The carousel needs its neighbours' wedges, and a trade with fewer than two
+     groups has no dial at all and is simply not in the swipe. */
+  const wedgesOf = useCallback((tradeKey) => {
+    const secs = secsBy[tradeKey];
+    if (!secs || secs.length < 2) return null;
+    const have = new Set(jobs.filter((j) => j.trade === tradeKey).map((j) => j.key));
+    const wedges = secs
+      .map((s) => ({
+        key: s.key,
+        label: (lang !== 'de' && s.labels?.[lang]) || s.label_de,
+        count: s.job_keys.filter((k) => have.has(k)).length,
+      }))
+      .filter((s) => s.count);
+    return wedges.length >= 2 ? wedges : null;
+  }, [secsBy, jobs, lang]);
+
+  const dials = useMemo(() => {
+    const out = {};
+    for (const tr of meta?.trades || []) {
+      const w = tr.key === trade ? dial : wedgesOf(tr.key);
+      if (w) out[tr.key] = w;
+    }
+    return out;
+  }, [meta, trade, dial, wedgesOf]);
+
+  /* Order is the trades that actually have a dial, so a swipe never lands on
+     an empty pane. */
+  const swipeOrder = useMemo(
+    () => (meta?.trades || []).map((tr) => tr.key).filter((k) => dials[k]),
+    [meta, dials],
+  );
 
   /* Resolved, not stored: `group` can name a section that this trade does not
      have, or one whose templates have all been retired. */
@@ -652,10 +695,24 @@ export default function EstimatePage() {
                             cream; the page is white now, so a white card on it
                             would be a border drawn round nothing. */
                          <div className="mb-3 -mx-1" data-testid="estimate-dial">
-                           <GroupDial groups={dial} value={openGroup} onChange={setGroup}
-                                      label={t('est_groups')}
-                                      promise={t('est_promise_lead')}
-                                      seconds={t('est_promise_time')} />
+                           {swipeOrder.length > 1 && swipeOrder.includes(trade) ? (
+                             /* The dial is the biggest thing on the screen and
+                                the thumb is already on it, so it switches trade
+                                as well. The row of cards above still does, and
+                                both write the same URL. */
+                             <DialSwipe order={swipeOrder} value={trade}
+                                        onChange={(k) => leave(`/estimate/${k}`)}
+                                        dials={dials} group={openGroup} onGroup={setGroup}
+                                        label={t('est_groups')}
+                                        promise={t('est_promise_lead')}
+                                        seconds={t('est_promise_time')}
+                                        swipeLabel={t('est_swipe_trades')} />
+                           ) : (
+                             <GroupDial groups={dial} value={openGroup} onChange={setGroup}
+                                        label={t('est_groups')}
+                                        promise={t('est_promise_lead')}
+                                        seconds={t('est_promise_time')} />
+                           )}
                          </div>
                        ) : sectionsFor !== trade ? (
                          /* Only ever seen on the first visit to a trade, and
