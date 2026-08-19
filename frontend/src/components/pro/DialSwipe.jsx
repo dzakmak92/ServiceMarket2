@@ -53,8 +53,16 @@ const SLOTS = [-2, -1, 0, 1, 2];            /* one spare each way for a flick */
 const smooth = (x) => x * x * (3 - 2 * x);
 const clamp01 = (x) => Math.max(0, Math.min(1, x));
 
+const Chevron = ({ back }) => (
+  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor"
+       strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d={back ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7'} />
+  </svg>
+);
+
 export default function DialSwipe({
   order, value, onChange, dials, group, onGroup, label, promise, seconds, swipeLabel,
+  prevLabel, nextLabel,
 }) {
   const n = order.length;
   const index = Math.max(0, order.indexOf(value));
@@ -66,6 +74,7 @@ export default function DialSwipe({
   const stage = useRef(null);
   const slotRefs = useRef([]);
   const [base, setBase] = useState(index);
+  const baseRef = useRef(index);
 
   const paint = useCallback(() => {
     const b = Math.round(pos.current);
@@ -89,14 +98,14 @@ export default function DialSwipe({
       const hub = el.querySelector('[data-dial-hub]');
       if (hub) hub.setAttribute('opacity', Math.pow(e, 0.7).toFixed(3));
     });
-    if (b !== base) setBase(b);
-  }, [base]);
+    if (b !== baseRef.current) { baseRef.current = b; setBase(b); }
+  }, []);
 
   const run = useCallback(() => {
     if (raf.current) return;
     const settle = () => {
       const gap = target.current - pos.current;
-      if (Math.abs(gap) < 0.0006) {
+      if (Math.abs(gap) < 0.003) {
         pos.current = target.current;
         raf.current = 0;
         paint();
@@ -104,7 +113,7 @@ export default function DialSwipe({
         if (key && key !== value) onChange(key);
         return;
       }
-      pos.current += gap * 0.18;
+      pos.current += gap * 0.22;
       paint();
       raf.current = requestAnimationFrame(settle);
     };
@@ -128,6 +137,8 @@ export default function DialSwipe({
     raf.current = 0;
     pos.current = index;
     target.current = index;
+    followed.current = index;
+    baseRef.current = index;
     setBase(index);
     paint();
   }, [orderKey, index, paint]);
@@ -135,7 +146,10 @@ export default function DialSwipe({
   /* The URL is the source of truth. When a card is tapped, or the back button
      is used, the dial animates to whatever the address now says. Nothing moves
      while a finger is down. */
+  const followed = useRef(index);
   useEffect(() => {
+    if (followed.current === index) return;
+    followed.current = index;
     if (drag.current) return;
     const here = ((Math.round(pos.current) % n) + n) % n;
     if (here === index) return;
@@ -252,6 +266,27 @@ export default function DialSwipe({
           </div>
         );
       })}
+
+      {/* Nothing about a dial says it can be dragged, so the arrows say it.
+          They are real buttons — the same step the keyboard takes — and they
+          sit in the margin the rings leave empty: at rest a neighbour reaches
+          about 77 px in from either edge of a 390-wide pane.
+          `onPointerDown` is stopped so pressing one never starts a drag. */}
+      {[true, false].map((back) => (
+        <button key={back ? 'p' : 'n'} type="button"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => step(back ? -1 : 1)}
+                aria-label={back ? prevLabel : nextLabel}
+                data-testid={back ? 'dial-prev' : 'dial-next'}
+                className={`absolute top-1/2 -translate-y-1/2 z-10 grid place-items-center
+                            w-9 h-9 rounded-full bg-paper/90 backdrop-blur-[2px]
+                            border border-line text-navy shadow-sm
+                            transition hover:bg-paper active:scale-95
+                            focus-visible:outline-none focus-visible:ring-4
+                            focus-visible:ring-teal/40 ${back ? 'left-1' : 'right-1'}`}>
+          <Chevron back={back} />
+        </button>
+      ))}
     </div>
   );
 }

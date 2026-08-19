@@ -320,14 +320,32 @@ export default function EstimatePage() {
     return wedges.length >= 2 ? wedges : null;
   }, [secsBy, jobs, lang]);
 
+  /* Identity matters here, not just value. GroupDial fits every wedge label by
+     bisection and memoises on the array it was given, so handing it a fresh
+     array re-runs that work for all five mounted dials. `wedgesOf` builds a new
+     array each call, so the previous one is kept whenever the content is the
+     same — which is why this map does not depend on the open trade at all.
+
+     It also cannot depend on `dial`: that is null for the one render after a
+     trade change, and a null here would swap the branch below and remount the
+     whole carousel mid-animation. `secsBy` is keyed by trade, so it is never
+     stale and needs no such guard. */
+  const wedgeCache = useRef({});
+  useEffect(() => { wedgeCache.current = {}; }, [lang]);
   const dials = useMemo(() => {
+    const same = (a, b) => a && b && a.length === b.length
+      && a.every((x, i) => x.key === b[i].key && x.label === b[i].label
+        && x.count === b[i].count);
     const out = {};
     for (const tr of meta?.trades || []) {
-      const w = tr.key === trade ? dial : wedgesOf(tr.key);
-      if (w) out[tr.key] = w;
+      const w = wedgesOf(tr.key);
+      if (!w) continue;
+      const prev = wedgeCache.current[tr.key];
+      out[tr.key] = same(prev, w) ? prev : w;
+      wedgeCache.current[tr.key] = out[tr.key];
     }
     return out;
-  }, [meta, trade, dial, wedgesOf]);
+  }, [meta, wedgesOf]);
 
   /* Order is the trades that actually have a dial, so a swipe never lands on
      an empty pane. */
@@ -690,11 +708,15 @@ export default function EstimatePage() {
             <JobPicker jobs={visible}
                        sections={sections}
                        onPick={openJob} t={t} lang={lang}
-                       dial={dial ? (
+                       dial={dials[trade] || dial ? (
                          /* No card. It had one to lift the ring off the
                             cream; the page is white now, so a white card on it
                             would be a border drawn round nothing. */
                          <div className="mb-3 -mx-1" data-testid="estimate-dial">
+                           {/* Gated on `dials`, not on `dial`. `dial` is null
+                               for the render after a trade change, and using it
+                               here unmounted the carousel and remounted it —
+                               which is a jump, not a swipe. */}
                            {swipeOrder.length > 1 && swipeOrder.includes(trade) ? (
                              /* The dial is the biggest thing on the screen and
                                 the thumb is already on it, so it switches trade
@@ -706,9 +728,14 @@ export default function EstimatePage() {
                                         label={t('est_groups')}
                                         promise={t('est_promise_lead')}
                                         seconds={t('est_promise_time')}
-                                        swipeLabel={t('est_swipe_trades')} />
+                                        swipeLabel={t('est_swipe_trades')}
+                                        prevLabel={t('est_prev_trade')}
+                                        nextLabel={t('est_next_trade')} />
                            ) : (
-                             <GroupDial groups={dial} value={openGroup} onChange={setGroup}
+                             /* Same reason: `dial` can be null for a render
+                                while `dials` already has this trade. */
+                             <GroupDial groups={dial || dials[trade]} value={openGroup}
+                                        onChange={setGroup}
                                         label={t('est_groups')}
                                         promise={t('est_promise_lead')}
                                         seconds={t('est_promise_time')} />
