@@ -570,16 +570,22 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, t, zone, also
                  +15–30 % looked exactly like one that only writes a sentence
                  into the quote. "note" is the only value that moves nothing. */
               const free = q.price_effect === 'note';
-              /* Three or fewer answers become chips: every option visible, one
-                 tap to change it. A select hides the answers behind a tap and
-                 then makes you aim at a list — on a phone, on a building site,
-                 with the other hand holding something. Four or more do not fit
-                 across 360 px without wrapping into an unreadable block, so
-                 those keep the select. */
+              /* Every answer is a chip: all of them visible, one tap to
+                 change. A select hides the answers behind a tap and then makes
+                 you aim at a list — on a phone, on a building site, with the
+                 other hand holding something.
+
+                 Three or fewer sit in one row. Four or more go two to a row,
+                 because "Raufaser, mehrfach überstrichen" is not a thing you
+                 can fit four of across 360 px — and the option a painter picks
+                 most is the one the shortest label belongs to, so truncating
+                 was never an option either. An odd last chip takes the full
+                 width rather than leaving a hole. */
               const opts = q.type === 'bool'
                 ? [[false, t('no')], [true, t('yes')]]
                 : (q.options || []);
-              const chips = opts.length > 0 && opts.length <= 3;
+              const chips = opts.length > 0;
+              const twoUp = opts.length > 3;
               const given = q.type === 'bool'
                 ? !!state.answers[q.key] : state.answers[q.key] ?? '';
               const pick = (v) => onAnswer(job.key, q.key, v);
@@ -597,18 +603,29 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, t, zone, also
                   {chips ? (
                     <div role="group" aria-label={lbl(q)}
                          data-testid={`estimate-field-${tid}-${q.key}`}
-                         className="flex rounded-[10px] border border-rule overflow-hidden">
+                         className={`rounded-[10px] border border-rule overflow-hidden
+                                     ${twoUp ? 'grid grid-cols-2' : 'flex'}`}>
                       {opts.map(([v, l], i) => {
                         const on = String(v) === String(given);
+                        const last = i === opts.length - 1;
+                        /* The dividers are drawn per cell rather than by the
+                           container, so one rule sits between any two chips
+                           however they wrap. In two-up: a left rule on the
+                           right-hand column, a top rule on every row but the
+                           first. */
+                        const rules = twoUp
+                          ? `${i % 2 ? 'border-l border-rule' : ''} ${i > 1 ? 'border-t border-rule' : ''}`
+                          : (i ? 'border-l border-rule' : '');
+                        const span = twoUp && last && opts.length % 2 ? 'col-span-2' : '';
                         return (
                           <button
                             key={String(v)} type="button" aria-pressed={on}
                             onClick={() => pick(v)}
                             data-testid={`estimate-opt-${tid}-${q.key}-${v}`}
-                            className={`flex-1 min-w-0 px-1.5 py-2.5 text-[12px] font-bold
-                                        leading-tight focus-visible:outline-none
-                                        focus-visible:ring-4 focus-visible:ring-teal/30
-                                        ${i ? 'border-l border-rule' : ''}
+                            className={`min-w-0 px-2 py-2.5 text-[12px] font-bold leading-tight
+                                        focus-visible:outline-none focus-visible:ring-4
+                                        focus-visible:ring-teal/30
+                                        ${twoUp ? '' : 'flex-1'} ${rules} ${span}
                                         ${on ? 'bg-navy text-paper'
                                              : 'bg-paper text-ink-soft'}`}>
                             {l}
