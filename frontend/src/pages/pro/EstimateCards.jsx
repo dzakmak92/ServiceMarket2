@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, Loader2, MapPin, Info, Repeat2 } from 'lucide-react';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
@@ -157,7 +157,7 @@ function Note({ note, tone = 'normal' }) {
  * quote. A line the pro has moved says so, because a corrected estimate and a
  * model's own estimate are different claims.
  */
-function Breakdown({ est, overrides, onQty, t, tid }) {
+function Breakdown({ est, overrides, rates, onQty, onRate, t, tid }) {
   const lines = est?.lines || [];
   if (!lines.length) return null;
   const moved = new Set(est.qty_adjusted || []);
@@ -169,8 +169,10 @@ function Breakdown({ est, overrides, onQty, t, tid }) {
       <div className="rounded-[11px] border border-rule overflow-hidden">
         {lines.map((ln) => {
           const own = overrides?.[ln.rate_key];
+          const rate = rates?.[ln.rate_key];
           const qty = own !== undefined && own !== '' ? Number(own) : ln.qty;
-          const sum = qty * (1 + (ln.waste_factor || 0)) * ln.unit_price;
+          const price = rate !== undefined && rate !== '' ? Number(rate) : ln.unit_price;
+          const sum = qty * (1 + (ln.waste_factor || 0)) * price;
           return (
             <div key={ln.rate_key + ln.description}
                  className={`px-2.5 py-2 border-b border-rule/60 last:border-b-0
@@ -206,7 +208,29 @@ function Breakdown({ est, overrides, onQty, t, tid }) {
                   </u>
                 </span>
                 <b className="text-[11px] font-bold text-ink-muted">×</b>
-                <span className="text-[12px] font-bold text-ink">{fmtEur(ln.unit_price)}</span>
+                {/* The unit price, and it is a field like everything else.
+                    Editing it writes this business's rate for this rate key —
+                    `maler.stundensatz` really is the hourly rate, and changing
+                    it here changes it everywhere, which is why the line below
+                    says so. It persists: the estimator has always read
+                    `pro_rates` in preference to the catalogue, and until now
+                    the only way to put a figure in there was to have a quote
+                    accepted or to go and find the settings screen. */}
+                <span className="inline-flex items-center rounded-[8px] border border-navy/25
+                                 bg-navy/[.05] pl-1.5 pr-1">
+                  <input
+                    type="number" inputMode="decimal" min="0" step="any"
+                    value={rate !== undefined ? rate : ln.unit_price}
+                    onChange={(e) => onRate(ln, e.target.value)}
+                    data-testid={`estimate-line-rate-${tid}-${ln.rate_key}`}
+                    aria-label={`${ln.description} — ${t('est_unit_price')}`}
+                    className="w-[54px] bg-transparent py-1 text-right text-[12px]
+                               font-bold text-ink outline-none"
+                  />
+                  <u className="not-italic no-underline pl-1 text-[9.5px] font-bold text-ink-muted">
+                    €
+                  </u>
+                </span>
                 <em className="ml-auto not-italic text-[13px] font-extrabold text-navy
                                tabular-nums">{fmtEur(sum)}</em>
               </p>
@@ -218,6 +242,17 @@ function Breakdown({ est, overrides, onQty, t, tid }) {
                       the response to quote. Reset is what recovers it. */}
                   {t('est_line_yours')}
                   <button type="button" onClick={() => onQty(ln.rate_key, undefined)}
+                          className="rounded-full border border-rule bg-paper px-1.5 py-[1px]
+                                     text-[9px] font-extrabold text-navy">
+                    {t('est_line_reset')}
+                  </button>
+                </p>
+              )}
+              {ln.rate_source === 'pro' && (
+                <p className="mt-1 flex items-center gap-2 text-[9.5px] font-bold text-teal">
+                  {t('est_rate_yours')}
+                  <button type="button" onClick={() => onRate(ln, undefined)}
+                          data-testid={`estimate-rate-reset-${tid}-${ln.rate_key}`}
                           className="rounded-full border border-rule bg-paper px-1.5 py-[1px]
                                      text-[9px] font-extrabold text-navy">
                     {t('est_line_reset')}
@@ -366,8 +401,8 @@ const ZONE = {
 };
 
 /** One template: a checkbox, and everything it needs once it is checked. */
-function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, t, zone, alsoIn,
-                section, vat }) {
+function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate, t, zone,
+                alsoIn, section, vat }) {
   const vatRate = Number(vat?.rate) || 0;
   const z = ZONE[zone];
   /* A cross-listed template is on the page twice, so its test ids have to say
@@ -676,8 +711,10 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, t, zone, also
               </p>
             </div>
           )}
-          <Breakdown est={est} overrides={state.qtyOverrides} tid={tid} t={t}
-                     onQty={(rateKey, v) => onLineQty(job.key, rateKey, v)} />
+          <Breakdown est={est} overrides={state.qtyOverrides} rates={state.rateEdits}
+                     tid={tid} t={t}
+                     onQty={(rateKey, v) => onLineQty(job.key, rateKey, v)}
+                     onRate={(ln, v) => onLineRate(job.key, ln, v)} />
           <Waste est={est} t={t} />
           <BandCheck est={est} job={job} t={t} />
 
@@ -754,6 +791,9 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
      for. Debounced together rather than per card: typing a quantity in one
      card must not fire five requests for the four that did not change. */
   const [tick, setTick] = useState(0);
+  /* Held as the typed string so "1," on the way to "12,5" does not snap back
+     to 1 under the cursor; `disc` is the number everything else uses. */
+  const [discount, setDiscount] = useState('');
   const bump = useCallback(() => setTick((n) => n + 1), []);
 
   useEffect(() => {
@@ -902,10 +942,61 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
     bump();
   };
 
+  /* A unit price the pro typed. It is not a per-quote override — it is this
+     business's rate for that rate key, written to `pro_rates` and marked
+     manual, which is the record the estimator has always preferred to the
+     catalogue and which learning never overwrites afterwards. So the next
+     quote starts from it, on this template and every other one that prices
+     the same key.
+
+     Debounced by the same tick the estimate is: typing "4" on the way to "46"
+     must not write a four-euro hourly rate to the profile. `undefined` clears
+     the override and the rate falls back to what the accepted quotes measured,
+     or to the catalogue. */
+  const rateWrite = useRef(null);
+  const lineRate = (key, ln, value) => {
+    setPicked((cur) => {
+      if (!cur[key]) return cur;
+      const next = { ...(cur[key].rateEdits || {}) };
+      if (value === undefined || value === '') delete next[ln.rate_key];
+      else next[ln.rate_key] = value;
+      return { ...cur, [key]: { ...cur[key], rateEdits: next, loading: true } };
+    });
+    clearTimeout(rateWrite.current);
+    rateWrite.current = setTimeout(async () => {
+      try {
+        if (value === undefined || value === '') {
+          await api.delete(`/api/profile/pro/rates/${encodeURIComponent(ln.rate_key)}`);
+        } else {
+          const amount = Number(String(value).replace(',', '.'));
+          if (!Number.isFinite(amount) || amount <= 0) return;
+          await api.put('/api/profile/pro/rates', {
+            key: ln.rate_key, amount, label: ln.description, unit: ln.unit,
+          });
+        }
+      } catch { /* the estimate below still shows the typed figure */ }
+      /* Drop the local edit once it is stored: from here the number comes back
+         from the estimator, which is the only way the line and the total can
+         be guaranteed to agree. */
+      setPicked((cur) => {
+        const out = { ...cur };
+        Object.keys(out).forEach((k) => {
+          if (!out[k].rateEdits) return;
+          const { [ln.rate_key]: _gone, ...rest } = out[k].rateEdits;
+          out[k] = { ...out[k], rateEdits: rest, loading: true };
+        });
+        return out;
+      });
+      bump();
+    }, 700);
+  };
+
   const chosen = Object.entries(picked).filter(([, p]) => p.checked && p.est);
   // Same figure as the cards, for the same reason: this bar sits directly
   // above the button that creates the quote, so it is a promise about it.
   const total = chosen.reduce((s, [, p]) => s + p.est.lines_net, 0);
+  const disc = Math.min(Math.max(Number(String(discount).replace(',', '.')) || 0, 0), 100);
+  const discounted = total * (1 - disc / 100);
 
   /* Ticked, but no quantity typed yet, so it has no price and cannot go into
      the quote. Somebody who ticks a position means to send it — dropping it
@@ -1012,7 +1103,8 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
             <Card key={`${sec.key}/${j.key}`} job={j} state={picked[j.key]} t={t}
                   zone={null} alsoIn={sec.also?.[j.key]} section={sec.key}
                   onToggle={toggle} onOpen={open} onAnswer={answer}
-                          onLineQty={lineQty} vat={vat} />
+                          onLineQty={lineQty}
+                          onLineRate={lineRate} vat={vat} />
           ))}
         </div>
       ))}
@@ -1063,7 +1155,8 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
                     <Card key={`${sec.key}/${j.key}`} job={j} state={picked[j.key]} t={t}
                           zone={band.zone} alsoIn={sec.also?.[j.key]} section={sec.key}
                           onToggle={toggle} onOpen={open} onAnswer={answer}
-                          onLineQty={lineQty} vat={vat} />
+                          onLineQty={lineQty}
+                          onLineRate={lineRate} vat={vat} />
                   ))}
                 </div>
               </div>
@@ -1078,7 +1171,7 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
              className="sticky bottom-0 -mx-4 mt-4 flex items-center justify-between gap-3
                         border-t border-sm-border bg-paper px-4 py-2.5
                         shadow-[0_-3px_14px_rgba(26,58,82,.07)]">
-          <div>
+          <div className="min-w-0">
             <p className="text-[9.5px] text-ink-muted">
               {chosen.length > 0 && (
                 <>
@@ -1096,15 +1189,56 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
             {/* No amount while nothing is priced. A 0,00 € under two ticked
                 positions reads as a total, and it is not one. */}
             {chosen.length > 0 && (
-              <p className="font-headings text-[17px] font-extrabold text-ink tabular-nums">
-                {fmtEur(total)}
+              <p className="flex items-baseline gap-2">
+                <span className={`font-headings text-[17px] font-extrabold tabular-nums
+                                  ${disc > 0 ? 'text-ink-faint line-through decoration-1'
+                                             : 'text-ink'}`}>
+                  {fmtEur(total)}
+                </span>
+                {disc > 0 && (
+                  <span className="font-headings text-[17px] font-extrabold text-ink tabular-nums">
+                    {fmtEur(discounted)}
+                  </span>
+                )}
               </p>
             )}
           </div>
+
+          {/* Nachlass on the document, not on a position.
+              `quotes.discount_pct` is what this writes, and that is already a
+              document-level field: it prints as its own row under the
+              positions, follows the quote onto the invoice when it is
+              accepted, and is applied per VAT rate rather than to the gross,
+              so a mixed 20/10 document stays right. */}
+          {chosen.length > 0 && (
+            <label className="shrink-0 text-right">
+              <span className="block text-[9px] font-extrabold uppercase tracking-[.06em]
+                               text-ink-muted">{t('est_discount')}</span>
+              <span className="inline-flex items-center rounded-[9px] border border-navy/25
+                               bg-navy/[.05] pl-1.5 pr-1">
+                <input
+                  type="number" inputMode="decimal" min="0" max="100" step="any"
+                  value={discount} placeholder="0"
+                  onChange={(e) => setDiscount(e.target.value)}
+                  data-testid="estimate-discount"
+                  className="w-[38px] bg-transparent py-1 text-right text-[13px]
+                             font-bold text-ink outline-none"
+                />
+                <u className="not-italic no-underline pl-1 text-[10px] font-bold text-ink-muted">
+                  %
+                </u>
+              </span>
+            </label>
+          )}
+
           <button type="button" disabled={quoting || pending.length > 0 || !chosen.length}
                   onClick={() => onQuote(chosen.map(([key, p]) => ({
                     job_key: key, answers: p.answers, tier: 'standard',
-                  })))}
+                    /* The corrections went with the draft and not with the
+                       quote, so a position the pro had halved was quoted at
+                       full quantity. */
+                    qty_overrides: numeric(p.qtyOverrides),
+                  })), { discount_pct: disc })}
                   data-testid="estimate-multi-quote"
                   className="btn-amber !px-4 !py-2.5 !text-[13px]
                              disabled:opacity-50 disabled:cursor-not-allowed">

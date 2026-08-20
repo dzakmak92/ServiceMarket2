@@ -149,6 +149,13 @@ class MultiQuoteIn(BaseModel):
     customer_id: Optional[str] = None
     title: Optional[str] = None
     lang: str = Field(default="de", pattern="^(de|en|tr|es)$")
+    # A Nachlass on the document, which is what `quotes.discount_pct` already
+    # is: it prints as its own row under the positions, carries across to the
+    # invoice when the quote is accepted, and is applied per VAT rate rather
+    # than to the gross, so a mixed 20/10 document stays right. Zero is stored
+    # as nothing at all — a quote with "0 % Nachlass" printed on it invites the
+    # question of why it is there.
+    discount_pct: float = Field(default=0, ge=0, le=100)
 
 
 async def _country_for(pro_id: str) -> str:
@@ -608,6 +615,7 @@ async def multi_position_quote(body: MultiQuoteIn,
             title=title,
             assumptions="\n".join(assumptions) or None,
             ai_confidence=worst,
+            discount_pct=body.discount_pct or None,
             ai_sources=[f"estimation_catalogue/{estimator.catalogue()['version']}"]
                        + [r["job"]["key"] for r in localised])]
     except LookupError as exc:
