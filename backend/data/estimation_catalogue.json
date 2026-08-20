@@ -2693,6 +2693,45 @@
           "drops_disposal": {}
         },
         {
+          "key": "raumhoehe",
+          "label_de": "Raumhöhe",
+          "type": "choice",
+          "unit": "",
+          "options": [
+            [
+              "bis_2_60",
+              "Bis 2,60 m"
+            ],
+            [
+              "bis_3_20",
+              "Bis 3,20 m"
+            ],
+            [
+              "ueber_3_20",
+              "Über 3,20 m"
+            ]
+          ],
+          "affects": "variant",
+          "default": "bis_2_60",
+          "note_if": {
+            "ueber_3_20": "hoehenarbeit_sicherung"
+          },
+          "help_de": "",
+          "uplift": {
+            "bis_3_20": [
+              0.08,
+              0.15
+            ],
+            "ueber_3_20": [
+              0.18,
+              0.32
+            ]
+          },
+          "material_uplift": {},
+          "drops": {},
+          "drops_disposal": {}
+        },
+        {
           "key": "moebel",
           "label_de": "Möblierung",
           "type": "choice",

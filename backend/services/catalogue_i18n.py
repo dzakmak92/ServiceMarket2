@@ -697,6 +697,9 @@ JOB_TITLES: dict[str, dict[str, str]] = {
 # What the form asks. Shared across templates wherever the wording is.
 
 QUESTIONS: dict[str, dict[str, str]] = {
+    'Raumhöhe': {
+        "en": 'Room height', "tr": 'Tavan yüksekliği',
+        "es": 'Altura del techo'},
     'Platz im Verteiler frei?': {
         "en": 'Space free in the board?', "tr": 'Panoda yer var mı?',
         "es": '¿Hay espacio libre en el cuadro?'},
@@ -1401,6 +1404,12 @@ QUESTIONS: dict[str, dict[str, str]] = {
 # What a tap on the form actually says.
 
 OPTIONS: dict[str, dict[str, str]] = {
+    'Bis 2,60 m': {
+        "en": 'Up to 2.60 m', "tr": "2,60 m'ye kadar", "es": 'Hasta 2,60 m'},
+    'Bis 3,20 m': {
+        "en": 'Up to 3.20 m', "tr": "3,20 m'ye kadar", "es": 'Hasta 3,20 m'},
+    'Über 3,20 m': {
+        "en": 'Over 3.20 m', "tr": "3,20 m'den yüksek", "es": 'Más de 3,20 m'},
     'Teil einer Schließanlage': {
         "en": 'Part of a master-key system', "tr": 'Bir kilit sisteminin parçası',
         "es": 'Parte de un amaestramiento'},

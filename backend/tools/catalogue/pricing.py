@@ -78,6 +78,13 @@ PRICING: dict[str, dict] = {
     "farbwechsel": _u(uplift={"True": (0.28, 0.40)},
                       material={"True": (0.30, 0.45)}),
 
+    # Reasoned the same way as `maler.fassade/hoehe`, and deliberately on the
+    # same ladder: one step of extra height is 8-15 %, two is 18-32 %. Nothing
+    # here is sourced from a price book — see the note at the top of this file
+    # — and the default, 2,60 m, carries nothing, because an uplift on a
+    # default would invalidate the market band it was validated against.
+    "raumhoehe": _u(uplift={"bis_3_20": (0.08, 0.15), "ueber_3_20": (0.18, 0.32)}),
+
     "tapetenart": _u(uplift={"raufaser_mehrfach": (0.30, 0.55),
                              "vlies": (-0.35, -0.20),
                              "papier_alt": (0.45, 0.80)}),

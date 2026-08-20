@@ -160,6 +160,15 @@ MALER_DEEP = [
             default="raufaser_1x",
             note_if={"raufaser_mehrfach": "untergrund_tragfaehig",
                      "papier_alt": "altbau_untergrund"}),
+          # Stripping is done standing up, and only up to about 2,20 m of it.
+          # Above that the top band comes off a hop-up or a trestle that has to
+          # be moved along every wall, which slows the whole wall rather than
+          # just its top — and in an Altbau at 3,50 m it is a rolling tower,
+          # plus the time to put it up and take it down again.
+          Q("raumhoehe", "Raumhöhe", "choice", affects="variant",
+            options=[("bis_2_60", "Bis 2,60 m"), ("bis_3_20", "Bis 3,20 m"),
+                     ("ueber_3_20", "Über 3,20 m")],
+            default="bis_2_60", note_if={"ueber_3_20": "hoehenarbeit_sicherung"}),
           Q_MOEBEL],
       operations=[
           # Raufaser peels; woodchip painted over five times does not.

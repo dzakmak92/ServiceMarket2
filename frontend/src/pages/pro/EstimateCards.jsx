@@ -563,16 +563,28 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, t, zone, also
             </p>
           )}
 
-          <div className="mt-3 grid grid-cols-2 gap-2">
+          <div className="mt-3 space-y-2.5">
             {fields.map((q) => {
-              const wide = q.type === 'bool' || (q.options || []).length > 3;
               /* `price_effect` has been on every question since the form was
                  built and nothing on screen used it, so a question worth
                  +15–30 % looked exactly like one that only writes a sentence
                  into the quote. "note" is the only value that moves nothing. */
               const free = q.price_effect === 'note';
+              /* Three or fewer answers become chips: every option visible, one
+                 tap to change it. A select hides the answers behind a tap and
+                 then makes you aim at a list — on a phone, on a building site,
+                 with the other hand holding something. Four or more do not fit
+                 across 360 px without wrapping into an unreadable block, so
+                 those keep the select. */
+              const opts = q.type === 'bool'
+                ? [[false, t('no')], [true, t('yes')]]
+                : (q.options || []);
+              const chips = opts.length > 0 && opts.length <= 3;
+              const given = q.type === 'bool'
+                ? !!state.answers[q.key] : state.answers[q.key] ?? '';
+              const pick = (v) => onAnswer(job.key, q.key, v);
               return (
-                <label key={q.key} className={wide ? 'col-span-2' : ''}>
+                <div key={q.key}>
                   <span className="flex items-center gap-1.5 text-[9px] font-extrabold uppercase
                                    tracking-[.06em] text-ink-muted mb-1">
                     <span className="min-w-0 truncate">{lbl(q)}</span>
@@ -582,25 +594,38 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, t, zone, also
                                        text-ink-muted">{t('est_effect_note')}</span>
                     )}
                   </span>
-                  {q.type === 'bool' ? (
-                    <select
-                      value={String(state.answers[q.key] ?? false)}
-                      onChange={(e) => onAnswer(job.key, q.key, e.target.value === 'true')}
-                      className={`w-full rounded-[9px] border px-2.5 py-2 text-[12px] text-ink
-                                  ${free ? 'border-rule bg-paper'
-                                         : 'border-navy/25 bg-navy/[.05] font-semibold'}`}>
-                      <option value="false">{t('no')}</option>
-                      <option value="true">{t('yes')}</option>
-                    </select>
+                  {chips ? (
+                    <div role="group" aria-label={lbl(q)}
+                         data-testid={`estimate-field-${tid}-${q.key}`}
+                         className="flex rounded-[10px] border border-rule overflow-hidden">
+                      {opts.map(([v, l], i) => {
+                        const on = String(v) === String(given);
+                        return (
+                          <button
+                            key={String(v)} type="button" aria-pressed={on}
+                            onClick={() => pick(v)}
+                            data-testid={`estimate-opt-${tid}-${q.key}-${v}`}
+                            className={`flex-1 min-w-0 px-1.5 py-2.5 text-[12px] font-bold
+                                        leading-tight focus-visible:outline-none
+                                        focus-visible:ring-4 focus-visible:ring-teal/30
+                                        ${i ? 'border-l border-rule' : ''}
+                                        ${on ? 'bg-navy text-paper'
+                                             : 'bg-paper text-ink-soft'}`}>
+                            {l}
+                          </button>
+                        );
+                      })}
+                    </div>
                   ) : (
                     <select
-                      value={state.answers[q.key] ?? ''}
-                      onChange={(e) => onAnswer(job.key, q.key, e.target.value)}
+                      value={q.type === 'bool' ? String(given) : given}
+                      onChange={(e) => pick(q.type === 'bool'
+                        ? e.target.value === 'true' : e.target.value)}
                       data-testid={`estimate-field-${tid}-${q.key}`}
-                      className={`w-full rounded-[9px] border px-2.5 py-2 text-[12px] text-ink
+                      className={`w-full rounded-[10px] border px-2.5 py-2.5 text-[12px] text-ink
                                   ${free ? 'border-rule bg-paper'
                                          : 'border-navy/25 bg-navy/[.05] font-semibold'}`}>
-                      {(q.options || []).map(([v, l]) => (
+                      {opts.map(([v, l]) => (
                         <option key={String(v)} value={String(v)}>{l}</option>
                       ))}
                     </select>
@@ -608,7 +633,7 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, t, zone, also
                   {byField.has(q.key) && (
                     <div className="mt-1.5"><Note note={byField.get(q.key)} /></div>
                   )}
-                </label>
+                </div>
               );
             })}
           </div>
