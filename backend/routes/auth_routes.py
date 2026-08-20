@@ -514,6 +514,13 @@ async def onboarding(data: OnboardingIn, request: Request,
                   licence_status = 'pending',
                   insurance_file_id = excluded.insurance_file_id,
                   insurance_status = excluded.insurance_status,
+                  -- The country picked on the "where" step is what the VAT
+                  -- rate is read from. On the conflict path it was left
+                  -- behind, so a profile row that existed before onboarding
+                  -- (an import, say) kept whatever country it came with and
+                  -- a German pro was invoiced at 20 %.
+                  invoice_country = excluded.invoice_country,
+                  business_country = excluded.business_country,
                   business_address = excluded.business_address,
                   business_postal_code = excluded.business_postal_code,
                   business_city = excluded.business_city,

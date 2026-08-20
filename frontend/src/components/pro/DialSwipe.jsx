@@ -38,12 +38,18 @@ import GroupDial from './GroupDial';
  * changes once per trade rather than once per frame.
  */
 
-const CENTRE = 0.92;
+const CENTRE = 1;
 const HALF = CENTRE / 2;
 const RO = 128;                             /* GroupDial's outer radius */
 const W = 354;                              /* and its viewBox width */
 const STAGE = 390;                          /* the pane the dial sits in */
-const PITCH = 195 - RO * HALF;              /* rings just touching: 136.1 */
+/* Where a neighbour sits. Not "rings just touching" — the comment used to
+   say that and it was never true: at 0.5 the neighbour's own radius is 64 and
+   the open dial's is 128, so touching would need 192 px of pitch. This puts
+   the neighbour's *outer edge* flush with the edge of the 390 px pane, which
+   is what makes it read as the next one waiting rather than a decoration. The
+   overlap behind the open dial is covered, because the open dial is opaque. */
+const PITCH = 195 - RO * HALF;              /* 131 at CENTRE 1 */
 const PITCH_PCT = (PITCH / STAGE) * 100;
 const FRONT_PCT = (W / STAGE) * 100;        /* 90.8 */
 const SIDE_PCT = (256 / STAGE) * 100;       /* the cropped box: 65.6 */

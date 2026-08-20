@@ -252,11 +252,19 @@ export default function OnboardingPage() {
                       aria-pressed={country === c.code}
                     >
                       <span className="text-[22px] leading-none">{c.flag}</span>
-                      <span className="font-bold text-[14px] text-ink flex-1 text-left">{c.name}</span>
+                      <span className="flex-1 text-left">
+                        <span className="block font-bold text-[14px] text-ink">{c.name}</span>
+                        <span className="block text-[11.5px] font-semibold text-ink-muted">
+                          {t('onboarding_country_vat', { pct: c.vat })}
+                        </span>
+                      </span>
                       {country === c.code && <Check size={15} className="text-teal" />}
                     </button>
                   ))}
                 </div>
+                <p className="mt-1.5 text-[12px] text-ink-muted leading-snug">
+                  {t('onboarding_country_vat_help')}
+                </p>
               </div>
 
               <div>

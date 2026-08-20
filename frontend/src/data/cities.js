@@ -14,9 +14,13 @@
  * first-class path rather than a fallback.
  */
 
+// `vat` is the standard rate, shown while choosing so the pro sees what the
+// choice does to their prices. It is a label only — the rate that actually
+// lands on a quote comes from the server (backend/services/tax_rules.py),
+// which also knows about Kleinunternehmer and reduced rates.
 export const COUNTRIES = [
-  { code: 'AT', name: 'Österreich', flag: '🇦🇹', dial: '+43' },
-  { code: 'DE', name: 'Deutschland', flag: '🇩🇪', dial: '+49' },
+  { code: 'AT', name: 'Österreich', flag: '🇦🇹', dial: '+43', vat: 20 },
+  { code: 'DE', name: 'Deutschland', flag: '🇩🇪', dial: '+49', vat: 19 },
 ];
 
 const AT = [
