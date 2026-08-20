@@ -755,6 +755,7 @@ export default function EstimatePage() {
                        cards={trade ? (
                          <EstimateCards jobs={visible}
                                         sections={sections}
+                                        vat={meta?.vat}
                                         only={dial ? openGroup : null}
                                         lang={lang} quoting={creating}
                                         onQuote={createMultiQuote}

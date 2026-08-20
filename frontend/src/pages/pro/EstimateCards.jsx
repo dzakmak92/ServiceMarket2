@@ -4,6 +4,9 @@ import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import { fmtEur } from '../../utils/money';
 
+/* 20 and 19 print without a decimal; a rate that is not whole keeps one. */
+const fmtPct = (n) => (Number.isInteger(n) ? String(n) : String(n).replace('.', ','));
+
 /**
  * The template list, as something you can tick rather than something you pick.
  *
@@ -151,7 +154,8 @@ const ZONE = {
 };
 
 /** One template: a checkbox, and everything it needs once it is checked. */
-function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section }) {
+function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section, vat }) {
+  const vatRate = Number(vat?.rate) || 0;
   const z = ZONE[zone];
   /* A cross-listed template is on the page twice, so its test ids have to say
      which copy. Rows that appear once keep the plain id they always had —
@@ -318,16 +322,12 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section
             <div className="flex-1">
               <span className="block text-[9px] font-extrabold uppercase tracking-[.06em]
                                text-ink-muted mb-1">€ / {unit(job.unit)}</span>
-              <div className="rounded-[9px] border border-rule bg-row px-2.5 py-2
-                              text-right text-[13px] font-bold text-ink-soft">
+              {/* Derived, so it is filled: on this card a surface means the
+                  app worked it out and you cannot type over it. */}
+              <div className="rounded-[9px] border border-navy/20 bg-navy/[.07] px-2.5 py-2
+                              text-right text-[13px] font-bold text-navy">
                 {est?.per_unit ? fmtEur(est.per_unit[1]) : '—'}
               </div>
-            </div>
-            <div className="min-w-[86px] rounded-[9px] bg-navy/[.09] px-2.5 py-2 text-right">
-              <span className="block text-[13px] font-extrabold text-ink">
-                {amount != null ? fmtEur(amount) : '—'}
-              </span>
-              <span className="block text-[8.5px] text-ink-muted">{t('est_net_estimated')}</span>
             </div>
           </div>
 
@@ -392,6 +392,44 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section
               ))}
             </div>
           )}
+
+          {/* Netto, USt., Brutto — the last thing on the card, because the
+              gross is the number that leaves it. Filled, like everything else
+              here the app worked out rather than took from you.
+
+              The rate is the pro's own, fetched with the catalogue: a
+              Kleinunternehmer charges nothing and assuming twenty percent
+              would be wrong for a large share of this app's users. Where the
+              customer could still change the treatment — reverse charge,
+              intra-EU — the line says so instead of pretending the gross is
+              settled. */}
+          {amount != null && (
+            <div className="mt-3 rounded-xl border border-navy/20 bg-navy/[.07] px-3 py-2.5"
+                 data-testid={`estimate-foot-${tid}`}>
+              <p className="flex items-baseline text-[12.5px] font-extrabold text-ink">
+                <span>{t('est_net_label')}</span>
+                <b className="ml-auto tabular-nums">{fmtEur(amount)}</b>
+              </p>
+              {vatRate > 0 && (
+                <p className="flex items-baseline text-[11px] font-bold text-ink-muted mt-0.5">
+                  <span>{t('est_vat', { pct: fmtPct(vatRate) })}</span>
+                  <b className="ml-auto tabular-nums">{fmtEur(amount * vatRate / 100)}</b>
+                </p>
+              )}
+              <p className="flex items-baseline border-t border-navy/15 mt-1.5 pt-1.5
+                            text-[13px] font-extrabold text-ink">
+                <span>{vatRate > 0 ? t('est_gross') : t('est_net_total')}</span>
+                <b className="ml-auto text-[18px] text-navy tabular-nums">
+                  {fmtEur(amount * (1 + vatRate / 100))}
+                </b>
+              </p>
+              <p className="mt-1 text-[9.5px] text-ink-muted">
+                {vat?.treatment === 'kleinunternehmer' ? t('est_vat_klein')
+                  : vat?.final === false ? t('est_vat_provisional') : t('est_net_estimated')}
+              </p>
+            </div>
+          )}
+
         </div>
       )}
     </div>
@@ -399,7 +437,7 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section
 }
 
 export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
-                                        onSelection, only = null }) {
+                                        onSelection, only = null, vat }) {
   const { t } = useLang();
   const [picked, setPicked] = useState({});
 
@@ -648,7 +686,7 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
           {sec.rows.map((j) => (
             <Card key={`${sec.key}/${j.key}`} job={j} state={picked[j.key]} t={t}
                   zone={null} alsoIn={sec.also?.[j.key]} section={sec.key}
-                  onToggle={toggle} onOpen={open} onAnswer={answer} />
+                  onToggle={toggle} onOpen={open} onAnswer={answer} vat={vat} />
           ))}
         </div>
       ))}
@@ -698,7 +736,7 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
                        same React key is one of them silently not rendering. */
                     <Card key={`${sec.key}/${j.key}`} job={j} state={picked[j.key]} t={t}
                           zone={band.zone} alsoIn={sec.also?.[j.key]} section={sec.key}
-                          onToggle={toggle} onOpen={open} onAnswer={answer} />
+                          onToggle={toggle} onOpen={open} onAnswer={answer} vat={vat} />
                   ))}
                 </div>
               </div>

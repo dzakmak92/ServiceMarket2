@@ -41,6 +41,7 @@ from services import catalogue_ui
 from services import catalogue_i18n
 from services import estimate_breakdown
 from services import estimator
+from services import tax_rules
 
 logger = logging.getLogger(__name__)
 
@@ -161,6 +162,36 @@ async def _country_for(pro_id: str) -> str:
     return c if c in ("AT", "DE") else "AT"
 
 
+async def _own_vat(pro_id: str) -> dict[str, Any]:
+    """The rate this pro charges on their own account.
+
+    Only the supplier half of the tax context is known here. The estimator runs
+    before a customer is chosen, so reverse charge, intra-EU and export cannot
+    be decided yet — those are resolved when the quote is created, against the
+    customer. What *is* decidable is the part that matters for the number on
+    the card: a Kleinunternehmer charges nothing, and everybody else charges
+    their country's standard rate.
+
+    It is returned rather than assumed because assuming 20 % is wrong for a
+    large share of exactly this app's users. `final` says whether the customer
+    could still change it, so the screen can be honest about that.
+    """
+    row = await pg.fetchrow(
+        "select invoice_country, is_kleinunternehmer from pro_profiles where id = $1", pro_id)
+    country = (row or {}).get("invoice_country")
+    country = country if country in ("AT", "DE") else "AT"
+    klein = bool((row or {}).get("is_kleinunternehmer"))
+    treatment = "kleinunternehmer" if klein else "standard"
+    return {
+        "rate": tax_rules.vat_rate(treatment, country),
+        "treatment": treatment,
+        "country": country,
+        # A Kleinunternehmer charges nothing to anybody; for everyone else the
+        # customer can still move the line to reverse charge or intra-EU.
+        "final": klein,
+    }
+
+
 async def _rates_for(pro_id: str) -> dict[str, float]:
     rows = await pg.fetch("select key, amount from pro_rates where pro_id = $1", pro_id)
     return {r["key"]: float(r["amount"]) for r in rows}
@@ -228,8 +259,10 @@ async def get_catalogue(lang: str = Query(default="de", pattern="^(de|en|tr|es)$
     whatever the interface was set to, and the trade grid — the estimator's
     first screen — read *Maler · Fliesen · Sanitär* under an English heading.
     """
-    await require_pro_id(user)
-    return estimator.meta(lang)
+    pro_id = await require_pro_id(user)
+    out = estimator.meta(lang)
+    out["vat"] = await _own_vat(pro_id)
+    return out
 
 
 @router.get("/jobs")
