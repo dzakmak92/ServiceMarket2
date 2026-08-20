@@ -618,6 +618,22 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, t, zone, also
               sits where the catalogue says this work sits. All three are drawn
               from the estimate that is already on screen — none of them costs
               a request. */}
+          {/* Nothing to break down until there is a price, and there is no
+              price until a quantity is typed — so an untouched card used to
+              show the two dropdowns and stop, looking exactly like the card
+              before any of this was built. Say what is behind the number
+              instead of leaving a blank where four blocks will be. */}
+          {!est && (
+            <div className="mt-3 rounded-[11px] border border-dashed border-rule bg-row
+                            px-3 py-3 text-center" data-testid={`estimate-awaiting-${tid}`}>
+              <p className="text-[11.5px] font-bold text-ink-soft">
+                {t('est_awaiting_qty', { u: unit(job.unit) })}
+              </p>
+              <p className="mt-0.5 text-[10.5px] text-ink-muted leading-snug">
+                {t('est_awaiting_what')}
+              </p>
+            </div>
+          )}
           <Breakdown est={est} overrides={state.qtyOverrides} tid={tid} t={t}
                      onQty={(rateKey, v) => onLineQty(job.key, rateKey, v)} />
           <Waste est={est} t={t} />
