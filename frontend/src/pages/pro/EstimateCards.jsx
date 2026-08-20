@@ -444,14 +444,19 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
      only looked at. */
   const drop = (key) => setPicked(({ [key]: _gone, ...rest }) => rest);
 
-  /* Accordion, not independent toggles. Two open cards is 940 px of the screen
-     and the whole point of this layout is that the other rows and the running
-     total stay visible while you work on one. A card that is neither ticked
-     nor the one being opened has nothing left to keep, so it goes. */
+  /* Independent toggles, not an accordion.
+     This was an accordion: opening a card closed whichever one was open, on
+     the argument that two open cards is 940 px and the other rows and the
+     running total should stay visible. That is a real cost and it is not the
+     one that matters — a quote is several positions and they get set up
+     together, so closing the one you just filled in to look at the next is the
+     app taking work away from you. Comparing two templates side by side was
+     impossible, and every reopen re-read a form you had already answered.
+     Cards now stay open until they are closed, and the ones that are neither
+     open nor ticked are still dropped, because those have nothing to keep. */
   const openOnly = (cur, key, patch) => {
     const rest = Object.fromEntries(Object.entries(cur)
-      .filter(([k, v]) => k === key || v.checked)
-      .map(([k, v]) => [k, k === key ? v : { ...v, open: false }]));
+      .filter(([k, v]) => k === key || v.checked || v.open));
     return { ...rest, [key]: { ...(cur[key] || {}), ...patch } };
   };
 
