@@ -7,6 +7,7 @@ import api from '../api/client';
 import { STAGES } from '../utils/workflow';
 import { CalendarDays, Home, LayoutDashboard, ListChecks,
   MoreHorizontal, Plus, Settings as SettingsIcon, Users, X } from 'lucide-react';
+import AppVersion from './AppVersion';
 
 /**
  * Mobile bottom nav — four anchors and a "More" sheet.
@@ -159,6 +160,9 @@ export default function MobileNav() {
                 );
               })}
             </div>
+            {/* The build, at the foot of the sheet: two taps from anywhere,
+                and beside nothing it could be mistaken for a setting. */}
+            <AppVersion />
             <div className="h-2" />
           </div>
         </div>

@@ -8,11 +8,10 @@ import PrivacySettings from '../../components/PrivacySettings';
 import ScrollSnapTabStrip, { SwipeableTabPanel } from '../../components/ScrollSnapTabStrip';
 import { lookupBankFromIban, isValidIban } from '../../utils/ibanBicLookup';
 import { isPremiumTier, planLabel } from '../../utils/tier';
-import { BUILD, buildLabel, runningAsset } from '../../utils/build';
 import {
   User, Bell, Briefcase, Settings as SettingsIcon, Image as ImageIcon,
   Globe, Plus, Trash2, Loader2, AlertCircle, CheckCircle2, Star, Eye, Shield,
-  KeyRound, Info, Copy,
+  KeyRound,
   MessageSquare, Pencil, MapPin, Receipt, Building2, Banknote, Sparkles, Check,
 } from 'lucide-react';
 
@@ -725,8 +724,6 @@ export default function ProSettingsPage() {
 
                   <ChangePassword t={t} />
 
-                  <AppVersion t={t} />
-
                   <div className="pt-4 border-t border-sm-border">
                     <button
                       className="btn-danger w-full"
@@ -1093,67 +1090,6 @@ function ChangePassword({ t }) {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-/**
- * Which build this phone is running.
- *
- * There was no answer to this anywhere in the app, which made every support
- * conversation start from nothing: a pro reporting a bug that was fixed on
- * Tuesday and a pro whose tab has not reloaded since Monday say exactly the
- * same sentence. The commit is what makes those two different.
- *
- * The running asset hash is shown beside it when it can be read, because they
- * can disagree — a tab open for days is executing an older bundle than the one
- * the server is handing out, and that disagreement is the diagnosis rather
- * than a detail to tidy away. `UpdatePrompt` is what offers the reload.
- *
- * One tap copies the lot, so it can be pasted into a message instead of read
- * out digit by digit.
- */
-function AppVersion({ t }) {
-  const [copied, setCopied] = useState(false);
-  const asset = runningAsset();
-  const built = BUILD.at ? new Date(BUILD.at) : null;
-  const line = `ServiceMarket ${buildLabel()}${asset ? ` · ${asset}` : ''}`;
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(line);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* No clipboard permission, or an insecure origin. The text is on screen
-         and selectable either way — this button is a convenience, not the
-         only way to get at it. */
-    }
-  };
-
-  return (
-    <div className="pt-4 border-t border-sm-border" data-testid="app-version">
-      <div className="flex items-start gap-2.5 rounded-[12px] border border-sm-border
-                      bg-cream-soft px-3 py-2.5">
-        <Info size={14} className="mt-[3px] shrink-0 text-ink-muted" />
-        <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-bold uppercase tracking-[.05em] text-ink-muted">
-            {t('settings_version')}
-          </p>
-          <p className="mt-[2px] font-bold text-[14px] text-ink tabular-nums"
-             data-testid="app-version-value">{buildLabel()}</p>
-          <p className="mt-[2px] text-[11px] text-ink-muted leading-relaxed">
-            {built ? t('settings_version_built', { d: built.toLocaleString() }) : null}
-            {asset ? ` · ${t('settings_version_running', { a: asset })}` : ''}
-          </p>
-        </div>
-        <button type="button" onClick={copy} data-testid="app-version-copy"
-                aria-label={t('settings_version_copy')}
-                className="shrink-0 rounded-[9px] border border-sm-border bg-paper px-2 py-1.5
-                           text-[11px] font-bold text-teal">
-          {copied ? <Check size={13} /> : <Copy size={13} />}
-        </button>
-      </div>
     </div>
   );
 }
