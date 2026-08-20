@@ -1,6 +1,38 @@
 // craco.config.js
 const path = require("path");
+const webpack = require("webpack");
+const { execSync } = require("child_process");
 require("dotenv").config();
+
+/**
+ * What build is this, in words a person can read out over the phone.
+ *
+ * The app already detects that a *newer* build exists — `UpdatePrompt` compares
+ * the hashed entry files — but nothing anywhere said which build the phone in
+ * your hand is running. "It is not working" and "which version are you on" had
+ * no answer, so a fixed bug and an unreloaded tab looked the same from here.
+ *
+ * Baked in at build time because there is nothing to ask at runtime: the commit
+ * is a fact about the bundle, not about the session. Vercel exports the sha in
+ * the environment; a local build reads it from git; a checkout with neither
+ * still builds, and says `dev`.
+ */
+function buildStamp() {
+  const sha = process.env.VERCEL_GIT_COMMIT_SHA
+    || (() => {
+      try {
+        return execSync("git rev-parse HEAD", { stdio: ["ignore", "pipe", "ignore"] })
+          .toString().trim();
+      } catch {
+        return "";
+      }
+    })();
+  return {
+    version: require("./package.json").version,
+    sha: sha ? sha.slice(0, 7) : "dev",
+    at: new Date().toISOString(),
+  };
+}
 
 // Check if we're in development/preview mode (not production build)
 // Craco sets NODE_ENV=development for start, NODE_ENV=production for build
@@ -55,6 +87,11 @@ let webpackConfig = {
       if (config.enableHealthCheck && healthPluginInstance) {
         webpackConfig.plugins.push(healthPluginInstance);
       }
+
+      // One string, so the settings screen can say which build it is.
+      webpackConfig.plugins.push(new webpack.DefinePlugin({
+        'process.env.REACT_APP_BUILD': JSON.stringify(JSON.stringify(buildStamp())),
+      }));
       return webpackConfig;
     },
   },

@@ -7,6 +7,11 @@ import { fmtEur } from '../../utils/money';
 /* 20 and 19 print without a decimal; a rate that is not whole keeps one. */
 const fmtPct = (n) => (Number.isInteger(n) ? String(n) : String(n).replace('.', ','));
 
+/* Kilos and quantities, not money — `fmtEur` would put a currency on a weight.
+   One decimal, because 25,6 kg is a measurement and 25,63 kg is a pretence. */
+const fmtNum = (n) => new Intl.NumberFormat('de-AT',
+  { maximumFractionDigits: 1 }).format(Number(n) || 0);
+
 /**
  * The template list, as something you can tick rather than something you pick.
  *
@@ -56,6 +61,19 @@ const txt = (o) => (o && (o.text || o.text_de)) || '';
    happen. On screen they should read as units. */
 const UNIT = { m2: 'm²', m3: 'm³' };
 const unit = (u) => UNIT[u] || u;
+
+/* The API takes numbers; the inputs hold strings, and a half-typed "1," is
+   not one. Anything unparseable is dropped rather than sent as NaN, so a
+   quantity in the middle of being typed leaves the estimate on its last good
+   figure instead of blanking the card. */
+function numeric(overrides) {
+  const out = {};
+  Object.entries(overrides || {}).forEach(([k, v]) => {
+    const n = Number(String(v).replace(',', '.'));
+    if (Number.isFinite(n) && n >= 0) out[k] = n;
+  });
+  return out;
+}
 
 /** Has this position a quantity somebody actually typed? */
 function hasQty(state) {
@@ -123,6 +141,200 @@ function Note({ note, tone = 'normal' }) {
   );
 }
 
+/**
+ * How the price is made up — the positions the estimator actually wrote.
+ *
+ * This is the part of the card the whole design round was about. Without it
+ * the card offers one number and no way to argue with it: a pro who thinks
+ * 32 m² of woodchip is four hours and not six has nowhere to say so, and a
+ * customer who asks what the 8,50 € covers gets an answer only the app knows.
+ *
+ * Every quantity here is editable and goes back as `qty_overrides`, keyed by
+ * rate key — the estimator has taken that parameter since the beginning and
+ * nothing on this screen ever sent one. The unit price is not editable and
+ * that is deliberate: what a unit costs is the rate card, one rate key at a
+ * time, and folding it in here would silently fork a business's pricing per
+ * quote. A line the pro has moved says so, because a corrected estimate and a
+ * model's own estimate are different claims.
+ */
+function Breakdown({ est, overrides, onQty, t, tid }) {
+  const lines = est?.lines || [];
+  if (!lines.length) return null;
+  const moved = new Set(est.qty_adjusted || []);
+  return (
+    <div className="mt-3">
+      <p className="text-[9px] font-extrabold uppercase tracking-[.06em] text-ink-muted mb-1.5">
+        {t('est_breakdown')}
+      </p>
+      <div className="rounded-[11px] border border-rule overflow-hidden">
+        {lines.map((ln) => {
+          const own = overrides?.[ln.rate_key];
+          const qty = own !== undefined && own !== '' ? Number(own) : ln.qty;
+          const sum = qty * (1 + (ln.waste_factor || 0)) * ln.unit_price;
+          return (
+            <div key={ln.rate_key + ln.description}
+                 className={`px-2.5 py-2 border-b border-rule/60 last:border-b-0
+                             ${ln.kind === 'material' ? 'bg-teal/[.04]' : 'bg-paper'}`}>
+              <p className="flex items-center gap-1.5">
+                <span className="flex-1 min-w-0 text-[11.5px] font-bold text-ink leading-snug">
+                  {ln.description}
+                </span>
+                <span className={`shrink-0 rounded-full px-1.5 py-[1px] text-[8.5px] font-extrabold
+                                  ${ln.kind === 'material' ? 'bg-teal/15 text-teal'
+                                    : ln.kind === 'other' ? 'bg-amber/20 text-amber-text'
+                                                          : 'bg-navy/10 text-navy'}`}>
+                  {t(ln.kind === 'material' ? 'est_kind_material'
+                    : ln.kind === 'other' ? 'est_kind_other' : 'est_kind_labour')}
+                </span>
+              </p>
+              <p className="mt-1.5 flex items-center gap-1.5">
+                {/* Editable, and filled so it reads as a field rather than as
+                    a printed figure. */}
+                <span className="inline-flex items-center rounded-[8px] border border-navy/25
+                                 bg-navy/[.05] pl-1.5 pr-1">
+                  <input
+                    type="number" inputMode="decimal" min="0" step="any"
+                    value={own !== undefined ? own : ln.qty}
+                    onChange={(e) => onQty(ln.rate_key, e.target.value)}
+                    data-testid={`estimate-line-qty-${tid}-${ln.rate_key}`}
+                    aria-label={`${ln.description} — ${t('est_qty')}`}
+                    className="w-[52px] bg-transparent py-1 text-right text-[12px]
+                               font-bold text-ink outline-none"
+                  />
+                  <u className="not-italic no-underline pl-1 text-[9.5px] font-bold text-ink-muted">
+                    {unit(ln.unit)}
+                  </u>
+                </span>
+                <b className="text-[11px] font-bold text-ink-muted">×</b>
+                <span className="text-[12px] font-bold text-ink">{fmtEur(ln.unit_price)}</span>
+                <em className="ml-auto not-italic text-[13px] font-extrabold text-navy
+                               tabular-nums">{fmtEur(sum)}</em>
+              </p>
+              {(moved.has(ln.rate_key) || own !== undefined) && (
+                <p className="mt-1 flex items-center gap-2 text-[9.5px] font-bold text-amber-text">
+                  {/* Just "your figure" — not "the catalogue said N". The
+                      estimator applies the override and echoes the corrected
+                      quantity back on `qty`, so the model's original is not in
+                      the response to quote. Reset is what recovers it. */}
+                  {t('est_line_yours')}
+                  <button type="button" onClick={() => onQty(ln.rate_key, undefined)}
+                          className="rounded-full border border-rule bg-paper px-1.5 py-[1px]
+                                     text-[9px] font-extrabold text-navy">
+                    {t('est_line_reset')}
+                  </button>
+                </p>
+              )}
+            </div>
+          );
+        })}
+        <p className="flex items-baseline bg-navy/[.06] px-2.5 py-2 text-[12px]
+                      font-extrabold text-ink">
+          <span>{t('est_positions')}</span>
+          <b className="ml-auto tabular-nums text-navy">{fmtEur(est.lines_net)}</b>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The waste, in kilos before it is in euros.
+ *
+ * The catalogue prices a tonne — `disposal_per_tonne`, 130–260 €/t for Austrian
+ * Sperrmüll — and carries `debris_kg_per_unit` per operation, so the euro
+ * figure on a small job is genuinely small: 32 m² of woodchip is 25,6 kg and
+ * about five euros. A pro reading "4,99 €" with no kilos beside it assumes the
+ * app has lost a decimal. With the kilos there they can see it is right, and
+ * see the thing the catalogue does *not* price: the trip to the Mistplatz.
+ */
+function Waste({ est, t }) {
+  const kg = est?.debris_kg || [0, 0];
+  if (!(kg[1] > 0)) return null;
+  /* The euro figure the *positions* carry, not the top of the disposal range.
+     The estimator writes one disposal line at the midpoint of that range and
+     puts the range itself in `disposal`, so printing `disposal[1]` here made
+     this block disagree with the line three rows above it — 9,98 € against
+     5,82 € for the same rubbish. */
+  const line = (est.lines || []).find((l) => l.kind === 'other');
+  const eur = line ? line.qty * (1 + (line.waste_factor || 0)) * line.unit_price
+                   : (est.disposal || [0, 0])[1];
+  return (
+    <div className="mt-3 rounded-[11px] border border-amber/30 bg-amber/[.07] px-2.5 py-2">
+      <p className="text-[9px] font-extrabold uppercase tracking-[.06em] text-amber-text">
+        {t('est_waste')}
+      </p>
+      <p className="mt-1 flex items-baseline gap-2 text-[12px] font-bold text-ink">
+        <span>{kg[0] === kg[1] ? `${fmtNum(kg[1])} kg`
+          : `${fmtNum(kg[0])} – ${fmtNum(kg[1])} kg`}</span>
+        <b className="ml-auto tabular-nums text-[13px] font-extrabold text-amber-text">
+          {fmtEur(eur)}
+        </b>
+      </p>
+      <p className="mt-1 text-[10px] leading-relaxed text-ink-soft">
+        {est.container ? t('est_waste_container', { c: est.container })
+          : t('est_waste_no_container')}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * The check a pro would do in their head, done on the card.
+ *
+ * `market_band` is what the catalogue says this work goes for, and until now it
+ * was printed on the collapsed row and nowhere else — so the one moment it
+ * matters, when a quantity or an answer has just moved the price, it was off
+ * screen. Comparing the same basis the band is quoted on: `per_unit` bands
+ * against €/unit, `total` bands against the position total.
+ */
+function BandCheck({ est, job, t }) {
+  const band = est?.market_band;
+  if (!band || band.length !== 2) return null;
+  const perUnit = est.band_basis === 'per_unit';
+  /* `lines_net / qty`, never `per_unit[1]`.
+     `per_unit` is the top of the model's *range* divided by the quantity, and
+     the card quotes `lines_net`. Checking one against the band while quoting
+     the other is how a position that quotes at 11,18 €/m² — comfortably inside
+     a 5–12 band — got flagged as 18,87 €/m² and over it. The check has to
+     judge the figure the customer will actually be sent. */
+  const value = perUnit ? (est.qty ? est.lines_net / est.qty : null) : est.lines_net;
+  if (!value) return null;
+  const span = band[1] - band[0];
+  const pos = span > 0 ? ((value - band[0]) / span) * 100 : 100;
+  const inside = value >= band[0] && value <= band[1];
+  /* Clamped for the bar only. The figure beside it is never clamped, and the
+     sentence says which side it fell off — a marker parked on the end of a
+     bar reads as "just about inside", which is the opposite of the truth. */
+  const at = Math.max(0, Math.min(100, pos));
+  return (
+    <div className="mt-3 rounded-[11px] border border-navy/15 bg-navy/[.04] px-2.5 py-2">
+      <p className="text-[9px] font-extrabold uppercase tracking-[.06em] text-ink-muted">
+        {t('est_check')}
+      </p>
+      <p className="mt-1 flex items-baseline gap-2">
+        <b className="text-[15px] font-extrabold text-navy tabular-nums">
+          {fmtEur(value)}{perUnit ? ` / ${unit(job.unit)}` : ''}
+        </b>
+        <span className={`ml-auto rounded-full px-1.5 py-[1px] text-[9px] font-extrabold
+                          ${inside ? 'bg-green-pos/15 text-green-text'
+                                   : 'bg-amber/20 text-amber-text'}`}>
+          {inside ? t('est_check_in') : value > band[1] ? t('est_check_over')
+                                                        : t('est_check_under')}
+        </span>
+      </p>
+      <div className="relative mt-2 h-[7px] rounded-full bg-navy/10">
+        <span className="absolute inset-y-0 left-0 right-0 rounded-full bg-green-pos/30" />
+        <span className="absolute -top-[3px] h-[13px] w-[2px] rounded-full bg-navy"
+              style={{ left: `${at}%` }} />
+      </div>
+      <p className="mt-1 text-[10px] text-ink-soft">
+        {t('est_check_band', { lo: fmtEur(band[0]), hi: fmtEur(band[1]),
+          u: perUnit ? `/ ${unit(job.unit)}` : '' })}
+      </p>
+    </div>
+  );
+}
+
 /* Per-zone chrome.
 
    `rest` is the card at rest — not open, not ticked — and it is the only state
@@ -154,7 +366,8 @@ const ZONE = {
 };
 
 /** One template: a checkbox, and everything it needs once it is checked. */
-function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section, vat }) {
+function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, t, zone, alsoIn,
+                section, vat }) {
   const vatRate = Number(vat?.rate) || 0;
   const z = ZONE[zone];
   /* A cross-listed template is on the page twice, so its test ids have to say
@@ -310,23 +523,36 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section
                 onChange={(e) => qq && onAnswer(job.key, qq.key, e.target.value)}
                 placeholder={unit(job.unit)}
                 data-testid={`estimate-qty-${tid}`}
-                className="w-full rounded-[9px] border border-rule bg-paper px-2.5 py-2
+                /* Filled, like every other field on this card you can type
+                   into. What you can change and what the app worked out are
+                   two different things and they should not look alike. */
+                className="w-full rounded-[9px] border border-navy/25 bg-navy/[.05] px-2.5 py-2
                            text-right text-[13px] font-bold text-ink"
               />
             </label>
-            {/* Derived, not editable. `per_unit` is total ÷ quantity across
-                four separate rate keys — labour, covering, material, setup —
-                so there is no single number here to type into. Changing what
-                a unit costs is what the rate card does, one rate key at a
-                time, and it is one tap away rather than silently folded in. */}
+            {/* Derived, not editable: the positions divided by the quantity,
+                across four separate rate keys — labour, covering, material,
+                setup — so there is no single number here to type into.
+                Changing what a unit costs is what the rate card does, one rate
+                key at a time, and it is one tap away rather than silently
+                folded in.
+
+                It used to print `per_unit[1]`, which is the top of the
+                estimator's *range* over the quantity — 18,87 €/m² beside a
+                card totalling 357,81 € on 32 m², a figure that multiplies back
+                out to 603,84 €. The plate now divides the same total the card
+                quotes, so the three numbers on screen agree. */}
             <div className="flex-1">
               <span className="block text-[9px] font-extrabold uppercase tracking-[.06em]
                                text-ink-muted mb-1">€ / {unit(job.unit)}</span>
-              {/* Derived, so it is filled: on this card a surface means the
-                  app worked it out and you cannot type over it. */}
-              <div className="rounded-[9px] border border-navy/20 bg-navy/[.07] px-2.5 py-2
-                              text-right text-[13px] font-bold text-navy">
-                {est?.per_unit ? fmtEur(est.per_unit[1]) : '—'}
+              {/* Derived, so it is flat. The filled navy wash now means "you
+                  can type here" — it is on the quantity above and on every
+                  quantity in the breakdown — and this plate must not borrow
+                  it, or the one field that cannot be edited would look like
+                  the ones that can. */}
+              <div className="rounded-[9px] border border-dashed border-rule bg-row px-2.5 py-2
+                              text-right text-[13px] font-bold text-ink-soft">
+                {est?.lines_net && est?.qty ? fmtEur(est.lines_net / est.qty) : '—'}
               </div>
             </div>
           </div>
@@ -340,16 +566,29 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section
           <div className="mt-3 grid grid-cols-2 gap-2">
             {fields.map((q) => {
               const wide = q.type === 'bool' || (q.options || []).length > 3;
+              /* `price_effect` has been on every question since the form was
+                 built and nothing on screen used it, so a question worth
+                 +15–30 % looked exactly like one that only writes a sentence
+                 into the quote. "note" is the only value that moves nothing. */
+              const free = q.price_effect === 'note';
               return (
                 <label key={q.key} className={wide ? 'col-span-2' : ''}>
-                  <span className="block text-[9px] font-extrabold uppercase tracking-[.06em]
-                                   text-ink-muted mb-1">{lbl(q)}</span>
+                  <span className="flex items-center gap-1.5 text-[9px] font-extrabold uppercase
+                                   tracking-[.06em] text-ink-muted mb-1">
+                    <span className="min-w-0 truncate">{lbl(q)}</span>
+                    {free && (
+                      <span className="shrink-0 rounded-full bg-ink/[.06] px-1.5 py-[1px]
+                                       text-[8px] font-extrabold tracking-normal normal-case
+                                       text-ink-muted">{t('est_effect_note')}</span>
+                    )}
+                  </span>
                   {q.type === 'bool' ? (
                     <select
                       value={String(state.answers[q.key] ?? false)}
                       onChange={(e) => onAnswer(job.key, q.key, e.target.value === 'true')}
-                      className="w-full rounded-[9px] border border-rule bg-paper px-2.5 py-2
-                                 text-[12px] text-ink">
+                      className={`w-full rounded-[9px] border px-2.5 py-2 text-[12px] text-ink
+                                  ${free ? 'border-rule bg-paper'
+                                         : 'border-navy/25 bg-navy/[.05] font-semibold'}`}>
                       <option value="false">{t('no')}</option>
                       <option value="true">{t('yes')}</option>
                     </select>
@@ -358,8 +597,9 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section
                       value={state.answers[q.key] ?? ''}
                       onChange={(e) => onAnswer(job.key, q.key, e.target.value)}
                       data-testid={`estimate-field-${tid}-${q.key}`}
-                      className="w-full rounded-[9px] border border-rule bg-paper px-2.5 py-2
-                                 text-[12px] text-ink">
+                      className={`w-full rounded-[9px] border px-2.5 py-2 text-[12px] text-ink
+                                  ${free ? 'border-rule bg-paper'
+                                         : 'border-navy/25 bg-navy/[.05] font-semibold'}`}>
                       {(q.options || []).map(([v, l]) => (
                         <option key={String(v)} value={String(v)}>{l}</option>
                       ))}
@@ -372,6 +612,16 @@ function Card({ job, state, onToggle, onOpen, onAnswer, t, zone, alsoIn, section
               );
             })}
           </div>
+
+          {/* The three blocks the card was missing: what the price is made of,
+              what comes out of the flat in kilos, and whether the result still
+              sits where the catalogue says this work sits. All three are drawn
+              from the estimate that is already on screen — none of them costs
+              a request. */}
+          <Breakdown est={est} overrides={state.qtyOverrides} tid={tid} t={t}
+                     onQty={(rateKey, v) => onLineQty(job.key, rateKey, v)} />
+          <Waste est={est} t={t} />
+          <BandCheck est={est} job={job} t={t} />
 
           {footer && <div className="mt-3"><Note note={footer} /></div>}
           {hidden > 0 && (
@@ -457,7 +707,8 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
         const p = picked[key];
         try {
           const { data } = await api.post('/api/estimate',
-            { job_key: key, answers: p.answers, tier: 'standard' },
+            { job_key: key, answers: p.answers, tier: 'standard',
+              qty_overrides: numeric(p.qtyOverrides) },
             { params: { lang } });
           next[key] = data;
         } catch { /* a position that will not price keeps its last figure */ }
@@ -578,6 +829,21 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
     bump();
   };
 
+  /* A quantity the pro corrected on one position of one template.
+     Keyed by rate key, which is what `/api/estimate` has always taken and what
+     the estimator matches its own lines on. Passing `undefined` clears the
+     correction and the line goes back to what the model says. */
+  const lineQty = (key, rateKey, value) => {
+    setPicked((cur) => {
+      if (!cur[key]) return cur;
+      const next = { ...(cur[key].qtyOverrides || {}) };
+      if (value === undefined || value === '') delete next[rateKey];
+      else next[rateKey] = value;
+      return { ...cur, [key]: { ...cur[key], qtyOverrides: next, loading: true } };
+    });
+    bump();
+  };
+
   const chosen = Object.entries(picked).filter(([, p]) => p.checked && p.est);
   // Same figure as the cards, for the same reason: this bar sits directly
   // above the button that creates the quote, so it is a promise about it.
@@ -599,6 +865,7 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
      because changing one changes the draft that would be saved. */
   const positions = chosen.map(([key, p]) => ({
     job_key: key, answers: p.answers, tier: 'standard',
+    qty_overrides: numeric(p.qtyOverrides),
   }));
   /* `pending.length` goes up too, and leaving that out is what made the first
      version of this useless: a card ticked with no quantity yet has no
@@ -686,7 +953,8 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
           {sec.rows.map((j) => (
             <Card key={`${sec.key}/${j.key}`} job={j} state={picked[j.key]} t={t}
                   zone={null} alsoIn={sec.also?.[j.key]} section={sec.key}
-                  onToggle={toggle} onOpen={open} onAnswer={answer} vat={vat} />
+                  onToggle={toggle} onOpen={open} onAnswer={answer}
+                          onLineQty={lineQty} vat={vat} />
           ))}
         </div>
       ))}
@@ -736,7 +1004,8 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
                        same React key is one of them silently not rendering. */
                     <Card key={`${sec.key}/${j.key}`} job={j} state={picked[j.key]} t={t}
                           zone={band.zone} alsoIn={sec.also?.[j.key]} section={sec.key}
-                          onToggle={toggle} onOpen={open} onAnswer={answer} vat={vat} />
+                          onToggle={toggle} onOpen={open} onAnswer={answer}
+                          onLineQty={lineQty} vat={vat} />
                   ))}
                 </div>
               </div>
