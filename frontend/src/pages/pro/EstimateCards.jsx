@@ -464,6 +464,10 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate,
    * single-job page, which prints it as a guide beside the same `lines_net`. */
   const amount = est ? est.lines_net : null;
   const { pct: disc, eur: discEur, net } = discountOf(state, amount);
+  const given = amount == null ? 0 : amount - net;
+  /* The combined figure only when there are two to combine — repeating one
+     line's own amount as its "zusammen" says nothing. */
+  const both = disc > 0 && discEur > 0;
 
   /* The answers worth repeating on a collapsed row: the ones that moved the
      price. `answers_applied` is the estimator's own list, so this cannot
@@ -777,6 +781,72 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate,
             </div>
           )}
 
+          {/* The Nachlass, in its own block rather than as two rows in the
+              tax column.
+
+              It is the one thing in this part of the card somebody decides;
+              everything under it is arithmetic. As rows in that column the
+              two fields never lined up and could not be made to — the boxes
+              started after labels of different widths, ended at different
+              widths, and carried a % and a € that are not the same width
+              either — so the fix is to stop them being rows in it.
+
+              Per position rather than per document, because that is where a
+              tradesperson actually gives ground: the painting is keen and the
+              scaffolding is not. It writes `quote_lines.discount_pct`, a
+              column the schema has carried from the start, that the invoice
+              already applies, and that nothing had ever set.
+
+              Neutral until something is entered. A quote with no Nachlass is
+              the normal case, and an amber block on every position of every
+              card would shout on all of them. Nothing moves when it fills —
+              same block, same rows, different colour. */}
+          {amount != null && (
+            <div data-testid={`estimate-discount-block-${tid}`}
+                 className={`mt-3 rounded-xl border px-3 py-2.5 ${given > 0
+                   ? 'border-amber/40 bg-amber/[.09]' : 'border-rule bg-row'}`}>
+              <p className={`flex items-baseline text-[9.5px] font-extrabold uppercase
+                             tracking-[.07em] ${given > 0 ? 'text-amber-text' : 'text-ink-muted'}`}>
+                <span>{t('est_discount')}</span>
+                {both && (
+                  <b className="ml-auto text-[12.5px] font-extrabold normal-case tracking-normal
+                                tabular-nums">− {fmtEur(given)}</b>
+                )}
+              </p>
+
+              {[['discount', '%', disc, amount * disc / 100, 100],
+                ['discountEur', '€', discEur, Math.min(discEur, amount * (1 - disc / 100)), null]]
+                .map(([field, sym, value, off, max]) => (
+                  <p key={field} className="mt-1.5 flex items-center gap-2">
+                    {/* Both boxes are the same element at the same width, first
+                        in the row, so they start and end on the same two
+                        verticals whatever is beside them. */}
+                    <span className={`inline-flex w-[78px] items-center rounded-[8px] border
+                                      bg-paper pl-2 pr-1.5 ${given > 0
+                                        ? 'border-amber/50' : 'border-rule'}`}>
+                      <input
+                        type="number" inputMode="decimal" min="0" step="any"
+                        {...(max ? { max } : {})}
+                        value={state[field] ?? ''} placeholder="0"
+                        onChange={(e) => onDiscount(job.key, field, e.target.value)}
+                        data-testid={`estimate-${field === 'discount' ? 'discount' : 'discount-eur'}-${tid}`}
+                        aria-label={`${t('est_discount')} ${sym}`}
+                        className="w-full bg-transparent py-[5px] text-right text-[12px]
+                                   font-bold text-ink outline-none"
+                      />
+                      <u className="not-italic no-underline pl-1.5 w-[11px] text-[10px]
+                                    font-bold text-ink-muted">{sym}</u>
+                    </span>
+                    {value > 0 && (
+                      <b className="ml-auto text-[12px] font-extrabold text-ink tabular-nums">
+                        − {fmtEur(off)}
+                      </b>
+                    )}
+                  </p>
+                ))}
+            </div>
+          )}
+
           {/* Netto, USt., Brutto — the last thing on the card, because the
               gross is the number that leaves it. Filled, like everything else
               here the app worked out rather than took from you.
@@ -796,58 +866,6 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate,
                   ? 'text-ink-faint line-through decoration-1 font-bold' : ''}`}>
                   {fmtEur(amount)}
                 </b>
-              </p>
-              {/* The Nachlass, on this position rather than on the document.
-                  It writes `quote_lines.discount_pct`, which the schema has
-                  carried from the start and the invoice already applies —
-                  nothing had ever set it. Per position because that is where
-                  a tradesperson actually gives ground: the painting is keen
-                  and the scaffolding is not, and one figure on the document
-                  cannot say that. */}
-              <p className="mt-1 flex items-center gap-2 text-[11px] font-bold text-ink-muted">
-                <span>{t('est_discount')}</span>
-                <span className="inline-flex items-center rounded-[7px] border border-navy/25
-                                 bg-paper pl-1.5 pr-1">
-                  <input
-                    type="number" inputMode="decimal" min="0" max="100" step="any"
-                    value={state.discount ?? ''} placeholder="0"
-                    onChange={(e) => onDiscount(job.key, 'discount', e.target.value)}
-                    data-testid={`estimate-discount-${tid}`}
-                    aria-label={t('est_discount')}
-                    className="w-[34px] bg-transparent py-[3px] text-right text-[11.5px]
-                               font-bold text-ink outline-none"
-                  />
-                  <u className="not-italic no-underline pl-1 text-[9.5px] font-bold
-                                text-ink-muted">%</u>
-                </span>
-                {disc > 0 && (
-                  <b className="ml-auto tabular-nums text-ink">
-                    − {fmtEur(amount * disc / 100)}
-                  </b>
-                )}
-              </p>
-              {/* An amount off, under the percentage, both live at once. */}
-              <p className="mt-1 flex items-center gap-2 text-[11px] font-bold text-ink-muted">
-                <span>{t('est_discount_eur')}</span>
-                <span className="inline-flex items-center rounded-[7px] border border-navy/25
-                                 bg-paper pl-1.5 pr-1">
-                  <input
-                    type="number" inputMode="decimal" min="0" step="any"
-                    value={state.discountEur ?? ''} placeholder="0"
-                    onChange={(e) => onDiscount(job.key, 'discountEur', e.target.value)}
-                    data-testid={`estimate-discount-eur-${tid}`}
-                    aria-label={t('est_discount_eur')}
-                    className="w-[46px] bg-transparent py-[3px] text-right text-[11.5px]
-                               font-bold text-ink outline-none"
-                  />
-                  <u className="not-italic no-underline pl-1 text-[9.5px] font-bold
-                                text-ink-muted">€</u>
-                </span>
-                {discEur > 0 && (
-                  <b className="ml-auto tabular-nums text-ink">
-                    − {fmtEur(Math.min(discEur, amount * (1 - disc / 100)))}
-                  </b>
-                )}
               </p>
               {(disc > 0 || discEur > 0) && (
                 <p className="flex items-baseline text-[12.5px] font-extrabold text-ink mt-1">
