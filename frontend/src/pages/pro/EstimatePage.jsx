@@ -552,7 +552,12 @@ export default function EstimatePage() {
       const q = data?.quotes?.[0];
       if (q?.id && then === 'home') { navigate('/'); return data; }
       if (q?.id) {
+        /* The gross too. `quotes` has always carried `vat_total` and
+           `gross_total` — the trigger on `quote_lines` fills them on insert —
+           and this dialog reported only the net, so a quote stored at 453,67
+           announced itself as 378,06 and read as one written without VAT. */
         setCreated({ id: q.id, number: q.quote_number, net: q.net_total,
+                     gross: q.gross_total, vat: q.vat_total,
                      n: positions.length });
         api.get('/api/estimate/accuracy').then(({ data: a }) => setAccuracy(a)).catch(() => {});
         return data;
@@ -894,7 +899,11 @@ export default function EstimatePage() {
               {t('est_created_title')}
             </p>
             <p className="text-[14px] text-ink-muted mt-1.5">
-              {[created.number, t('est_created_net', { v: fmtEur(created.net) })]
+              {[created.number,
+                Number(created.vat) > 0
+                  ? t('est_created_gross', { n: fmtEur(created.net),
+                                             g: fmtEur(created.gross) })
+                  : t('est_created_net', { v: fmtEur(created.net) })]
                 .filter(Boolean).join(' · ')}
             </p>
             <button type="button" onClick={() => navigate('/quotes')}

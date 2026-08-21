@@ -909,6 +909,16 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
      for. Debounced together rather than per card: typing a quantity in one
      card must not fire five requests for the four that did not change. */
   const [tick, setTick] = useState(0);
+  /* Whether the bar leads with net or gross is a fact about the business — a
+     Maler quoting private customers thinks in Brutto, one quoting a builder
+     thinks in Netto — so it is remembered rather than asked every visit. */
+  const [withVat, setWithVat] = useState(() => {
+    try { return localStorage.getItem('sm_est_gross') === '1'; } catch { return false; }
+  });
+  const toggleVat = () => setWithVat((v) => {
+    try { localStorage.setItem('sm_est_gross', v ? '0' : '1'); } catch { /* private mode */ }
+    return !v;
+  });
   const bump = useCallback(() => setTick((n) => n + 1), []);
 
   useEffect(() => {
@@ -1123,6 +1133,12 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
   const gross = chosen.reduce((s, [, p]) => s + p.est.lines_net, 0);
   const total = chosen.reduce((s, [, p]) => s + netOf(p), 0);
   const given = gross - total;
+  /* The quote has always stored net, VAT and gross — the `quote_lines`
+     trigger computes all three on insert — but this bar reported the net
+     while the card foot above it reported the gross, so the figure read just
+     before pressing the button was not the figure on the document. */
+  const vatRate = Number(vat?.rate) || 0;
+  const withTax = (n) => (withVat ? n * (1 + vatRate / 100) : n);
 
   /* Ticked, but no quantity typed yet, so it has no price and cannot go into
      the quote. Somebody who ticks a position means to send it — dropping it
@@ -1304,7 +1320,10 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
               {chosen.length > 0 && (
                 <>
                   {chosen.length === 1 ? t('est_one_position')
-                    : t('est_n_positions', { n: chosen.length })} · {t('est_net_estimated')}
+                    : t('est_n_positions', { n: chosen.length })}
+                  {' · '}
+                  {withVat && vatRate > 0 ? t('est_incl_vat', { pct: fmtPct(vatRate) })
+                    : t('est_net_estimated')}
                 </>
               )}
               {pending.length > 0 && (
@@ -1321,11 +1340,11 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
                 {given > 0 && (
                   <span className="font-headings text-[17px] font-extrabold tabular-nums
                                    text-ink-faint line-through decoration-1">
-                    {fmtEur(gross)}
+                    {fmtEur(withTax(gross))}
                   </span>
                 )}
                 <span className="font-headings text-[17px] font-extrabold text-ink tabular-nums">
-                  {fmtEur(total)}
+                  {fmtEur(withTax(total))}
                 </span>
               </p>
             )}
@@ -1335,6 +1354,27 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
               </p>
             )}
           </div>
+
+          {chosen.length > 0 && vatRate > 0 && (
+            <button type="button" onClick={toggleVat} aria-pressed={withVat}
+                    data-testid="estimate-with-vat"
+                    className="shrink-0 flex items-center gap-1.5 rounded-[9px] border
+                               border-sm-border bg-cream-soft px-2 py-1.5">
+              <span className={`grid h-[15px] w-[15px] place-items-center rounded-[4px]
+                                border-[1.5px] ${withVat ? 'border-teal bg-teal'
+                                                         : 'border-ink-faint/50 bg-paper'}`}>
+                {withVat && (
+                  <svg viewBox="0 0 12 10" aria-hidden="true"
+                       className="h-[8px] w-[10px] fill-none stroke-white stroke-[2.4]">
+                    <path d="M1 5l3.2 3.2L11 1.4" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </span>
+              <span className="text-[10.5px] font-bold text-ink whitespace-nowrap">
+                {t('est_vat_short', { pct: fmtPct(vatRate) })}
+              </span>
+            </button>
+          )}
 
           <button type="button" disabled={quoting || pending.length > 0 || !chosen.length}
                   onClick={() => onQuote(chosen.map(([key, p]) => ({
