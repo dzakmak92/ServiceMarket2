@@ -528,11 +528,11 @@ export default function EstimatePage() {
       and the rate card. This is the other case, and it is the more common one
       — a bathroom is tiling and plumbing and painting, and quoting it as three
       documents is something nobody does by hand. */
-  const createMultiQuote = async (positions, { then = 'confirm', discount_pct = 0 } = {}) => {
+  const createMultiQuote = async (positions, { then = 'confirm' } = {}) => {
     setCreating(true); setError(''); setNotice('');
     try {
       const { data } = await api.post('/api/estimate/quote/multi', {
-        positions, job_id: targetJob || null, lang, discount_pct,
+        positions, job_id: targetJob || null, lang,
       });
       /* Report the outcome where the button is.
 

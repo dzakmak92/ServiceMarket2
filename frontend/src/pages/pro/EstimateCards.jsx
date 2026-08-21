@@ -401,8 +401,8 @@ const ZONE = {
 };
 
 /** One template: a checkbox, and everything it needs once it is checked. */
-function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate, t, zone,
-                alsoIn, section, vat }) {
+function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate,
+                onDiscount, t, zone, alsoIn, section, vat }) {
   const vatRate = Number(vat?.rate) || 0;
   const z = ZONE[zone];
   /* A cross-listed template is on the page twice, so its test ids have to say
@@ -436,6 +436,8 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate, t
    * the quote will carry. The range still has a place, but it is on the
    * single-job page, which prints it as a guide beside the same `lines_net`. */
   const amount = est ? est.lines_net : null;
+  const disc = Math.min(Math.max(Number(String(state?.discount ?? '').replace(',', '.')) || 0, 0), 100);
+  const net = amount == null ? null : amount * (1 - disc / 100);
 
   /* The answers worth repeating on a collapsed row: the ones that moved the
      price. `answers_applied` is the estimator's own list, so this cannot
@@ -518,7 +520,7 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate, t
 
         {checked && !open && (amount != null ? (
           <span className="text-right whitespace-nowrap">
-            <span className="block font-extrabold text-[13px] text-ink">{fmtEur(amount)}</span>
+            <span className="block font-extrabold text-[13px] text-ink">{fmtEur(net)}</span>
             <span className="block text-[9px] text-ink-muted">
               {est.qty} {unit(job.unit)}
             </span>
@@ -753,19 +755,57 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate, t
                  data-testid={`estimate-foot-${tid}`}>
               <p className="flex items-baseline text-[12.5px] font-extrabold text-ink">
                 <span>{t('est_net_label')}</span>
-                <b className="ml-auto tabular-nums">{fmtEur(amount)}</b>
+                <b className={`ml-auto tabular-nums ${disc > 0
+                  ? 'text-ink-faint line-through decoration-1 font-bold' : ''}`}>
+                  {fmtEur(amount)}
+                </b>
               </p>
+              {/* The Nachlass, on this position rather than on the document.
+                  It writes `quote_lines.discount_pct`, which the schema has
+                  carried from the start and the invoice already applies —
+                  nothing had ever set it. Per position because that is where
+                  a tradesperson actually gives ground: the painting is keen
+                  and the scaffolding is not, and one figure on the document
+                  cannot say that. */}
+              <p className="mt-1 flex items-center gap-2 text-[11px] font-bold text-ink-muted">
+                <span>{t('est_discount')}</span>
+                <span className="inline-flex items-center rounded-[7px] border border-navy/25
+                                 bg-paper pl-1.5 pr-1">
+                  <input
+                    type="number" inputMode="decimal" min="0" max="100" step="any"
+                    value={state.discount ?? ''} placeholder="0"
+                    onChange={(e) => onDiscount(job.key, e.target.value)}
+                    data-testid={`estimate-discount-${tid}`}
+                    aria-label={t('est_discount')}
+                    className="w-[34px] bg-transparent py-[3px] text-right text-[11.5px]
+                               font-bold text-ink outline-none"
+                  />
+                  <u className="not-italic no-underline pl-1 text-[9.5px] font-bold
+                                text-ink-muted">%</u>
+                </span>
+                {disc > 0 && (
+                  <b className="ml-auto tabular-nums text-ink">
+                    − {fmtEur(amount - net)}
+                  </b>
+                )}
+              </p>
+              {disc > 0 && (
+                <p className="flex items-baseline text-[12.5px] font-extrabold text-ink mt-1">
+                  <span>{t('est_net_after')}</span>
+                  <b className="ml-auto tabular-nums">{fmtEur(net)}</b>
+                </p>
+              )}
               {vatRate > 0 && (
                 <p className="flex items-baseline text-[11px] font-bold text-ink-muted mt-0.5">
                   <span>{t('est_vat', { pct: fmtPct(vatRate) })}</span>
-                  <b className="ml-auto tabular-nums">{fmtEur(amount * vatRate / 100)}</b>
+                  <b className="ml-auto tabular-nums">{fmtEur(net * vatRate / 100)}</b>
                 </p>
               )}
               <p className="flex items-baseline border-t border-navy/15 mt-1.5 pt-1.5
                             text-[13px] font-extrabold text-ink">
                 <span>{vatRate > 0 ? t('est_gross') : t('est_net_total')}</span>
                 <b className="ml-auto text-[18px] text-navy tabular-nums">
-                  {fmtEur(amount * (1 + vatRate / 100))}
+                  {fmtEur(net * (1 + vatRate / 100))}
                 </b>
               </p>
               <p className="mt-1 text-[9.5px] text-ink-muted">
@@ -791,9 +831,6 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
      for. Debounced together rather than per card: typing a quantity in one
      card must not fire five requests for the four that did not change. */
   const [tick, setTick] = useState(0);
-  /* Held as the typed string so "1," on the way to "12,5" does not snap back
-     to 1 under the cursor; `disc` is the number everything else uses. */
-  const [discount, setDiscount] = useState('');
   const bump = useCallback(() => setTick((n) => n + 1), []);
 
   useEffect(() => {
@@ -991,12 +1028,21 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
     }, 700);
   };
 
+  /* Kept as the typed string so "1," on the way to "12,5" does not snap back
+     to 1 under the cursor. Local only — a discount changes no arithmetic the
+     estimator does, so there is nothing to re-fetch. */
+  const setDiscount = (key, value) => setPicked((cur) => (
+    cur[key] ? { ...cur, [key]: { ...cur[key], discount: value } } : cur));
+
+  const pctOf = (p) => Math.min(Math.max(
+    Number(String(p.discount ?? '').replace(',', '.')) || 0, 0), 100);
+
   const chosen = Object.entries(picked).filter(([, p]) => p.checked && p.est);
   // Same figure as the cards, for the same reason: this bar sits directly
   // above the button that creates the quote, so it is a promise about it.
-  const total = chosen.reduce((s, [, p]) => s + p.est.lines_net, 0);
-  const disc = Math.min(Math.max(Number(String(discount).replace(',', '.')) || 0, 0), 100);
-  const discounted = total * (1 - disc / 100);
+  const gross = chosen.reduce((s, [, p]) => s + p.est.lines_net, 0);
+  const total = chosen.reduce((s, [, p]) => s + p.est.lines_net * (1 - pctOf(p) / 100), 0);
+  const given = gross - total;
 
   /* Ticked, but no quantity typed yet, so it has no price and cannot go into
      the quote. Somebody who ticks a position means to send it — dropping it
@@ -1104,7 +1150,8 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
                   zone={null} alsoIn={sec.also?.[j.key]} section={sec.key}
                   onToggle={toggle} onOpen={open} onAnswer={answer}
                           onLineQty={lineQty}
-                          onLineRate={lineRate} vat={vat} />
+                          onLineRate={lineRate}
+                          onDiscount={setDiscount} vat={vat} />
           ))}
         </div>
       ))}
@@ -1156,7 +1203,8 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
                           zone={band.zone} alsoIn={sec.also?.[j.key]} section={sec.key}
                           onToggle={toggle} onOpen={open} onAnswer={answer}
                           onLineQty={lineQty}
-                          onLineRate={lineRate} vat={vat} />
+                          onLineRate={lineRate}
+                          onDiscount={setDiscount} vat={vat} />
                   ))}
                 </div>
               </div>
@@ -1190,46 +1238,23 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
                 positions reads as a total, and it is not one. */}
             {chosen.length > 0 && (
               <p className="flex items-baseline gap-2">
-                <span className={`font-headings text-[17px] font-extrabold tabular-nums
-                                  ${disc > 0 ? 'text-ink-faint line-through decoration-1'
-                                             : 'text-ink'}`}>
-                  {fmtEur(total)}
-                </span>
-                {disc > 0 && (
-                  <span className="font-headings text-[17px] font-extrabold text-ink tabular-nums">
-                    {fmtEur(discounted)}
+                {given > 0 && (
+                  <span className="font-headings text-[17px] font-extrabold tabular-nums
+                                   text-ink-faint line-through decoration-1">
+                    {fmtEur(gross)}
                   </span>
                 )}
+                <span className="font-headings text-[17px] font-extrabold text-ink tabular-nums">
+                  {fmtEur(total)}
+                </span>
+              </p>
+            )}
+            {given > 0 && (
+              <p className="text-[9.5px] font-bold text-amber-text">
+                {t('est_discount_given', { v: fmtEur(given) })}
               </p>
             )}
           </div>
-
-          {/* Nachlass on the document, not on a position.
-              `quotes.discount_pct` is what this writes, and that is already a
-              document-level field: it prints as its own row under the
-              positions, follows the quote onto the invoice when it is
-              accepted, and is applied per VAT rate rather than to the gross,
-              so a mixed 20/10 document stays right. */}
-          {chosen.length > 0 && (
-            <label className="shrink-0 text-right">
-              <span className="block text-[9px] font-extrabold uppercase tracking-[.06em]
-                               text-ink-muted">{t('est_discount')}</span>
-              <span className="inline-flex items-center rounded-[9px] border border-navy/25
-                               bg-navy/[.05] pl-1.5 pr-1">
-                <input
-                  type="number" inputMode="decimal" min="0" max="100" step="any"
-                  value={discount} placeholder="0"
-                  onChange={(e) => setDiscount(e.target.value)}
-                  data-testid="estimate-discount"
-                  className="w-[38px] bg-transparent py-1 text-right text-[13px]
-                             font-bold text-ink outline-none"
-                />
-                <u className="not-italic no-underline pl-1 text-[10px] font-bold text-ink-muted">
-                  %
-                </u>
-              </span>
-            </label>
-          )}
 
           <button type="button" disabled={quoting || pending.length > 0 || !chosen.length}
                   onClick={() => onQuote(chosen.map(([key, p]) => ({
@@ -1238,7 +1263,8 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
                        quote, so a position the pro had halved was quoted at
                        full quantity. */
                     qty_overrides: numeric(p.qtyOverrides),
-                  })), { discount_pct: disc })}
+                    discount_pct: pctOf(p),
+                  })))}
                   data-testid="estimate-multi-quote"
                   className="btn-amber !px-4 !py-2.5 !text-[13px]
                              disabled:opacity-50 disabled:cursor-not-allowed">
