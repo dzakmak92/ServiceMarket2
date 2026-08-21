@@ -397,17 +397,19 @@ function Waste({ est, t }) {
  * screen. Comparing the same basis the band is quoted on: `per_unit` bands
  * against €/unit, `total` bands against the position total.
  */
-function BandCheck({ est, job, t }) {
+function BandCheck({ est, job, net, t }) {
   const band = est?.market_band;
   if (!band || band.length !== 2) return null;
   const perUnit = est.band_basis === 'per_unit';
   /* `lines_net / qty`, never `per_unit[1]`.
      `per_unit` is the top of the model's *range* divided by the quantity, and
-     the card quotes `lines_net`. Checking one against the band while quoting
-     the other is how a position that quotes at 11,18 €/m² — comfortably inside
-     a 5–12 band — got flagged as 18,87 €/m² and over it. The check has to
-     judge the figure the customer will actually be sent. */
-  const value = perUnit ? (est.qty ? est.lines_net / est.qty : null) : est.lines_net;
+     the card quotes what the positions come to. Checking one against the band
+     while quoting the other is how a position that quotes at 11,18 €/m² —
+     comfortably inside a 5–12 band — got flagged as 18,87 €/m² and over it.
+     The check has to judge the figure the customer will actually be sent, so
+     it takes the net the card arrived at: after positions were unticked,
+     after prices were typed over, after the Nachlass. */
+  const value = perUnit ? (est.qty ? net / est.qty : null) : net;
   if (!value) return null;
   const span = band[1] - band[0];
   const pos = span > 0 ? ((value - band[0]) / span) * 100 : 100;
@@ -417,7 +419,8 @@ function BandCheck({ est, job, t }) {
      bar reads as "just about inside", which is the opposite of the truth. */
   const at = Math.max(0, Math.min(100, pos));
   return (
-    <div className="mt-3 rounded-[11px] border border-navy/15 bg-navy/[.04] px-2.5 py-2">
+    <div className="mb-3 rounded-[11px] border border-navy/15 bg-navy/[.04] px-2.5 py-2"
+         data-testid="estimate-band">
       <p className="text-[9px] font-extrabold uppercase tracking-[.06em] text-ink-muted">
         {t('est_check')}
       </p>
@@ -635,6 +638,14 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate,
 
       {open && state && (
         <div className="border-t border-rule bg-paper px-3 py-3">
+          {/* First, under the title, above the quantity.
+              It was the last thing on the card, which put the one line that
+              says whether the price is sane below the Brutto that the price
+              had already become — you read the verdict after you had read the
+              number it was a verdict on. It is a reading of the €/unit
+              against the catalogue's own band, so it belongs beside the two
+              fields that produce it. */}
+          <BandCheck est={est} job={job} net={net} t={t} />
           <div className="flex items-end gap-2">
             <label className="flex-1">
               <span className="block text-[9px] font-extrabold uppercase tracking-[.06em]
@@ -827,7 +838,6 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate,
                      onRate={(ln, v) => onLineRate(job.key, ln, v)}
                      onInclude={(rateKey, on) => onInclude(job.key, rateKey, on)} />
           <Waste est={est} t={t} />
-          <BandCheck est={est} job={job} t={t} />
 
           {footer && <div className="mt-3"><Note note={footer} /></div>}
           {hidden > 0 && (
