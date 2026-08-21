@@ -75,6 +75,33 @@ function numeric(overrides) {
   return out;
 }
 
+const round2 = (n) => Math.round(n * 100) / 100;
+
+/**
+ * What this position comes to after its Nachlass.
+ *
+ * Two figures, both live at once: a percentage and an amount off. They apply
+ * in that order — the percentage against the position, the amount against
+ * what the percentage left — which is the order a Nachlass is written in, and
+ * the only order in which "10 % und 50 EUR" means one thing. Clamped at zero:
+ * 400 EUR off a 378 EUR position is a typo, not a position the pro pays the
+ * customer to do.
+ *
+ * `pct_effective` is the two of them expressed as the single percentage that
+ * produces the same net, because `quote_lines.discount_pct` is the only
+ * discount column the schema has and a fixed amount has nowhere else to go.
+ * The arithmetic is exact; what it costs is that the quote prints one
+ * percentage rather than the two figures the pro typed.
+ */
+function discountOf(state, amount) {
+  const num = (v) => Math.max(Number(String(v ?? '').replace(',', '.')) || 0, 0);
+  const pct = Math.min(num(state?.discount), 100);
+  const eur = num(state?.discountEur);
+  if (amount == null || !(amount > 0)) return { pct, eur, net: amount, pct_effective: 0 };
+  const net = Math.max(amount * (1 - pct / 100) - eur, 0);
+  return { pct, eur, net, pct_effective: round2((1 - net / amount) * 100) };
+}
+
 /** Has this position a quantity somebody actually typed? */
 function hasQty(state) {
   const qq = qtyQuestion(state?.form);
@@ -436,8 +463,7 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate,
    * the quote will carry. The range still has a place, but it is on the
    * single-job page, which prints it as a guide beside the same `lines_net`. */
   const amount = est ? est.lines_net : null;
-  const disc = Math.min(Math.max(Number(String(state?.discount ?? '').replace(',', '.')) || 0, 0), 100);
-  const net = amount == null ? null : amount * (1 - disc / 100);
+  const { pct: disc, eur: discEur, net } = discountOf(state, amount);
 
   /* The answers worth repeating on a collapsed row: the ones that moved the
      price. `answers_applied` is the estimator's own list, so this cannot
@@ -622,7 +648,6 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate,
                 ? [[false, t('no')], [true, t('yes')]]
                 : (q.options || []);
               const chips = opts.length > 0;
-              const twoUp = opts.length > 3;
               const given = q.type === 'bool'
                 ? !!state.answers[q.key] : state.answers[q.key] ?? '';
               const pick = (v) => onAnswer(job.key, q.key, v);
@@ -638,34 +663,46 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate,
                     )}
                   </span>
                   {chips ? (
+                    /* Cards, two to a row.
+                       The joined segmented block it replaces was drawn for
+                       three short words, and the catalogue's answers are not
+                       short words: "Raufaser, mehrfach überstrichen" wrapped
+                       to two lines beside a neighbour that took one, so every
+                       row came out ragged, and the chosen answer was a heavy
+                       navy slab in an otherwise white card.
+
+                       Separate cells of equal minimum height wrap without
+                       going ragged, and selection is a tinted fill with a
+                       navy edge and a tick — the answer sits in the card
+                       rather than on top of it. An odd last card takes the
+                       full width instead of leaving a hole. */
                     <div role="group" aria-label={lbl(q)}
                          data-testid={`estimate-field-${tid}-${q.key}`}
-                         className={`rounded-[10px] border border-rule overflow-hidden
-                                     ${twoUp ? 'grid grid-cols-2' : 'flex'}`}>
+                         className="grid grid-cols-2 gap-1.5">
                       {opts.map(([v, l], i) => {
                         const on = String(v) === String(given);
                         const last = i === opts.length - 1;
-                        /* The dividers are drawn per cell rather than by the
-                           container, so one rule sits between any two chips
-                           however they wrap. In two-up: a left rule on the
-                           right-hand column, a top rule on every row but the
-                           first. */
-                        const rules = twoUp
-                          ? `${i % 2 ? 'border-l border-rule' : ''} ${i > 1 ? 'border-t border-rule' : ''}`
-                          : (i ? 'border-l border-rule' : '');
-                        const span = twoUp && last && opts.length % 2 ? 'col-span-2' : '';
+                        const span = last && opts.length % 2 ? 'col-span-2' : '';
                         return (
                           <button
                             key={String(v)} type="button" aria-pressed={on}
                             onClick={() => pick(v)}
                             data-testid={`estimate-opt-${tid}-${q.key}-${v}`}
-                            className={`min-w-0 px-2 py-2.5 text-[12px] font-bold leading-tight
-                                        focus-visible:outline-none focus-visible:ring-4
-                                        focus-visible:ring-teal/30
-                                        ${twoUp ? '' : 'flex-1'} ${rules} ${span}
-                                        ${on ? 'bg-navy text-paper'
-                                             : 'bg-paper text-ink-soft'}`}>
+                            className={`relative min-h-[46px] min-w-0 rounded-[11px] border
+                                        px-2.5 py-2 pr-6 text-left text-[12px] font-bold
+                                        leading-tight focus-visible:outline-none
+                                        focus-visible:ring-4 focus-visible:ring-teal/30 ${span}
+                                        ${on ? 'border-[1.5px] border-navy bg-navy/[.07] text-ink'
+                                             : 'border-rule bg-paper text-ink-soft'}`}>
                             {l}
+                            {on && (
+                              <svg viewBox="0 0 12 10" aria-hidden="true"
+                                   className="absolute right-2 top-2 h-[9px] w-[11px]
+                                              fill-none stroke-navy stroke-[2.2]">
+                                <path d="M1 5l3.2 3.2L11 1.4" strokeLinecap="round"
+                                      strokeLinejoin="round" />
+                              </svg>
+                            )}
                           </button>
                         );
                       })}
@@ -755,7 +792,7 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate,
                  data-testid={`estimate-foot-${tid}`}>
               <p className="flex items-baseline text-[12.5px] font-extrabold text-ink">
                 <span>{t('est_net_label')}</span>
-                <b className={`ml-auto tabular-nums ${disc > 0
+                <b className={`ml-auto tabular-nums ${disc > 0 || discEur > 0
                   ? 'text-ink-faint line-through decoration-1 font-bold' : ''}`}>
                   {fmtEur(amount)}
                 </b>
@@ -774,7 +811,7 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate,
                   <input
                     type="number" inputMode="decimal" min="0" max="100" step="any"
                     value={state.discount ?? ''} placeholder="0"
-                    onChange={(e) => onDiscount(job.key, e.target.value)}
+                    onChange={(e) => onDiscount(job.key, 'discount', e.target.value)}
                     data-testid={`estimate-discount-${tid}`}
                     aria-label={t('est_discount')}
                     className="w-[34px] bg-transparent py-[3px] text-right text-[11.5px]
@@ -785,11 +822,34 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate,
                 </span>
                 {disc > 0 && (
                   <b className="ml-auto tabular-nums text-ink">
-                    − {fmtEur(amount - net)}
+                    − {fmtEur(amount * disc / 100)}
                   </b>
                 )}
               </p>
-              {disc > 0 && (
+              {/* An amount off, under the percentage, both live at once. */}
+              <p className="mt-1 flex items-center gap-2 text-[11px] font-bold text-ink-muted">
+                <span>{t('est_discount_eur')}</span>
+                <span className="inline-flex items-center rounded-[7px] border border-navy/25
+                                 bg-paper pl-1.5 pr-1">
+                  <input
+                    type="number" inputMode="decimal" min="0" step="any"
+                    value={state.discountEur ?? ''} placeholder="0"
+                    onChange={(e) => onDiscount(job.key, 'discountEur', e.target.value)}
+                    data-testid={`estimate-discount-eur-${tid}`}
+                    aria-label={t('est_discount_eur')}
+                    className="w-[46px] bg-transparent py-[3px] text-right text-[11.5px]
+                               font-bold text-ink outline-none"
+                  />
+                  <u className="not-italic no-underline pl-1 text-[9.5px] font-bold
+                                text-ink-muted">€</u>
+                </span>
+                {discEur > 0 && (
+                  <b className="ml-auto tabular-nums text-ink">
+                    − {fmtEur(Math.min(discEur, amount * (1 - disc / 100)))}
+                  </b>
+                )}
+              </p>
+              {(disc > 0 || discEur > 0) && (
                 <p className="flex items-baseline text-[12.5px] font-extrabold text-ink mt-1">
                   <span>{t('est_net_after')}</span>
                   <b className="ml-auto tabular-nums">{fmtEur(net)}</b>
@@ -1031,17 +1091,19 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
   /* Kept as the typed string so "1," on the way to "12,5" does not snap back
      to 1 under the cursor. Local only — a discount changes no arithmetic the
      estimator does, so there is nothing to re-fetch. */
-  const setDiscount = (key, value) => setPicked((cur) => (
-    cur[key] ? { ...cur, [key]: { ...cur[key], discount: value } } : cur));
+  const setDiscount = (key, field, value) => setPicked((cur) => (
+    cur[key] ? { ...cur, [key]: { ...cur[key], [field]: value } } : cur));
 
-  const pctOf = (p) => Math.min(Math.max(
-    Number(String(p.discount ?? '').replace(',', '.')) || 0, 0), 100);
+  /* The single percentage that produces the same net as the two figures the
+     pro typed — see `discountOf`. It is what the quote can store. */
+  const pctOf = (p) => discountOf(p, p.est?.lines_net).pct_effective;
+  const netOf = (p) => discountOf(p, p.est.lines_net).net;
 
   const chosen = Object.entries(picked).filter(([, p]) => p.checked && p.est);
   // Same figure as the cards, for the same reason: this bar sits directly
   // above the button that creates the quote, so it is a promise about it.
   const gross = chosen.reduce((s, [, p]) => s + p.est.lines_net, 0);
-  const total = chosen.reduce((s, [, p]) => s + p.est.lines_net * (1 - pctOf(p) / 100), 0);
+  const total = chosen.reduce((s, [, p]) => s + netOf(p), 0);
   const given = gross - total;
 
   /* Ticked, but no quantity typed yet, so it has no price and cannot go into
