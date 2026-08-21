@@ -77,6 +77,22 @@ function numeric(overrides) {
 
 const round2 = (n) => Math.round(n * 100) / 100;
 
+/** One line's net, with its own waste factor. */
+const lineNet = (ln) => ln.qty * (1 + (ln.waste_factor || 0)) * ln.unit_price;
+
+/**
+ * The positions that are in the price, and what they come to.
+ *
+ * `lines_net` is the estimator's sum of everything it wrote. Once a pro can
+ * untick a position that is no longer the number on the card, so the card
+ * adds up what is left — and the quote drops the same lines, so the two agree
+ * by construction rather than by coincidence.
+ */
+function included(est, excluded) {
+  const out = (est?.lines || []).filter((ln) => !(excluded || []).includes(ln.rate_key));
+  return { lines: out, net: round2(out.reduce((n, ln) => n + lineNet(ln), 0)) };
+}
+
 /**
  * What this position comes to after its Nachlass.
  *
@@ -184,10 +200,12 @@ function Note({ note, tone = 'normal' }) {
  * quote. A line the pro has moved says so, because a corrected estimate and a
  * model's own estimate are different claims.
  */
-function Breakdown({ est, overrides, rates, onQty, onRate, t, tid }) {
+function Breakdown({ est, overrides, rates, excluded, onQty, onRate, onInclude, t, tid }) {
   const lines = est?.lines || [];
   if (!lines.length) return null;
   const moved = new Set(est.qty_adjusted || []);
+  const out = new Set(excluded || []);
+  const kept = lines.filter((ln) => !out.has(ln.rate_key));
   return (
     <div className="mt-3">
       <p className="text-[9px] font-extrabold uppercase tracking-[.06em] text-ink-muted mb-1.5">
@@ -200,10 +218,32 @@ function Breakdown({ est, overrides, rates, onQty, onRate, t, tid }) {
           const qty = own !== undefined && own !== '' ? Number(own) : ln.qty;
           const price = rate !== undefined && rate !== '' ? Number(rate) : ln.unit_price;
           const sum = qty * (1 + (ln.waste_factor || 0)) * price;
+          const on = !out.has(ln.rate_key);
           return (
             <div key={ln.rate_key + ln.description}
-                 className={`px-2.5 py-2 border-b border-rule/60 last:border-b-0
-                             ${ln.kind === 'material' ? 'bg-teal/[.04]' : 'bg-paper'}`}>
+                 className={`flex gap-2 px-2.5 py-2 border-b border-rule/60 last:border-b-0
+                             ${!on ? 'bg-row'
+                               : ln.kind === 'material' ? 'bg-teal/[.04]' : 'bg-paper'}`}>
+              {/* In the price, or not. An unticked position keeps its figures
+                  and stays legible — it is a thing you can put back, not a
+                  thing deleted — and it is dropped from the quote entirely
+                  rather than written as an option the customer can ask for. */}
+              <button type="button" onClick={() => onInclude(ln.rate_key, !on)}
+                      aria-pressed={on} aria-label={ln.description}
+                      data-testid={`estimate-line-on-${tid}-${ln.rate_key}`}
+                      className={`mt-[3px] grid h-[19px] w-[19px] shrink-0 place-items-center
+                                  rounded-[6px] border-[1.6px] focus-visible:outline-none
+                                  focus-visible:ring-4 focus-visible:ring-teal/30
+                                  ${on ? 'border-teal bg-teal'
+                                       : 'border-ink-faint/50 bg-paper'}`}>
+                {on && (
+                  <svg viewBox="0 0 12 10" aria-hidden="true"
+                       className="h-[8px] w-[10px] fill-none stroke-white stroke-[2.4]">
+                    <path d="M1 5l3.2 3.2L11 1.4" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </button>
+              <div className={`min-w-0 flex-1 ${on ? '' : 'opacity-55'}`}>
               <p className="flex items-center gap-1.5">
                 <span className="flex-1 min-w-0 text-[11.5px] font-bold text-ink leading-snug">
                   {ln.description}
@@ -275,7 +315,7 @@ function Breakdown({ est, overrides, rates, onQty, onRate, t, tid }) {
                   </button>
                 </p>
               )}
-              {ln.rate_source === 'pro' && (
+              {(est.repriced || []).includes(ln.rate_key) && (
                 <p className="mt-1 flex items-center gap-2 text-[9.5px] font-bold text-teal">
                   {t('est_rate_yours')}
                   <button type="button" onClick={() => onRate(ln, undefined)}
@@ -286,13 +326,21 @@ function Breakdown({ est, overrides, rates, onQty, onRate, t, tid }) {
                   </button>
                 </p>
               )}
+              </div>
             </div>
           );
         })}
-        <p className="flex items-baseline bg-navy/[.06] px-2.5 py-2 text-[12px]
+        <p className="flex items-baseline gap-2 bg-navy/[.06] px-2.5 py-2 text-[12px]
                       font-extrabold text-ink">
           <span>{t('est_positions')}</span>
-          <b className="ml-auto tabular-nums text-navy">{fmtEur(est.lines_net)}</b>
+          {kept.length < lines.length && (
+            <span className="text-[10px] font-bold text-ink-muted">
+              {t('est_positions_of', { n: kept.length, total: lines.length })}
+            </span>
+          )}
+          <b className="ml-auto tabular-nums text-navy">
+            {fmtEur(kept.reduce((n, ln) => n + lineNet(ln), 0))}
+          </b>
         </p>
       </div>
     </div>
@@ -429,7 +477,7 @@ const ZONE = {
 
 /** One template: a checkbox, and everything it needs once it is checked. */
 function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate,
-                onDiscount, t, zone, alsoIn, section, vat }) {
+                onInclude, onPerUnit, onDiscount, t, zone, alsoIn, section, vat }) {
   const vatRate = Number(vat?.rate) || 0;
   const z = ZONE[zone];
   /* A cross-listed template is on the page twice, so its test ids have to say
@@ -462,7 +510,16 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate,
    * The number beside a tick-box that becomes a quote has to be the number
    * the quote will carry. The range still has a place, but it is on the
    * single-job page, which prints it as a guide beside the same `lines_net`. */
-  const amount = est ? est.lines_net : null;
+  const inc = included(est, state?.excluded);
+  const qtyNow = Number(est?.qty) || 0;
+  /* What the included positions come to, divided by the quantity — so it
+     moves when they do, and a position unticked below changes it. Held as the
+     typed string while somebody is typing into it. */
+  const perUnitShown = state?.perUnit !== undefined && state.perUnit !== ''
+    ? state.perUnit
+    : (qtyNow > 0 && est ? round2(inc.net / qtyNow) : '');
+  const amount = est ? inc.net : null;
+  const dropped = est ? (est.lines || []).length - inc.lines.length : 0;
   const { pct: disc, eur: discEur, net } = discountOf(state, amount);
   const given = amount == null ? 0 : amount - net;
   /* The combined figure only when there are two to combine — repeating one
@@ -612,15 +669,25 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate,
             <div className="flex-1">
               <span className="block text-[9px] font-extrabold uppercase tracking-[.06em]
                                text-ink-muted mb-1">€ / {unit(job.unit)}</span>
-              {/* Derived, so it is flat. The filled navy wash now means "you
-                  can type here" — it is on the quantity above and on every
-                  quantity in the breakdown — and this plate must not borrow
-                  it, or the one field that cannot be edited would look like
-                  the ones that can. */}
-              <div className="rounded-[9px] border border-dashed border-rule bg-row px-2.5 py-2
-                              text-right text-[13px] font-bold text-ink-soft">
-                {est?.lines_net && est?.qty ? fmtEur(est.lines_net / est.qty) : '—'}
-              </div>
+              {/* A field now, not a plate.
+                  It was derived and locked on the grounds that it is the
+                  positions divided by the quantity and there is no single
+                  number underneath to type into. True of the arithmetic and
+                  wrong about the job: a painter knows they charge 8,50 the m²
+                  and wants to say so. Typing one scales every position by the
+                  same factor, so the breakdown still adds up to the figure
+                  above it, and the scaled prices travel with this position —
+                  without touching the rate card the whole business quotes
+                  from. */}
+              <input
+                type="number" inputMode="decimal" min="0" step="any"
+                value={perUnitShown}
+                onChange={(e) => onPerUnit(job.key, inc.lines, qtyNow, e.target.value)}
+                placeholder="—"
+                data-testid={`estimate-per-unit-${tid}`}
+                className="w-full rounded-[9px] border border-navy/25 bg-navy/[.05] px-2.5 py-2
+                           text-right text-[13px] font-bold text-ink outline-none"
+              />
             </div>
           </div>
 
@@ -755,9 +822,10 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate,
             </div>
           )}
           <Breakdown est={est} overrides={state.qtyOverrides} rates={state.rateEdits}
-                     tid={tid} t={t}
+                     excluded={state.excluded} tid={tid} t={t}
                      onQty={(rateKey, v) => onLineQty(job.key, rateKey, v)}
-                     onRate={(ln, v) => onLineRate(job.key, ln, v)} />
+                     onRate={(ln, v) => onLineRate(job.key, ln, v)}
+                     onInclude={(rateKey, on) => onInclude(job.key, rateKey, on)} />
           <Waste est={est} t={t} />
           <BandCheck est={est} job={job} t={t} />
 
@@ -931,7 +999,8 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
         try {
           const { data } = await api.post('/api/estimate',
             { job_key: key, answers: p.answers, tier: 'standard',
-              qty_overrides: numeric(p.qtyOverrides) },
+              qty_overrides: numeric(p.qtyOverrides),
+              rate_overrides: numeric(p.rateEdits) },
             { params: { lang } });
           next[key] = data;
         } catch { /* a position that will not price keeps its last figure */ }
@@ -1078,59 +1147,79 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
      must not write a four-euro hourly rate to the profile. `undefined` clears
      the override and the rate falls back to what the accepted quotes measured,
      or to the catalogue. */
-  const rateWrite = useRef(null);
+  /* A unit price the pro typed, for this position on this job.
+     It goes to the estimator as `rate_overrides` and travels with the quote.
+     It is deliberately *not* the rate card: `maler.stundensatz` is the hourly
+     rate every template in the trade prices from, and setting the price per
+     m² on one job scales every position on it — writing those scaled figures
+     into the profile would silently reprice the whole business off one job.
+     The rate card is still what the estimator falls back to, still learned
+     from accepted quotes, and still editable in settings.
+     Clearing the field drops the override. */
   const lineRate = (key, ln, value) => {
     setPicked((cur) => {
       if (!cur[key]) return cur;
       const next = { ...(cur[key].rateEdits || {}) };
       if (value === undefined || value === '') delete next[ln.rate_key];
       else next[ln.rate_key] = value;
-      return { ...cur, [key]: { ...cur[key], rateEdits: next, loading: true } };
+      /* The typed €/unit is abandoned: it was a target for a different set of
+         prices, and keeping it would leave the field disagreeing with the
+         positions under it. */
+      return { ...cur, [key]: { ...cur[key], rateEdits: next, perUnit: '', loading: true } };
     });
-    clearTimeout(rateWrite.current);
-    rateWrite.current = setTimeout(async () => {
-      try {
-        if (value === undefined || value === '') {
-          await api.delete(`/api/profile/pro/rates/${encodeURIComponent(ln.rate_key)}`);
-        } else {
-          const amount = Number(String(value).replace(',', '.'));
-          if (!Number.isFinite(amount) || amount <= 0) return;
-          await api.put('/api/profile/pro/rates', {
-            key: ln.rate_key, amount, label: ln.description, unit: ln.unit,
-          });
-        }
-      } catch { /* the estimate below still shows the typed figure */ }
-      /* Drop the local edit once it is stored: from here the number comes back
-         from the estimator, which is the only way the line and the total can
-         be guaranteed to agree. */
-      setPicked((cur) => {
-        const out = { ...cur };
-        Object.keys(out).forEach((k) => {
-          if (!out[k].rateEdits) return;
-          const { [ln.rate_key]: _gone, ...rest } = out[k].rateEdits;
-          out[k] = { ...out[k], rateEdits: rest, loading: true };
-        });
-        return out;
-      });
-      bump();
-    }, 700);
+    bump();
+  };
+
+  /* In the price, or out of it. Held as rate keys because that is what both
+     the estimate lines and the quote payload are keyed on, so what the card
+     drops and what the document drops cannot drift apart. */
+  const include = (key, rateKey, on) => {
+    setPicked((cur) => {
+      if (!cur[key]) return cur;
+      const was = cur[key].excluded || [];
+      const next = on ? was.filter((k) => k !== rateKey)
+                      : (was.includes(rateKey) ? was : [...was, rateKey]);
+      return { ...cur, [key]: { ...cur[key], excluded: next, perUnit: '' } };
+    });
+  };
+
+  /* A price per unit, turned into per-position prices.
+     The target is `value × qty` for the positions that are in the price; every
+     one of them is scaled by the same factor, so the breakdown still adds up
+     to what the field says. Sent as `rate_overrides`, which the estimator
+     applies to the lines it wrote — including the disposal line, which is
+     priced from the tonne rate and never consulted a rate card at all. */
+  const perUnit = (key, lines, qty, value) => {
+    setPicked((cur) => {
+      if (!cur[key]) return cur;
+      const target = Number(String(value).replace(',', '.'));
+      const base = lines.reduce((n, ln) => n + lineNet(ln), 0);
+      if (!(qty > 0) || !(base > 0) || !Number.isFinite(target) || target <= 0) {
+        return { ...cur, [key]: { ...cur[key], perUnit: value } };
+      }
+      const factor = (target * qty) / base;
+      const next = { ...(cur[key].rateEdits || {}) };
+      lines.forEach((ln) => { next[ln.rate_key] = round2(ln.unit_price * factor); });
+      return { ...cur, [key]: { ...cur[key], perUnit: value, rateEdits: next, loading: true } };
+    });
+    bump();
   };
 
   /* Kept as the typed string so "1," on the way to "12,5" does not snap back
-     to 1 under the cursor. Local only — a discount changes no arithmetic the
-     estimator does, so there is nothing to re-fetch. */
+     to 1 under the cursor. Local only — a Nachlass changes nothing the
+     estimator computes, so there is nothing to re-fetch. */
   const setDiscount = (key, field, value) => setPicked((cur) => (
     cur[key] ? { ...cur, [key]: { ...cur[key], [field]: value } } : cur));
 
   /* The single percentage that produces the same net as the two figures the
-     pro typed — see `discountOf`. It is what the quote can store. */
-  const pctOf = (p) => discountOf(p, p.est?.lines_net).pct_effective;
-  const netOf = (p) => discountOf(p, p.est.lines_net).net;
+     pro typed — see `discountOf` — applied to what is still in the price. */
+  const pctOf = (p) => discountOf(p, included(p.est, p.excluded).net).pct_effective;
+  const netOf = (p) => discountOf(p, included(p.est, p.excluded).net).net;
 
   const chosen = Object.entries(picked).filter(([, p]) => p.checked && p.est);
   // Same figure as the cards, for the same reason: this bar sits directly
   // above the button that creates the quote, so it is a promise about it.
-  const gross = chosen.reduce((s, [, p]) => s + p.est.lines_net, 0);
+  const gross = chosen.reduce((s, [, p]) => s + included(p.est, p.excluded).net, 0);
   const total = chosen.reduce((s, [, p]) => s + netOf(p), 0);
   const given = gross - total;
   /* The quote has always stored net, VAT and gross — the `quote_lines`
@@ -1157,6 +1246,8 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
   const positions = chosen.map(([key, p]) => ({
     job_key: key, answers: p.answers, tier: 'standard',
     qty_overrides: numeric(p.qtyOverrides),
+    rate_overrides: numeric(p.rateEdits),
+    excluded: p.excluded || [],
   }));
   /* `pending.length` goes up too, and leaving that out is what made the first
      version of this useless: a card ticked with no quantity yet has no
@@ -1247,6 +1338,7 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
                   onToggle={toggle} onOpen={open} onAnswer={answer}
                           onLineQty={lineQty}
                           onLineRate={lineRate}
+                          onInclude={include} onPerUnit={perUnit}
                           onDiscount={setDiscount} vat={vat} />
           ))}
         </div>
@@ -1300,6 +1392,7 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
                           onToggle={toggle} onOpen={open} onAnswer={answer}
                           onLineQty={lineQty}
                           onLineRate={lineRate}
+                          onInclude={include} onPerUnit={perUnit}
                           onDiscount={setDiscount} vat={vat} />
                   ))}
                 </div>
@@ -1383,6 +1476,8 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
                        quote, so a position the pro had halved was quoted at
                        full quantity. */
                     qty_overrides: numeric(p.qtyOverrides),
+                    rate_overrides: numeric(p.rateEdits),
+                    excluded: p.excluded || [],
                     discount_pct: pctOf(p),
                   })))}
                   data-testid="estimate-multi-quote"

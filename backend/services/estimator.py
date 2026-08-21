@@ -416,6 +416,7 @@ def resolve_qty(job: dict, answers: Optional[dict] = None) -> float:
 def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT",
              tier: str = "standard", hourly: Optional[tuple[float, float]] = None,
              rates: Optional[dict] = None,
+             rate_overrides: Optional[dict] = None,
              calibration: Optional[dict] = None,
              qty_overrides: Optional[dict] = None) -> dict:
     """Estimate one job.
@@ -665,6 +666,25 @@ def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT
               unit_price=_mid(disposal), rate_key=f"{job['trade']}.entsorgung",
               rate_source="catalogue")
 
+    # ── the pro's own unit prices, for this calculation only ──
+    #
+    # Applied here rather than through `rates` because `rates` is the business's
+    # rate card — a standing figure, learned from accepted quotes or typed in
+    # settings — and this is a price for one position on one job. Applied after
+    # the lines exist, like the quantity corrections below, so it reaches every
+    # line including the disposal one, which is priced from the tonne rate and
+    # never consulted the rate card at all.
+    repriced: list[str] = []
+    for ln in lines:
+        own = parse_number((rate_overrides or {}).get(ln["rate_key"]))
+        if own is None or own < 0 or abs(own - ln["unit_price"]) < 1e-9:
+            continue
+        moved = ln["qty"] * (1 + ln["waste_factor"]) * (own - ln["unit_price"])
+        ln["unit_price"] = round(own, 2)
+        ln["rate_source"] = "pro"
+        total = (total[0] + moved, total[1] + moved)
+        repriced.append(ln["rate_key"])
+
     # ── the pro's own quantities, where they disagree with the catalogue ──
     adjusted: list[str] = []
     for ln in lines:
@@ -736,6 +756,9 @@ def estimate(job_key: str, answers: Optional[dict] = None, *, country: str = "AT
         # estimate, which is the only state in which total_net is purely the
         # model's own arithmetic.
         "qty_adjusted": adjusted,
+        # Which positions carry a price typed for this calculation rather than
+        # one the catalogue or the rate card produced.
+        "repriced": repriced,
         # How many positions were priced by this business rather than by the
         # catalogue. Zero means lines_net should sit inside total_net; above
         # zero means the two are measuring different things on purpose.

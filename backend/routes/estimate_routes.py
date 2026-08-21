@@ -76,6 +76,10 @@ class EstimateIn(BaseModel):
     # Per-position quantity corrections, keyed by rate key. See
     # `estimator.estimate`.
     qty_overrides: dict[str, float] = Field(default_factory=dict)
+    # Per-position unit prices, keyed by rate key. Distinct from the rate card
+    # on purpose: this is what a position costs on this job, not what the
+    # business charges from now on.
+    rate_overrides: dict[str, float] = Field(default_factory=dict)
 
 
 class SaveEstimateIn(EstimateIn):
@@ -129,6 +133,13 @@ class PositionIn(BaseModel):
     tier: str = Field(default="standard", pattern=TIER_PATTERN)
     hourly_rate: Optional[float] = Field(default=None, gt=0, le=1000)
     qty_overrides: dict[str, float] = Field(default_factory=dict)
+    rate_overrides: dict[str, float] = Field(default_factory=dict)
+    # Positions the pro unticked. They are dropped from the quote rather than
+    # written as unselected lines: "leave the paste washing out" means the
+    # customer should not be reading about paste washing, and a line stored
+    # `is_optional, not is_selected` would still print as an option they can
+    # ask for.
+    excluded: list[str] = Field(default_factory=list, max_length=40)
     # A Nachlass on this position, not on the document. `quote_lines` has
     # carried a `discount_pct` since the schema was written and the invoice
     # already honours it; nothing had ever set it. Per position rather than
@@ -234,6 +245,8 @@ async def _estimate(pro_id: str, body: "EstimateIn", *, tier: Optional[str] = No
     # in the header — the one property that makes a breakdown worth printing.
     if body.qty_overrides:
         kw["qty_overrides"] = body.qty_overrides
+    if body.rate_overrides:
+        kw["rate_overrides"] = body.rate_overrides
     result = estimator.estimate(body.job_key, body.answers, **kw)
     if cal:
         result["calibration_note"] = calib.explain(cal)
@@ -566,6 +579,8 @@ async def multi_position_quote(body: MultiQuoteIn,
             kw["hourly"] = (pos.hourly_rate, pos.hourly_rate)
         if pos.qty_overrides:
             kw["qty_overrides"] = pos.qty_overrides
+        if pos.rate_overrides:
+            kw["rate_overrides"] = pos.rate_overrides
         try:
             results.append(estimator.estimate(pos.job_key, pos.answers, **kw))
         except LookupError as exc:
@@ -575,6 +590,9 @@ async def multi_position_quote(body: MultiQuoteIn,
 
     lines = []
     for pos, r in zip(body.positions, localised):
+        if pos.excluded:
+            drop = set(pos.excluded)
+            r["lines"] = [ln for ln in r["lines"] if ln.get("rate_key") not in drop]
         # Stamped on every line the position produced. `_insert_lines` passes
         # it straight through to `quote_lines.discount_pct`, which the quote
         # PDF prints against the line and the invoice applies before tax.
