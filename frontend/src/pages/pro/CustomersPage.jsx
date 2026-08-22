@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
-import ContactMap from '../../components/pro/ContactMap';
 import {
   Loader2, Plus, Search, Mail, Phone, MapPin, MessageCircle, X, AlertCircle,
 } from 'lucide-react';
@@ -79,7 +78,6 @@ export default function CustomersPage() {
      list would point at letters that are not where it says. */
   const [sort, setSort] = useState('recent');
   const [plz, setPlz] = useState('');
-  const [mapOpen, setMapOpen] = useState(false);
   const navigate = useNavigate();
 
   const load = useCallback(async () => {
@@ -185,10 +183,6 @@ export default function CustomersPage() {
             {showForm ? (t('cancel') || 'Abbrechen') : (t('new_customer') || 'Neuer Kunde')}
           </button>
         </div>
-
-        <ContactMap customers={items} open={mapOpen}
-                    onToggle={() => setMapOpen((o) => !o)}
-                    onPick={(id) => navigate(`/customers/${id}`)} />
 
         <div className="mb-3 flex items-center gap-1.5" data-testid="contacts-sort">
           <span className="text-[9px] font-extrabold uppercase tracking-[.06em] text-ink-muted">
