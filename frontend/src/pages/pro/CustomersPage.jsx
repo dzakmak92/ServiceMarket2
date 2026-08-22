@@ -72,11 +72,10 @@ export default function CustomersPage() {
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
-  /* `search` returns `last_job_at desc nulls last, name asc`, so recency is
-     what arrives. The A–Z rail claims alphabetical order, so choosing it is a
-     re-sort and the bar above says which one is on — a rail over a recency
-     list would point at letters that are not where it says. */
-  const [sort, setSort] = useState('recent');
+  /* Always A–Z. `search` returns `last_job_at desc nulls last, name asc`, so
+     recency is what arrives and this re-sorts it — which is what makes the
+     rail on the right honest: an alphabet index over a recency list points at
+     letters that are not where it says. */
   const [plz, setPlz] = useState('');
   const navigate = useNavigate();
 
@@ -116,13 +115,11 @@ export default function CustomersPage() {
 
   const shown = useMemo(() => {
     const list = plz ? items.filter((c) => (c.postal_code || '').trim() === plz) : items;
-    if (sort !== 'az') return list;
     return [...list].sort((a, b) => (a.company_name || a.name || '')
       .localeCompare(b.company_name || b.name || '', 'de'));
-  }, [items, plz, sort]);
+  }, [items, plz]);
 
-  /* Which letters the rail can actually land on. Only meaningful in A–Z
-     order, so the rail is only shown there. */
+  /* Which letters the rail can actually land on. */
   const letters = useMemo(() => new Set(shown.map(firstLetter)), [shown]);
 
   const toLetter = (l) => {
@@ -182,23 +179,6 @@ export default function CustomersPage() {
             {showForm ? <X size={16} /> : <Plus size={16} />}
             {showForm ? (t('cancel') || 'Abbrechen') : (t('new_customer') || 'Neuer Kunde')}
           </button>
-        </div>
-
-        <div className="mb-3 flex items-center gap-1.5" data-testid="contacts-sort">
-          <span className="text-[9px] font-extrabold uppercase tracking-[.06em] text-ink-muted">
-            {t('contacts_sorted')}
-          </span>
-          {[['recent', t('contacts_sort_recent')], ['az', t('contacts_sort_az')]]
-            .map(([k, label]) => (
-              <button key={k} type="button" onClick={() => setSort(k)}
-                      aria-pressed={sort === k}
-                      data-testid={`contacts-sort-${k}`}
-                      className={`rounded-full px-2.5 py-1 text-[10px] font-extrabold
-                                  ${sort === k ? 'bg-teal/[.14] text-teal-deep'
-                                               : 'border border-navy-edge bg-paper text-ink-muted'}`}>
-                {label}
-              </button>
-            ))}
         </div>
 
         <div className="mb-3 flex items-center gap-2 rounded-[10px] border border-rule
@@ -311,7 +291,7 @@ export default function CustomersPage() {
               {shown.map((c, i) => {
                 const tax = taxOf(c);
                 const letter = firstLetter(c);
-                const heads = sort === 'az' && (i === 0 || firstLetter(shown[i - 1]) !== letter);
+                const heads = i === 0 || firstLetter(shown[i - 1]) !== letter;
                 const title = c.company_name || c.name;
                 return (
                   <React.Fragment key={c.id}>
@@ -410,21 +390,17 @@ export default function CustomersPage() {
               })}
             </div>
 
-            {/* Only in A–Z order: an alphabet rail over a recency list points
-                at letters that are not where it says. */}
-            {sort === 'az' && (
-              <div className="flex w-[17px] shrink-0 flex-col items-center justify-between py-0.5"
-                   data-testid="contacts-rail">
-                {AZ.map((l) => (
-                  <button key={l} type="button" onClick={() => toLetter(l)}
-                          disabled={!letters.has(l)}
-                          className={`w-[17px] text-[9px] font-extrabold leading-none
-                                      ${letters.has(l) ? 'text-teal' : 'text-ink-faint/40'}`}>
-                    {l}
-                  </button>
-                ))}
-              </div>
-            )}
+            <div className="flex w-[17px] shrink-0 flex-col items-center justify-between py-0.5"
+                 data-testid="contacts-rail">
+              {AZ.map((l) => (
+                <button key={l} type="button" onClick={() => toLetter(l)}
+                        disabled={!letters.has(l)}
+                        className={`w-[17px] text-[9px] font-extrabold leading-none
+                                    ${letters.has(l) ? 'text-teal' : 'text-ink-faint/40'}`}>
+                  {l}
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
