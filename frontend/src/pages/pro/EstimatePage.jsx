@@ -98,7 +98,11 @@ export default function EstimatePage() {
     if (trade || !meta?.trades?.length) return;
     const last = localStorage.getItem('est_trade');
     const known = meta.trades.some((x) => x.key === last);
-    navigate(`/estimate/${known ? last : meta.trades[0].key}`, { replace: true });
+    /* Keep the query. /estimate?customer=… is how the contacts page hands a
+       customer over, and this redirect ran before anything read it — the
+       customer was chosen, then dropped on the way to the trade. */
+    const qs = window.location.search;
+    navigate(`/estimate/${known ? last : meta.trades[0].key}${qs}`, { replace: true });
   }, [trade, meta, navigate]);
 
   useEffect(() => {
@@ -133,6 +137,11 @@ export default function EstimatePage() {
 
   const [myJobs, setMyJobs] = useState([]);
   const [targetJob, setTargetJob] = useState(params.get('job') || '');
+  /* Arrived from the contacts page with somebody chosen. It is what the quote
+     is for, and it is also what settles the tax: `quotes_repo.create` resolves
+     the treatment from the customer, which is why the card feet say the rate
+     is provisional until there is one. */
+  const customerId = params.get('customer') || '';
   const [allTiers, setAllTiers] = useState(false);
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -532,7 +541,7 @@ export default function EstimatePage() {
     setCreating(true); setError(''); setNotice('');
     try {
       const { data } = await api.post('/api/estimate/quote/multi', {
-        positions, job_id: targetJob || null, lang,
+        positions, job_id: targetJob || null, customer_id: customerId || null, lang,
       });
       /* Report the outcome where the button is.
 

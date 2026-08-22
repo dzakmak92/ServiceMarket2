@@ -1,10 +1,51 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
+import ContactMap from '../../components/pro/ContactMap';
 import {
-  Loader2, Plus, Search, User, Building2, Mail, Phone, MapPin, X, AlertCircle,
+  Loader2, Plus, Search, Mail, Phone, MapPin, MessageCircle, X, AlertCircle,
 } from 'lucide-react';
+
+const AZ = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+/** Two letters off the name that will be shown, so the ring matches the card. */
+const initials = (c) => ((c.company_name || c.name || '?')
+  .split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('') || '?').toUpperCase();
+
+const firstLetter = (c) => {
+  const ch = (c.company_name || c.name || '').trim()[0];
+  if (!ch) return '#';
+  const up = ch.toUpperCase();
+  return AZ.includes(up) ? up : '#';
+};
+
+/* The tax treatment the quote will resolve for this customer.
+   `quotes_repo._tax_context` decides it from the record, and the two facts it
+   turns on are on the row: a Bauleister, and whether the UID was validated —
+   which the schema is explicit about ("A business customer without a validated
+   UID is NOT eligible"). Anything unsettled is worth seeing before the tap. */
+const taxOf = (c) => {
+  if (c.is_bauleister) {
+    return c.vat_id_validated_at
+      ? { label: '§ 13b', warn: true } : { label: '§ 13b ?', warn: true };
+  }
+  if (c.type === 'business' && c.vat_id && !c.vat_id_validated_at) {
+    return { label: 'UID ?', warn: true };
+  }
+  return { label: '20 %', warn: false };
+};
+
+const fmtEur = (n) => (Number(n) || 0).toLocaleString('de-AT',
+  { maximumFractionDigits: 0 });
+
+const ago = (iso, t) => {
+  if (!iso) return t('contacts_never');
+  const days = Math.round((Date.now() - new Date(iso).getTime()) / 86400000);
+  if (days <= 1) return t('contacts_today');
+  if (days < 60) return t('contacts_days', { n: days });
+  return t('contacts_months', { n: Math.round(days / 30) });
+};
 
 const EMPTY = {
   type: 'private', name: '', company_name: '', contact_person: '',
@@ -32,6 +73,14 @@ export default function CustomersPage() {
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
+  /* `search` returns `last_job_at desc nulls last, name asc`, so recency is
+     what arrives. The A–Z rail claims alphabetical order, so choosing it is a
+     re-sort and the bar above says which one is on — a rail over a recency
+     list would point at letters that are not where it says. */
+  const [sort, setSort] = useState('recent');
+  const [plz, setPlz] = useState('');
+  const [mapOpen, setMapOpen] = useState(false);
+  const navigate = useNavigate();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -54,6 +103,34 @@ export default function CustomersPage() {
     const id = setTimeout(load, 250);
     return () => clearTimeout(id);
   }, [load]);
+
+  /* Every postcode in the book with a count, commonest first. Derived rather
+     than configured: a painter's districts are whatever their customers are
+     in, and nobody should have to maintain a list of them. */
+  const plzOptions = useMemo(() => {
+    const counts = new Map();
+    items.forEach((c) => {
+      const p = (c.postal_code || '').trim();
+      if (p) counts.set(p, (counts.get(p) || 0) + 1);
+    });
+    return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  }, [items]);
+
+  const shown = useMemo(() => {
+    const list = plz ? items.filter((c) => (c.postal_code || '').trim() === plz) : items;
+    if (sort !== 'az') return list;
+    return [...list].sort((a, b) => (a.company_name || a.name || '')
+      .localeCompare(b.company_name || b.name || '', 'de'));
+  }, [items, plz, sort]);
+
+  /* Which letters the rail can actually land on. Only meaningful in A–Z
+     order, so the rail is only shown there. */
+  const letters = useMemo(() => new Set(shown.map(firstLetter)), [shown]);
+
+  const toLetter = (l) => {
+    const el = document.querySelector(`[data-letter="${l}"]`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -83,7 +160,11 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-cream pb-24">
+    /* bg-paper, not bg-cream. Walking the paint chain on the running app:
+       /estimate and /projects paint rgb(255,255,255) and this page painted
+       rgb(253,243,227), so a pro arriving here from a calculation crossed into
+       a different-coloured room for no reason. */
+    <div className="min-h-screen bg-paper pb-24">
       <div className="max-w-4xl mx-auto px-4 pt-6">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
@@ -105,26 +186,48 @@ export default function CustomersPage() {
           </button>
         </div>
 
-        <div className="flex gap-2 mb-4">
-          <div className="relative flex-1">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder={t('search_customers') || 'Name, Firma, E-Mail, Telefon, Ort…'}
-              className="input pl-9 w-full"
-              data-testid="customer-search"
-            />
-          </div>
+        <ContactMap customers={items} open={mapOpen}
+                    onToggle={() => setMapOpen((o) => !o)}
+                    onPick={(id) => navigate(`/customers/${id}`)} />
+
+        <div className="mb-3 flex items-center gap-1.5" data-testid="contacts-sort">
+          <span className="text-[9px] font-extrabold uppercase tracking-[.06em] text-ink-muted">
+            {t('contacts_sorted')}
+          </span>
+          {[['recent', t('contacts_sort_recent')], ['az', t('contacts_sort_az')]]
+            .map(([k, label]) => (
+              <button key={k} type="button" onClick={() => setSort(k)}
+                      aria-pressed={sort === k}
+                      data-testid={`contacts-sort-${k}`}
+                      className={`rounded-full px-2.5 py-1 text-[10px] font-extrabold
+                                  ${sort === k ? 'bg-teal/[.14] text-teal-deep'
+                                               : 'border border-navy-edge bg-paper text-ink-muted'}`}>
+                {label}
+              </button>
+            ))}
+        </div>
+
+        <div className="mb-3 flex items-center gap-2 rounded-[10px] border border-rule
+                        bg-row pl-3 pr-2 h-[42px]">
+          <Search size={15} className="shrink-0 text-ink-muted" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={t('search_customers') || 'Name, Firma, E-Mail, Telefon, Ort…'}
+            className="min-w-0 flex-1 bg-transparent text-[12.5px] text-ink outline-none"
+            data-testid="customer-search"
+          />
           <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="input w-40"
-            data-testid="customer-type-filter"
+            value={plz}
+            onChange={(e) => setPlz(e.target.value)}
+            className="h-[30px] rounded-[8px] border border-navy-edge bg-paper px-1.5
+                       text-[10.5px] font-extrabold text-ink"
+            data-testid="customer-plz-filter"
           >
-            <option value="">{t('all') || 'Alle'}</option>
-            <option value="private">{t('private') || 'Privat'}</option>
-            <option value="business">{t('business') || 'Firma'}</option>
+            <option value="">{t('contacts_plz_all')}</option>
+            {plzOptions.map(([p, n]) => (
+              <option key={p} value={p}>{p} · {n}</option>
+            ))}
           </select>
         </div>
 
@@ -209,45 +312,125 @@ export default function CustomersPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-2" data-testid="customer-list">
-            {items.map((c) => (
-              <div key={c.id} className="card flex items-start gap-3" data-testid="customer-row">
-                <div className="mt-0.5 text-teal">
-                  {c.type === 'business' ? <Building2 size={18} /> : <User size={18} />}
-                </div>
-                <div className="min-w-0 flex-1">
-                  {/* The name is the way into the record — the detail, edit
-                      and delete endpoints had no caller at all before it.
-                      Only the name, not the whole row: the row already
-                      contains mailto: and tel: links, and an anchor inside an
-                      anchor is invalid and behaves unpredictably on tap. */}
-                  <Link to={`/customers/${c.id}`} data-testid="customer-open"
-                        className="block font-headings font-bold text-ink truncate hover:text-teal">
-                    {c.company_name || c.name}
-                  </Link>
-                  {c.company_name && c.name && (
-                    <div className="text-sm text-ink-muted truncate">{c.name}</div>
-                  )}
-                  <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink-muted">
-                    {c.email && (
-                      <a href={`mailto:${c.email}`} className="flex items-center gap-1 hover:text-teal">
-                        <Mail size={13} /> {c.email}
-                      </a>
+          <div className="flex gap-1.5" data-testid="customer-list">
+            <div className="min-w-0 flex-1">
+              {shown.map((c, i) => {
+                const tax = taxOf(c);
+                const letter = firstLetter(c);
+                const heads = sort === 'az' && (i === 0 || firstLetter(shown[i - 1]) !== letter);
+                const title = c.company_name || c.name;
+                return (
+                  <React.Fragment key={c.id}>
+                    {heads && (
+                      <p data-letter={letter}
+                         className="mb-1.5 ml-1 text-[10px] font-extrabold tracking-[.08em] text-teal">
+                        {letter}
+                      </p>
                     )}
-                    {c.phone && (
-                      <a href={`tel:${c.phone}`} className="flex items-center gap-1 hover:text-teal">
-                        <Phone size={13} /> {c.phone}
-                      </a>
-                    )}
-                    {(c.city || c.postal_code) && (
-                      <span className="flex items-center gap-1">
-                        <MapPin size={13} /> {[c.postal_code, c.city].filter(Boolean).join(' ')}
-                      </span>
-                    )}
-                  </div>
-                </div>
+                    <div data-testid="customer-row"
+                         className="mb-3 overflow-hidden rounded-[14px] border-[1.5px]
+                                    border-[#9dbcd8] bg-paper">
+                      <div className="flex items-center gap-3 px-3 pb-2.5 pt-3">
+                        {/* A closed ring, not a gauge. The colour is the tax
+                            treatment and nothing else, so it reads as a state
+                            rather than as a proportion of something. */}
+                        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full
+                                          border-2 bg-paper text-[12.5px] font-extrabold
+                                          ${tax.warn ? 'border-amber-text text-amber-text'
+                                                     : 'border-teal text-teal'}`}>
+                          {initials(c)}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <Link to={`/customers/${c.id}`} data-testid="customer-open"
+                                  className="min-w-0 flex-1 truncate text-[13.5px] font-extrabold
+                                             text-ink hover:text-teal">
+                              {title}
+                            </Link>
+                            <span className={`shrink-0 rounded-full px-1.5 py-[3px] text-[8.5px]
+                                              font-extrabold
+                                              ${tax.warn ? 'bg-amber/20 text-amber-text'
+                                                         : 'bg-green-pos/15 text-green-text'}`}>
+                              {tax.label}
+                            </span>
+                          </div>
+                          <p className="truncate text-[10.5px] text-ink-muted">
+                            {[t('contacts_jobs', { n: c.jobs_count ?? 0 }),
+                              Number(c.lifetime_value) > 0
+                                ? `${fmtEur(c.lifetime_value)} €` : null,
+                              ago(c.last_job_at, t)].filter(Boolean).join(' · ')}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Four ways to reach them, then the reason this screen
+                          exists. The washes are 14 % — the strength /quotes
+                          already draws its tabs at — so the action at the end
+                          stays the strongest thing in the strip. */}
+                      <div className="flex items-center gap-1.5 border-t border-[#b9d0e4]
+                                      bg-row px-3 py-2">
+                        <a href={c.phone ? `tel:${c.phone}` : undefined}
+                           aria-disabled={!c.phone} aria-label={t('phone')}
+                           className={`grid h-8 w-8 place-items-center rounded-full
+                                       bg-green-pos/[.14] text-green-text
+                                       ${c.phone ? '' : 'pointer-events-none opacity-40'}`}>
+                          <Phone size={14} />
+                        </a>
+                        <a href={c.phone ? `sms:${c.phone}` : undefined}
+                           aria-disabled={!c.phone} aria-label={t('contacts_message')}
+                           className={`grid h-8 w-8 place-items-center rounded-full
+                                       bg-teal/[.14] text-teal-deep
+                                       ${c.phone ? '' : 'pointer-events-none opacity-40'}`}>
+                          <MessageCircle size={14} />
+                        </a>
+                        <a href={c.email ? `mailto:${c.email}` : undefined}
+                           aria-disabled={!c.email} aria-label={t('email')}
+                           className={`grid h-8 w-8 place-items-center rounded-full
+                                       bg-navy/[.14] text-navy
+                                       ${c.email ? '' : 'pointer-events-none opacity-40'}`}>
+                          <Mail size={14} />
+                        </a>
+                        <a href={[c.address, c.postal_code, c.city].filter(Boolean).length
+                              ? `https://www.google.com/maps/search/?api=1&query=${
+                                encodeURIComponent([c.address, c.postal_code, c.city]
+                                  .filter(Boolean).join(' '))}` : undefined}
+                           target="_blank" rel="noreferrer"
+                           aria-label={t('contacts_route')}
+                           className={`grid h-8 w-8 place-items-center rounded-full
+                                       bg-red-warn/[.14] text-[#8f2f3b]
+                                       ${c.city || c.address ? '' : 'pointer-events-none opacity-40'}`}>
+                          <MapPin size={14} />
+                        </a>
+                        <button type="button"
+                                onClick={() => navigate(`/estimate?customer=${c.id}`)}
+                                data-testid={`customer-to-estimate-${c.id}`}
+                                className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-full
+                                           bg-teal/[.14] px-3.5 text-[10.5px] font-extrabold
+                                           text-teal">
+                          <Plus size={13} /> {t('contacts_to_estimate')}
+                        </button>
+                      </div>
+                    </div>
+                  </React.Fragment>
+                );
+              })}
+            </div>
+
+            {/* Only in A–Z order: an alphabet rail over a recency list points
+                at letters that are not where it says. */}
+            {sort === 'az' && (
+              <div className="flex w-[17px] shrink-0 flex-col items-center justify-between py-0.5"
+                   data-testid="contacts-rail">
+                {AZ.map((l) => (
+                  <button key={l} type="button" onClick={() => toLetter(l)}
+                          disabled={!letters.has(l)}
+                          className={`w-[17px] text-[9px] font-extrabold leading-none
+                                      ${letters.has(l) ? 'text-teal' : 'text-ink-faint/40'}`}>
+                    {l}
+                  </button>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         )}
       </div>
