@@ -646,6 +646,28 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate,
               against the catalogue's own band, so it belongs beside the two
               fields that produce it. */}
           <BandCheck est={est} job={job} net={net} t={t} />
+
+          {/* Until there is a quantity the two fields sit inside a green
+              block that says what is missing, directly under the title.
+              It was a placeholder further down, in the gap the breakdown
+              will fill — which is the right place for a result and the wrong
+              place for an instruction: you read it after scrolling past the
+              field it is asking you to fill.
+
+              The green wraps the fields rather than sitting above them, so
+              the note ends where the work ends and there is no doubt what it
+              refers to. Type a quantity and the block turns white.
+
+              green-pos is a fill and the config says it "fails as text
+              everywhere it has been used", so the wash is green-pos at 20 %
+              and the words are green-text: 4.72:1, comfortably past AA. */}
+          <div className={!est ? 'mb-[18px] rounded-[11px] border-[1.5px] border-green-text/25 bg-green-pos/20 px-3 pb-3 pt-2.5' : ''}
+               data-testid={!est ? `estimate-awaiting-${tid}` : undefined}>
+          {!est && (
+            <p className="mb-2 text-[12px] font-extrabold text-green-text">
+              {t('est_awaiting_qty', { u: unit(job.unit) })}
+            </p>
+          )}
           <div className="flex items-end gap-2">
             <label className="flex-1">
               <span className="block text-[9px] font-extrabold uppercase tracking-[.06em]
@@ -700,6 +722,7 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate,
                            text-right text-[13px] font-bold text-ink outline-none"
               />
             </div>
+          </div>
           </div>
 
           {est?.rates_applied > 0 && (
@@ -816,22 +839,6 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate,
               sits where the catalogue says this work sits. All three are drawn
               from the estimate that is already on screen — none of them costs
               a request. */}
-          {/* Nothing to break down until there is a price, and there is no
-              price until a quantity is typed — so an untouched card used to
-              show the two dropdowns and stop, looking exactly like the card
-              before any of this was built. Say what is behind the number
-              instead of leaving a blank where four blocks will be. */}
-          {!est && (
-            <div className="mt-3 rounded-[11px] border border-dashed border-rule bg-row
-                            px-3 py-3 text-center" data-testid={`estimate-awaiting-${tid}`}>
-              <p className="text-[11.5px] font-bold text-ink-soft">
-                {t('est_awaiting_qty', { u: unit(job.unit) })}
-              </p>
-              <p className="mt-0.5 text-[10.5px] text-ink-muted leading-snug">
-                {t('est_awaiting_what')}
-              </p>
-            </div>
-          )}
           <Breakdown est={est} overrides={state.qtyOverrides} rates={state.rateEdits}
                      excluded={state.excluded} tid={tid} t={t}
                      onQty={(rateKey, v) => onLineQty(job.key, rateKey, v)}
