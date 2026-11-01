@@ -102,7 +102,7 @@ export default function FolierungPricesPage() {
         ))}
       </Card>
 
-      <Card title="Rolle & Zuschnitt" sub="Bodaq Interior Film: 1.220 mm × 50 m je Rolle. Der Rechner legt jedes Teil auf die Bahn und rechnet den echten Verschnitt statt der Pauschale.">
+      <Card title="Rolle & Zuschnitt" sub="Bodaq Interior Film: 1.220 mm × 50 m je Rolle. Der Rechner rechnet je Teil den Umschlag (Materialstärke plus Rückseite) dazu, legt es auf die Bahn und ermittelt den echten Verschnitt. Fronten, Türen und Seiten werden nie gedreht.">
         <div className="grid sm:grid-cols-2 gap-3">
           <label className="flex items-center justify-between gap-3 rounded-xl border border-sm-border bg-cream px-3 py-2.5 text-sm sm:col-span-2 cursor-pointer">
             <span className="font-semibold text-ink">Zuschnitt rechnen (Nesting)</span>
@@ -110,12 +110,14 @@ export default function FolierungPricesPage() {
           </label>
           <Num label="Rollenbreite" unit="mm" value={s.nesting.rollWidthMm} onChange={(v) => setIn('nesting', 'rollWidthMm', null, v)} />
           <Num label="Rollenlänge" unit="m" value={s.nesting.rollLengthM} onChange={(v) => setIn('nesting', 'rollLengthM', null, v)} />
-          <Num label="Zugabe je Seite" unit="mm" value={s.nesting.bleedMm} onChange={(v) => setIn('nesting', 'bleedMm', null, v)} hint="Kante umschlagen plus Anschnitt" />
+          <Num label="Umschlag hinten" unit="mm" value={s.nesting.backWrapMm} onChange={(v) => setIn('nesting', 'backWrapMm', null, v)} hint="über die Kante und auf die Rückseite, 20–30 mm" />
+          <Num label="Materialstärke Standard" unit="mm" value={s.nesting.thicknessMm} onChange={(v) => setIn('nesting', 'thicknessMm', null, v)} hint="Front 19, Platte 38, Türblatt 40; je Element änderbar" />
+          <Num label="Anschnitt an freien Kanten" unit="mm" value={s.nesting.bleedMm} onChange={(v) => setIn('nesting', 'bleedMm', null, v)} hint="Flächen und Streifen ohne Umschlag" />
           <Num label="Messerabstand" unit="mm" value={s.nesting.gapMm} onChange={(v) => setIn('nesting', 'gapMm', null, v)} />
           <label className="grid gap-1 text-sm sm:col-span-2">
             <span className="font-semibold text-ink">Teile drehen</span>
             <select value={s.nesting.rotate} onChange={(e) => setIn('nesting', 'rotate', null, e.target.value)} className="rounded-xl border border-sm-border bg-cream px-3 py-2.5 text-ink">
-              <option value="auto">Automatisch: nur bei Dekoren ohne Laufrichtung (Uni, Stein, Spezial)</option>
+              <option value="auto">Automatisch: Streifen und Flächen nur bei Dekoren ohne Laufrichtung (Uni, Stein, Spezial)</option>
               <option value="no">Nie drehen</option>
               <option value="yes">Immer erlauben</option>
             </select>

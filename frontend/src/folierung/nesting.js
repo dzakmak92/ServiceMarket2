@@ -25,7 +25,9 @@ export const DEFAULT_NESTING = {
   enabled: true,
   rollWidthMm: 1220,   // Bodaq / Coverstyl' / DI-NOC
   rollLengthM: 50,
-  bleedMm: 20,         // Zugabe je Seite: 19er-Kante umschlagen plus Anschnitt
+  bleedMm: 10,         // Anschnitt je Kante, die NICHT umschlagen wird (Flächen, Streifen)
+  backWrapMm: 25,      // Umschlag hinten: über die Kante und 2–3 cm auf die Rückseite
+  thicknessMm: 19,     // Materialstärke, wenn das Element keine eigene trägt
   gapMm: 8,            // Abstand zwischen zwei Teilen fürs Messer
   rotate: 'auto',      // 'auto' = nach Dekor, 'yes' = immer, 'no' = nie
 };
@@ -35,33 +37,38 @@ export const GRAIN_DECORS = new Set(['holz', 'metall', 'leder', 'marmor']);
 
 /* ── Standardmaße je Element ────────────────────────────────────────────
  * Schlüssel `oberflaeche.element`, Rückfall `element`. Ein Eintrag ist
- *   { w, h }                        ein Teil je Stück (mm)
+ *   { w, h }                        ein Teil je Stück (mm), Sichtmaß
  *   { w, perM: true }               Streifen: Länge = Menge in m, Breite w
  *   { strip: true }                 Fläche in m²: volle Bahnbreite, Länge daraus
  *   { parts: [{ w, h, n }] }        mehrere Teile je Stück
+ * dazu der Umschlag:
+ *   t        Materialstärke in mm (Front 19, Platte 38, Türblatt 40)
+ *   wx, wy   wie viele Kanten je Achse umschlagen werden (0, 1, 2);
+ *            eine umschlagene Kante braucht t + backWrap, eine freie nur Anschnitt.
+ *   vertical Maserung steht senkrecht, wird nie gedreht (Fronten, Türen, Seiten)
  */
-const FRONT = { w: 596, h: 716 };
+const FRONT = { w: 596, h: 716, t: 19, wx: 2, wy: 2, vertical: true };
 export const PIECE_DEFAULTS = {
   'kueche.fronten': FRONT, 'kueche.insel_fronten': FRONT, 'kueche.extra_fronten': FRONT,
-  'kueche.platte': { w: 650, perM: true }, 'kueche.insel_platte': { w: 950, perM: true },
-  'kueche.nische': { w: 600, perM: true }, 'kueche.sockel': { w: 150, perM: true },
-  'kueche.blenden': { w: 100, h: 716 }, 'kueche.seiten': { w: 580, h: 870 }, 'kueche.insel_seiten': { w: 900, h: 870 },
-  'kueche.extra_seiten': { w: 580, h: 1000 }, 'kueche.regal': { w: 300, h: 1000 },
-  'tueren.blatt_1': { w: 860, h: 1985 }, 'tueren.blatt_2': { parts: [{ w: 860, h: 1985, n: 2 }] },
+  'kueche.platte': { w: 650, perM: true, t: 38, wx: 1 }, 'kueche.insel_platte': { w: 950, perM: true, t: 38, wx: 2 },
+  'kueche.nische': { w: 600, perM: true, t: 0, wx: 0 }, 'kueche.sockel': { w: 150, perM: true, t: 16, wx: 0 },
+  'kueche.blenden': { w: 100, h: 716, t: 19, wx: 2, wy: 1, vertical: true }, 'kueche.seiten': { w: 580, h: 870, t: 19, wx: 1, wy: 1, vertical: true }, 'kueche.insel_seiten': { w: 900, h: 870, t: 19, wx: 2, wy: 1, vertical: true },
+  'kueche.extra_seiten': { w: 580, h: 1000, t: 19, wx: 1, wy: 1, vertical: true }, 'kueche.regal': { w: 300, h: 1000, t: 19, wx: 1, wy: 0 },
+  'tueren.blatt_1': { w: 860, h: 1985, t: 40, wx: 2, wy: 2, vertical: true }, 'tueren.blatt_2': { parts: [{ w: 860, h: 1985, n: 2 }], t: 40, wx: 1, wy: 1, vertical: true },
   'tueren.zarge': { parts: [{ w: 180, h: 2100, n: 4 }, { w: 180, h: 900, n: 2 }, { w: 110, h: 2100, n: 2 }, { w: 110, h: 900, n: 1 }] },
-  'tueren.haustuer': { w: 1000, h: 2100 },
-  'moebel.fronten': { w: 596, h: 716 }, 'moebel.seiten': { w: 580, h: 900 }, 'moebel.tisch': { strip: true },
-  'moebel.regal': { w: 300, h: 1000 }, 'moebel.bett': { parts: [{ w: 1000, h: 1600, n: 1 }, { w: 300, h: 2000, n: 2 }] },
-  'bad.fliesen': { strip: true }, 'bad.fronten': { w: 450, h: 600 }, 'bad.waschtisch': { w: 600, perM: true },
+  'tueren.haustuer': { w: 1000, h: 2100, t: 60, wx: 2, wy: 2, vertical: true },
+  'moebel.fronten': FRONT, 'moebel.seiten': { w: 580, h: 900, t: 19, wx: 1, wy: 1, vertical: true }, 'moebel.tisch': { strip: true },
+  'moebel.regal': { w: 300, h: 1000, t: 19, wx: 1, wy: 0 }, 'moebel.bett': { parts: [{ w: 1000, h: 1600, n: 1 }, { w: 300, h: 2000, n: 2 }] },
+  'bad.fliesen': { strip: true }, 'bad.fronten': { w: 446, h: 570, t: 19, wx: 2, wy: 2, vertical: true }, 'bad.waschtisch': { w: 600, perM: true, t: 38, wx: 1 },
   'bad.schuerze': { strip: true }, 'bad.dusche': { strip: true },
-  'waende.wand': { strip: true }, 'waende.paneel': { w: 600, h: 1000 }, 'waende.saeule': { w: 1200, perM: true }, 'waende.decke': { strip: true },
+  'waende.wand': { strip: true }, 'waende.paneel': { w: 600, h: 1000, t: 19, wx: 2, wy: 2, vertical: true }, 'waende.saeule': { w: 1200, perM: true }, 'waende.decke': { strip: true },
   'fenster.fluegel': { parts: [{ w: 110, h: 1400, n: 2 }, { w: 110, h: 900, n: 2 }] }, 'fenster.rahmen': { w: 120, perM: true },
   'fenster.bank': { w: 300, perM: true }, 'fenster.rollo': { w: 300, perM: true },
   'gewerbe.theke': { parts: [{ w: 1100, h: 1000, n: 1 }, { w: 650, h: 1000, n: 1 }] }, 'gewerbe.regal': { parts: [{ w: 400, h: 2000, n: 2 }, { w: 1000, h: 350, n: 4 }] },
   'gewerbe.aufzug': { strip: true }, 'gewerbe.zimmer': { parts: [{ w: 596, h: 2000, n: 4 }, { w: 800, h: 1600, n: 1 }, { w: 500, h: 600, n: 4 }] },
-  'gewerbe.tisch': { w: 850, h: 1650 }, 'gewerbe.trennwand': { strip: true },
-  'sonstiges.stufe': { w: 350, h: 1000 }, 'sonstiges.setzstufe': { w: 180, h: 1000 },
-  'sonstiges.heizkoerper': { w: 800, h: 1000 }, 'sonstiges.garderobe': { w: 800, h: 1000 },
+  'gewerbe.tisch': { w: 850, h: 1650, t: 25, wx: 2, wy: 2 }, 'gewerbe.trennwand': { strip: true },
+  'sonstiges.stufe': { w: 350, h: 1000, t: 40, wx: 1, wy: 0 }, 'sonstiges.setzstufe': { w: 180, h: 1000, t: 0, wx: 0, wy: 0 },
+  'sonstiges.heizkoerper': { w: 800, h: 1000, t: 0, wx: 0, wy: 0 }, 'sonstiges.garderobe': { w: 800, h: 1000, t: 19, wx: 2, wy: 2, vertical: true },
 };
 
 /* Elemente ohne Eintrag (Ausschnitte, Glasausschnitte) brauchen keine Folie. */
@@ -69,41 +76,65 @@ export function pieceDefault(surfaceKey, elementKey) {
   return PIECE_DEFAULTS[`${surfaceKey}.${elementKey}`] || PIECE_DEFAULTS[`kueche.${elementKey}`] || null;
 }
 
+/** Zuschnittmaß aus Sichtmaß: je Achse umschlagene Kanten (t + hinten) plus freie Kanten (Anschnitt). */
+export function cutSize(w, h, { t = 19, wx = 2, wy = 2 } = {}, back = 25, bleed = 10) {
+  const addX = wx * (t + back) + (2 - wx) * bleed;
+  const addY = wy * (t + back) + (2 - wy) * bleed;
+  return { w: Math.round(w + addX), h: Math.round(h + addY), addX, addY };
+}
+
 /**
- * Die Teileliste aus Zählwerten.
+ * Die Teileliste aus Zählwerten, fertig mit Umschlag und Anschnitt.
  *
- * @param elements   aktive Elemente (catalog.activeElements)
+ * @param elements   aktive Elemente (catalog.activeElements), tragen rawKey/surfaceKey
  * @param counts     input.counts
- * @param overrides  input.pieces: { [elementKey]: { w, h } } vom Betrieb eingetragene Maße
- * @param custom     input.customPieces: [{ label, w, h, n }]
+ * @param overrides  input.pieces: { [elementKey]: { w, h, t, groups: [{ w, h, n }] } }
+ * @param custom     input.customPieces: [{ label, w, h, n, t }]
  * @param rollW      Rollenbreite für Flächen-Streifen
- * @param bleed      Zugabe je Seite, für die Streifenbreite
+ * @param bleed      Anschnitt je freier Kante
+ * @param innenPct   Anteil Fronten, deren Innenseite mitfoliert wird
+ * @param wrap       { back, t }: Umschlag hinten und Standard-Materialstärke
  */
-export function piecesFor(surfaceKey, elements, counts, overrides = {}, custom = [], rollW = 1220, bleed = 25, innenPct = 0) {
+export function piecesFor(surfaceKey, elements, counts, overrides = {}, custom = [], rollW = 1220, bleed = 10, innenPct = 0, wrap = {}) {
+  const back = Number(wrap.back ?? DEFAULT_NESTING.backWrapMm);
+  const tDefault = Number(wrap.t ?? DEFAULT_NESTING.thicknessMm);
   const out = [];
-  const push = (key, label, w, h, n, extra = {}) => {
-    if (n <= 0 || w <= 0 || h <= 0) return;
-    out.push({ key, label, w: Math.round(w), h: Math.round(h), n: Math.ceil(n), ...extra });
+  const push = (key, label, rawW, rawH, n, spec, extra = {}) => {
+    if (n <= 0 || rawW <= 0 || rawH <= 0) return;
+    const c = cutSize(rawW, rawH, { t: spec.t ?? tDefault, wx: spec.wx ?? 2, wy: spec.wy ?? 2 }, back, bleed);
+    out.push({ key, label, w: c.w, h: c.h, rawW: Math.round(rawW), rawH: Math.round(rawH), n: Math.ceil(n), cut: true, vertical: !!spec.vertical, t: spec.t ?? tDefault, wx: spec.wx ?? 2, wy: spec.wy ?? 2, ...extra });
   };
   for (const e of elements) {
     const qty = Number(counts?.[e.key]) || 0;
     if (qty <= 0) continue;
-    const base = pieceDefault(surfaceKey, e.key);
-    if (!base && !overrides?.[e.key]) continue;
-    const d = { ...(base || {}), ...(overrides?.[e.key] || {}) };
-    if (d.parts && !overrides?.[e.key]) {
-      d.parts.forEach((p, i) => push(e.key, `${e.label} ${i + 1}`, p.w, p.h, p.n * qty));
+    const base = pieceDefault(e.surfaceKey || surfaceKey, e.rawKey || e.key);
+    const o = overrides?.[e.key];
+    if (!base && !o) continue;
+    const d = { ...(base || {}), ...(o || {}) };
+    if (o?.t != null) d.t = Number(o.t);
+    const isFront = /front|blatt/.test(e.rawKey || e.key) && e.unit === 'stk';
+    if (d.groups?.length && e.unit === 'stk') {
+      // Größen aufgeteilt: n je Größe; was über die Zählung hinaus fehlt, bekommt das Standardmaß.
+      let left = qty;
+      for (const g of d.groups) {
+        const n = Math.min(left, Number(g.n) || 0);
+        if (n > 0 && g.w && g.h) { push(e.key, `${e.label} ${g.w}×${g.h}`, Number(g.w), Number(g.h), n, d); left -= n; }
+      }
+      if (left > 0 && d.w && d.h) push(e.key, e.label, d.w, d.h, left, d);
+      if (innenPct > 0 && isFront) for (const g of d.groups) if (g.w && g.h && g.n) push(e.key, `${e.label} ${g.w}×${g.h} innen`, Number(g.w), Number(g.h), Number(g.n) * innenPct, d);
+    } else if (d.parts && !(o?.w && o?.h)) {
+      d.parts.forEach((p, i) => push(e.key, `${e.label} ${i + 1}`, p.w, p.h, p.n * qty, d));
     } else if (d.perM) {
-      push(e.key, e.label, d.w, qty * 1000, 1, { splittable: true });
+      push(e.key, e.label, d.w, qty * 1000, 1, { ...d, wy: 0 }, { splittable: true });
     } else if (d.strip) {
       const w = Math.max(200, rollW - 2 * bleed);
-      push(e.key, e.label, w, (qty * 1e6) / w, 1, { splittable: true, strip: true });
+      push(e.key, e.label, w - 2 * bleed, (qty * 1e6) / w, 1, { t: 0, wx: 0, wy: 0 }, { splittable: true, strip: true });
     } else {
-      push(e.key, e.label, d.w, d.h, qty);
-      if (innenPct > 0 && e.unit === 'stk' && /front|blatt/.test(e.key)) push(e.key, `${e.label} innen`, d.w, d.h, qty * innenPct);
+      push(e.key, e.label, d.w, d.h, qty, d);
+      if (innenPct > 0 && isFront) push(e.key, `${e.label} innen`, d.w, d.h, qty * innenPct, d);
     }
   }
-  for (const c of custom || []) push(c.key || 'custom', c.label || 'Eigenes Teil', Number(c.w), Number(c.h), Number(c.n) || 1);
+  for (const c of custom || []) push(c.key || 'custom', c.label || 'Eigenes Teil', Number(c.w), Number(c.h), Number(c.n) || 1, { t: c.t != null && c.t !== '' ? Number(c.t) : tDefault, wx: 2, wy: 2, vertical: !!c.vertical });
   return out;
 }
 
@@ -126,14 +157,17 @@ export function nest(pieces, opts = {}) {
   let areaPieces = 0;
   for (const p of pieces) {
     for (let i = 0; i < p.n; i++) {
-      let w = p.w + 2 * bleed, h = p.h + 2 * bleed;
-      areaPieces += (p.w * p.h) / 1e6;
-      if (w > rollW && (h <= rollW) && (rotate || p.strip || p.splittable)) [w, h] = [h, w];
+      // Teile aus piecesFor sind fertig zugeschnitten (cut); rohe Teile bekommen hier Zugabe.
+      const b = p.cut ? 0 : bleed;
+      let w = p.w + 2 * b, h = p.h + 2 * b;
+      areaPieces += ((p.rawW ?? p.w) * (p.rawH ?? p.h)) / 1e6;
+      const lock = !!p.vertical;   // senkrechte Maserung: nie drehen, auch bei Uni nicht
+      if (w > rollW && (h <= rollW) && !lock && (rotate || p.strip || p.splittable)) [w, h] = [h, w];
       if (w > rollW) { unplaced.push({ label: p.label, w: p.w, h: p.h, why: `breiter als die Rolle (${rollW} mm), auch gedreht` }); continue; }
       // Quer möglichst breit legen, das spart Länge; nur wenn Drehen erlaubt ist.
-      if (rotate && h <= rollW && h > w) [w, h] = [h, w];
+      if (rotate && !lock && h <= rollW && h > w) [w, h] = [h, w];
       while (h > rollL) { items.push({ w, h: rollL, label: `${p.label} (Teil)`, key: p.key }); h -= rollL; }
-      items.push({ w, h, label: p.label, key: p.key, canRotate: rotate && !p.strip });
+      items.push({ w, h, label: p.label, key: p.key, canRotate: rotate && !p.strip && !lock });
     }
   }
   items.sort((a, b) => b.h - a.h || b.w - a.w);

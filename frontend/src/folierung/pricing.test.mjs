@@ -13,7 +13,7 @@ const nestingUrl = asUrl(readFileSync(join(here, 'nesting.js'), 'utf8'));
 const pricingSrc = readFileSync(join(here, 'pricing.js'), 'utf8')
   .replaceAll("from './catalog'", `from '${catalogUrl}'`)
   .replaceAll("from './nesting'", `from '${nestingUrl}'`);
-const { calculate, emptyInput, withShape, withAddon, primerPacks, DEFAULT_SETTINGS, summaryText } = await import(asUrl(pricingSrc));
+const { calculate, emptyInput, withShape, withAddon, withExtraSurface, primerPacks, DEFAULT_SETTINGS, summaryText } = await import(asUrl(pricingSrc));
 
 let pass = 0, fail = 0;
 const ok = (c, m) => { c ? (pass++, console.log('  ok  ', m)) : (fail++, console.log('  FAIL', m)); };
@@ -73,6 +73,11 @@ ok(small.notes.some((n) => n.text.includes('Mindestauftrag')), '… und wird als
 let addon = withAddon(inp, 'insel', true);
 ok(addon.addons.includes('insel') && addon.counts.insel_platte === 2, 'Insel aktivieren setzt ihre Startwerte');
 ok(calculate(addon).areaNet > base.areaNet, '… und vergrößert die Fläche');
+let multi = withExtraSurface(inp, 'tueren', true);
+ok(multi.extraSurfaces.includes('tueren') && multi.counts['tueren:blatt_1'] === 4, 'Türen als weiterer Bereich mit Startwerten');
+let mr = calculate(multi);
+ok(mr.lines.some((l) => l.key === 'tueren:blatt_1') && mr.areaNet > base.areaNet, 'Türen zählen in Fläche und Preis mit');
+ok(mr.fronts === base.fronts + 4, `Türblätter zählen als Fronten (${mr.fronts})`);
 let own = calculate(inp, { ...DEFAULT_SETTINGS, hourlyRate: 90 });
 ok(own.ways.montage.value > base.ways.montage.value, 'eigener Stundensatz wirkt');
 let wall = calculate({ ...emptyInput('waende') });

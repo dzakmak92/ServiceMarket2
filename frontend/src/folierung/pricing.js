@@ -65,6 +65,7 @@ export function emptyInput(surfaceKey = 'kueche') {
     extras: { innen: false, grifflos: false, geraete: 0, demontage: false },
     travel: '0',
     weekend: false,
+    extraSurfaces: [],   // weitere Bereiche im selben Auftrag (Türen, Möbel, …)
     pieces: {},          // eigene Maße je Element (mm), für den Zuschnitt
     customPieces: [],    // zusätzliche Teile { label, w, h, n }
   };
@@ -83,6 +84,16 @@ export function withAddon(input, addonKey, on) {
   const counts = { ...input.counts };
   if (on) for (const e of addon.elements) if (counts[e.key] == null) counts[e.key] = e.default;
   return { ...input, addons, counts };
+}
+
+/** Einen weiteren Bereich (Türen, Möbel, …) in dieselbe Kalkulation nehmen. */
+export function withExtraSurface(input, surfaceKey, on) {
+  const extra = surfaceByKey(surfaceKey);
+  if (!extra || extra.key === input.surface) return input;
+  const extraSurfaces = on ? [...new Set([...(input.extraSurfaces || []), extra.key])] : (input.extraSurfaces || []).filter((k) => k !== extra.key);
+  const counts = { ...input.counts };
+  if (on) for (const e of extra.elements) if (counts[`${extra.key}:${e.key}`] == null) counts[`${extra.key}:${e.key}`] = e.default;
+  return { ...input, extraSurfaces, counts };
 }
 
 /** Küchenform wählen: setzt die Zählwerte auf die typischen Startwerte. */
@@ -113,7 +124,7 @@ export function primerPacks(ml, prices) {
 export function calculate(input, settings = DEFAULT_SETTINGS) {
   const s = { ...DEFAULT_SETTINGS, ...settings };
   const surface = surfaceByKey(input.surface);
-  const elements = activeElements(surface, input.addons || []);
+  const elements = activeElements(surface, input.addons || [], input.extraSurfaces || []);
   const condition = CONDITIONS.find((c) => c.key === input.condition) || CONDITIONS[0];
   const condFactor = num(s.conditions?.[condition.key], condition.factor);
   const substrate = substrateByKey(input.substrate);
@@ -130,16 +141,16 @@ export function calculate(input, settings = DEFAULT_SETTINGS) {
     const a = n * e.area, ed = n * e.edge, h = n * e.hours * condFactor;
     areaNet += a; edges += ed; workHours += h;
     if (e.portable) { portableHours += h; portableArea += a; }
-    if (FRONT_KEYS.has(e.key)) fronts += n;
-    lines.push({ key: e.key, label: e.label, qty: n, unit: e.unit, area: a, hours: h });
+    if (FRONT_KEYS.has(e.rawKey || e.key)) fronts += n;
+    lines.push({ key: e.key, rawKey: e.rawKey || e.key, label: e.addon?.startsWith('surface:') ? `${e.label} (${surfaceByKey(e.surfaceKey).short})` : e.label, qty: n, unit: e.unit, area: a, hours: h });
   }
   const wastePct = num(s.waste, 25) / 100;
   const areaGross = areaNet * (1 + wastePct);
 
   // Innenseiten: Fläche und Zeit der Fronten noch einmal anteilig.
   const innenPct = input.extras?.innen ? num(s.extras?.innen, 40) / 100 : 0;
-  const frontArea = lines.filter((l) => FRONT_KEYS.has(l.key)).reduce((a, l) => a + l.area, 0);
-  const frontHours = lines.filter((l) => FRONT_KEYS.has(l.key)).reduce((a, l) => a + l.hours, 0);
+  const frontArea = lines.filter((l) => FRONT_KEYS.has(l.rawKey)).reduce((a, l) => a + l.area, 0);
+  const frontHours = lines.filter((l) => FRONT_KEYS.has(l.rawKey)).reduce((a, l) => a + l.hours, 0);
   const innenArea = frontArea * innenPct;
   const innenHours = frontHours * innenPct;
 
@@ -184,7 +195,7 @@ export function calculate(input, settings = DEFAULT_SETTINGS) {
   const ns = { ...DEFAULT_NESTING, ...(s.nesting || {}) };
   let nesting = null;
   if (ns.enabled && lines.length) {
-    const pieces = piecesFor(surface.key, elements, input.counts, input.pieces, input.customPieces, ns.rollWidthMm, ns.bleedMm, innenPct);
+    const pieces = piecesFor(surface.key, elements, input.counts, input.pieces, input.customPieces, ns.rollWidthMm, ns.bleedMm, innenPct, { back: ns.backWrapMm, t: ns.thicknessMm });
     nesting = nest(pieces, { ...ns, grain: GRAIN_DECORS.has(decor.key) });
     nesting.pieces = pieces;
   }

@@ -28,7 +28,16 @@ Modul `frontend/src/folierung/`:
   und die Lage jedes Teils für die Zeichnung. Rolle: **Bodaq Interior Film 1.220 mm × 50 m**
   (Materialbank: 4 ft × 164 ft; resimdo-Datenblatt: 122 cm × 50 lfm). Coverstyl' und 3M DI-NOC
   sind ebenfalls 1.220 mm breit. Einstellbar unter Preise → Rolle & Zuschnitt.
-- `nesting.test.mjs` — 22 Prüfungen. Die wichtigste: zwei 596er-Fronten mit 20–25 mm Zugabe
+  **Umschlag:** je umschlagener Kante kommt Materialstärke + Rückseite (Standard 25 mm) dazu,
+  je freier Kante nur Anschnitt (10 mm). Front 596 × 716 bei 19 mm → Zuschnitt 684 × 804.
+  Standardmaße der Fronten (32er-Raster, `FRONT_WIDTHS` / `FRONT_HEIGHTS` im Katalog) und
+  Materialstärken (16–40 mm) sind im Zählschritt je Element wählbar; Fronten lassen sich in
+  Größengruppen aufteilen (4 × 596 × 716, 4 × 596 × 283, Rest Standard). Fronten, Türen und
+  Seiten tragen `vertical: true` und werden nie gedreht, bei keinem Dekor.
+  **Mehrere Bereiche je Auftrag:** Schritt 1 nimmt weitere Bereiche (Türen, Möbel, Bad, …)
+  dazu; ihre Elemente heißen `bereich:element`, bekommen eigene Zeichnung und Zählzeilen und
+  laufen in denselben Preis und Zuschnitt (`activeElements(surface, addons, extraSurfaces)`).
+- `nesting.test.mjs` — 29 Prüfungen. Die wichtigste: zwei 596er-Fronten mit 20–25 mm Zugabe
   passen **nicht** nebeneinander auf 1.220 mm; eine Küche aus 600er-Fronten in Holzdekor
   verschneidet daher um 50 %, nicht 25 %. 450er-Fronten liegen zu zweit.
 - `store.js` — Freischaltung (`canUseFolierung`) und Persistenz. **Heute localStorage.**

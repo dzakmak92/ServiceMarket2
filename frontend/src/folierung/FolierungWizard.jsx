@@ -8,11 +8,11 @@ import { copyToClipboard } from '../utils/sms';
 import { parseDecimal } from '../utils/number';
 import {
   SURFACES, surfaceByKey, activeElements, CONDITIONS, SUBSTRATES, SUBSTRATES_FOR,
-  substrateByKey, DECORS, EXTRAS, TRAVEL_ZONES,
+  substrateByKey, DECORS, EXTRAS, TRAVEL_ZONES, FRONT_WIDTHS, FRONT_HEIGHTS, THICKNESSES,
 } from './catalog';
-import { calculate, emptyInput, withAddon, withShape, summaryText } from './pricing';
+import { calculate, emptyInput, withAddon, withShape, withExtraSurface, summaryText } from './pricing';
 import Drawing, { drawingFor, SurfaceIcon, ConditionIcon } from './Drawings';
-import { pieceDefault } from './nesting';
+import { pieceDefault, cutSize } from './nesting';
 
 /**
  * Der Folierungs-Rechner in vier Schritten, nach dem Muster, das Retrena auf
@@ -52,7 +52,7 @@ export default function FolierungWizard({ audience = 'customer', settings, initi
   const topRef = useRef(null);
 
   const surface = surfaceByKey(input.surface);
-  const elements = useMemo(() => activeElements(surface, input.addons), [surface, input.addons]);
+  const elements = useMemo(() => activeElements(surface, input.addons, input.extraSurfaces || []), [surface, input.addons, input.extraSurfaces]);
   const result = useMemo(() => calculate(input, settings), [input, settings]);
 
   useEffect(() => { topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, [step]);
@@ -130,6 +130,19 @@ export default function FolierungWizard({ audience = 'customer', settings, initi
               </div>
             </>
           )}
+          <Kicker className="mt-8">Weitere Bereiche im selben Auftrag</Kicker>
+          <p className="text-sm text-ink-muted mb-3">Türen, Möbel oder Bad gleich mit? Jeder Bereich bekommt seine eigene Zählzeichnung, der Preis wird einer.</p>
+          <div className="flex flex-wrap gap-2">
+            {SURFACES.filter((x) => x.key !== input.surface).map((x) => {
+              const on = (input.extraSurfaces || []).includes(x.key);
+              return (
+                <button key={x.key} type="button" onClick={() => setInput(withExtraSurface(input, x.key, !on))} aria-pressed={on} data-testid={`fol-extra-surface-${x.key}`}
+                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition ${on ? 'border-amber bg-amber/10 text-ink' : 'border-sm-border bg-paper text-ink hover:border-teal/40'}`}>
+                  {on ? <Check size={14} className="text-amber-deep" /> : <Plus size={14} className="text-ink-muted" />} {x.label}
+                </button>
+              );
+            })}
+          </div>
         </section>
       )}
 
@@ -200,6 +213,17 @@ export default function FolierungWizard({ audience = 'customer', settings, initi
                 input={input} setCount={setCount} active={active} setActive={setActive} />
             </div>
           ))}
+          {(input.extraSurfaces || []).map((k) => {
+            const sf = surfaceByKey(k);
+            return (
+              <div key={k} className="mt-8">
+                <Kicker>{sf.label}</Kicker>
+                <p className="text-sm text-ink-muted mb-3">{sf.intro}</p>
+                <CountBlock surface={sf} drawing={sf.key === 'moebel' ? 'furniture' : sf.drawing} elements={elements.filter((e) => e.addon === `surface:${k}`)}
+                  input={input} setCount={setCount} active={active} setActive={setActive} />
+              </div>
+            );
+          })}
 
           {isPro && (
             <PieceEditor surface={surface} elements={elements} input={input} patch={patch} settings={settings} result={result} />
@@ -339,12 +363,16 @@ const PRIMER_LABEL = { none: 'kein Primer', edges: 'Primer an den Kanten', full:
 
 /* ── Zählblock: Zeichnung + Zeilen ─────────────────────────────────────── */
 function CountBlock({ surface, drawing, elements, input, setCount, active, setActive }) {
-  const keys = elements.map((e) => e.key);
+  // Die Zeichnung kennt nur rohe Schlüssel (fronten), die Zählwerte den
+  // vollen (moebel:fronten), wenn ein Bereich dazugenommen wurde.
+  const raw = (e) => e.rawKey || e.key;
+  const keys = elements.map(raw);
   const activeEl = elements.find((e) => e.key === active);
+  const pick = (rk) => { const e = elements.find((x) => raw(x) === rk); if (e) setActive(e.key); };
   return (
     <div>
       <div className="rounded-2xl border border-sm-border bg-paper p-3 mb-3">
-        <Drawing kind={drawing} active={active} onPick={setActive} only={keys} />
+        <Drawing kind={drawing} active={activeEl ? raw(activeEl) : null} onPick={pick} only={keys} />
         <p className="text-xs text-ink-muted text-center mt-2 px-2">
           {activeEl ? <><span className="font-semibold text-amber-text">{activeEl.step} {activeEl.label}:</span> {activeEl.rule}</>
             : <><Info size={12} className="inline -mt-0.5" /> Tipp eine Nummer im Bild oder eine Zeile an, dann steht die Regel hier.</>}
@@ -491,9 +519,13 @@ function ProPanel({ result, input, settings }) {
 /* ── Zuschnitt: Maße je Element und eigene Teile ────────────────────────── */
 function PieceEditor({ surface, elements, input, patch, settings, result }) {
   const [open, setOpen] = useState(false);
-  const rows = elements.filter((e) => (Number(input.counts[e.key]) || 0) > 0).map((e) => ({ e, d: pieceDefault(surface.key, e.key), o: input.pieces?.[e.key] }))
+  const ns = settings.nesting || {};
+  const back = ns.backWrapMm ?? 25, bleed = ns.bleedMm ?? 10, tDef = ns.thicknessMm ?? 19;
+  const rows = elements
+    .filter((e) => (Number(input.counts[e.key]) || 0) > 0)
+    .map((e) => ({ e, d: pieceDefault(e.surfaceKey || surface.key, e.rawKey || e.key), o: input.pieces?.[e.key] }))
     .filter((r) => r.d || r.o);
-  const setPiece = (key, k, v) => patch({ pieces: { ...(input.pieces || {}), [key]: { ...(input.pieces?.[key] || {}), [k]: v } } });
+  const setPiece = (key, p) => patch({ pieces: { ...(input.pieces || {}), [key]: { ...(input.pieces?.[key] || {}), ...p } } });
   const clearPiece = (key) => { const p = { ...(input.pieces || {}) }; delete p[key]; patch({ pieces: p }); };
   const custom = input.customPieces || [];
   const setCustom = (i, k, v) => patch({ customPieces: custom.map((c, j) => (j === i ? { ...c, [k]: v } : c)) });
@@ -502,34 +534,91 @@ function PieceEditor({ surface, elements, input, patch, settings, result }) {
     <div className="mt-8 rounded-2xl border border-navy-edge bg-navy-wedge p-4">
       <button type="button" onClick={() => setOpen(!open)} className="w-full flex items-center justify-between gap-3 text-left">
         <div className="min-w-0">
-          <div className="font-headings font-bold text-ink flex items-center gap-2"><Scissors size={16} className="text-navy" /> Maße für den Zuschnitt</div>
+          <div className="font-headings font-bold text-ink flex items-center gap-2"><Scissors size={16} className="text-navy" /> Maße, Stärke & Zuschnitt</div>
           <div className="text-xs text-ink-muted mt-0.5">
-            {n ? `${n.pieceCount} Teile → ${fmtNum(n.totalMm / 1000, 1)} lfm auf ${n.rollCount} Rolle${n.rollCount === 1 ? '' : 'n'} à ${settings.nesting?.rollWidthMm || 1220} mm · Verschnitt ${Math.round(n.wastePct * 100)} %` : 'Standardmaße; trag echte Maße ein, wenn du sie hast.'}
+            {n ? `${n.pieceCount} Teile → ${fmtNum(n.totalMm / 1000, 1)} lfm auf ${n.rollCount} Rolle${n.rollCount === 1 ? '' : 'n'} à ${ns.rollWidthMm || 1220} mm · Verschnitt ${Math.round(n.wastePct * 100)} %` : 'Standardmaße; trag echte Maße ein, wenn du sie hast.'}
           </div>
         </div>
         <ChevronDown size={18} className={`text-ink-muted shrink-0 transition ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
         <div className="mt-3 grid gap-2">
-          <p className="text-xs text-ink-muted">Breite liegt quer zur Rolle, Länge läuft mit der Rolle. Zugabe {settings.nesting?.bleedMm ?? 20} mm je Seite kommt automatisch dazu. Leer lassen heißt Standardmaß.</p>
+          <p className="text-xs text-ink-muted">
+            Sichtmaß eingeben. Der Zuschnitt rechnet je umschlagener Kante die Materialstärke plus {back} mm auf die Rückseite dazu, je freier Kante {bleed} mm Anschnitt.
+            Fronten, Türen und Seiten werden nie gedreht: die Maserung steht senkrecht.
+          </p>
           {rows.map(({ e, d, o }) => {
-            const kind = d?.parts ? 'parts' : d?.perM ? 'perM' : d?.strip ? 'strip' : 'piece';
+            const kind = d?.parts && !(o?.w && o?.h) ? 'parts' : d?.perM ? 'perM' : d?.strip ? 'strip' : 'piece';
+            const spec = { t: o?.t ?? d?.t ?? tDef, wx: d?.wx ?? 2, wy: d?.wy ?? 2 };
+            const qty = Number(input.counts[e.key]) || 0;
+            const groups = o?.groups || [];
+            const grouped = groups.reduce((a, g) => a + (Number(g.n) || 0), 0);
+            const baseW = o?.w || d?.w, baseH = o?.h || d?.h;
+            const cut = kind === 'piece' && baseW && baseH ? cutSize(baseW, baseH, spec, back, bleed) : null;
+            const isFront = e.unit === 'stk' && /front|blatt/.test(e.rawKey || e.key);
             return (
-              <div key={e.key} className="rounded-xl bg-paper border border-sm-border px-3 py-2 grid grid-cols-[1fr_auto] gap-2 items-center">
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold text-ink">{input.counts[e.key]} {e.unit === 'stk' ? '×' : e.unit === 'm2' ? 'm²' : 'm'} {e.label}</div>
-                  <div className="text-[11px] text-ink-muted">
-                    {kind === 'parts' && !o && `Standard: ${d.parts.map((p) => `${p.n} × ${p.w} × ${p.h}`).join(', ')} mm je Stück`}
-                    {kind === 'perM' && `Streifen ${o?.w || d.w} mm breit, ${input.counts[e.key]} m lang`}
-                    {kind === 'strip' && `volle Bahnbreite, Länge aus der Fläche`}
-                    {(kind === 'piece' || (kind === 'parts' && o)) && `${o?.w || d?.w || '–'} × ${o?.h || d?.h || '–'} mm je Stück`}
+              <div key={e.key} className="rounded-xl bg-paper border border-sm-border px-3 py-2.5 grid gap-2">
+                <div className="flex items-start justify-between gap-2 flex-wrap">
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-ink">{qty} {e.unit === 'stk' ? '×' : e.unit === 'm2' ? 'm²' : 'm'} {e.label}{e.addon?.startsWith('surface:') ? ` · ${surfaceByKey(e.surfaceKey).short}` : ''}</div>
+                    <div className="text-[11px] text-ink-muted">
+                      {kind === 'parts' && `Leistensatz: ${d.parts.map((p) => `${p.n} × ${p.w} × ${p.h}`).join(', ')} mm je Stück`}
+                      {kind === 'perM' && `Streifen ${baseW} mm sichtbar, ${qty} m lang → Zuschnitt ${cutSize(baseW, qty * 1000, { ...spec, wy: 0 }, back, bleed).w} mm breit`}
+                      {kind === 'strip' && 'volle Bahnbreite, Länge aus der Fläche, kein Umschlag'}
+                      {kind === 'piece' && cut && `Standard ${baseW} × ${baseH} → Zuschnitt ${cut.w} × ${cut.h} mm (${spec.wx + spec.wy} Kanten umschlagen)`}
+                    </div>
                   </div>
+                  {kind !== 'strip' && (
+                    <label className="inline-flex items-center gap-1.5 text-[11px] text-ink-muted">
+                      Stärke
+                      <select value={spec.t} onChange={(ev) => setPiece(e.key, { t: Number(ev.target.value) })} className="rounded-lg border border-sm-border bg-cream px-1.5 py-1 text-xs text-ink">
+                        {[...new Set([...THICKNESSES, spec.t])].sort((a, b) => a - b).map((t) => <option key={t} value={t}>{t} mm</option>)}
+                      </select>
+                    </label>
+                  )}
                 </div>
-                <div className="flex items-center gap-1">
-                  {kind !== 'strip' && <MmField value={o?.w ?? ''} placeholder={String(d?.w ?? d?.parts?.[0]?.w ?? '')} onChange={(v) => setPiece(e.key, 'w', v)} label="Breite" />}
-                  {kind !== 'strip' && kind !== 'perM' && <><span className="text-ink-muted text-xs">×</span><MmField value={o?.h ?? ''} placeholder={String(d?.h ?? d?.parts?.[0]?.h ?? '')} onChange={(v) => setPiece(e.key, 'h', v)} label="Länge" /></>}
-                  {o && <button type="button" onClick={() => clearPiece(e.key)} className="p-1.5 text-ink-muted hover:text-red-text" aria-label="Standardmaß"><RotateCcwIcon /></button>}
-                </div>
+
+                {kind === 'piece' && e.unit === 'stk' && (
+                  <div className="grid gap-1.5">
+                    {groups.map((g, gi) => {
+                      const c = g.w && g.h ? cutSize(Number(g.w), Number(g.h), spec, back, bleed) : null;
+                      return (
+                        <div key={gi} className="flex items-center gap-1.5 flex-wrap text-xs">
+                          <SizeSelect value={g.w} options={isFront ? FRONT_WIDTHS : []} onChange={(v) => setPiece(e.key, { groups: groups.map((x, j) => (j === gi ? { ...x, w: v } : x)) })} label="Breite" />
+                          <span className="text-ink-muted">×</span>
+                          <SizeSelect value={g.h} options={isFront ? FRONT_HEIGHTS.map((x) => x.h) : []} labels={isFront ? FRONT_HEIGHTS : []} onChange={(v) => setPiece(e.key, { groups: groups.map((x, j) => (j === gi ? { ...x, h: v } : x)) })} label="Höhe" />
+                          <span className="text-ink-muted">×</span>
+                          <MmField value={g.n} placeholder="Stk" onChange={(v) => setPiece(e.key, { groups: groups.map((x, j) => (j === gi ? { ...x, n: v } : x)) })} label="Stück" narrow />
+                          {c && <span className="text-ink-muted">→ {c.w} × {c.h}</span>}
+                          <button type="button" onClick={() => setPiece(e.key, { groups: groups.filter((_, j) => j !== gi) })} className="p-1 text-ink-muted hover:text-red-text" aria-label="Größe entfernen"><Trash2 size={13} /></button>
+                        </div>
+                      );
+                    })}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button type="button" onClick={() => setPiece(e.key, { groups: [...groups, { w: baseW || 596, h: baseH || 716, n: Math.max(1, qty - grouped) }] })}
+                        className="inline-flex items-center gap-1 rounded-lg border border-sm-border bg-cream px-2 py-1 text-xs font-semibold text-ink hover:bg-cream-deep"><Plus size={12} /> Größe aufteilen</button>
+                      {groups.length > 0 && (
+                        <span className={`text-[11px] ${grouped === qty ? 'text-green-text' : grouped > qty ? 'text-red-text' : 'text-ink-muted'}`}>
+                          {grouped} von {qty} zugeordnet{grouped < qty ? `, ${qty - grouped} im Standardmaß` : grouped > qty ? ', zu viele' : ''}
+                        </span>
+                      )}
+                      {groups.length === 0 && (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-ink-muted">Standard
+                          <MmField value={o?.w ?? ''} placeholder={String(d?.w ?? '')} onChange={(v) => setPiece(e.key, { w: v })} label="Breite" />×
+                          <MmField value={o?.h ?? ''} placeholder={String(d?.h ?? '')} onChange={(v) => setPiece(e.key, { h: v })} label="Höhe" />
+                        </span>
+                      )}
+                      {o && <button type="button" onClick={() => clearPiece(e.key)} className="p-1 text-ink-muted hover:text-red-text" aria-label="Zurücksetzen"><RotateCcwIcon /></button>}
+                    </div>
+                  </div>
+                )}
+                {kind === 'perM' && (
+                  <div className="flex items-center gap-1.5 text-[11px] text-ink-muted">Sichtbreite <MmField value={o?.w ?? ''} placeholder={String(d?.w ?? '')} onChange={(v) => setPiece(e.key, { w: v })} label="Breite" />
+                    {o && <button type="button" onClick={() => clearPiece(e.key)} className="p-1 text-ink-muted hover:text-red-text" aria-label="Zurücksetzen"><RotateCcwIcon /></button>}</div>
+                )}
+                {kind === 'piece' && e.unit !== 'stk' && (
+                  <div className="flex items-center gap-1.5 text-[11px] text-ink-muted">Maß <MmField value={o?.w ?? ''} placeholder={String(d?.w ?? '')} onChange={(v) => setPiece(e.key, { w: v })} label="Breite" />×<MmField value={o?.h ?? ''} placeholder={String(d?.h ?? '')} onChange={(v) => setPiece(e.key, { h: v })} label="Höhe" /></div>
+                )}
               </div>
             );
           })}
@@ -539,17 +628,45 @@ function PieceEditor({ surface, elements, input, patch, settings, result }) {
               <input value={c.label} onChange={(e) => setCustom(i, 'label', e.target.value)} placeholder="Bezeichnung" className="flex-1 min-w-[120px] text-sm bg-cream rounded-lg border border-sm-border px-2 py-1.5 text-ink" />
               <MmField value={c.w} placeholder="Breite" onChange={(v) => setCustom(i, 'w', v)} label="Breite" />
               <span className="text-ink-muted text-xs">×</span>
-              <MmField value={c.h} placeholder="Länge" onChange={(v) => setCustom(i, 'h', v)} label="Länge" />
+              <MmField value={c.h} placeholder="Höhe" onChange={(v) => setCustom(i, 'h', v)} label="Höhe" />
               <span className="text-ink-muted text-xs">×</span>
               <MmField value={c.n} placeholder="Stk" onChange={(v) => setCustom(i, 'n', v)} label="Stück" narrow />
+              <select value={c.t ?? tDef} onChange={(e) => setCustom(i, 't', Number(e.target.value))} className="rounded-lg border border-sm-border bg-cream px-1.5 py-1 text-xs text-ink" aria-label="Stärke">
+                {THICKNESSES.map((t) => <option key={t} value={t}>{t} mm</option>)}
+              </select>
+              <label className="inline-flex items-center gap-1 text-[11px] text-ink-muted"><input type="checkbox" checked={!!c.vertical} onChange={(e) => setCustom(i, 'vertical', e.target.checked)} className="accent-amber" /> senkrecht</label>
               <button type="button" onClick={() => patch({ customPieces: custom.filter((_, j) => j !== i) })} className="p-1.5 text-ink-muted hover:text-red-text" aria-label="Entfernen"><Trash2 size={14} /></button>
             </div>
           ))}
-          <button type="button" onClick={() => patch({ customPieces: [...custom, { label: '', w: '', h: '', n: 1 }] })}
+          <button type="button" onClick={() => patch({ customPieces: [...custom, { label: '', w: '', h: '', n: 1, t: tDef, vertical: true }] })}
             className="justify-self-start inline-flex items-center gap-1.5 rounded-xl border border-sm-border bg-paper px-3 py-2 text-sm font-semibold text-ink hover:bg-cream-soft"><Plus size={14} /> Teil hinzufügen</button>
         </div>
       )}
     </div>
+  );
+}
+
+/* Standardmaß aus der Liste oder ein eigenes. */
+function SizeSelect({ value, options, labels, onChange, label }) {
+  const v = value === '' || value == null ? '' : Number(value);
+  const inList = options.includes(v);
+  const [custom, setCustom] = useState(!inList && v !== '');
+  if (!options.length || custom) {
+    return (
+      <span className="inline-flex items-center gap-1">
+        <MmField value={v} placeholder={label} onChange={onChange} label={label} />
+        {options.length > 0 && <button type="button" onClick={() => setCustom(false)} className="text-[10px] text-teal underline">Liste</button>}
+      </span>
+    );
+  }
+  return (
+    <select value={inList ? v : ''} aria-label={label}
+      onChange={(e) => { if (e.target.value === '__custom') { setCustom(true); return; } onChange(Number(e.target.value)); }}
+      className="rounded-lg border border-sm-border bg-cream px-1.5 py-1 text-xs text-ink">
+      {!inList && <option value="">{label}</option>}
+      {options.map((o) => <option key={o} value={o}>{labels ? (labels.find((l) => l.h === o)?.label || o) : `${o} mm`}</option>)}
+      <option value="__custom">anderes Maß…</option>
+    </select>
   );
 }
 

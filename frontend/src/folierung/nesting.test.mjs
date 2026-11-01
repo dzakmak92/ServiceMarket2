@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const asUrl = (src) => `data:text/javascript;base64,${Buffer.from(src).toString('base64')}`;
-const { nest, piecesFor, DEFAULT_NESTING } = await import(asUrl(readFileSync(join(here, 'nesting.js'), 'utf8')));
+const { nest, piecesFor, cutSize, DEFAULT_NESTING } = await import(asUrl(readFileSync(join(here, 'nesting.js'), 'utf8')));
 
 let pass = 0, fail = 0;
 const ok = (c, m) => { c ? (pass++, console.log('  ok  ', m)) : (fail++, console.log('  FAIL', m)); };
@@ -45,19 +45,33 @@ ok(wide.unplaced.length === 1, 'ein 1.400er-Quadrat passt nicht, auch gedreht ni
 let platte = nest([{ key: 'platte', label: 'Platte', w: 650, h: 5000, n: 1, splittable: true }], { grain: true, bleedMm: 25 });
 ok(platte.rolls[0].strips[0].items[0].h === 5050, 'Platte 5 m läuft mit der Rolle, nicht quer');
 
+console.log('\n── Umschlag um die Kante ──');
+let cs = cutSize(596, 716, { t: 19, wx: 2, wy: 2 }, 25, 10);
+ok(cs.w === 596 + 2 * (19 + 25) && cs.h === 716 + 2 * (19 + 25), `Front 596 × 716 bei 19 mm → Zuschnitt ${cs.w} × ${cs.h} (je Seite 19 + 25)`);
+let cp = cutSize(650, 5000, { t: 38, wx: 1, wy: 0 }, 25, 10);
+ok(cp.w === 650 + 38 + 25 + 10 && cp.h === 5020, `Platte: vorn 38 + 25 umschlagen, hinten Anschnitt → ${cp.w} breit`);
+let lock = nest([{ key: 'fronten', label: 'Front', w: 684, h: 804, n: 4, cut: true, rawW: 596, rawH: 716, vertical: true }], { grain: false });
+ok(lock.rolls[0].strips.every((s) => s.items.every((i) => !i.rot)), 'Fronten werden auch bei Uni nicht gedreht (Maserung senkrecht)');
+ok(lock.rolls[0].strips[0].items[0].w === 684, 'die Breite liegt quer, die Höhe läuft mit der Rolle');
+
 console.log('\n── piecesFor ──');
 const els = [
-  { key: 'fronten', label: 'Fronten', unit: 'stk' },
-  { key: 'platte', label: 'Arbeitsplatte', unit: 'm' },
-  { key: 'ausschnitte', label: 'Ausschnitte', unit: 'stk' },
+  { key: 'fronten', rawKey: 'fronten', surfaceKey: 'kueche', label: 'Fronten', unit: 'stk' },
+  { key: 'platte', rawKey: 'platte', surfaceKey: 'kueche', label: 'Arbeitsplatte', unit: 'm' },
+  { key: 'ausschnitte', rawKey: 'ausschnitte', surfaceKey: 'kueche', label: 'Ausschnitte', unit: 'stk' },
 ];
-let p = piecesFor('kueche', els, { fronten: 16, platte: 5, ausschnitte: 2 }, {}, [], 1220, 25, 0.4);
+let p = piecesFor('kueche', els, { fronten: 16, platte: 5, ausschnitte: 2 }, {}, [], 1220, 10, 0.4);
 ok(p.find((x) => x.key === 'fronten' && x.n === 16), '16 Fronten als Teile');
 ok(p.find((x) => x.label === 'Fronten innen' && x.n === 7), `Innenseiten: 40 % von 16 → 7 (${p.find((x) => x.label === 'Fronten innen')?.n})`);
-ok(p.find((x) => x.key === 'platte' && x.h === 5000 && x.w === 650), 'Platte 5 m × 650');
+ok(p.find((x) => x.key === 'platte' && x.h === 5020 && x.w === 723), `Platte 5 m × 650 → Zuschnitt 723 × 5020 (${p.find((x) => x.key === 'platte')?.w} × ${p.find((x) => x.key === 'platte')?.h})`);
+ok(p.find((x) => x.key === 'fronten' && x.w === 684 && x.h === 804 && x.vertical), 'Fronten: 684 × 804 mit Umschlag, Maserung senkrecht');
 ok(!p.find((x) => x.key === 'ausschnitte'), 'Ausschnitte brauchen keine Folie');
 let o = piecesFor('kueche', els, { fronten: 2 }, { fronten: { w: 400, h: 1200 } });
-ok(o[0].w === 400 && o[0].h === 1200, 'eigene Maße überschreiben die Vorgabe');
+ok(o[0].rawW === 400 && o[0].rawH === 1200 && o[0].w === 488, 'eigene Maße überschreiben die Vorgabe, Umschlag bleibt');
+let th = piecesFor('kueche', els, { fronten: 2 }, { fronten: { t: 22 } });
+ok(th[0].w === 596 + 2 * (22 + 25), 'eigene Materialstärke 22 mm wirkt auf den Umschlag');
+let gr = piecesFor('kueche', els, { fronten: 10 }, { fronten: { groups: [{ w: 596, h: 716, n: 4 }, { w: 596, h: 283, n: 4 }] } });
+ok(gr.length === 3 && gr[2].n === 2 && gr[1].rawH === 283, 'Größen aufgeteilt: 4 Türen, 4 Schubladen, Rest 2 im Standardmaß');
 let c = piecesFor('kueche', [], {}, {}, [{ label: 'Blende', w: 120, h: 2400, n: 3 }]);
 ok(c.length === 1 && c[0].n === 3, 'eigene Teile werden angehängt');
 

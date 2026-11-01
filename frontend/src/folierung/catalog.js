@@ -164,12 +164,33 @@ export const SURFACES = [
 export const surfaceByKey = (key) => SURFACES.find((s) => s.key === key) || SURFACES[0];
 
 /** Alle Elemente einer Oberfläche inklusive der aktivierten Bausteine. */
-export function activeElements(surface, addonKeys = []) {
+export function activeElements(surface, addonKeys = [], extraSurfaces = []) {
+  const own = surface.elements.map((e) => ({ ...e, rawKey: e.key, surfaceKey: surface.key }));
   const extra = (surface.addons || [])
     .filter((a) => addonKeys.includes(a.key))
-    .flatMap((a) => a.elements.map((e) => ({ ...e, addon: a.key })));
-  return [...surface.elements, ...extra];
+    .flatMap((a) => a.elements.map((e) => ({ ...e, rawKey: e.key, surfaceKey: surface.key, addon: a.key })));
+  /* Weitere Bereiche im selben Auftrag (Küche + Türen + Möbel). Die Schlüssel
+     werden mit dem Bereich vorangestellt, weil `fronten` in Küche, Möbel und
+     Bad dasselbe Wort für drei verschiedene Teile ist. */
+  const more = extraSurfaces
+    .filter((k) => k !== surface.key)
+    .map((k) => SURFACES.find((x) => x.key === k)).filter(Boolean)
+    .flatMap((sf) => sf.elements.map((e) => ({ ...e, rawKey: e.key, key: `${sf.key}:${e.key}`, surfaceKey: sf.key, addon: `surface:${sf.key}` })));
+  return [...own, ...extra, ...more];
 }
+
+/* ── Standardmaße ────────────────────────────────────────────────────────
+ * Küchenfronten nach dem 32er-Raster, wie sie die Hersteller liefern. Die
+ * Höhe trägt den Namen, den der Monteur benutzt; die Breite ist die
+ * Korpusbreite minus 4 mm Fuge.
+ */
+export const FRONT_WIDTHS = [146, 196, 296, 396, 446, 496, 596, 796, 896, 996, 1196];
+export const FRONT_HEIGHTS = [
+  { h: 140, label: 'Schublade 140' }, { h: 283, label: 'Schublade 283' }, { h: 356, label: 'Auszug 356' },
+  { h: 428, label: 'Klappe 428' }, { h: 570, label: 'Tür 570' }, { h: 716, label: 'Tür 716' }, { h: 900, label: 'Tür 900' },
+  { h: 1300, label: 'Halbhoch 1300' }, { h: 1600, label: 'Hoch 1600' }, { h: 1950, label: 'Hoch 1950' }, { h: 2100, label: 'Hoch 2100' },
+];
+export const THICKNESSES = [16, 18, 19, 22, 25, 28, 38, 40];
 
 /* ── Zustand der Fronten heute ───────────────────────────────────────────
  * Retrena fragt das als Bild ab. `factor` ist ein Aufschlag auf die Arbeits-
