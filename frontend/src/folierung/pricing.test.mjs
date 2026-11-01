@@ -13,7 +13,7 @@ const nestingUrl = asUrl(readFileSync(join(here, 'nesting.js'), 'utf8'));
 const pricingSrc = readFileSync(join(here, 'pricing.js'), 'utf8')
   .replaceAll("from './catalog'", `from '${catalogUrl}'`)
   .replaceAll("from './nesting'", `from '${nestingUrl}'`);
-const { calculate, emptyInput, withShape, withAddon, withExtraSurface, primerPacks, DEFAULT_SETTINGS, summaryText } = await import(asUrl(pricingSrc));
+const { calculate, emptyInput, withShape, withAddon, withExtraSurface, primerPacks, DEFAULT_SETTINGS, summaryText, vatFromProfile, vatLabel, quoteLinesFrom } = await import(asUrl(pricingSrc));
 
 let pass = 0, fail = 0;
 const ok = (c, m) => { c ? (pass++, console.log('  ok  ', m)) : (fail++, console.log('  FAIL', m)); };
@@ -31,7 +31,7 @@ ok(Math.abs(r.material.m2 - r.nesting.areaBoughtM2) < 0.001, 'Material = gekauft
 ok(r.material.wastePct > wasteOf(r) - 0.001, `echter Verschnitt ${(r.material.wastePct * 100).toFixed(0)} % statt Pauschale`);
 let off = calculate(inp, { ...DEFAULT_SETTINGS, nesting: { ...DEFAULT_SETTINGS.nesting, enabled: false } });
 near(off.material.m2, off.areaGross, 0.01, 'Nesting aus → Pauschale');
-ok(r.ways.montage.value > 1500 && r.ways.montage.value < 4500, `Montage vor Ort landet im Marktband 1.500–4.500 € (${r.ways.montage.value.toFixed(0)})`);
+ok(r.ways.montage.gross > 1500 && r.ways.montage.gross < 4500, `Montage vor Ort brutto im Marktband 1.500–4.500 € (${r.ways.montage.gross.toFixed(0)})`);
 ok(r.ways.pickup && r.ways.pickup.value < r.ways.montage.value, 'Hol- & Bring ist billiger als Montage');
 ok(r.ways.diy.value < r.ways.pickup.value, 'Selbst machen ist am billigsten');
 ok(r.ek < r.vk && r.marginPct > 0.3, `Deckungsbeitrag positiv und über 30 % (${(r.marginPct * 100).toFixed(0)} %)`);
@@ -66,9 +66,9 @@ let innen = calculate({ ...inp, extras: { ...inp.extras, innen: true } });
 ok(innen.ways.montage.value > base.ways.montage.value, 'Innenseiten kosten mehr');
 near(innen.innenArea, base.lines.find((l) => l.key === 'fronten').area * 0.4, 0.01, 'Innenseiten = 40 % der Frontfläche');
 let griff = calculate({ ...inp, extras: { ...inp.extras, grifflos: true } });
-near(griff.extrasVk, 16 * 14, 0.01, 'grifflos: 14 € je Front');
+near(griff.extrasVk, 16 * 12, 0.01, 'grifflos: 12 € netto je Front');
 let small = calculate({ ...emptyInput('kueche'), counts: { fronten: 2 } });
-ok(small.ways.montage.minApplied && small.ways.montage.value === 490, 'zwei Fronten → Mindestauftragswert greift');
+ok(small.ways.montage.minApplied && small.ways.montage.value === 410, 'zwei Fronten → Mindestauftragswert greift (410 netto)');
 ok(small.notes.some((n) => n.text.includes('Mindestauftrag')), '… und wird als Hinweis genannt');
 let addon = withAddon(inp, 'insel', true);
 ok(addon.addons.includes('insel') && addon.counts.insel_platte === 2, 'Insel aktivieren setzt ihre Startwerte');
@@ -85,6 +85,36 @@ ok(wall.notes.some((n) => n.level === 'high'), 'Wände tragen den Q3-Hinweis');
 ok(summaryText(inp, base).includes('16 × Fronten'), 'die Anfrage nennt die Positionen');
 let nothing = calculate({ ...emptyInput('kueche'), counts: {} });
 ok(nothing.vk === 0 && nothing.hours.total === 0 && nothing.ways.pickup === null, 'nichts gezählt → kein Preis, keine Rüstzeit');
+
+console.log('\n── Umsatzsteuer aus dem Profil ──');
+const at = vatFromProfile({ invoice_country: 'AT' });
+const de = vatFromProfile({ invoice_country: 'DE' });
+const kl = vatFromProfile({ invoice_country: 'AT', is_kleinunternehmer: true });
+ok(at.rate === 20 && de.rate === 19 && kl.rate === 0, 'AT 20 %, DE 19 %, Kleinunternehmer 0 %');
+ok(vatFromProfile({}).country === 'AT', 'ohne Angabe: Österreich');
+ok(vatLabel(at) === 'inkl. 20 % MwSt.' && vatLabel(kl).includes('Kleinunternehmer'), `Beschriftung: "${vatLabel(at)}"`);
+const rAT = calculate(inp, { ...DEFAULT_SETTINGS, vat: at });
+const rDE = calculate(inp, { ...DEFAULT_SETTINGS, vat: de });
+const rKL = calculate(inp, { ...DEFAULT_SETTINGS, vat: kl });
+near(rAT.ways.montage.gross, rAT.ways.montage.net * 1.2, 0.01, 'netto-Preisliste in AT: brutto = netto × 1,20');
+near(rDE.ways.montage.gross, rDE.ways.montage.net * 1.19, 0.01, 'in DE: × 1,19');
+near(rKL.ways.montage.gross, rKL.ways.montage.net, 0.01, 'Kleinunternehmer: brutto = netto');
+const rG = calculate(inp, { ...DEFAULT_SETTINGS, priceBasis: 'gross', vat: at });
+near(rG.ways.montage.gross, rG.ways.montage.value, 0.01, 'Brutto-Preisliste: der Preis bleibt, wie er eingegeben ist');
+near(rG.vk, rG.ways.montage.value / 1.2, 0.01, '… und der Deckungsbeitrag rechnet netto');
+ok(rAT.marginPct > 0.3, `Deckungsbeitrag netto gegen EK netto: ${(rAT.marginPct * 100).toFixed(0)} %`);
+ok(summaryText(inp, rAT).includes('inkl. 20 % MwSt.'), 'die Anfrage nennt 20 % für Österreich');
+
+console.log('\n── Angebotspositionen ──');
+const ql = quoteLinesFrom(inp, rAT, { ...DEFAULT_SETTINGS, vat: at });
+const qsum = ql.reduce((a, l) => a + l.qty * l.unit_price, 0);
+near(qsum, rAT.vk, 1, `Positionen summieren sich auf den Netto-Richtwert (${qsum.toFixed(2)} ≈ ${rAT.vk.toFixed(2)})`);
+ok(ql.every((l) => l.description && l.qty > 0 && l.unit_price >= 0 && l.position > 0), 'jede Position ist vollständig');
+ok(ql.some((l) => l.kind === 'labor' && l.unit === 'h') && ql.some((l) => l.kind === 'material' && l.unit === 'm²'), 'Arbeit in Stunden, Folie in m²');
+const qk = quoteLinesFrom(inp, rKL, { ...DEFAULT_SETTINGS, vat: kl });
+ok(qk.every((l) => l.tax_treatment === 'kleinunternehmer'), 'Kleinunternehmer: Behandlung auf jeder Position');
+const qsmall = quoteLinesFrom(small.input || { ...emptyInput('kueche'), counts: { fronten: 2 } }, small);
+ok(qsmall.some((l) => l.description.startsWith('Mindestauftragswert')), 'Mindestauftrag wird als Ausgleich ausgewiesen');
 
 console.log(`\n${pass} ok, ${fail} failed`);
 process.exit(fail ? 1 : 0);

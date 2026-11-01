@@ -32,12 +32,12 @@ export default function FolierungPricesPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 pb-28">
-      <Link to="/folierung" className="text-sm text-teal inline-flex items-center gap-1 hover:underline mb-3"><ArrowLeft size={14} /> Zum Rechner</Link>
+      <Link to="/estimate/folierung" className="text-sm text-teal inline-flex items-center gap-1 hover:underline mb-3"><ArrowLeft size={14} /> Zum Rechner</Link>
       <div className="flex items-start justify-between gap-3 mb-6">
         <div>
           <div className="text-[11px] tracking-[0.18em] uppercase text-amber-text font-bold flex items-center gap-1"><Lock size={11} /> Nur für dich</div>
           <h1 className="font-headings text-2xl md:text-3xl text-ink leading-tight">Preise & Einstellungen</h1>
-          <p className="text-sm text-ink-muted mt-1">Alle Beträge brutto in Euro. Was du hier speicherst, rechnet der Kunde auf deiner Seite sofort mit.</p>
+          <p className="text-sm text-ink-muted mt-1">Was du hier speicherst, rechnet der Kunde auf deiner Seite sofort mit. EK immer netto.</p>
         </div>
       </div>
 
@@ -48,9 +48,24 @@ export default function FolierungPricesPage() {
         <Text label="Link zur KI-Vorschau (Vorher / Nachher)" value={s.aiUrl} onChange={(v) => set('aiUrl', v)} placeholder="https://…" hint="Die Plattform, auf der der Kunde sein Foto im Dekor sieht. Wird als Knopf im Preis-Schritt angezeigt." />
       </Card>
 
+      <Card title="Umsatzsteuer & Preisbasis" sub="Der Steuersatz kommt aus deinem Profil (Rechnungsland, Kleinunternehmer). Ändern unter Einstellungen → Rechnungsdaten.">
+        <div className="rounded-xl bg-cream border border-sm-border px-3 py-2.5 text-sm text-ink" data-testid="fol-vat-info">
+          {s.vat?.klein ? 'Kleinunternehmer: keine Umsatzsteuer.' : `${s.vat?.country === 'DE' ? 'Deutschland' : 'Österreich'}: ${s.vat?.rate ?? 20} % USt.`}
+        </div>
+        <div className="grid grid-cols-2 gap-2" role="group" aria-label="Preisbasis">
+          {[['net', 'VK netto eingeben', 'Kunde sieht netto + USt.'], ['gross', 'VK brutto eingeben', 'Preisliste inkl. USt.']].map(([k, a, b]) => (
+            <button key={k} type="button" onClick={() => set('priceBasis', k)} aria-pressed={s.priceBasis === k} data-testid={`fol-basis-${k}`}
+              className={`text-left rounded-xl border px-3 py-2.5 ${s.priceBasis === k ? 'border-amber bg-amber/10 ring-2 ring-amber/30' : 'border-sm-border bg-paper'}`}>
+              <div className="font-semibold text-ink text-sm">{a}</div>
+              <div className="text-xs text-ink-muted">{b}</div>
+            </button>
+          ))}
+        </div>
+      </Card>
+
       <Card title="Kalkulation">
         <div className="grid sm:grid-cols-2 gap-3">
-          <Num label="Stundensatz VK" unit="€/h" value={s.hourlyRate} onChange={(v) => set('hourlyRate', v)} />
+          <Num label={`Stundensatz VK ${s.priceBasis === 'gross' ? 'brutto' : 'netto'}`} unit="€/h" value={s.hourlyRate} onChange={(v) => set('hourlyRate', v)} />
           <Num label="Lohnkosten intern" unit="€/h" value={s.laborCost} onChange={(v) => set('laborCost', v)} hint="für den Deckungsbeitrag" />
           <Num label="Rüstzeit je Auftrag" unit="h" value={s.setupHours} onChange={(v) => set('setupHours', v)} hint="anfahren, abdecken, aufräumen" />
           <Num label="Verschnitt" unit="%" value={s.waste} onChange={(v) => set('waste', v)} />
@@ -66,11 +81,12 @@ export default function FolierungPricesPage() {
         </div>
       </Card>
 
-      <Card title="Dekore: EK / VK je m²" sub="Wie Coverstyl' sortiert. Das Musterbild zeigt die Kundenseite statt des Platzhalters; am besten die Bild-URL einer Coverstyl'-Musterkarte.">
+      <Card title={`Dekore: EK netto / VK ${s.priceBasis === 'gross' ? 'brutto' : 'netto'} je m²`} sub="Wie Coverstyl' sortiert. Das Musterbild zeigt die Kundenseite statt des Platzhalters; am besten die Bild-URL einer Coverstyl'-Musterkarte.">
         <div className="grid gap-3">
           {DECORS.map((d) => {
             const row = s.decors[d.key];
-            const margin = row.vk > 0 ? Math.round((1 - row.ek / row.vk) * 100) : 0;
+            const vkNet = s.priceBasis === 'gross' ? row.vk / (1 + (s.vat?.klein ? 0 : (s.vat?.rate ?? 20)) / 100) : row.vk;
+            const margin = vkNet > 0 ? Math.round((1 - row.ek / vkNet) * 100) : 0;
             return (
               <div key={d.key} className="rounded-xl border border-sm-border p-3 grid sm:grid-cols-[48px_1fr_90px_90px_60px] gap-3 items-center">
                 <div className="h-12 w-12 rounded-lg border border-sm-border" style={row.sample ? { backgroundImage: `url(${row.sample})`, backgroundSize: 'cover' } : { background: d.swatch }} />

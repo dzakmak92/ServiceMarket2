@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLang } from '../contexts/LangContext';
-import { canUseFolierung } from '../folierung/store';
 import { useNotifications } from '../hooks/useNotifications';
 import { useWebPush } from '../hooks/useWebPush';
 import { isPremiumTier } from '../utils/tier';
@@ -101,7 +100,6 @@ export default function Header() {
         { to: '/customers', label: t('nav_customers') },
         { to: '/quotes', label: t('nav_quotes') },
         { to: '/estimate', label: t('nav_estimate') },
-        ...(canUseFolierung(user) ? [{ to: '/folierung', label: t('nav_folierung') }] : []),
         ...(hasToolkit ? [{ to: '/my-invoices', label: t('nav_my_invoices') }] : []),
         ...(hasToolkit ? [{ to: '/overdue', label: t('nav_overdue') }] : []),
         ...(hasTaxToolkit ? [{ to: '/tax', label: t('nav_tax') }] : []),

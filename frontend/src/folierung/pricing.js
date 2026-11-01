@@ -9,8 +9,13 @@
  *  - der Betrieb sieht dazu EK, VK, Deckungsbeitrag, Stunden, den Primer-
  *    Vorschlag in Millilitern und Gebinden und das Verbrauchsmaterial.
  *
- * Alles in EUR brutto, so wie es dem Endkunden genannt wird. Die Engine
- * rundet nichts außer den Gebinden; runden tut die Anzeige.
+ * Gerechnet wird in der Preisbasis, in der der Betrieb seine Preise führt
+ * (`settings.priceBasis`: 'net' Standard, 'gross' für eine Brutto-Preisliste).
+ * Die Umsatzsteuer kommt aus dem Profil (`settings.vat`: Land, Satz,
+ * Kleinunternehmer): Österreich 20 %, Deutschland 19 %, Kleinunternehmer 0 %.
+ * Jeder Weg trägt danach `net` und `gross`; der Kunde sieht brutto, der
+ * Deckungsbeitrag wird immer netto gegen den Netto-EK gerechnet.
+ * Die Engine rundet nichts außer den Gebinden; runden tut die Anzeige.
  */
 import {
   surfaceByKey, activeElements, CONDITIONS, substrateByKey, DECORS, PRIMERS,
@@ -23,19 +28,21 @@ export const DEFAULT_SETTINGS = {
   slug: 'folie',
   whatsapp: '',
   aiUrl: '',
-  hourlyRate: 68,        // VK-Stundensatz brutto
+  priceBasis: 'net',     // 'net' = VK-Preise netto eingegeben, 'gross' = Brutto-Preisliste
+  vat: { country: 'AT', rate: 20, klein: false }, // aus dem Profil, siehe vatFromProfile()
+  hourlyRate: 57,        // VK-Stundensatz
   laborCost: 34,         // interne Lohnkosten je Stunde (für den Deckungsbeitrag)
   setupHours: 1.5,       // Rüstzeit je Auftrag: anfahren, abdecken, Werkzeug, aufräumen
   waste: 25,             // Verschnitt in %
-  minOrder: 490,
+  minOrder: 410,
   rangePct: 10,          // ± um den Richtwert
   primerMarkup: 1.6,     // VK-Faktor auf den Primer-EK
   consumableMarkup: 1.5,
   pickupFactor: 0.5,     // Hol- & Bring: Lohn für demontierbare Teile × Faktor (Werkstatt: Serie, Tisch, kein Abdecken)
   pickupHandlingHours: 0.5, // Hol- & Bring: Annahme, Beschriftung, Verladen je Auftrag
   diyMaterialFactor: 1.0,
-  diyCutFee: 90,
-  diyShipping: 29,
+  diyCutFee: 75,
+  diyShipping: 24,
   weekendPct: 25,
   decors: Object.fromEntries(DECORS.map((d) => [d.key, { ek: d.ek, vk: d.vk, sample: '' }])),
   primers: Object.fromEntries(Object.values(PRIMERS).map((p) => [p.key, {
@@ -47,6 +54,21 @@ export const DEFAULT_SETTINGS = {
   conditions: Object.fromEntries(CONDITIONS.map((c) => [c.key, c.factor])),
   nesting: { ...DEFAULT_NESTING },
 };
+
+/** USt.-Satz aus dem Pro-Profil: Rechnungsland und Kleinunternehmer-Haken. */
+export const VAT_RATES = { AT: 20, DE: 19 };
+export function vatFromProfile(profile) {
+  const country = ['AT', 'DE'].includes(profile?.invoice_country) ? profile.invoice_country
+    : ['AT', 'DE'].includes(profile?.business_country) ? profile.business_country : 'AT';
+  const klein = !!profile?.is_kleinunternehmer;
+  return { country, rate: klein ? 0 : VAT_RATES[country], klein };
+}
+
+/** Wie die Steuer neben einem Preis steht. */
+export function vatLabel(vat) {
+  if (!vat || vat.klein) return 'ohne USt. (Kleinunternehmerregelung)';
+  return `inkl. ${String(vat.rate).replace('.', ',')} % MwSt.`;
+}
 
 /** Startzustand eines Rechners für eine Oberfläche. */
 export function emptyInput(surfaceKey = 'kueche') {
@@ -246,8 +268,19 @@ export function calculate(input, settings = DEFAULT_SETTINGS) {
   diy.value = material.vk * num(s.diyMaterialFactor, 1) + primer.vk + num(s.diyCutFee, 90) + num(s.diyShipping, 29);
   diy.lo = diy.value * (1 - rangePct); diy.hi = diy.value * (1 + rangePct); diy.minApplied = false;
 
-  const ek = material.ek + primer.ek + consumablesEk + labor.cost + travelVk * 0.6;
-  const vk = montage.value;
+  // ── Steuer: Preisbasis → netto / brutto ───────────────────────────────
+  const vat = { country: s.vat?.country || 'AT', klein: !!s.vat?.klein, rate: s.vat?.klein ? 0 : num(s.vat?.rate, 20), basis: s.priceBasis === 'gross' ? 'gross' : 'net' };
+  const f = 1 + vat.rate / 100;
+  const toNet = (v) => (vat.basis === 'gross' ? v / f : v);
+  const toGross = (v) => (vat.basis === 'gross' ? v : v * f);
+  for (const w of [montage, pickup, diy]) {
+    if (!w) continue;
+    Object.assign(w, { net: toNet(w.value), gross: toGross(w.value), grossLo: toGross(w.lo), grossHi: toGross(w.hi) });
+  }
+
+  // EK ist netto (Lieferantenpreise, Lohnkosten); der VK für den Vergleich auch.
+  const ek = material.ek + primer.ek + consumablesEk + labor.cost + toNet(travelVk) * 0.6;
+  const vk = toNet(montage.value);
   const margin = vk - ek;
 
   const notes = [];
@@ -257,7 +290,7 @@ export function calculate(input, settings = DEFAULT_SETTINGS) {
   if (condition.key === 'beschaedigt') notes.push({ level: 'medium', text: 'Beschädigte Kanten werden gespachtelt. Gequollene Spanplatte kann nicht foliert werden; das zeigt das Foto.' });
   if (input.surface === 'bad' && num(input.counts?.dusche, 0) > 0) notes.push({ level: 'high', text: 'Duschrückwand: Folie nur außerhalb des dauerhaft nassen Bereichs. Silikonfugen neu ziehen.' });
   if (nesting?.unplaced?.length) notes.push({ level: 'high', text: `${nesting.unplaced.length} Teil(e) passen nicht auf die Rolle (${ns.rollWidthMm} mm): ${nesting.unplaced.map((u) => `${u.label} ${u.w} × ${u.h}`).join(', ')}. Teilen oder quer legen.` });
-  if (montage.minApplied) notes.push({ level: 'medium', text: `Unter dem Mindestauftragswert von ${minOrder} €. Der Richtwert ist auf den Mindestwert gesetzt.` });
+  if (montage.minApplied) notes.push({ level: 'medium', text: `Unter dem Mindestauftragswert von ${Math.round(minOrder)} € ${vat.basis === 'gross' ? 'brutto' : 'netto'}. Der Richtwert ist auf den Mindestwert gesetzt.` });
 
   return {
     surface: surface.key, condition: condition.key, substrate: substrate.key, decor: decor.key,
@@ -266,7 +299,8 @@ export function calculate(input, settings = DEFAULT_SETTINGS) {
     extras: extrasLines, extrasVk, travelVk, weekendVk,
     ways: { montage, pickup, diy },
     ek, vk, margin, marginPct: vk > 0 ? margin / vk : 0,
-    perFront: fronts > 0 ? montage.value / fronts : null,
+    vat, toNet, toGross,
+    perFront: fronts > 0 ? montage.gross / fronts : null,
     notes,
   };
 }
@@ -302,11 +336,61 @@ export function summaryText(input, result, settings = DEFAULT_SETTINGS) {
     `Extras: ${ex.length ? ex.join(', ') : 'keine'}`,
     `Anfahrt: ${zone ? zone.label : '–'}`,
     '',
-    `Richtwert Montage vor Ort: ab ${eur(result.ways.montage.lo)} (${eur(result.ways.montage.lo)} – ${eur(result.ways.montage.hi)})`,
-    result.ways.pickup ? `Hol- & Bring-Service: ab ${eur(result.ways.pickup.lo)}` : null,
-    `Selbst machen (Zuschnitt-Set): ab ${eur(result.ways.diy.lo)}`,
+    `Richtwert Montage vor Ort: ab ${eur(result.ways.montage.grossLo)} (${eur(result.ways.montage.grossLo)} – ${eur(result.ways.montage.grossHi)}), ${vatLabel(result.vat)}`,
+    result.ways.pickup ? `Hol- & Bring-Service: ab ${eur(result.ways.pickup.grossLo)}` : null,
+    `Selbst machen (Zuschnitt-Set): ab ${eur(result.ways.diy.grossLo)}`,
     '',
     'Name:', 'Adresse / PLZ:', 'Telefon:', 'Wunschtermin:',
     '2–3 Handyfotos sind angehängt.',
   ].filter((l) => l !== null).join('\n');
+}
+
+/**
+ * Angebotspositionen aus einer Kalkulation, für POST /api/quotes.
+ *
+ * Immer netto: die Datenbank rechnet USt. und Brutto beim Einfügen selbst
+ * (Trigger auf quote_lines), und ein Kleinunternehmer bekommt die Behandlung
+ * mitgeschickt, damit kein Satz erfunden wird. Die Summe der Positionen ist
+ * genau der Netto-Richtwert der Montage vor Ort.
+ */
+export function quoteLinesFrom(input, result, settings = DEFAULT_SETTINGS) {
+  const s = { ...DEFAULT_SETTINGS, ...settings };
+  const n = result.toNet;
+  const decor = DECORS.find((d) => d.key === input.decor) || DECORS[0];
+  const tax = result.vat?.klein ? { tax_treatment: 'kleinunternehmer' } : {};
+  const r2 = (v) => Math.round(v * 100) / 100;
+  const lines = [];
+  const add = (kind, description, qty, unit, total, detail) => {
+    if (!(total > 0) || !(qty > 0)) return;
+    lines.push({ kind, description, qty: r2(qty), unit, unit_price: r2(n(total) / qty), ...(detail ? { detail } : {}), ...tax });
+  };
+  const counted = result.lines.map((l) => `${l.qty} ${l.unit === 'stk' ? '×' : l.unit === 'm2' ? 'm²' : 'm'} ${l.label}`).join(', ');
+  const m = result.material;
+  add('material', `Architekturfolie ${decor.label}`, m.m2, 'm²', m.vk,
+    m.lfm != null ? `${String(m.lfm.toFixed(1)).replace('.', ',')} lfm von der ${s.nesting?.rollWidthMm || 1220}-mm-Rolle, inkl. Umschlag und Verschnitt` : `inkl. ${s.waste} % Verschnitt`);
+  add('material', 'Primer', 1, 'pcs', result.primer.vk, result.primer.text);
+  add('material', 'Verbrauchsmaterial (Reiniger, Schleifvlies, Spachtel)', 1, 'pcs', result.consumables.vk);
+  add('labor', 'Folierarbeiten inkl. Vorarbeit und Rüsten', result.hours.total, 'h', result.labor.vk, counted);
+  for (const x of result.extras) add('other', x.label, 1, 'pcs', x.vk);
+  add('travel', 'Anfahrt', 1, 'pcs', result.travelVk);
+  add('other', 'Zuschlag Wochenende / Nacht', 1, 'pcs', result.weekendVk);
+  const sum = lines.reduce((a, l) => a + l.qty * l.unit_price, 0);
+  const gap = r2(result.vk - sum);
+  if (gap > 0.5) lines.push({ kind: 'other', description: 'Mindestauftragswert, Ausgleich', qty: 1, unit: 'pcs', unit_price: gap, ...tax });
+  return lines.map((l, i) => ({ ...l, position: i + 1 }));
+}
+
+export function quoteTitleFrom(input) {
+  const surface = surfaceByKey(input.surface);
+  const more = (input.extraSurfaces || []).length;
+  return `Folierung ${surface.label}${more ? ` + ${more}` : ''}`;
+}
+
+export function quoteAssumptionsFrom(result) {
+  const notes = result.notes.filter((x) => x.level !== 'info').map((x) => x.text);
+  return [
+    'Richtwert nach Foto-Einschätzung; verbindlich nach Aufmaß.',
+    result.primer.note,
+    ...notes,
+  ].filter(Boolean).join('\n');
 }

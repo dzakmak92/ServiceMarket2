@@ -8,7 +8,7 @@ Untergrund mit Primer-Vorschlag und eine Betriebsansicht mit EK/VK.
 
 | Adresse | Für wen | Datei |
 |---|---|---|
-| `/folierung` | Betrieb (nur freigeschaltete Profile) | `frontend/src/pages/pro/FolierungPage.jsx` |
+| `/estimate/folierung` | Betrieb: achte Gewerke-Karte auf der Kalkulationsseite (4 + 4), nur freigeschaltete Profile. `/folierung` leitet dorthin. | `frontend/src/folierung/FolierungPanel.jsx` |
 | `/folierung/preise` | Betrieb: EK, VK, Stundensatz, Primer, Links | `frontend/src/pages/pro/FolierungPricesPage.jsx` |
 | `/folie/:slug` | Endkunde, ohne Login, ohne App-Chrome | `frontend/src/pages/FoliePublicPage.jsx` |
 
@@ -150,3 +150,18 @@ im `/api/profile/pro`-Payload mitliefern, `canUseFolierung` liest sie. Setzen ü
 8. Garantietext, AGB-Haken, Anzahlung (30 % bei Auftrag) in der Anfrage.
 9. Vier Sprachen: das Modul ist absichtlich deutsch; `t()`-Schlüssel nur für die Nav gesetzt.
 10. Entsorgung alter Fronten, Demontage Elektrogeräte, Scharnier-/Dämpfer-Upsell als Extras.
+
+## Steuer, Angebote, Entwürfe (Stand Nov. 2026)
+
+- **USt. aus dem Profil:** `vatFromProfile()` liest `invoice_country` und `is_kleinunternehmer`
+  aus `/api/profile/pro`: AT 20 %, DE 19 %, Kleinunternehmer 0 %. Preisbasis wählbar
+  (`priceBasis`: netto Standard, brutto für Preislisten). Ältere Speicherstände ohne Feld
+  gelten als brutto, weil die Preisseite damals "alle Beträge brutto" sagte. Der Kunde sieht
+  brutto, der Deckungsbeitrag rechnet netto gegen den Netto-EK.
+- **Angebot:** `quoteLinesFrom()` baut Netto-Positionen (Folie m², Primer, Material, Arbeit h,
+  Extras, Anfahrt, ggf. Mindestauftrag-Ausgleich). Angelegt über `POST /api/jobs` +
+  `POST /api/quotes`, kein neuer Backend-Endpunkt nötig.
+- **Verlassen:** wie bei den anderen Gewerken. Zurück und Gewerkewechsel fragen
+  "Kalkulation verlassen?" mit "Entwurf behalten" (legt das Angebot unter Angebote an) und
+  "Verwerfen". Zusätzlich sichert die Folierung den Stand lokal (`folierung_draft_v1`),
+  sodass ein Wechsel über die Navigationsleiste nichts verliert.

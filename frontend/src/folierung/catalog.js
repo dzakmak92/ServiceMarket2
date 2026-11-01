@@ -275,19 +275,19 @@ export const SUBSTRATES_FOR = {
  * `sample` kann je Familie eine Bild-URL tragen (Coverstyl'-Muster).
  */
 export const DECORS = [
-  { key: 'uni', label: 'Uni matt', hint: 'Weiß, Grau, Anthrazit, Salbei, Pastell', ek: 14, vk: 34,
+  { key: 'uni', label: 'Uni matt', hint: 'Weiß, Grau, Anthrazit, Salbei, Pastell', ek: 14, vk: 28,
     swatch: 'linear-gradient(135deg,#e9e4da 0 50%,#b8b4ad 50%)' },
-  { key: 'holz', label: 'Holzoptik', hint: 'Eiche, Nussbaum, Esche, Walnuss, Altholz', ek: 16, vk: 39,
+  { key: 'holz', label: 'Holzoptik', hint: 'Eiche, Nussbaum, Esche, Walnuss, Altholz', ek: 16, vk: 33,
     swatch: 'repeating-linear-gradient(100deg,#b58757 0 6px,#a4794c 6px 9px,#c3996a 9px 17px)' },
-  { key: 'stein', label: 'Stein & Beton', hint: 'Beton, Schiefer, Terrazzo, Sandstein', ek: 18, vk: 42,
+  { key: 'stein', label: 'Stein & Beton', hint: 'Beton, Schiefer, Terrazzo, Sandstein', ek: 18, vk: 35,
     swatch: 'radial-gradient(circle at 30% 30%,#9a9a96 0 2px,transparent 3px),radial-gradient(circle at 70% 60%,#7c7c78 0 2px,transparent 3px),#8e8e8a' },
-  { key: 'marmor', label: 'Marmor', hint: 'Carrara, Calacatta, Nero Marquina', ek: 19, vk: 44,
+  { key: 'marmor', label: 'Marmor', hint: 'Carrara, Calacatta, Nero Marquina', ek: 19, vk: 37,
     swatch: 'linear-gradient(115deg,#f3f1ee 0 40%,#cfcac3 42%,#f3f1ee 45% 70%,#b9b3ab 72%,#f3f1ee 74%)' },
-  { key: 'metall', label: 'Metall', hint: 'Edelstahl gebürstet, Messing, Kupfer, Schwarzstahl', ek: 22, vk: 49,
+  { key: 'metall', label: 'Metall', hint: 'Edelstahl gebürstet, Messing, Kupfer, Schwarzstahl', ek: 22, vk: 41,
     swatch: 'repeating-linear-gradient(90deg,#c9ccd0 0 1px,#aeb2b7 1px 2px,#d6d9dc 2px 4px)' },
-  { key: 'leder', label: 'Leder & Textil', hint: 'Leder, Leinen, Filz, Rattan', ek: 20, vk: 46,
+  { key: 'leder', label: 'Leder & Textil', hint: 'Leder, Leinen, Filz, Rattan', ek: 20, vk: 38,
     swatch: 'radial-gradient(circle,#6c4a35 0 1px,transparent 1.5px) 0 0/6px 6px,#7a5640' },
-  { key: 'spezial', label: 'Spezial', hint: 'Supermatt Soft-Touch, 3D-Struktur, Glitter, Tafelfolie', ek: 26, vk: 58,
+  { key: 'spezial', label: 'Spezial', hint: 'Supermatt Soft-Touch, 3D-Struktur, Glitter, Tafelfolie', ek: 26, vk: 48,
     swatch: 'linear-gradient(135deg,#2c2f33 0 50%,#43474d 50%)' },
 ];
 
@@ -308,8 +308,8 @@ export const CONSUMABLES = {
 /* ── Extras, die der Kunde ankreuzt ───────────────────────────────────── */
 export const EXTRAS = [
   { key: 'innen', label: 'Innenseiten mitfolieren', hint: 'sichtbar beim Öffnen', pct: 40, appliesTo: 'fronts' },
-  { key: 'grifflos', label: 'Grifflose Optik / neue Griffe', hint: 'alte Bohrungen schließen', perFront: 14 },
-  { key: 'geraete', label: 'Geräte-Fronten (Geschirrspüler, Kühlschrank)', hint: 'Demontage der Gerätefront', perItem: 35, count: true },
+  { key: 'grifflos', label: 'Grifflose Optik / neue Griffe', hint: 'alte Bohrungen schließen', perFront: 12 },
+  { key: 'geraete', label: 'Geräte-Fronten (Geschirrspüler, Kühlschrank)', hint: 'Demontage der Gerätefront', perItem: 29, count: true },
   { key: 'demontage', label: 'Demontage & Wiedermontage durch uns', hint: 'Scharniere, Griffe, Dämpfer', pct: 12, appliesTo: 'labor' },
 ];
 
@@ -318,7 +318,7 @@ export const FRONT_KEYS = new Set(['fronten', 'insel_fronten', 'extra_fronten', 
 
 export const TRAVEL_ZONES = [
   { key: '0', label: 'Bis 30 km · inklusive', price: 0 },
-  { key: '1', label: '30 – 80 km', price: 60 },
-  { key: '2', label: '80 – 150 km', price: 120 },
-  { key: '3', label: 'Über 150 km, mit Übernachtung', price: 290 },
+  { key: '1', label: '30 – 80 km', price: 50 },
+  { key: '2', label: '80 – 150 km', price: 100 },
+  { key: '3', label: 'Über 150 km, mit Übernachtung', price: 240 },
 ];

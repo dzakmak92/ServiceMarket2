@@ -51,6 +51,16 @@ const PATHS = {
       <path d="M8 18a3 3 0 0 1 3-3" />
     </>
   ),
+  /* Eine Folienrolle, von der eine Bahn abläuft. Der Kreis allein wäre eine
+     Münze; erst die Bahn mit der Kante macht daraus Material. */
+  folierung: (
+    <>
+      <circle cx="10" cy="10" r="6" />
+      <circle cx="10" cy="10" r="1.8" />
+      <path d="M16 10h10v18H10V16" />
+      <path d="M21 23l5 5" />
+    </>
+  ),
   montage: (
     <path d="M22 4a7 7 0 0 0-8.6 9.3L4 22.7 9.3 28l9.4-9.4A7 7 0 0 0 28 10l-4 4-4-4 4-4a7 7 0
              0 0-2-2z" />

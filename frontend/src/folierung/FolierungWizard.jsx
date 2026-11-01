@@ -10,7 +10,7 @@ import {
   SURFACES, surfaceByKey, activeElements, CONDITIONS, SUBSTRATES, SUBSTRATES_FOR,
   substrateByKey, DECORS, EXTRAS, TRAVEL_ZONES, FRONT_WIDTHS, FRONT_HEIGHTS, THICKNESSES,
 } from './catalog';
-import { calculate, emptyInput, withAddon, withShape, withExtraSurface, summaryText } from './pricing';
+import { calculate, emptyInput, withAddon, withShape, withExtraSurface, summaryText, vatLabel } from './pricing';
 import Drawing, { drawingFor, SurfaceIcon, ConditionIcon } from './Drawings';
 import { pieceDefault, cutSize } from './nesting';
 
@@ -39,10 +39,10 @@ const STEPS = [
    Endkunde liest die öffentliche Seite ohne Sprachwahl. */
 const eur = (v) => `${Math.round(Number(v) || 0).toLocaleString('de-DE')} €`;
 const fmtNum = (v, d = 1) => Number(v || 0).toLocaleString('de-DE', { maximumFractionDigits: d });
-const eurRange = (w) => `${eur(roundTo(w.lo, 10))} – ${eur(roundTo(w.hi, 10))}`;
+const eurRange = (w) => `${eur(roundTo(w.grossLo, 10))} – ${eur(roundTo(w.grossHi, 10))}`;
 const roundTo = (v, step) => Math.round(v / step) * step;
 
-export default function FolierungWizard({ audience = 'customer', settings, initial, onSave, onCreateQuote }) {
+export default function FolierungWizard({ audience = 'customer', settings, initial, onSave, onCreateQuote, onChange, creating = false }) {
   const isPro = audience === 'pro';
   const [step, setStep] = useState(0);
   const [input, setInput] = useState(() => initial || emptyInput('kueche'));
@@ -55,8 +55,18 @@ export default function FolierungWizard({ audience = 'customer', settings, initi
   const elements = useMemo(() => activeElements(surface, input.addons, input.extraSurfaces || []), [surface, input.addons, input.extraSurfaces]);
   const result = useMemo(() => calculate(input, settings), [input, settings]);
 
-  useEffect(() => { topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, [step]);
+  /* Nur bei einem Schrittwechsel nach oben, nicht beim Öffnen: auf der
+     Kalkulationsseite steht darüber das Gewerke-Raster, das sichtbar bleiben soll. */
+  const firstStep = useRef(true);
+  useEffect(() => {
+    if (firstStep.current) { firstStep.current = false; return; }
+    topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [step]);
   useEffect(() => { setSaved(false); }, [input]);
+  /* Der Elternteil (Kalkulationsseite) braucht den Stand, um beim Verlassen
+     ein Angebot anzulegen und den Entwurf zu sichern. */
+  const startRef = useRef(JSON.stringify(input));
+  useEffect(() => { onChange?.({ input, result, dirty: JSON.stringify(input) !== startRef.current }); }, [input, result]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const patch = (p) => setInput((i) => ({ ...i, ...p }));
   const setCount = (key, v) => setInput((i) => ({ ...i, counts: { ...i.counts, [key]: Math.max(0, v) } }));
@@ -278,7 +288,7 @@ export default function FolierungWizard({ audience = 'customer', settings, initi
           ))}
 
           {/* Weg 1: Montage vor Ort */}
-          <WayCard badge="Meistgewählt" title="Montage vor Ort" sub="Das Team kommt zu dir, fertig in 1–3 Tagen" way={result.ways.montage}
+          <WayCard badge="Meistgewählt" vat={result.vat} isPro={isPro} title="Montage vor Ort" sub="Das Team kommt zu dir, fertig in 1–3 Tagen" way={result.ways.montage}
             bullets={[`Auch ${surface.key === 'kueche' ? 'Arbeitsplatte, Insel & Nischenrückwand' : 'alles Verbaute, das nicht in die Werkstatt kann'}`, '10 Jahre Herstellergarantie auf Haftung und Farbstabilität', result.perFront ? `ca. ${eur(result.perFront)} je Front` : null]}
             cta={!isPro && <CtaRow waHref={waHref} onCopy={share} copied={copied} label="Festpreis anfragen" />} />
 
@@ -292,12 +302,12 @@ export default function FolierungWizard({ audience = 'customer', settings, initi
           )}
 
           {result.ways.pickup && (
-            <WayCard title="Hol- & Bring-Service" sub="Du montierst Fronten & Co. selbst ab, wir holen sie, folieren in der Werkstatt und bringen sie zurück" way={result.ways.pickup}
+            <WayCard vat={result.vat} isPro={isPro} title="Hol- & Bring-Service" sub="Du montierst Fronten & Co. selbst ab, wir holen sie, folieren in der Werkstatt und bringen sie zurück" way={result.ways.pickup}
               bullets={[`Rund ${Math.round((1 - result.ways.pickup.value / result.ways.montage.value) * 100)} % günstiger als Montage vor Ort`, 'Werkstattzeit 1–2 Wochen', result.ways.pickup.onsiteLeft ? 'Verbautes (Platte, Nische, Korpus) machen wir beim Zurückbringen vor Ort' : null, 'Wiedermontage machst du selbst, oder wir gegen Aufpreis']}
               cta={!isPro && <CtaRow waHref={waHref} onCopy={share} copied={copied} label="Abholung anfragen" ghost />} />
           )}
 
-          <WayCard title="Selbst machen" sub="Zuschnitt-Set nach deinen Maßen, du klebst selbst" way={result.ways.diy}
+          <WayCard vat={result.vat} isPro={isPro} title="Selbst machen" sub="Zuschnitt-Set nach deinen Maßen, du klebst selbst" way={result.ways.diy}
             bullets={[result.material.lfm != null ? `${fmtNum(result.material.lfm, 1)} lfm von der ${settings.nesting?.rollWidthMm || 1220}er-Rolle (${fmtNum(result.material.m2, 1)} m²), auf Maß geschnitten` : `${fmtNum(result.material.m2, 1)} m² Folie inkl. Verschnitt, auf Maß geschnitten`, `Primer dazu: ${result.primer.mode === 'none' ? 'nicht nötig' : result.primer.packs.map((p) => `${p.n} × ${p.ml >= 1000 ? '1 l' : '250 ml'}`).join(' + ')}`, 'Rakel, Cutter und Anleitung liegen bei']}
             cta={!isPro && <CtaRow waHref={waHref} onCopy={share} copied={copied} label="Zuschnitt-Set anfragen" ghost />} />
 
@@ -328,8 +338,9 @@ export default function FolierungWizard({ audience = 'customer', settings, initi
                 {saved ? <Check size={16} /> : <Save size={16} />} {saved ? 'Gespeichert' : 'Kalkulation speichern'}
               </button>
               {onCreateQuote && (
-                <button type="button" onClick={() => onCreateQuote({ input, result })} className="inline-flex items-center gap-2 rounded-xl border border-sm-border bg-paper text-ink px-4 py-2.5 text-sm font-semibold hover:bg-cream-soft">
-                  <FileText size={16} /> Angebot daraus
+                <button type="button" disabled={creating} onClick={() => onCreateQuote({ input, result })} data-testid="fol-create-quote"
+                  className="inline-flex items-center gap-2 rounded-xl border border-sm-border bg-paper text-ink px-4 py-2.5 text-sm font-semibold hover:bg-cream-soft disabled:opacity-60">
+                  <FileText size={16} /> {creating ? 'Lege Angebot an…' : 'Angebot anlegen'}
                 </button>
               )}
               <button type="button" onClick={share} className="inline-flex items-center gap-2 rounded-xl border border-sm-border bg-paper text-ink px-4 py-2.5 text-sm font-semibold hover:bg-cream-soft">
@@ -345,7 +356,7 @@ export default function FolierungWizard({ audience = 'customer', settings, initi
         <div className="rounded-2xl bg-teal-deep text-paper px-3 py-2.5 flex items-center justify-between gap-2 shadow-lg">
           <button type="button" onClick={() => go(step - 1)} disabled={step === 0}
             className="rounded-xl border border-paper/30 px-4 py-2.5 text-sm font-semibold disabled:opacity-30">Zurück</button>
-          <div className="text-sm opacity-90">Schritt {step + 1}/{STEPS.length}{step === 2 && result.vk > 0 ? ` · ab ${eur(roundTo(result.ways.montage.lo, 10))}` : ''}</div>
+          <div className="text-sm opacity-90">Schritt {step + 1}/{STEPS.length}{step === 2 && result.vk > 0 ? ` · ab ${eur(roundTo(result.ways.montage.grossLo, 10))}` : ''}</div>
           {step < STEPS.length - 1 ? (
             <button type="button" onClick={() => go(step + 1)} data-testid="fol-next"
               className="rounded-xl bg-amber text-on-amber px-4 py-2.5 text-sm font-bold hover:bg-amber-deep">{step === 2 ? 'Preise zeigen' : 'Weiter'}</button>
@@ -419,14 +430,15 @@ function Stepper({ value, onChange, step = 1, unit = '', testId }) {
 }
 
 /* ── Preis-Karten ───────────────────────────────────────────────────────── */
-function WayCard({ badge, title, sub, way, bullets, cta }) {
+function WayCard({ badge, title, sub, way, bullets, cta, vat, isPro }) {
   return (
     <div className={`relative rounded-2xl border bg-paper p-5 mb-3 ${badge ? 'border-sm-border mt-4' : 'border-sm-border'}`}>
       {badge && <span className="absolute -top-3 left-4 rounded-full bg-amber text-on-amber text-xs font-bold px-3 py-1">{badge}</span>}
       <h3 className="font-headings font-bold text-ink text-lg">{title}</h3>
       <p className="text-sm text-ink-muted">{sub}</p>
-      <div className="mt-3 font-headings text-3xl text-ink tabular-nums">{way.value > 0 ? <>ab {eur(roundTo(way.lo, 10))}</> : '–'}</div>
-      <div className="text-xs text-ink-muted">{way.value > 0 ? <>Spanne {eurRange(way)} · inkl. 19 % MwSt. und Material{way.noMin ? ', inkl. Versand' : ' · zzgl. An- und Abfahrt außerhalb 30 km'}</> : 'Noch nichts gezählt.'}</div>
+      <div className="mt-3 font-headings text-3xl text-ink tabular-nums">{way.value > 0 ? <>ab {eur(roundTo(way.grossLo, 10))}</> : '–'}</div>
+      <div className="text-xs text-ink-muted">{way.value > 0 ? <>Spanne {eurRange(way)} · {vatLabel(vat)} und Material{way.noMin ? ', inkl. Versand' : ' · zzgl. An- und Abfahrt außerhalb 30 km'}</> : 'Noch nichts gezählt.'}</div>
+      {isPro && way.value > 0 && !vat?.klein && <div className="text-xs text-ink-muted tabular-nums">netto {eur(way.net)} · USt. {eur(way.gross - way.net)}</div>}
       <ul className="mt-3 grid gap-1.5">
         {bullets.filter(Boolean).map((b, i) => <li key={i} className="flex gap-2 text-sm text-ink"><Check size={16} className="text-teal shrink-0 mt-0.5" />{b}</li>)}
       </ul>
@@ -475,7 +487,7 @@ function ProPanel({ result, input, settings }) {
       {open && (
         <div className="grid md:grid-cols-2 gap-5 mt-4">
           <div className="rounded-xl bg-paper border border-sm-border p-4">
-            <Kicker>EK / VK</Kicker>
+            <Kicker>EK netto / VK {result.vat.basis === 'gross' ? 'brutto' : 'netto'} · {result.vat.klein ? 'Kleinunternehmer' : `${result.vat.country} ${result.vat.rate} % USt.`}</Kicker>
             <Row l={result.material.lfm != null
               ? `Folie ${fmtNum(result.material.lfm, 1)} lfm = ${fmtNum(result.material.m2, 1)} m² (${Math.round(result.material.wastePct * 100)} % Verschnitt, gelegt)`
               : `Folie ${fmtNum(result.material.m2, 1)} m² (inkl. ${settings.waste} % Verschnitt)`} v={`${eur(result.material.ek)} → ${eur(result.material.vk)}`} />
@@ -485,7 +497,11 @@ function ProPanel({ result, input, settings }) {
             {result.extras.map((x) => <Row key={x.key} l={x.label} v={`– → ${eur(x.vk)}`} />)}
             {result.travelVk > 0 && <Row l="Anfahrt" v={`${eur(result.travelVk * 0.6)} → ${eur(result.travelVk)}`} />}
             {result.weekendVk > 0 && <Row l="Zuschlag Wochenende/Nacht" v={`– → ${eur(result.weekendVk)}`} />}
-            <Row l="Summe EK → VK (Montage)" v={`${eur(result.ek)} → ${eur(result.vk)}`} strong />
+            <Row l={`Summe VK ${result.vat.basis === 'gross' ? 'brutto' : 'netto'} (Montage)`} v={eur(result.ways.montage.value)} strong />
+            {result.vat.basis === 'gross'
+              ? <Row l={`davon USt. ${result.vat.rate} %`} v={eur(result.ways.montage.gross - result.ways.montage.net)} muted />
+              : !result.vat.klein && <Row l={`+ USt. ${result.vat.rate} % = brutto`} v={eur(result.ways.montage.gross)} muted />}
+            <Row l="EK netto → VK netto" v={`${eur(result.ek)} → ${eur(result.vk)}`} strong />
             <Row l="Deckungsbeitrag" v={`${eur(result.margin)} · ${Math.round(result.marginPct * 100)} %`} strong />
             {result.ways.montage.minApplied && <Row l="Mindestauftragswert angewendet" v={eur(settings.minOrder)} muted />}
           </div>

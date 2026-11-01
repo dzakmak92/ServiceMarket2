@@ -42,6 +42,9 @@ export function loadSettings() {
   const saved = read(SETTINGS_KEY, null);
   if (!saved) return structuredClone(DEFAULT_SETTINGS);
   const out = { ...DEFAULT_SETTINGS, ...saved };
+  // Bis Nov. 2026 hieß es auf der Preisseite "alle Beträge brutto". Wer damals
+  // gespeichert hat, hat brutto eingetragen; das bleibt so, bis er umstellt.
+  if (!saved.priceBasis) out.priceBasis = 'gross';
   for (const k of ['decors', 'primers', 'consumables', 'travel', 'extras', 'conditions', 'nesting']) {
     out[k] = { ...DEFAULT_SETTINGS[k], ...(saved[k] || {}) };
     if (k === 'decors' || k === 'primers') {
@@ -52,6 +55,21 @@ export function loadSettings() {
 }
 
 export function saveSettings(settings) { write(SETTINGS_KEY, settings); return settings; }
+
+/** Nur den USt.-Stand aus dem Profil festhalten, damit die Kundenseite ihn kennt. */
+export function rememberVat(vat) {
+  const saved = read(SETTINGS_KEY, null);
+  if (saved && JSON.stringify(saved.vat) === JSON.stringify(vat)) return;
+  write(SETTINGS_KEY, { ...(saved || { priceBasis: 'net' }), vat });
+}
+
+/* Die laufende Kalkulation, damit ein Wechsel über die Navigationsleiste sie
+   nicht verliert. Wird gelöscht, sobald ein Angebot daraus wurde oder der
+   Betrieb sie verwirft. */
+const DRAFT_KEY = 'folierung_draft_v1';
+export function loadDraft() { return read(DRAFT_KEY, null); }
+export function saveDraft(input) { write(DRAFT_KEY, { input, at: new Date().toISOString() }); }
+export function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch { /* s.o. */ } }
 export function resetSettings() { try { localStorage.removeItem(SETTINGS_KEY); } catch { /* s.o. */ } return structuredClone(DEFAULT_SETTINGS); }
 
 /** Gespeicherte Kalkulationen des Betriebs, neueste zuerst. */

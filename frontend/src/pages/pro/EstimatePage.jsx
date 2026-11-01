@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import NumberField from '../../components/NumberField';
@@ -7,6 +7,10 @@ import EstimateCards from './EstimateCards';
 import GroupDial from '../../components/pro/GroupDial';
 import DialSwipe from '../../components/pro/DialSwipe';
 import TradeRow from '../../components/pro/TradeRow';
+import { useAuth } from '../../contexts/AuthContext';
+import FolierungPanel from '../../folierung/FolierungPanel';
+import { canUseFolierung } from '../../folierung/store';
+import { SURFACES as FOL_SURFACES } from '../../folierung/catalog';
 import { fmtEur0 as fmtEur, fmtEur as fmtEur2, fmtNum as fmtNumRaw } from '../../utils/money';
 
 import {
@@ -20,6 +24,7 @@ import {
 const fmtNum = (v, d = 1) => fmtNumRaw(v, d);
 
 const TIERS = ['basic', 'standard', 'premium'];
+const FOL_KEY = 'folierung';
 const TIER_LABEL = { basic: 'Basis', standard: 'Standard', premium: 'Premium' };
 
 // Severity drives colour, not decoration. An asbestos warning and a note about
@@ -68,6 +73,12 @@ export default function EstimatePage() {
   // below.
   const navigate = useNavigate();
   const { trade = '' } = useParams();
+  /* Folierung ist ein Gewerk auf dieser Seite, aber kein Katalog-Gewerk des
+     Servers: es hat seinen eigenen Rechner (src/folierung) und erscheint nur
+     für freigeschaltete Profile als achte Karte, also zweite Reihe 4 + 4. */
+  const { user } = useAuth();
+  const folAllowed = canUseFolierung(user);
+  const folRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   /* How this trade's templates are chunked, from the API. Null for a search
@@ -97,13 +108,13 @@ export default function EstimatePage() {
   useEffect(() => {
     if (trade || !meta?.trades?.length) return;
     const last = localStorage.getItem('est_trade');
-    const known = meta.trades.some((x) => x.key === last);
+    const known = meta.trades.some((x) => x.key === last) || (last === FOL_KEY && folAllowed);
     /* Keep the query. /estimate?customer=… is how the contacts page hands a
        customer over, and this redirect ran before anything read it — the
        customer was chosen, then dropped on the way to the trade. */
     const qs = window.location.search;
     navigate(`/estimate/${known ? last : meta.trades[0].key}${qs}`, { replace: true });
-  }, [trade, meta, navigate]);
+  }, [trade, meta, navigate, folAllowed]);
 
   useEffect(() => {
     if (trade) localStorage.setItem('est_trade', trade);
@@ -358,6 +369,11 @@ export default function EstimatePage() {
 
   /* Order is the trades that actually have a dial, so a swipe never lands on
      an empty pane. */
+  const tradeList = useMemo(() => [
+    ...(meta?.trades || []),
+    ...(folAllowed ? [{ key: FOL_KEY, label: t('nav_folierung'), count: FOL_SURFACES.length }] : []),
+  ], [meta, folAllowed, t]);
+
   const swipeOrder = useMemo(
     () => (meta?.trades || []).map((tr) => tr.key).filter((k) => dials[k]),
     [meta, dials],
@@ -379,6 +395,8 @@ export default function EstimatePage() {
    * always dropped them home rather than at the trade list.
    */
   const leave = (to, onDiscard = to) => {
+    // Die Folierung führt ihren eigenen Stand und ihren eigenen Dialog.
+    if (trade === FOL_KEY) { if (!folRef.current?.requestLeave(onDiscard)) navigate(to); return; }
     if (selection.positions.length || selection.unpriced) { setLeaveTo(onDiscard); setLeaving(true); }
     else navigate(to);
   };
@@ -639,6 +657,29 @@ export default function EstimatePage() {
     );
   }
 
+  if (trade === FOL_KEY) {
+    if (!folAllowed) return <Navigate to="/estimate" replace />;
+    return (
+      <div className="min-h-screen bg-paper pb-24">
+        <div className="max-w-4xl mx-auto px-4 pt-2">
+          <div className="mb-3">
+            <button type="button" onClick={() => leave('/')}
+                    className="flex items-center gap-1.5 -ml-2 px-2 min-h-[44px]
+                               text-ink-muted hover:text-ink font-bold text-[13px]"
+                    data-testid="estimate-back">
+              <ArrowLeft size={16} />
+              {t('back')}
+            </button>
+            <TradeRow trades={tradeList} value={trade}
+                      onChange={(k) => leave(`/estimate/${k}`)}
+                      label={t('est_pick_trade')} unit={t('est_templates')} />
+          </div>
+          <FolierungPanel ref={folRef} />
+        </div>
+      </div>
+    );
+  }
+
   /* White, not the app's cream. The ring's unselected wedges are a cool
      near-white; on cream they measure 1.01:1 against the page, so the fill
      does nothing and the shape is carried entirely by a 1 px hairline. That is
@@ -671,7 +712,7 @@ export default function EstimatePage() {
               <ArrowLeft size={16} />
               {t('back')}
             </button>
-            <TradeRow trades={meta?.trades || []} value={trade}
+            <TradeRow trades={tradeList} value={trade}
                       onChange={(k) => leave(`/estimate/${k}`)}
                       label={t('est_pick_trade')} unit={t('est_templates')} />
           </div>

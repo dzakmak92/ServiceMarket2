@@ -3,11 +3,10 @@ import { Link, useLocation } from 'react-router-dom';
 import useEscapeKey from '../hooks/useEscapeKey';
 import { useAuth } from '../contexts/AuthContext';
 import { useLang } from '../contexts/LangContext';
-import { canUseFolierung } from '../folierung/store';
 import api from '../api/client';
 import { STAGES } from '../utils/workflow';
 import { CalendarDays, Home, LayoutDashboard, ListChecks,
-  Layers, MoreHorizontal, Plus, Settings as SettingsIcon, Users, X } from 'lucide-react';
+  MoreHorizontal, Plus, Settings as SettingsIcon, Users, X } from 'lucide-react';
 import AppVersion from './AppVersion';
 
 /**
@@ -74,7 +73,6 @@ export default function MobileNav() {
   // the menu repeating the front page.
   const morePro = [
     { to: '/customers', icon: Users, label: t('nav_customers') },
-    ...(canUseFolierung(user) ? [{ to: '/folierung', icon: Layers, label: t('nav_folierung') }] : []),
     ...(hasTax ? [{ to: '/tax', icon: ListChecks, label: t('nav_tax') }] : []),
     { to: '/settings', icon: SettingsIcon, label: t('nav_settings') },
   ].filter(notAStage);

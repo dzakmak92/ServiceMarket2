@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import FolierungWizard from '../folierung/FolierungWizard';
 import { loadSettings } from '../folierung/store';
+import { vatLabel } from '../folierung/pricing';
 
 /**
  * /folie/:slug — die Kundenseite. Kein Login, kein Header, keine internen
@@ -47,7 +48,7 @@ export default function FoliePublicPage() {
           </div>
           <p className="text-sm text-ink mt-5">Folieren heißt: Fronten, Platten und sichtbare Flächen werden mit einer selbstklebenden Architekturfolie bezogen. Kein Abbau, kein Staub, kein Neukauf. Der Untergrund wird gereinigt, Kanten werden grundiert, die Folie wird warm um jede Kante gelegt.</p>
         </section>
-        <footer className="text-xs text-ink-muted text-center mt-10">Richtwerte inkl. 19 % MwSt. Verbindlich wird der Preis nach Foto-Einschätzung oder Aufmaß.</footer>
+        <footer className="text-xs text-ink-muted text-center mt-10">Richtwerte {vatLabel(settings.vat)}. Verbindlich wird der Preis nach Foto-Einschätzung oder Aufmaß.</footer>
       </main>
     </div>
   );
