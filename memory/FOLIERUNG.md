@@ -165,3 +165,13 @@ im `/api/profile/pro`-Payload mitliefern, `canUseFolierung` liest sie. Setzen ü
   "Kalkulation verlassen?" mit "Entwurf behalten" (legt das Angebot unter Angebote an) und
   "Verwerfen". Zusätzlich sichert die Folierung den Stand lokal (`folierung_draft_v1`),
   sodass ein Wechsel über die Navigationsleiste nichts verliert.
+
+## Zählzeile mit Maßen: gewählte Basis C1 (Nov. 2026)
+
+Der Betrieb hat **C1 „Tabelle mit Summenzeile“** als Basis gewählt (Vorschau:
+https://claude.ai/artifact/Cozb6dNTAQHwvzbjgtMbes, Runde 2). Jedes Element trägt seine
+Maße direkt unter dem Zähler als kleine Tabelle: Formspalte (Proportion der Front),
+Breite und Höhe als Pill-Auswahl, Stück-Zähler in der Zeile, Zuschnitt als Chip,
+Summenzeile „16 / 16“ gegen die Anzahl, Stärke in der Summenzeile, „+ Größe“ darunter.
+Der Zuschnitt übernimmt die Maße automatisch; der separate Bereich „Maße, Stärke &
+Zuschnitt“ entfällt. Weitere Feinschliff-Runden bauen auf C1 auf.
