@@ -44,6 +44,9 @@ import MySchedulePage from "./pages/pro/MySchedulePage";
 import PMProjectDetailPage from "./pages/pro/PMProjectDetailPage";
 import InvoiceFromProjectRedirect from "./pages/pro/InvoiceFromProjectRedirect";
 import ProSettingsPage from "./pages/pro/ProSettingsPage";
+import FolierungPage from "./pages/pro/FolierungPage";
+import FolierungPricesPage from "./pages/pro/FolierungPricesPage";
+import FoliePublicPage from "./pages/FoliePublicPage";
 
 // Admin
 import AdminPage from "./pages/admin/AdminPage";
@@ -114,6 +117,7 @@ function AppShell() {
     location.pathname.startsWith("/sub/") ||
     location.pathname.startsWith("/accountant/") ||
     location.pathname.startsWith("/pay/") ||
+    location.pathname.startsWith("/folie/") ||
     location.pathname === "/forgot-password" ||
     location.pathname === "/reset-password" ||
     location.pathname === "/privacy" ||
@@ -164,6 +168,8 @@ function AppShell() {
         {/* Customer-facing pay-invoice flow — no auth required */}
         <Route path="/pay/:token" element={<PayInvoicePage />} />
         <Route path="/pay/:token/success" element={<PaySuccessPage />} />
+        {/* Folierungsrechner für Endkunden: ohne Login, ohne Chrome. */}
+        <Route path="/folie/:slug" element={<FoliePublicPage />} />
         <Route
           path="/feedback"
           element={
@@ -339,6 +345,22 @@ function AppShell() {
           element={
             <ProtectedRoute>
               <ProDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/folierung"
+          element={
+            <ProtectedRoute roles={["tradesperson", "admin"]}>
+              <FolierungPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/folierung/preise"
+          element={
+            <ProtectedRoute roles={["tradesperson", "admin"]}>
+              <FolierungPricesPage />
             </ProtectedRoute>
           }
         />
