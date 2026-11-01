@@ -9,11 +9,15 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const asUrl = (src) => `data:text/javascript;base64,${Buffer.from(src).toString('base64')}`;
 const catalogUrl = asUrl(readFileSync(join(here, 'catalog.js'), 'utf8'));
-const pricingSrc = readFileSync(join(here, 'pricing.js'), 'utf8').replaceAll("from './catalog'", `from '${catalogUrl}'`);
+const nestingUrl = asUrl(readFileSync(join(here, 'nesting.js'), 'utf8'));
+const pricingSrc = readFileSync(join(here, 'pricing.js'), 'utf8')
+  .replaceAll("from './catalog'", `from '${catalogUrl}'`)
+  .replaceAll("from './nesting'", `from '${nestingUrl}'`);
 const { calculate, emptyInput, withShape, withAddon, primerPacks, DEFAULT_SETTINGS, summaryText } = await import(asUrl(pricingSrc));
 
 let pass = 0, fail = 0;
 const ok = (c, m) => { c ? (pass++, console.log('  ok  ', m)) : (fail++, console.log('  FAIL', m)); };
+const wasteOf = (r) => r.nesting ? r.nesting.wastePct : 0;
 const near = (got, want, tol, m) => ok(Math.abs(got - want) <= tol, `${m} (got ${got.toFixed(2)}, want ≈ ${want})`);
 
 console.log('\n── eine L-Küche, wie Retrena sie vorrechnet ──');
@@ -21,7 +25,12 @@ let inp = withShape(emptyInput('kueche'), 'l');
 let r = calculate(inp, DEFAULT_SETTINGS);
 ok(r.lines.length >= 4, 'die Formvorwahl füllt Fronten, Platte, Sockel, Seiten');
 near(r.areaNet, 16 * 0.42 + 5 * 0.85 + 5 * 0.16 + 2 * 0.55 + 1 * 0, 0.01, 'Nettofläche summiert Element × Fläche');
-near(r.areaGross, r.areaNet * 1.25, 0.01, '25 % Verschnitt obendrauf');
+near(r.areaGross, r.areaNet * 1.25, 0.01, '25 % Verschnitt pauschal (Vergleichswert)');
+ok(r.nesting && r.nesting.rollCount >= 1, `Nesting gelaufen: ${r.nesting.pieceCount} Teile, ${(r.nesting.totalMm / 1000).toFixed(1)} lfm auf ${r.nesting.rollCount} Rolle(n)`);
+ok(Math.abs(r.material.m2 - r.nesting.areaBoughtM2) < 0.001, 'Material = gekaufte Laufmeter × Rollenbreite');
+ok(r.material.wastePct > wasteOf(r) - 0.001, `echter Verschnitt ${(r.material.wastePct * 100).toFixed(0)} % statt Pauschale`);
+let off = calculate(inp, { ...DEFAULT_SETTINGS, nesting: { ...DEFAULT_SETTINGS.nesting, enabled: false } });
+near(off.material.m2, off.areaGross, 0.01, 'Nesting aus → Pauschale');
 ok(r.ways.montage.value > 1500 && r.ways.montage.value < 4500, `Montage vor Ort landet im Marktband 1.500–4.500 € (${r.ways.montage.value.toFixed(0)})`);
 ok(r.ways.pickup && r.ways.pickup.value < r.ways.montage.value, 'Hol- & Bring ist billiger als Montage');
 ok(r.ways.diy.value < r.ways.pickup.value, 'Selbst machen ist am billigsten');

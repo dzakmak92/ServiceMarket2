@@ -16,6 +16,7 @@ import {
   surfaceByKey, activeElements, CONDITIONS, substrateByKey, DECORS, PRIMERS,
   CONSUMABLES, EXTRAS, FRONT_KEYS, TRAVEL_ZONES, SUBSTRATES_FOR,
 } from './catalog';
+import { DEFAULT_NESTING, GRAIN_DECORS, piecesFor, nest } from './nesting';
 
 export const DEFAULT_SETTINGS = {
   businessName: '',
@@ -44,6 +45,7 @@ export const DEFAULT_SETTINGS = {
   travel: Object.fromEntries(TRAVEL_ZONES.map((z) => [z.key, z.price])),
   extras: Object.fromEntries(EXTRAS.map((x) => [x.key, x.pct ?? x.perFront ?? x.perItem])),
   conditions: Object.fromEntries(CONDITIONS.map((c) => [c.key, c.factor])),
+  nesting: { ...DEFAULT_NESTING },
 };
 
 /** Startzustand eines Rechners für eine Oberfläche. */
@@ -63,6 +65,8 @@ export function emptyInput(surfaceKey = 'kueche') {
     extras: { innen: false, grifflos: false, geraete: 0, demontage: false },
     travel: '0',
     weekend: false,
+    pieces: {},          // eigene Maße je Element (mm), für den Zuschnitt
+    customPieces: [],    // zusätzliche Teile { label, w, h, n }
   };
 }
 
@@ -174,11 +178,28 @@ export function calculate(input, settings = DEFAULT_SETTINGS) {
     total: prepHours + workHours + innenHours + setupHours + demontageHours,
   };
 
+  // ── Zuschnitt: die Teile auf die Rolle legen ──────────────────────────
+  // Ergibt die gekaufte Fläche (Laufmeter × Rollenbreite) und den echten
+  // Verschnitt. Ist das Nesting aus, gilt der pauschale Prozentsatz.
+  const ns = { ...DEFAULT_NESTING, ...(s.nesting || {}) };
+  let nesting = null;
+  if (ns.enabled && lines.length) {
+    const pieces = piecesFor(surface.key, elements, input.counts, input.pieces, input.customPieces, ns.rollWidthMm, ns.bleedMm, innenPct);
+    nesting = nest(pieces, { ...ns, grain: GRAIN_DECORS.has(decor.key) });
+    nesting.pieces = pieces;
+  }
+  const pauschalM2 = areaGross + innenArea * (1 + wastePct);
+  const materialM2 = nesting && nesting.areaBoughtM2 > 0 ? nesting.areaBoughtM2 : pauschalM2;
+
   // ── Geld ──────────────────────────────────────────────────────────────
   const material = {
-    m2: areaGross + innenArea * (1 + wastePct),
-    ek: (areaGross + innenArea * (1 + wastePct)) * num(decorPrice.ek, decor.ek),
-    vk: (areaGross + innenArea * (1 + wastePct)) * num(decorPrice.vk, decor.vk),
+    m2: materialM2,
+    lfm: nesting ? nesting.totalMm / 1000 : null,
+    rolls: nesting ? nesting.rollCount : null,
+    wastePct: nesting ? nesting.wastePct : wastePct,
+    pauschalM2,
+    ek: materialM2 * num(decorPrice.ek, decor.ek),
+    vk: materialM2 * num(decorPrice.vk, decor.vk),
   };
   const labor = { vk: hours.total * rate, cost: hours.total * num(s.laborCost, 34) };
   const extrasLines = [];
@@ -224,12 +245,13 @@ export function calculate(input, settings = DEFAULT_SETTINGS) {
   if (substrate.key === 'kunststoff') notes.push({ level: 'high', text: 'PVC: nur mit Kunststoffprimer. Kein Standardprimer, sonst löst sich die Folie an den Umschlägen.' });
   if (condition.key === 'beschaedigt') notes.push({ level: 'medium', text: 'Beschädigte Kanten werden gespachtelt. Gequollene Spanplatte kann nicht foliert werden; das zeigt das Foto.' });
   if (input.surface === 'bad' && num(input.counts?.dusche, 0) > 0) notes.push({ level: 'high', text: 'Duschrückwand: Folie nur außerhalb des dauerhaft nassen Bereichs. Silikonfugen neu ziehen.' });
+  if (nesting?.unplaced?.length) notes.push({ level: 'high', text: `${nesting.unplaced.length} Teil(e) passen nicht auf die Rolle (${ns.rollWidthMm} mm): ${nesting.unplaced.map((u) => `${u.label} ${u.w} × ${u.h}`).join(', ')}. Teilen oder quer legen.` });
   if (montage.minApplied) notes.push({ level: 'medium', text: `Unter dem Mindestauftragswert von ${minOrder} €. Der Richtwert ist auf den Mindestwert gesetzt.` });
 
   return {
     surface: surface.key, condition: condition.key, substrate: substrate.key, decor: decor.key,
     areaNet, areaGross, innenArea, edges, fronts, lines, prepItems,
-    hours, material, labor, primer, consumables: { ek: consumablesEk, vk: consumablesVk },
+    hours, material, labor, primer, nesting, consumables: { ek: consumablesEk, vk: consumablesVk },
     extras: extrasLines, extrasVk, travelVk, weekendVk,
     ways: { montage, pickup, diy },
     ek, vk, margin, marginPct: vk > 0 ? margin / vk : 0,

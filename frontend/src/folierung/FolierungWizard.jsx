@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft, Check, Minus, Plus, Sparkles, Copy, FileText, Save, Info,
-  AlertTriangle, Droplets, Clock, Layers, Coins, ChevronDown, ExternalLink,
+  AlertTriangle, Droplets, Clock, Layers, Coins, ChevronDown, ExternalLink, Scissors, Trash2,
 } from 'lucide-react';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import { copyToClipboard } from '../utils/sms';
@@ -12,6 +12,7 @@ import {
 } from './catalog';
 import { calculate, emptyInput, withAddon, withShape, summaryText } from './pricing';
 import Drawing, { drawingFor, SurfaceIcon, ConditionIcon } from './Drawings';
+import { pieceDefault } from './nesting';
 
 /**
  * Der Folierungs-Rechner in vier Schritten, nach dem Muster, das Retrena auf
@@ -200,6 +201,10 @@ export default function FolierungWizard({ audience = 'customer', settings, initi
             </div>
           ))}
 
+          {isPro && (
+            <PieceEditor surface={surface} elements={elements} input={input} patch={patch} settings={settings} result={result} />
+          )}
+
           <Kicker className="mt-8">Extras</Kicker>
           <div className="grid gap-2">
             {EXTRAS.map((x) => {
@@ -269,7 +274,7 @@ export default function FolierungWizard({ audience = 'customer', settings, initi
           )}
 
           <WayCard title="Selbst machen" sub="Zuschnitt-Set nach deinen Maßen, du klebst selbst" way={result.ways.diy}
-            bullets={[`${fmtNum(result.material.m2, 1)} m² Folie inkl. Verschnitt, auf Maß geschnitten`, `Primer dazu: ${result.primer.mode === 'none' ? 'nicht nötig' : result.primer.packs.map((p) => `${p.n} × ${p.ml >= 1000 ? '1 l' : '250 ml'}`).join(' + ')}`, 'Rakel, Cutter und Anleitung liegen bei']}
+            bullets={[result.material.lfm != null ? `${fmtNum(result.material.lfm, 1)} lfm von der ${settings.nesting?.rollWidthMm || 1220}er-Rolle (${fmtNum(result.material.m2, 1)} m²), auf Maß geschnitten` : `${fmtNum(result.material.m2, 1)} m² Folie inkl. Verschnitt, auf Maß geschnitten`, `Primer dazu: ${result.primer.mode === 'none' ? 'nicht nötig' : result.primer.packs.map((p) => `${p.n} × ${p.ml >= 1000 ? '1 l' : '250 ml'}`).join(' + ')}`, 'Rakel, Cutter und Anleitung liegen bei']}
             cta={!isPro && <CtaRow waHref={waHref} onCopy={share} copied={copied} label="Zuschnitt-Set anfragen" ghost />} />
 
           {/* KI-Vorschau */}
@@ -290,6 +295,7 @@ export default function FolierungWizard({ audience = 'customer', settings, initi
             </div>
           </div>
 
+          {isPro && result.nesting && <NestingCard nesting={result.nesting} settings={settings} />}
           {isPro && <ProPanel result={result} input={input} settings={settings} />}
 
           {isPro && (
@@ -442,7 +448,9 @@ function ProPanel({ result, input, settings }) {
         <div className="grid md:grid-cols-2 gap-5 mt-4">
           <div className="rounded-xl bg-paper border border-sm-border p-4">
             <Kicker>EK / VK</Kicker>
-            <Row l={`Folie ${fmtNum(result.material.m2, 1)} m² (inkl. ${settings.waste} % Verschnitt)`} v={`${eur(result.material.ek)} → ${eur(result.material.vk)}`} />
+            <Row l={result.material.lfm != null
+              ? `Folie ${fmtNum(result.material.lfm, 1)} lfm = ${fmtNum(result.material.m2, 1)} m² (${Math.round(result.material.wastePct * 100)} % Verschnitt, gelegt)`
+              : `Folie ${fmtNum(result.material.m2, 1)} m² (inkl. ${settings.waste} % Verschnitt)`} v={`${eur(result.material.ek)} → ${eur(result.material.vk)}`} />
             <Row l="Primer" v={`${eur(result.primer.ek)} → ${eur(result.primer.vk)}`} />
             <Row l="Verbrauchsmaterial" v={`${eur(result.consumables.ek)} → ${eur(result.consumables.vk)}`} />
             <Row l={`Arbeit ${fmtNum(result.hours.total, 1)} h`} v={`${eur(result.labor.cost)} → ${eur(result.labor.vk)}`} />
@@ -475,6 +483,155 @@ function ProPanel({ result, input, settings }) {
             </div>
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Zuschnitt: Maße je Element und eigene Teile ────────────────────────── */
+function PieceEditor({ surface, elements, input, patch, settings, result }) {
+  const [open, setOpen] = useState(false);
+  const rows = elements.filter((e) => (Number(input.counts[e.key]) || 0) > 0).map((e) => ({ e, d: pieceDefault(surface.key, e.key), o: input.pieces?.[e.key] }))
+    .filter((r) => r.d || r.o);
+  const setPiece = (key, k, v) => patch({ pieces: { ...(input.pieces || {}), [key]: { ...(input.pieces?.[key] || {}), [k]: v } } });
+  const clearPiece = (key) => { const p = { ...(input.pieces || {}) }; delete p[key]; patch({ pieces: p }); };
+  const custom = input.customPieces || [];
+  const setCustom = (i, k, v) => patch({ customPieces: custom.map((c, j) => (j === i ? { ...c, [k]: v } : c)) });
+  const n = result.nesting;
+  return (
+    <div className="mt-8 rounded-2xl border border-navy-edge bg-navy-wedge p-4">
+      <button type="button" onClick={() => setOpen(!open)} className="w-full flex items-center justify-between gap-3 text-left">
+        <div className="min-w-0">
+          <div className="font-headings font-bold text-ink flex items-center gap-2"><Scissors size={16} className="text-navy" /> Maße für den Zuschnitt</div>
+          <div className="text-xs text-ink-muted mt-0.5">
+            {n ? `${n.pieceCount} Teile → ${fmtNum(n.totalMm / 1000, 1)} lfm auf ${n.rollCount} Rolle${n.rollCount === 1 ? '' : 'n'} à ${settings.nesting?.rollWidthMm || 1220} mm · Verschnitt ${Math.round(n.wastePct * 100)} %` : 'Standardmaße; trag echte Maße ein, wenn du sie hast.'}
+          </div>
+        </div>
+        <ChevronDown size={18} className={`text-ink-muted shrink-0 transition ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="mt-3 grid gap-2">
+          <p className="text-xs text-ink-muted">Breite liegt quer zur Rolle, Länge läuft mit der Rolle. Zugabe {settings.nesting?.bleedMm ?? 20} mm je Seite kommt automatisch dazu. Leer lassen heißt Standardmaß.</p>
+          {rows.map(({ e, d, o }) => {
+            const kind = d?.parts ? 'parts' : d?.perM ? 'perM' : d?.strip ? 'strip' : 'piece';
+            return (
+              <div key={e.key} className="rounded-xl bg-paper border border-sm-border px-3 py-2 grid grid-cols-[1fr_auto] gap-2 items-center">
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-ink">{input.counts[e.key]} {e.unit === 'stk' ? '×' : e.unit === 'm2' ? 'm²' : 'm'} {e.label}</div>
+                  <div className="text-[11px] text-ink-muted">
+                    {kind === 'parts' && !o && `Standard: ${d.parts.map((p) => `${p.n} × ${p.w} × ${p.h}`).join(', ')} mm je Stück`}
+                    {kind === 'perM' && `Streifen ${o?.w || d.w} mm breit, ${input.counts[e.key]} m lang`}
+                    {kind === 'strip' && `volle Bahnbreite, Länge aus der Fläche`}
+                    {(kind === 'piece' || (kind === 'parts' && o)) && `${o?.w || d?.w || '–'} × ${o?.h || d?.h || '–'} mm je Stück`}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  {kind !== 'strip' && <MmField value={o?.w ?? ''} placeholder={String(d?.w ?? d?.parts?.[0]?.w ?? '')} onChange={(v) => setPiece(e.key, 'w', v)} label="Breite" />}
+                  {kind !== 'strip' && kind !== 'perM' && <><span className="text-ink-muted text-xs">×</span><MmField value={o?.h ?? ''} placeholder={String(d?.h ?? d?.parts?.[0]?.h ?? '')} onChange={(v) => setPiece(e.key, 'h', v)} label="Länge" /></>}
+                  {o && <button type="button" onClick={() => clearPiece(e.key)} className="p-1.5 text-ink-muted hover:text-red-text" aria-label="Standardmaß"><RotateCcwIcon /></button>}
+                </div>
+              </div>
+            );
+          })}
+          <Kicker className="mt-2">Eigene Teile</Kicker>
+          {custom.map((c, i) => (
+            <div key={i} className="rounded-xl bg-paper border border-sm-border px-3 py-2 flex items-center gap-2 flex-wrap">
+              <input value={c.label} onChange={(e) => setCustom(i, 'label', e.target.value)} placeholder="Bezeichnung" className="flex-1 min-w-[120px] text-sm bg-cream rounded-lg border border-sm-border px-2 py-1.5 text-ink" />
+              <MmField value={c.w} placeholder="Breite" onChange={(v) => setCustom(i, 'w', v)} label="Breite" />
+              <span className="text-ink-muted text-xs">×</span>
+              <MmField value={c.h} placeholder="Länge" onChange={(v) => setCustom(i, 'h', v)} label="Länge" />
+              <span className="text-ink-muted text-xs">×</span>
+              <MmField value={c.n} placeholder="Stk" onChange={(v) => setCustom(i, 'n', v)} label="Stück" narrow />
+              <button type="button" onClick={() => patch({ customPieces: custom.filter((_, j) => j !== i) })} className="p-1.5 text-ink-muted hover:text-red-text" aria-label="Entfernen"><Trash2 size={14} /></button>
+            </div>
+          ))}
+          <button type="button" onClick={() => patch({ customPieces: [...custom, { label: '', w: '', h: '', n: 1 }] })}
+            className="justify-self-start inline-flex items-center gap-1.5 rounded-xl border border-sm-border bg-paper px-3 py-2 text-sm font-semibold text-ink hover:bg-cream-soft"><Plus size={14} /> Teil hinzufügen</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MmField({ value, onChange, placeholder, label, narrow }) {
+  return (
+    <span className="inline-flex items-center rounded-lg border border-sm-border bg-cream overflow-hidden">
+      <input value={value ?? ''} inputMode="numeric" placeholder={placeholder} aria-label={label}
+        onChange={(e) => { const v = e.target.value.replace(/[^\d]/g, ''); onChange(v === '' ? '' : Number(v)); }}
+        className={`${narrow ? 'w-10' : 'w-14'} text-sm text-right bg-transparent px-1.5 py-1.5 text-ink outline-none tabular-nums`} />
+      {!narrow && <span className="pr-1.5 text-[10px] text-ink-muted">mm</span>}
+    </span>
+  );
+}
+
+function RotateCcwIcon() {
+  return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></svg>;
+}
+
+/* ── Nesting: die Rolle als Bild ────────────────────────────────────────── */
+function NestingCard({ nesting, settings }) {
+  const [open, setOpen] = useState(true);
+  const W = nesting.rollWidthMm;
+  const grainNote = nesting.rotate ? 'Dekor ohne Laufrichtung: Teile dürfen gedreht werden.' : 'Dekor mit Laufrichtung: nichts wird gedreht, die Maserung läuft bei jedem Teil mit der Rolle.';
+  return (
+    <div className="rounded-2xl border border-navy-edge bg-navy-wedge p-5 mt-4">
+      <button type="button" onClick={() => setOpen(!open)} className="w-full flex items-center justify-between gap-3 text-left">
+        <h3 className="font-headings font-bold text-ink text-lg flex items-center gap-2"><Scissors size={18} className="text-navy" /> Zuschnitt auf der Rolle</h3>
+        <ChevronDown size={18} className={`text-ink-muted shrink-0 transition ${open ? 'rotate-180' : ''}`} />
+      </button>
+      <div className="grid grid-cols-3 gap-2 mt-3">
+        {[[`${fmtNum(nesting.totalMm / 1000, 1)} lfm`, `Rolle ${W} mm`], [`${nesting.rollCount}`, `Rolle${nesting.rollCount === 1 ? '' : 'n'} à ${settings.nesting?.rollLengthM || 50} m`], [`${Math.round(nesting.wastePct * 100)} %`, 'Verschnitt, gelegt']].map(([a, b]) => (
+          <div key={b} className="rounded-xl bg-paper border border-sm-border px-3 py-2.5 text-center">
+            <div className="font-headings font-bold text-ink text-lg tabular-nums leading-tight">{a}</div>
+            <div className="text-[11px] text-ink-muted">{b}</div>
+          </div>
+        ))}
+      </div>
+      <p className="text-xs text-ink-muted mt-2">{grainNote} Zugabe {settings.nesting?.bleedMm ?? 20} mm je Seite, {settings.nesting?.gapMm ?? 8} mm Messerabstand. Pauschal wären es {settings.waste} %.</p>
+      {open && nesting.rolls.map((roll, ri) => {
+        // Liegend, in Abschnitten von 4 m: 1.220 mm hoch, 4.000 mm breit je Zeile,
+        // so bleibt eine 600er-Front als Kästchen lesbar statt als Strich.
+        const SEG = 4000;
+        const segs = Math.max(1, Math.ceil(roll.usedMm / SEG));
+        return (
+          <div key={ri} className="mt-3 rounded-xl bg-paper border border-sm-border p-3">
+            <div className="text-xs font-semibold text-ink mb-2">Rolle {ri + 1} · {fmtNum(roll.usedMm / 1000, 2)} lfm · {roll.strips.length} Bahnen · Laufrichtung →</div>
+            <div className="grid gap-2">
+              {Array.from({ length: segs }, (_, si) => {
+                const y0 = si * SEG, y1 = Math.min(roll.usedMm, y0 + SEG);
+                const items = roll.strips.flatMap((st) => st.items).filter((it) => it.y < y1 && it.y + it.h > y0);
+                return (
+                  <div key={si}>
+                    <div className="text-[10px] text-ink-muted mb-0.5">{fmtNum(y0 / 1000, 1)} – {fmtNum(y1 / 1000, 1)} m</div>
+                    <svg viewBox={`0 0 ${SEG} ${W}`} className="w-full h-auto" role="img" aria-label={`Rolle ${ri + 1}, Meter ${y0 / 1000} bis ${y1 / 1000}`}>
+                      <defs><clipPath id={`clip-${ri}-${si}`}><rect x="0" y="0" width={SEG} height={W} /></clipPath></defs>
+                      <rect x="0" y="0" width={SEG} height={W} className="fill-cream stroke-sm-border" strokeWidth="6" />
+                      <rect x={y1 - y0} y="0" width={SEG - (y1 - y0)} height={W} className="fill-paper" />
+                      <g clipPath={`url(#clip-${ri}-${si})`}>
+                        {items.map((it, ii) => {
+                          const x = it.y - y0, wAlong = it.h, yAcross = it.x, hAcross = it.w;
+                          return (
+                            <g key={ii}>
+                              <rect x={x} y={yAcross} width={wAlong} height={hAcross} rx="8" className={it.rot ? 'fill-amber/60 stroke-amber-deep' : 'fill-teal/35 stroke-teal-deep'} strokeWidth="6" />
+                              {wAlong > 220 && hAcross > 90 && (
+                                <text x={x + wAlong / 2} y={yAcross + hAcross / 2} textAnchor="middle" dominantBaseline="middle" className="fill-ink" fontSize={Math.min(70, hAcross * 0.45, wAlong / 7)} fontWeight="600">
+                                  {it.label.length > 16 ? `${it.label.slice(0, 15)}…` : it.label}
+                                </text>
+                              )}
+                            </g>
+                          );
+                        })}
+                      </g>
+                    </svg>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+      {nesting.unplaced.length > 0 && (
+        <div className="mt-3 text-sm text-red-text">Nicht gelegt: {nesting.unplaced.map((u) => `${u.label} ${u.w} × ${u.h} mm`).join(', ')}. Breiter als die Rolle; teilen oder Maß prüfen.</div>
       )}
     </div>
   );

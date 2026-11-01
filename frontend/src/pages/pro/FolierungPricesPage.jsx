@@ -102,6 +102,27 @@ export default function FolierungPricesPage() {
         ))}
       </Card>
 
+      <Card title="Rolle & Zuschnitt" sub="Bodaq Interior Film: 1.220 mm × 50 m je Rolle. Der Rechner legt jedes Teil auf die Bahn und rechnet den echten Verschnitt statt der Pauschale.">
+        <div className="grid sm:grid-cols-2 gap-3">
+          <label className="flex items-center justify-between gap-3 rounded-xl border border-sm-border bg-cream px-3 py-2.5 text-sm sm:col-span-2 cursor-pointer">
+            <span className="font-semibold text-ink">Zuschnitt rechnen (Nesting)</span>
+            <input type="checkbox" checked={!!s.nesting.enabled} onChange={(e) => setIn('nesting', 'enabled', null, e.target.checked)} className="w-5 h-5 accent-amber" />
+          </label>
+          <Num label="Rollenbreite" unit="mm" value={s.nesting.rollWidthMm} onChange={(v) => setIn('nesting', 'rollWidthMm', null, v)} />
+          <Num label="Rollenlänge" unit="m" value={s.nesting.rollLengthM} onChange={(v) => setIn('nesting', 'rollLengthM', null, v)} />
+          <Num label="Zugabe je Seite" unit="mm" value={s.nesting.bleedMm} onChange={(v) => setIn('nesting', 'bleedMm', null, v)} hint="Kante umschlagen plus Anschnitt" />
+          <Num label="Messerabstand" unit="mm" value={s.nesting.gapMm} onChange={(v) => setIn('nesting', 'gapMm', null, v)} />
+          <label className="grid gap-1 text-sm sm:col-span-2">
+            <span className="font-semibold text-ink">Teile drehen</span>
+            <select value={s.nesting.rotate} onChange={(e) => setIn('nesting', 'rotate', null, e.target.value)} className="rounded-xl border border-sm-border bg-cream px-3 py-2.5 text-ink">
+              <option value="auto">Automatisch: nur bei Dekoren ohne Laufrichtung (Uni, Stein, Spezial)</option>
+              <option value="no">Nie drehen</option>
+              <option value="yes">Immer erlauben</option>
+            </select>
+          </label>
+        </div>
+      </Card>
+
       <Card title="Verbrauchsmaterial EK">
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {Object.entries(CONSUMABLES).map(([k, c]) => (

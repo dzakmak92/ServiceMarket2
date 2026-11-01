@@ -22,6 +22,15 @@ Modul `frontend/src/folierung/`:
   Gebinden, drei Wege (Montage vor Ort, Hol- & Bring, Selbst machen) als Spanne,
   Deckungsbeitrag, Hinweise. `summaryText()` für WhatsApp/Formular. `DEFAULT_SETTINGS`.
 - `pricing.test.mjs` — 30 Prüfungen, `node src/folierung/pricing.test.mjs`.
+- `nesting.js` — Zuschnitt auf der Rolle. Standardmaße je Element (mm), Teileliste aus den
+  Zählwerten (`piecesFor`), Streifen-Packen auf Rollen (`nest`): Zugabe je Seite, Messerabstand,
+  Drehen nur bei Dekoren ohne Laufrichtung. Liefert Laufmeter, Rollenzahl, echten Verschnitt
+  und die Lage jedes Teils für die Zeichnung. Rolle: **Bodaq Interior Film 1.220 mm × 50 m**
+  (Materialbank: 4 ft × 164 ft; resimdo-Datenblatt: 122 cm × 50 lfm). Coverstyl' und 3M DI-NOC
+  sind ebenfalls 1.220 mm breit. Einstellbar unter Preise → Rolle & Zuschnitt.
+- `nesting.test.mjs` — 22 Prüfungen. Die wichtigste: zwei 596er-Fronten mit 20–25 mm Zugabe
+  passen **nicht** nebeneinander auf 1.220 mm; eine Küche aus 600er-Fronten in Holzdekor
+  verschneidet daher um 50 %, nicht 25 %. 450er-Fronten liegen zu zweit.
 - `store.js` — Freischaltung (`canUseFolierung`) und Persistenz. **Heute localStorage.**
   Das ist die einzige Stelle, die beim Backend-Anschluss geändert wird.
 - `Drawings.jsx` — nummerierte Zählzeichnungen (Küche, Insel, Schrank, Möbel, Tür, Bad, Wand,
@@ -126,7 +135,7 @@ im `/api/profile/pro`-Payload mitliefern, `canUseFolierung` liest sie. Setzen ü
    `repositories/rates.py` die eigenen Preise lernt.
 3. Terminvorschlag aus `hours.total` (1–3 Tage) in `/schedule`.
 4. Zwei Dekore in einem Auftrag (Ober-/Unterschränke verschieden), Mehrpreis je Dekor statt je Familie.
-5. Rollenbreite und Bahnenplanung (1,22 m / 1,52 m): echter Verschnitt statt Pauschale.
+5. Nesting verfeinern: Maserungsrichtung je Element (Schubladen quer), Reststücke über Bahnen hinweg nutzen (Guillotine statt Streifen), Export der Schnittliste als PDF/CSV für den Plotter.
 6. Musterkarte bestellen (Preis, Versand) als vierter Weg.
 7. Rabattstaffel ab 30 Fronten / Objektgeschäft, Tagespauschale, Mehrpersonen-Team.
 8. Garantietext, AGB-Haken, Anzahlung (30 % bei Auftrag) in der Anfrage.

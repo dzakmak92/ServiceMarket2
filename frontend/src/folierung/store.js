@@ -42,7 +42,7 @@ export function loadSettings() {
   const saved = read(SETTINGS_KEY, null);
   if (!saved) return structuredClone(DEFAULT_SETTINGS);
   const out = { ...DEFAULT_SETTINGS, ...saved };
-  for (const k of ['decors', 'primers', 'consumables', 'travel', 'extras', 'conditions']) {
+  for (const k of ['decors', 'primers', 'consumables', 'travel', 'extras', 'conditions', 'nesting']) {
     out[k] = { ...DEFAULT_SETTINGS[k], ...(saved[k] || {}) };
     if (k === 'decors' || k === 'primers') {
       for (const id of Object.keys(DEFAULT_SETTINGS[k])) out[k][id] = { ...DEFAULT_SETTINGS[k][id], ...(saved[k]?.[id] || {}) };
