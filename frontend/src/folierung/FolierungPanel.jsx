@@ -5,11 +5,17 @@ import api from '../api/client';
 import { useLang } from '../contexts/LangContext';
 import { fmtEur0, fmtDate } from '../utils/money';
 import FolierungWizard from './FolierungWizard';
+import GroupDial from '../components/pro/GroupDial';
+import SuccessCheck from '../components/motion/SuccessCheck';
 import {
   loadSettings, loadCalcs, saveCalc, deleteCalc, rememberVat, loadDraft, saveDraft, clearDraft,
 } from './store';
 import { vatFromProfile, quoteLinesFrom, quoteTitleFrom, quoteAssumptionsFrom } from './pricing';
-import { surfaceByKey, DECORS } from './catalog';
+import { surfaceByKey, DECORS, SURFACES } from './catalog';
+
+/* Die acht Flächen als Ring, wie die Gruppen der anderen Gewerke. Die Zahl
+   unter dem Namen ist die Anzahl zählbarer Elemente. */
+const DIAL = SURFACES.map((s) => ({ key: s.key, label: s.short, count: s.elements.length }));
 
 /**
  * Die Folierung als Gewerk auf der Kalkulationsseite (/estimate/folierung).
@@ -36,6 +42,9 @@ const FolierungPanel = forwardRef(function FolierungPanel(_props, ref) {
   const [error, setError] = useState('');
   const [leaving, setLeaving] = useState(null);       // Ziel, wenn der Dialog offen ist
   const state = useRef({ input: null, result: null, dirty: !!draft?.input });
+  const wizardRef = useRef(null);
+  const [surface, setSurface] = useState(() => draft?.input?.surface || 'kueche');
+  const [done, setDone] = useState(null);             // gerade angelegtes Angebot
 
   /* Steuer aus dem Profil: Rechnungsland und Kleinunternehmer. */
   useEffect(() => {
@@ -53,6 +62,7 @@ const FolierungPanel = forwardRef(function FolierungPanel(_props, ref) {
     const d = dirty || state.current.restoredDirty;
     state.current = { input, result, dirty: d, restoredDirty: state.current.restoredDirty };
     if (d) saveDraft(input);
+    setSurface(input.surface);
   }, []);
   // Ein wiederhergestellter Entwurf ist von Anfang an "angefangen".
   state.current.restoredDirty = restored;
@@ -115,6 +125,12 @@ const FolierungPanel = forwardRef(function FolierungPanel(_props, ref) {
         </div>
       </div>
 
+      <div className="mb-3 -mx-1" data-testid="folierung-dial">
+        <GroupDial groups={DIAL} value={surface}
+                   onChange={(k) => { wizardRef.current?.chooseSurface(k); setSurface(k); }}
+                   label="Flächen" promise={t('est_promise_lead')} seconds={t('est_promise_time')} />
+      </div>
+
       {restored && draft?.at && wizardKey === 0 && (
         <div className="flex items-center justify-between gap-3 rounded-xl border border-amber/40 bg-amber/5 px-4 py-2.5 mb-4 text-sm" data-testid="fol-draft-restored">
           <span className="text-ink">Deine letzte Kalkulation vom {fmtDate(draft.at)} ist wieder offen.</span>
@@ -123,11 +139,11 @@ const FolierungPanel = forwardRef(function FolierungPanel(_props, ref) {
       )}
       {error && <div className="rounded-xl border border-red-warn/40 bg-red-warn/5 px-4 py-2.5 mb-4 text-sm text-red-text">{error}</div>}
 
-      <FolierungWizard key={wizardKey} audience="pro" settings={settings} initial={initial} onChange={onChange} creating={creating}
+      <FolierungWizard ref={wizardRef} key={wizardKey} audience="pro" surfaceFromDial settings={settings} initial={initial} onChange={onChange} creating={creating}
         onSave={({ input, result }) => setCalcs(saveCalc({
           input, surface: input.surface, decor: input.decor, vk: result.vk, ek: result.ek, hours: result.hours.total, fronts: result.fronts,
         }))}
-        onCreateQuote={async (x) => { const q = await createQuote(x); if (q?.id) navigate(`/quotes/${q.id}`); }} />
+        onCreateQuote={async (x) => { const q = await createQuote(x); if (q?.id) setDone({ q, net: x.result.vk, gross: x.result.ways.montage.gross }); }} />
 
       {calcs.length > 0 && (
         <section className="mt-10">
@@ -153,10 +169,10 @@ const FolierungPanel = forwardRef(function FolierungPanel(_props, ref) {
 
       {/* Gleicher Dialog wie bei den anderen Gewerken (EstimatePage). */}
       {leaving !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-6 bg-ink/40"
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-6 bg-ink/40 animate-scrim-in"
              role="dialog" aria-modal="true" data-testid="fol-leave"
              onClick={(e) => { if (e.target === e.currentTarget) setLeaving(null); }}>
-          <div className="w-full max-w-sm rounded-2xl bg-paper p-4 shadow-xl">
+          <div className="w-full max-w-sm rounded-2xl bg-paper p-4 shadow-xl animate-dialog-in">
             <p className="font-headings font-bold text-ink text-[17px]">{t('est_leave_title')}</p>
             <p className="text-[14px] text-ink-muted mt-1.5">
               {t('est_leave_body', { n: state.current.result?.lines.length || 0, v: fmtEur0(net) })}
@@ -178,6 +194,24 @@ const FolierungPanel = forwardRef(function FolierungPanel(_props, ref) {
                       className="flex-1 min-h-[46px] rounded-xl font-bold text-[14px] border border-red-warn/35 bg-paper text-red-text">
                 {t('est_leave_discard')}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {done && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-6 bg-ink/40 animate-scrim-in"
+             role="dialog" aria-modal="true" data-testid="fol-created">
+          <div className="w-full max-w-sm rounded-2xl bg-paper p-4 shadow-xl text-center animate-dialog-in">
+            <SuccessCheck />
+            <p className="font-headings font-bold text-ink text-[17px]">{t('est_created_title')}</p>
+            <p className="text-[14px] text-ink-muted mt-1.5 tabular-nums">
+              {[done.q.quote_number, `${fmtEur0(done.net)} netto`, settings.vat?.klein ? null : `${fmtEur0(done.gross)} brutto`].filter(Boolean).join(' · ')}
+            </p>
+            <div className="flex gap-2 mt-4">
+              <button type="button" onClick={() => navigate(`/quotes/${done.q.id}`)} data-testid="fol-created-open"
+                      className="flex-1 min-h-[46px] rounded-xl bg-teal text-paper font-bold text-[14px]">Angebot öffnen</button>
+              <button type="button" onClick={() => { setDone(null); restart(); }}
+                      className="flex-1 min-h-[46px] rounded-xl border border-sm-border bg-paper text-ink font-bold text-[14px]">Neue Kalkulation</button>
             </div>
           </div>
         </div>

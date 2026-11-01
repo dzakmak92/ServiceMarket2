@@ -10,6 +10,7 @@ import TradeRow from '../../components/pro/TradeRow';
 import { useAuth } from '../../contexts/AuthContext';
 import FolierungPanel from '../../folierung/FolierungPanel';
 import { canUseFolierung } from '../../folierung/store';
+import SuccessCheck from '../../components/motion/SuccessCheck';
 import { SURFACES as FOL_SURFACES } from '../../folierung/catalog';
 import { fmtEur0 as fmtEur, fmtEur as fmtEur2, fmtNum as fmtNumRaw } from '../../utils/money';
 
@@ -885,10 +886,10 @@ export default function EstimatePage() {
           abandoned after two taps becomes a draft nobody wants, and the quotes
           list is where they would pile up. */}
       {leaving && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-6 bg-ink/40"
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-6 bg-ink/40 animate-scrim-in"
              role="dialog" aria-modal="true" data-testid="estimate-leave"
              onClick={(e) => { if (e.target === e.currentTarget) setLeaving(false); }}>
-          <div className="w-full max-w-sm rounded-2xl bg-paper p-4 shadow-xl">
+          <div className="w-full max-w-sm rounded-2xl bg-paper p-4 shadow-xl animate-dialog-in">
             <p className="font-headings font-bold text-ink text-[17px]">
               {t('est_leave_title')}
             </p>
@@ -938,13 +939,10 @@ export default function EstimatePage() {
           because "did that work?" is the question, and a screen you did not
           ask for is not an answer to it. */}
       {created && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-6 bg-ink/40"
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-6 bg-ink/40 animate-scrim-in"
              role="dialog" aria-modal="true" data-testid="estimate-created">
-          <div className="w-full max-w-sm rounded-2xl bg-paper p-4 shadow-xl text-center">
-            <div className="w-11 h-11 rounded-full bg-green-pos/15 text-green-text
-                            flex items-center justify-center mx-auto mb-2.5">
-              <Check size={22} strokeWidth={2.6} />
-            </div>
+          <div className="w-full max-w-sm rounded-2xl bg-paper p-4 shadow-xl text-center animate-dialog-in">
+            <SuccessCheck />
             <p className="font-headings font-bold text-ink text-[17px]">
               {t('est_created_title')}
             </p>

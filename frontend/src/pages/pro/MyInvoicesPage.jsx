@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import SkeletonList from '../../components/motion/SkeletonList';
 import api, { formatError, apiBase } from '../../api/client';
 import useEscapeKey from '../../hooks/useEscapeKey';
 import { toast } from 'sonner';
@@ -361,7 +362,7 @@ export default function MyInvoicesPage() {
         {/* ── List ─────────────────────────────────────── */}
         <SwipeableTabPanel tabKeys={MYINV_TAB_KEYS} activeKey={statusFilter} onChange={setStatusFilter}>
           {loading ? (
-            <div className="flex justify-center py-10"><Loader2 size={24} className="text-teal animate-spin" /></div>
+            <SkeletonList rows={4} />
           ) : filtered.length === 0 ? (
             <div className="card-lg text-center py-10" data-testid="myinv-empty">
               <FileText size={36} className="mx-auto text-ink-muted mb-2" />

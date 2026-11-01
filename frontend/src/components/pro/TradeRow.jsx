@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import TradeMark from '../TradeMark';
 
 /**
@@ -33,9 +33,42 @@ import TradeMark from '../TradeMark';
  * so a screen reader still hears "Maler, 19 templates".
  */
 const NAVY = '#1e5490';
+/* Letzte Lage des Blocks über Remounts hinweg: der Wechsel zur Folierung
+   zeichnet die Seite neu, und ohne das spränge der Block statt zu gleiten. */
+let lastPill = null;
 const EDGE = '#cfdeeb';
 
 export default function TradeRow({ trades, value, onChange, label, unit }) {
+  /* Der dunkelblaue Block ist ein eigenes Element unter den Karten und gleitet
+     zur gewählten Karte, statt dass eine Karte schlagartig umfärbt. Gemessen
+     wird nach dem Layout; beim ersten Zeichnen ohne Übergang, damit er nicht
+     aus der Ecke einfliegt. */
+  const boxRef = useRef(null);
+  const [pill, setPill] = useState(null);
+  const placed = useRef(false);
+  useLayoutEffect(() => {
+    const box = boxRef.current;
+    if (!box) return undefined;
+    const measure = () => {
+      const el = box.querySelector('[aria-pressed="true"]');
+      if (!el) { setPill(null); return; }
+      const b = box.getBoundingClientRect(), r = el.getBoundingClientRect();
+      const next = { x: r.left - b.left, y: r.top - b.top, w: r.width, h: r.height };
+      if (!placed.current && lastPill && (lastPill.x !== next.x || lastPill.y !== next.y)) {
+        setPill({ ...lastPill, animate: false });
+        requestAnimationFrame(() => requestAnimationFrame(() => setPill({ ...next, animate: true })));
+      } else {
+        setPill({ ...next, animate: placed.current });
+      }
+      lastPill = next;
+      placed.current = true;
+    };
+    measure();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    ro?.observe(box);
+    return () => ro?.disconnect();
+  }, [value, trades.length]);
+
   if (!trades.length) return null;
 
   /* Four then three. With fewer than five trades there is no second row and
@@ -52,13 +85,15 @@ export default function TradeRow({ trades, value, onChange, label, unit }) {
         aria-pressed={on}
         aria-label={`${tr.label}, ${tr.count} ${unit}`}
         style={on
-          ? { backgroundColor: NAVY, borderColor: NAVY, color: '#fff' }
+          ? { backgroundColor: pill ? 'transparent' : NAVY, borderColor: pill ? 'transparent' : NAVY, color: '#fff' }
           : { borderColor: EDGE, color: '#4d6477' }}
-        className="flex-1 min-w-0 rounded-xl border bg-paper flex flex-col items-center
-                   justify-center gap-1 px-0.5 py-2 transition
-                   focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+        className={`relative z-[1] flex-1 min-w-0 rounded-xl border flex flex-col items-center
+                   justify-center gap-1 px-0.5 py-2 transition-colors duration-ui ease-out
+                   active:scale-[.97] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal/40
+                   ${on ? '' : 'bg-paper'}`}
       >
-        <TradeMark trade={tr.key} size={on ? 30 : 26} />
+        <TradeMark trade={tr.key} size={30}
+                   className={`transition-transform duration-300 ease-spring ${on ? 'scale-100' : 'scale-[.87]'}`} />
         {/* One line in every language at 11 px — see the note above. `break-words`
             is the safety net rather than the layout: if a face wider than the
             measured one ever pushes a name past its card, it wraps instead of
@@ -71,8 +106,18 @@ export default function TradeRow({ trades, value, onChange, label, unit }) {
   };
 
   return (
-    <div data-testid="estimate-trade-row" role="group" aria-label={label}
-         className="flex flex-col gap-2">
+    <div data-testid="estimate-trade-row" role="group" aria-label={label} ref={boxRef}
+         className="relative flex flex-col gap-2">
+      {pill && (
+        <span aria-hidden="true" className="absolute left-0 top-0 rounded-xl pointer-events-none"
+              style={{
+                backgroundColor: NAVY, width: pill.w, height: pill.h,
+                transform: `translate(${pill.x}px, ${pill.y}px)`,
+                transition: pill.animate
+                  ? 'transform 300ms cubic-bezier(.34,1.4,.5,1), width 300ms cubic-bezier(.2,.8,.2,1), height 300ms cubic-bezier(.2,.8,.2,1)'
+                  : 'none',
+              }} />
+      )}
       {rows.map((r, i) => (
         <div key={i} className="flex gap-2">{r.map(Card)}</div>
       ))}

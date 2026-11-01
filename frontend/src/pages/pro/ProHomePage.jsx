@@ -1,3 +1,4 @@
+import useTweenNumber from '../../hooks/useTweenNumber';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -23,7 +24,27 @@ import QuoteCarousel, { openQuotes } from '../../components/pro/QuoteCarousel';
  * work and the right is delivering it; that split is what the two colour
  * families encode.
  */
+/* Die Startseite baut sich einmal je Sitzung auf: Fokuskarte, dann die
+   Kacheln versetzt, die Zahlen zählen hoch. Bei jedem weiteren Besuch steht
+   sie sofort, sonst würde der Aufbau zur Wartezeit. */
+function useOncePerSession(key) {
+  const [on] = useState(() => {
+    try {
+      if (sessionStorage.getItem(key)) return false;
+      sessionStorage.setItem(key, '1');
+      return true;
+    } catch { return false; }
+  });
+  return on;
+}
+
+function CountUp({ n, animate }) {
+  const { value } = useTweenNumber(n ?? 0, animate ? 600 : 1);
+  return Math.round(value);
+}
+
 export default function ProHomePage() {
+  const intro = useOncePerSession('sm_home_intro');
   const { user } = useAuth();
   const { t } = useLang();
 
@@ -127,8 +148,8 @@ export default function ProHomePage() {
         ) : (
         <Link
           to={focus.to}
-          className="block bg-teal-deep text-paper rounded-[18px] p-5 mt-1
-                     focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal-deep/40"
+          className={`block bg-teal-deep text-paper rounded-[18px] p-5 mt-1 ${intro ? 'animate-rise' : ''}
+                     focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal-deep/40`}
           data-testid="home-focus"
         >
           <p className="text-[10.5px] uppercase tracking-[.13em] font-bold text-teal-tint">
@@ -164,7 +185,7 @@ export default function ProHomePage() {
             keyboard and screen-reader order follow the same path. */}
         <div className="grid grid-cols-2 grid-rows-3 grid-flow-col gap-2.5"
              data-testid="home-stages">
-          {STAGES.map((s) => {
+          {STAGES.map((s, i) => {
             const Icon = s.icon;
             const n = counts?.[s.key];
             const body = (
@@ -198,24 +219,27 @@ export default function ProHomePage() {
                   </span>
                 ) : (
                   <span className="relative text-[11px] text-ink-muted leading-snug">
-                    {s.to ? `${n ?? 0} ${t(s.unitKey)}` : t('stage_soon')}
+                    {s.to ? <><CountUp n={n} animate={intro} /> {t(s.unitKey)}</> : t('stage_soon')}
                   </span>
                 )}
               </>
             );
             const shell = `${s.fill} relative overflow-hidden rounded-2xl px-3.5 py-3
-                           min-h-[94px] flex flex-col justify-center gap-0.5`;
+                           min-h-[94px] flex flex-col justify-center gap-0.5
+                           transition-transform duration-press ease-out active:scale-[.98]
+                           ${intro ? 'animate-rise' : ''}`;
+            const stagger = intro ? { animationDelay: `${120 + i * 50}ms` } : undefined;
             // A stage with nowhere to go is not a link. Rendering it as one
             // would put a focusable, tappable control on the screen that does
             // nothing when pressed.
             return s.to ? (
-              <Link key={s.key} to={s.to} data-testid={`stage-${s.key}`}
+              <Link key={s.key} to={s.to} data-testid={`stage-${s.key}`} style={stagger}
                     className={`${shell} focus-visible:outline-none focus-visible:ring-4
                                 focus-visible:ring-teal/40`}>
                 {body}
               </Link>
             ) : (
-              <div key={s.key} data-testid={`stage-${s.key}`}
+              <div key={s.key} data-testid={`stage-${s.key}`} style={stagger}
                    className={shell} aria-disabled="true">
                 {body}
               </div>

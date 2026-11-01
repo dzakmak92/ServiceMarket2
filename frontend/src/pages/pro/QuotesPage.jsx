@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import SkeletonList from '../../components/motion/SkeletonList';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import { fmtEur } from '../../utils/money';
@@ -482,9 +483,7 @@ export default function QuotesPage() {
 
 
         {loading ? (
-          <div className="flex justify-center py-10">
-            <Loader2 size={26} className="text-teal animate-spin" />
-          </div>
+          <SkeletonList rows={4} />
         ) : shown.length === 0 ? (
           <div className="card-lg text-center py-10" data-testid="quote-empty">
             <FileText size={30} className="text-ink-muted mx-auto mb-2" />

@@ -1,4 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import AnimatedEur from '../components/motion/AnimatedEur';
+import useTweenNumber from '../hooks/useTweenNumber';
 import {
   ArrowLeft, Check, Minus, Plus, Sparkles, Copy, FileText, Save, Info,
   AlertTriangle, Droplets, Clock, Layers, Coins, ChevronDown, ExternalLink, Scissors, Trash2,
@@ -42,7 +44,8 @@ const fmtNum = (v, d = 1) => Number(v || 0).toLocaleString('de-DE', { maximumFra
 const eurRange = (w) => `${eur(roundTo(w.grossLo, 10))} – ${eur(roundTo(w.grossHi, 10))}`;
 const roundTo = (v, step) => Math.round(v / step) * step;
 
-export default function FolierungWizard({ audience = 'customer', settings, initial, onSave, onCreateQuote, onChange, creating = false }) {
+/* forwardRef: die Kalkulationsseite wählt die Fläche über das Dial. */
+const FolierungWizard = forwardRef(function FolierungWizard({ audience = 'customer', settings, initial, onSave, onCreateQuote, onChange, creating = false, surfaceFromDial = false }, ref) {
   const isPro = audience === 'pro';
   const [step, setStep] = useState(0);
   const [input, setInput] = useState(() => initial || emptyInput('kueche'));
@@ -76,6 +79,7 @@ export default function FolierungWizard({ audience = 'customer', settings, initi
     setActive(null);
   };
   const go = (n) => setStep(Math.max(0, Math.min(STEPS.length - 1, n)));
+  useImperativeHandle(ref, () => ({ chooseSurface }));
 
   const share = async () => {
     const ok = await copyToClipboard(summaryText(input, result, settings));
@@ -92,8 +96,9 @@ export default function FolierungWizard({ audience = 'customer', settings, initi
 
       {step === 0 && (
         <section>
-          <StepTitle title="Was soll foliert werden?" sub="Tipp die Fläche an, die deiner am nächsten kommt. Jede hat ihre eigene Zählzeichnung." />
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <StepTitle title={surfaceFromDial ? surface.label : 'Was soll foliert werden?'}
+            sub={surfaceFromDial ? `${surface.tagline}. Andere Fläche im Ring oben wählen.` : 'Tipp die Fläche an, die deiner am nächsten kommt. Jede hat ihre eigene Zählzeichnung.'} />
+          <div className={`grid grid-cols-2 sm:grid-cols-4 gap-3 ${surfaceFromDial ? 'hidden' : ''}`}>
             {SURFACES.map((s) => (
               <Choice key={s.key} on={s.key === input.surface} onClick={() => chooseSurface(s.key)} testId={`fol-surface-${s.key}`}>
                 <SurfaceIcon kind={s.key} className="w-12 h-12 shrink-0" />
@@ -368,7 +373,9 @@ export default function FolierungWizard({ audience = 'customer', settings, initi
       </div>
     </div>
   );
-}
+});
+
+export default FolierungWizard;
 
 const PRIMER_LABEL = { none: 'kein Primer', edges: 'Primer an den Kanten', full: 'Primer vollflächig', full2: 'Primer vollflächig, zwei Aufträge' };
 
@@ -413,15 +420,29 @@ function CountBlock({ surface, drawing, elements, input, setCount, active, setAc
 function Stepper({ value, onChange, step = 1, unit = '', testId }) {
   const [text, setText] = useState(String(value).replace('.', ','));
   const [focus, setFocus] = useState(false);
+  /* Die Ziffer rollt: bei Plus nach oben, bei Minus nach unten. Das Feld
+     selbst bleibt zum Tippen da und ist nur unsichtbar, solange es nicht
+     fokussiert ist. */
+  const prev = useRef(value);
+  const dir = value > prev.current ? 'up' : value < prev.current ? 'down' : null;
+  useEffect(() => { prev.current = value; }, [value]);
   useEffect(() => { if (!focus) setText(String(value).replace('.', ',')); }, [value, focus]);
   const commit = () => { const n = parseDecimal(text); onChange(n == null ? 0 : n); setFocus(false); };
   return (
     <div className="inline-flex items-center rounded-full border border-sm-border bg-cream overflow-hidden" onClick={(e) => e.stopPropagation()} role="presentation">
       <button type="button" aria-label="weniger" onClick={() => onChange(Math.round((value - step) * 100) / 100)} className="w-9 h-9 flex items-center justify-center text-ink hover:bg-cream-deep"><Minus size={14} /></button>
       <div className="flex items-baseline">
-        <input value={text} inputMode="decimal" onFocus={() => setFocus(true)} onChange={(e) => setText(e.target.value)} onBlur={commit}
-          onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
-          className="w-10 h-9 text-center bg-transparent font-bold text-ink text-sm outline-none tabular-nums" data-testid={testId} aria-label="Anzahl" />
+        <span className="relative w-10 h-9 overflow-hidden">
+          <input value={text} inputMode="decimal" onFocus={() => setFocus(true)} onChange={(e) => setText(e.target.value)} onBlur={commit}
+            onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+            className={`absolute inset-0 w-10 h-9 text-center bg-transparent font-bold text-sm outline-none tabular-nums ${focus ? 'text-ink' : 'text-transparent caret-ink'}`} data-testid={testId} aria-label="Anzahl" />
+          {!focus && (
+            <span key={value} aria-hidden="true"
+              className={`absolute inset-0 flex items-center justify-center font-bold text-ink text-sm tabular-nums pointer-events-none ${dir === 'up' ? 'animate-num-up' : dir === 'down' ? 'animate-num-down' : ''}`}>
+              {String(value).replace('.', ',')}
+            </span>
+          )}
+        </span>
         {unit && <span className="text-xs text-ink-muted -ml-1 pr-1">{unit}</span>}
       </div>
       <button type="button" aria-label="mehr" onClick={() => onChange(Math.round((value + step) * 100) / 100)} className="w-9 h-9 flex items-center justify-center text-ink hover:bg-cream-deep"><Plus size={14} /></button>
@@ -436,7 +457,7 @@ function WayCard({ badge, title, sub, way, bullets, cta, vat, isPro }) {
       {badge && <span className="absolute -top-3 left-4 rounded-full bg-amber text-on-amber text-xs font-bold px-3 py-1">{badge}</span>}
       <h3 className="font-headings font-bold text-ink text-lg">{title}</h3>
       <p className="text-sm text-ink-muted">{sub}</p>
-      <div className="mt-3 font-headings text-3xl text-ink tabular-nums">{way.value > 0 ? <>ab {eur(roundTo(way.grossLo, 10))}</> : '–'}</div>
+      <div className="mt-3 font-headings text-3xl text-ink tabular-nums">{way.value > 0 ? <AnimatedEur value={roundTo(way.grossLo, 10)} format={(v) => `ab ${eur(roundTo(v, 10))}`} /> : '–'}</div>
       <div className="text-xs text-ink-muted">{way.value > 0 ? <>Spanne {eurRange(way)} · {vatLabel(vat)} und Material{way.noMin ? ', inkl. Versand' : ' · zzgl. An- und Abfahrt außerhalb 30 km'}</> : 'Noch nichts gezählt.'}</div>
       {isPro && way.value > 0 && !vat?.klein && <div className="text-xs text-ink-muted tabular-nums">netto {eur(way.net)} · USt. {eur(way.gross - way.net)}</div>}
       <ul className="mt-3 grid gap-1.5">
@@ -704,6 +725,10 @@ function RotateCcwIcon() {
 /* ── Nesting: die Rolle als Bild ────────────────────────────────────────── */
 function NestingCard({ nesting, settings }) {
   const [open, setOpen] = useState(true);
+  // Beim ersten Zeichnen zählen Laufmeter und Verschnitt von 0 hoch, während die Teile fallen.
+  const lfm = useTweenNumber(nesting.totalMm / 1000, 900, 0).value;
+  const waste = useTweenNumber(nesting.wastePct * 100, 900, 0).value;
+  let drop = 0;
   const W = nesting.rollWidthMm;
   const grainNote = nesting.rotate ? 'Dekor ohne Laufrichtung: Teile dürfen gedreht werden.' : 'Dekor mit Laufrichtung: nichts wird gedreht, die Maserung läuft bei jedem Teil mit der Rolle.';
   return (
@@ -713,7 +738,7 @@ function NestingCard({ nesting, settings }) {
         <ChevronDown size={18} className={`text-ink-muted shrink-0 transition ${open ? 'rotate-180' : ''}`} />
       </button>
       <div className="grid grid-cols-3 gap-2 mt-3">
-        {[[`${fmtNum(nesting.totalMm / 1000, 1)} lfm`, `Rolle ${W} mm`], [`${nesting.rollCount}`, `Rolle${nesting.rollCount === 1 ? '' : 'n'} à ${settings.nesting?.rollLengthM || 50} m`], [`${Math.round(nesting.wastePct * 100)} %`, 'Verschnitt, gelegt']].map(([a, b]) => (
+        {[[`${fmtNum(lfm, 1)} lfm`, `Rolle ${W} mm`], [`${nesting.rollCount}`, `Rolle${nesting.rollCount === 1 ? '' : 'n'} à ${settings.nesting?.rollLengthM || 50} m`], [`${Math.round(waste)} %`, 'Verschnitt, gelegt']].map(([a, b]) => (
           <div key={b} className="rounded-xl bg-paper border border-sm-border px-3 py-2.5 text-center">
             <div className="font-headings font-bold text-ink text-lg tabular-nums leading-tight">{a}</div>
             <div className="text-[11px] text-ink-muted">{b}</div>
@@ -745,7 +770,8 @@ function NestingCard({ nesting, settings }) {
                           const x = it.y - y0, wAlong = it.h, yAcross = it.x, hAcross = it.w;
                           return (
                             <g key={ii}>
-                              <rect x={x} y={yAcross} width={wAlong} height={hAcross} rx="8" className={it.rot ? 'fill-amber/60 stroke-amber-deep' : 'fill-teal/35 stroke-teal-deep'} strokeWidth="6" />
+                              <rect x={x} y={yAcross} width={wAlong} height={hAcross} rx="8" className={`animate-drop ${it.rot ? 'fill-amber/60 stroke-amber-deep' : 'fill-teal/35 stroke-teal-deep'}`} strokeWidth="6"
+                                style={{ animationDelay: `${Math.min(40, drop++) * 45}ms`, transformBox: 'fill-box', transformOrigin: 'center' }} />
                               {wAlong > 220 && hAcross > 90 && (
                                 <text x={x + wAlong / 2} y={yAcross + hAcross / 2} textAnchor="middle" dominantBaseline="middle" className="fill-ink" fontSize={Math.min(70, hAcross * 0.45, wAlong / 7)} fontWeight="600">
                                   {it.label.length > 16 ? `${it.label.slice(0, 15)}…` : it.label}
@@ -772,15 +798,25 @@ function NestingCard({ nesting, settings }) {
 
 /* ── Kleinteile ─────────────────────────────────────────────────────────── */
 function Progress({ step, onJump }) {
+  /* Nur die Punkte bewegen sich: der aktuelle wächst mit einer kleinen Feder,
+     die Linie zum nächsten füllt sich von links. Der Inhalt darunter wechselt
+     ohne Animation (Rückmeldung zum Bewegungskonzept). */
   return (
     <div className="flex items-center justify-between mb-8 px-1">
       {STEPS.map((s, i) => (
         <React.Fragment key={s.key}>
           <button type="button" onClick={() => onJump(i)} className="flex flex-col items-center gap-1.5 min-w-[56px]" aria-current={i === step ? 'step' : undefined}>
-            <span className={`rounded-full transition-all ${i === step ? 'w-8 h-8 bg-amber ring-8 ring-amber/15' : i < step ? 'w-4 h-4 bg-amber' : 'w-4 h-4 bg-cream-deep'}`} />
-            <span className={`text-xs ${i === step ? 'font-bold text-ink' : 'text-ink-muted'}`}>{s.label}</span>
+            <span className="relative w-8 h-8 flex items-center justify-center">
+              <span className={`absolute inset-0 rounded-full bg-amber/15 transition-transform duration-300 ease-spring ${i === step ? 'scale-100' : 'scale-0'}`} />
+              <span className={`relative w-4 h-4 rounded-full transition-[transform,background-color] duration-300 ease-spring ${i === step ? 'scale-[1.75] bg-amber' : i < step ? 'scale-100 bg-amber' : 'scale-100 bg-cream-deep'}`} />
+            </span>
+            <span className={`text-xs transition-colors duration-ui ${i === step ? 'font-bold text-ink' : 'text-ink-muted'}`}>{s.label}</span>
           </button>
-          {i < STEPS.length - 1 && <span className={`flex-1 h-[3px] rounded -mt-5 ${i < step ? 'bg-amber' : 'bg-cream-deep'}`} />}
+          {i < STEPS.length - 1 && (
+            <span className="relative flex-1 h-[3px] rounded -mt-5 bg-cream-deep overflow-hidden">
+              <span className={`absolute inset-0 bg-amber origin-left transition-transform duration-300 ease-out ${i < step ? 'scale-x-100' : 'scale-x-0'}`} />
+            </span>
+          )}
         </React.Fragment>
       ))}
     </div>
@@ -803,8 +839,8 @@ function Kicker({ children, className = '' }) {
 function Choice({ on, onClick, children, row, small, testId }) {
   return (
     <button type="button" onClick={onClick} data-testid={testId} aria-pressed={on}
-      className={`relative text-left rounded-2xl border bg-paper transition flex items-center gap-3 ${small ? 'px-4 py-2.5' : 'p-4'} ${row ? '' : 'flex-col items-start sm:flex-row sm:items-center'} ${on ? 'border-amber bg-amber/5 ring-2 ring-amber/30' : 'border-sm-border hover:border-teal/40'}`}>
-      {on && <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-amber text-on-amber flex items-center justify-center"><Check size={14} strokeWidth={3} /></span>}
+      className={`relative text-left rounded-2xl border bg-paper transition duration-ui ease-out active:scale-[.97] flex items-center gap-3 ${small ? 'px-4 py-2.5' : 'p-4'} ${row ? '' : 'flex-col items-start sm:flex-row sm:items-center'} ${on ? 'border-amber bg-amber/5 ring-2 ring-amber/30' : 'border-sm-border hover:border-teal/40'}`}>
+      {on && <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-amber text-on-amber flex items-center justify-center animate-pop"><Check size={14} strokeWidth={3} /></span>}
       {children}
     </button>
   );

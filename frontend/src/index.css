@@ -419,3 +419,19 @@
   .status-pill.status-pending { @apply bg-cream-deep text-ink-soft border-sm-border; }
   .status-pill.status-active { @apply bg-teal/10 text-teal border-teal/30; }
 }
+
+
+/* Reduzierte Bewegung: eine Regel für die ganze App. Wer das am Gerät
+   eingestellt hat, bekommt jede Animation als sofortigen Wechsel. Spinner
+   drehen weiter, weil sie sonst nicht mehr als "lädt" lesbar sind. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
+  }
+  .animate-spin { animation-duration: 1s !important; }
+}
+
+/* Für SuccessCheck: Strich zeichnet sich (per Inline-Style mit Verzögerung). */
+@keyframes draw { to { stroke-dashoffset: 0; } }
