@@ -175,3 +175,13 @@ Breite und Höhe als Pill-Auswahl, Stück-Zähler in der Zeile, Zuschnitt als Ch
 Summenzeile „16 / 16“ gegen die Anzahl, Stärke in der Summenzeile, „+ Größe“ darunter.
 Der Zuschnitt übernimmt die Maße automatisch; der separate Bereich „Maße, Stärke &
 Zuschnitt“ entfällt. Weitere Feinschliff-Runden bauen auf C1 auf.
+
+**Umgesetzt: C1·3 „Material-Anteil je Element“** (Runde 3, gewählt). Im Zählschritt der
+Betriebsansicht trägt jede Elementzeile: Farbstreifen links, Anteilsbalken mit % und lfm,
+darunter die C1-Tabelle (`DimTable` in `FolierungWizard.jsx`): Breite/Höhe als Pill-Auswahl
+(Fronten aus dem 32er-Raster, sonst Freimaß), Stück je Größe, Zuschnitt-Chip, Summenzeile
+gegen die Anzahl, Stärke. Streifen (Platte, Sockel) zeigen Breite, Länge, Stärke, Zuschnitt.
+Eine einzige Größe zählt immer mit der Zeile mit; „+ Größe“ nimmt eine Front von der größten
+Gruppe, damit die Summe stimmt. Unten „Zuschnitt live“ (`CutSummary`): lfm, Teile, Verschnitt,
+gestapelter Balken je Element und „Eigene Teile“. Der alte Bereich „Maße, Stärke & Zuschnitt“
+ist entfernt. Die Kundenseite zeigt keine Maße.

@@ -43,6 +43,7 @@ const eur = (v) => `${Math.round(Number(v) || 0).toLocaleString('de-DE')} €`;
 const fmtNum = (v, d = 1) => Number(v || 0).toLocaleString('de-DE', { maximumFractionDigits: d });
 const eurRange = (w) => `${eur(roundTo(w.grossLo, 10))} – ${eur(roundTo(w.grossHi, 10))}`;
 const roundTo = (v, step) => Math.round(v / step) * step;
+const PALETTE = ['#1e5490', '#c27c12', '#2d6a7f', '#7a4f9a', '#3b6f32', '#ae3f4c', '#5b8fb0', '#8a6a3c'];
 
 /* forwardRef: die Kalkulationsseite wählt die Fläche über das Dial. */
 const FolierungWizard = forwardRef(function FolierungWizard({ audience = 'customer', settings, initial, onSave, onCreateQuote, onChange, creating = false, surfaceFromDial = false }, ref) {
@@ -72,7 +73,18 @@ const FolierungWizard = forwardRef(function FolierungWizard({ audience = 'custom
   useEffect(() => { onChange?.({ input, result, dirty: JSON.stringify(input) !== startRef.current }); }, [input, result]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const patch = (p) => setInput((i) => ({ ...i, ...p }));
-  const setCount = (key, v) => setInput((i) => ({ ...i, counts: { ...i.counts, [key]: Math.max(0, v) } }));
+  const setCount = (key, v) => setInput((i) => {
+    const n = Math.max(0, v);
+    // Eine einzige Größe zählt immer so viele Stück wie die Zeile; erst ab der
+    // zweiten Größe verteilt der Betrieb selbst.
+    const g = i.pieces?.[key]?.groups;
+    const pieces = g?.length === 1 ? { ...i.pieces, [key]: { ...i.pieces[key], groups: [{ ...g[0], n }] } } : i.pieces;
+    return { ...i, counts: { ...i.counts, [key]: n }, pieces };
+  });
+  /* C1·3: jedes Element hat eine Farbe; sein Anteil am Material steht als
+     Balken in der Zeile und gestapelt in der Zusammenfassung. */
+  const colorOf = useMemo(() => Object.fromEntries(elements.map((e, i) => [e.key, PALETTE[i % PALETTE.length]])), [elements]);
+  const dimProps = isPro ? { pro: true, patch, settings, result, colorOf } : {};
   const chooseSurface = (key) => {
     if (key === input.surface) return;
     setInput(emptyInput(key));
@@ -220,12 +232,12 @@ const FolierungWizard = forwardRef(function FolierungWizard({ audience = 'custom
         <section>
           <StepTitle title="Jetzt kurz zählen und abschätzen" sub={surface.intro} />
           <CountBlock surface={surface} drawing={surface.key === 'moebel' ? 'furniture' : surface.drawing}
-            elements={elements.filter((e) => !e.addon)} input={input} setCount={setCount} active={active} setActive={setActive} />
+            elements={elements.filter((e) => !e.addon)} input={input} setCount={setCount} active={active} setActive={setActive} {...dimProps} />
           {(surface.addons || []).filter((a) => input.addons.includes(a.key)).map((a) => (
             <div key={a.key} className="mt-8">
               <Kicker>{a.label}</Kicker>
               <CountBlock surface={surface} drawing={a.drawing} elements={elements.filter((e) => e.addon === a.key)}
-                input={input} setCount={setCount} active={active} setActive={setActive} />
+                input={input} setCount={setCount} active={active} setActive={setActive} {...dimProps} />
             </div>
           ))}
           {(input.extraSurfaces || []).map((k) => {
@@ -235,14 +247,12 @@ const FolierungWizard = forwardRef(function FolierungWizard({ audience = 'custom
                 <Kicker>{sf.label}</Kicker>
                 <p className="text-sm text-ink-muted mb-3">{sf.intro}</p>
                 <CountBlock surface={sf} drawing={sf.key === 'moebel' ? 'furniture' : sf.drawing} elements={elements.filter((e) => e.addon === `surface:${k}`)}
-                  input={input} setCount={setCount} active={active} setActive={setActive} />
+                  input={input} setCount={setCount} active={active} setActive={setActive} {...dimProps} />
               </div>
             );
           })}
 
-          {isPro && (
-            <PieceEditor surface={surface} elements={elements} input={input} patch={patch} settings={settings} result={result} />
-          )}
+          {isPro && <CutSummary result={result} settings={settings} elements={elements} colorOf={colorOf} input={input} patch={patch} />}
 
           <Kicker className="mt-8">Extras</Kicker>
           <div className="grid gap-2">
@@ -380,13 +390,14 @@ export default FolierungWizard;
 const PRIMER_LABEL = { none: 'kein Primer', edges: 'Primer an den Kanten', full: 'Primer vollflächig', full2: 'Primer vollflächig, zwei Aufträge' };
 
 /* ── Zählblock: Zeichnung + Zeilen ─────────────────────────────────────── */
-function CountBlock({ surface, drawing, elements, input, setCount, active, setActive }) {
+function CountBlock({ surface, drawing, elements, input, setCount, active, setActive, pro = false, patch, settings, result, colorOf }) {
   // Die Zeichnung kennt nur rohe Schlüssel (fronten), die Zählwerte den
   // vollen (moebel:fronten), wenn ein Bereich dazugenommen wurde.
   const raw = (e) => e.rawKey || e.key;
   const keys = elements.map(raw);
   const activeEl = elements.find((e) => e.key === active);
   const pick = (rk) => { const e = elements.find((x) => raw(x) === rk); if (e) setActive(e.key); };
+  const share = pro ? sharesOf(result) : null;
   return (
     <div>
       <div className="rounded-2xl border border-sm-border bg-paper p-3 mb-3">
@@ -396,22 +407,200 @@ function CountBlock({ surface, drawing, elements, input, setCount, active, setAc
             : <><Info size={12} className="inline -mt-0.5" /> Tipp eine Nummer im Bild oder eine Zeile an, dann steht die Regel hier.</>}
         </p>
       </div>
-      <div className="grid gap-2">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-2">
         {elements.map((e) => {
           const on = active === e.key;
           const v = input.counts[e.key] ?? 0;
+          const color = colorOf?.[e.key];
+          const sh = share?.[e.key];
           return (
-            <div key={e.key} onClick={() => setActive(e.key)} role="presentation"
-              className={`grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border bg-paper px-3 py-2.5 ${on ? 'border-amber ring-2 ring-amber/30' : 'border-sm-border'}`}>
-              <span className={`w-6 h-6 rounded-full text-[11px] font-bold flex items-center justify-center ${on ? 'bg-amber-deep text-paper' : 'bg-ink text-paper'}`}>{e.step}</span>
-              <div className="min-w-0">
-                <div className="font-semibold text-ink text-sm leading-tight">{e.label}</div>
-                <div className="text-[11px] text-ink-muted leading-snug">{e.rule}</div>
+            <div key={e.key} onClick={() => setActive(e.key)} role="presentation" data-testid={`fol-el-${e.key}`}
+              style={pro && v > 0 && sh ? { borderLeftColor: color, borderLeftWidth: 4 } : undefined}
+              className={`min-w-0 rounded-2xl border bg-paper px-3 py-2.5 transition-[border-color,box-shadow] duration-ui ${on ? 'border-amber ring-2 ring-amber/30' : 'border-sm-border'}`}>
+              <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
+                <span className={`w-6 h-6 rounded-full text-[11px] font-bold flex items-center justify-center ${on ? 'bg-amber-deep text-paper' : 'bg-ink text-paper'}`}>{e.step}</span>
+                <div className="min-w-0">
+                  <div className="font-semibold text-ink text-sm leading-tight">{e.label}</div>
+                  <div className="text-[11px] text-ink-muted leading-snug">{e.rule}</div>
+                </div>
+                <Stepper value={v} onChange={(n) => setCount(e.key, n)} step={e.stepSize || 1} unit={e.unit === 'stk' ? '' : e.unit === 'm2' ? 'm²' : 'm'} testId={`fol-count-${e.key}`} />
               </div>
-              <Stepper value={v} onChange={(n) => setCount(e.key, n)} step={e.stepSize || 1} unit={e.unit === 'stk' ? '' : e.unit === 'm2' ? 'm²' : 'm'} testId={`fol-count-${e.key}`} />
+              {pro && v > 0 && sh && (
+                <div className="grid grid-cols-[1fr_auto] items-center gap-2 mt-2">
+                  <div className="h-2 rounded-full bg-cream-deep overflow-hidden">
+                    <div className="h-full rounded-full transition-[width] duration-sig ease-out" style={{ width: `${Math.max(2, sh.frac * 100)}%`, background: color }} />
+                  </div>
+                  <span className="text-[11.5px] font-bold text-ink tabular-nums whitespace-nowrap">{Math.round(sh.frac * 100)} % <span className="font-medium text-ink-muted">· {fmtNum(sh.lfm, 1)} lfm</span></span>
+                </div>
+              )}
+              {pro && v > 0 && <DimTable e={e} surfaceKey={e.surfaceKey || surface.key} qty={v} input={input} patch={patch} settings={settings} />}
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+/** Anteil je Element an der Zuschnittfläche, auf die gelegten Laufmeter umgelegt. */
+function sharesOf(result) {
+  const n = result?.nesting;
+  if (!n?.pieces?.length) return {};
+  const area = {};
+  for (const p of n.pieces) area[p.key] = (area[p.key] || 0) + p.w * p.h * p.n;
+  const tot = Object.values(area).reduce((a, b) => a + b, 0) || 1;
+  const out = {};
+  for (const [k, a] of Object.entries(area)) out[k] = { frac: a / tot, lfm: (n.totalMm / 1000) * (a / tot), m2: a / 1e6 };
+  return out;
+}
+
+/* ── C1: Maße direkt unter der Anzahl ───────────────────────────────────── */
+const pill = 'w-[4.6rem] rounded-full border border-sm-border bg-cream pl-2 pr-0.5 py-1 text-xs font-bold text-ink tabular-nums';
+function DimTable({ e, surfaceKey, qty, input, patch, settings }) {
+  const ns = settings.nesting || {};
+  const back = ns.backWrapMm ?? 25, bleed = ns.bleedMm ?? 10, tDef = ns.thicknessMm ?? 19;
+  const d = pieceDefault(surfaceKey, e.rawKey || e.key);
+  const o = input.pieces?.[e.key];
+  if (!d && !o) return null;
+  const spec = { t: o?.t ?? d?.t ?? tDef, wx: d?.wx ?? 2, wy: d?.wy ?? 2 };
+  const setPiece = (p) => patch({ pieces: { ...(input.pieces || {}), [e.key]: { ...(o || {}), ...p } } });
+  const isFront = e.unit === 'stk' && /front|blatt/.test(e.rawKey || e.key);
+  const thk = (
+    <select value={spec.t} onChange={(ev) => setPiece({ t: Number(ev.target.value) })} onClick={(ev) => ev.stopPropagation()} aria-label="Materialstärke" className={pill}>
+      {[...new Set([...THICKNESSES, spec.t])].sort((a, b) => a - b).map((t) => <option key={t} value={t}>{t} mm</option>)}
+    </select>
+  );
+  const th = 'text-[9.5px] tracking-[.08em] uppercase text-ink-muted font-extrabold text-left px-1 py-1.5 border-b border-sm-border';
+  const td = 'px-1 py-1.5 border-b border-sm-border align-middle';
+  const glyphCell = 'hidden sm:table-cell';
+  const chip = (txt) => <span className="inline-block rounded-lg border border-navy-edge bg-navy-wedge px-1.5 py-0.5 text-[11px] font-extrabold text-navy tabular-nums whitespace-nowrap">{txt}</span>;
+
+  if (d?.strip && !o?.w) {
+    return <p className="mt-2 text-[11px] text-ink-muted">Volle Bahnbreite, Länge aus der Fläche. Kein Umschlag.</p>;
+  }
+  if (d?.parts && !(o?.w && o?.h)) {
+    return (
+      <div className="mt-2 flex items-center justify-between gap-2 flex-wrap text-[11px] text-ink-muted" onClick={(ev) => ev.stopPropagation()} role="presentation">
+        <span>Leistensatz je Stück: {d.parts.map((p) => `${p.n} × ${p.w} × ${p.h}`).join(', ')} mm</span>{thk}
+      </div>
+    );
+  }
+  if (d?.perM) {
+    const w = o?.w || d.w;
+    const c = cutSize(w, qty * 1000, { ...spec, wy: 0 }, back, bleed);
+    return (
+      <div className="mt-2 overflow-x-auto" onClick={(ev) => ev.stopPropagation()} role="presentation">
+        <table className="w-full border-separate border-spacing-0 text-xs tabular-nums">
+          <thead><tr><th className={`${th} ${glyphCell}`} /><th className={th}>Breite</th><th className={th}>Länge</th><th className={th}>Stärke</th><th className={`${th} text-right`}>Zuschnitt</th></tr></thead>
+          <tbody><tr>
+            <td className={`${td} border-b-0 ${glyphCell}`}><span className="inline-block w-5 h-1 rounded bg-cream-deep" /></td>
+            <td className={`${td} border-b-0`}><SizeSelect value={w} options={[...new Set([w, d.w])].sort((a, b) => a - b)} onChange={(v) => setPiece({ w: v })} label="Breite" /></td>
+            <td className={`${td} border-b-0`}>{fmtNum(qty, 1)} m</td>
+            <td className={`${td} border-b-0`}>{thk}</td>
+            <td className={`${td} border-b-0 text-right`}>{chip(`${c.w} breit`)}</td>
+          </tr></tbody>
+        </table>
+      </div>
+    );
+  }
+  // Stückteile: Größen als Zeilen
+  const groups = o?.groups?.length ? o.groups : [{ w: o?.w || d.w, h: o?.h || d.h, n: qty }];
+  const setGroups = (gs) => setPiece({ groups: gs });
+  const assigned = groups.reduce((a, g) => a + (Number(g.n) || 0), 0);
+  const tone = assigned === qty ? 'text-green-text' : assigned < qty ? 'text-amber-text' : 'text-red-text';
+  return (
+    <div className="mt-2 overflow-x-auto" onClick={(ev) => ev.stopPropagation()} role="presentation">
+      <table className="w-full border-separate border-spacing-0 text-xs tabular-nums">
+        <thead><tr><th className={`${th} ${glyphCell}`} /><th className={th}>Breite</th><th className={th}>Höhe</th><th className={th}>Stk</th><th className={`${th} text-right`}>Zuschnitt</th><th className={th} /></tr></thead>
+        <tbody>
+          {groups.map((g, i) => {
+            const c = cutSize(Number(g.w), Number(g.h), spec, back, bleed);
+            const s = 22 / Math.max(g.w, g.h);
+            const upd = (p) => setGroups(groups.map((x, j) => (j === i ? { ...x, ...p } : x)));
+            return (
+              <tr key={i}>
+                <td className={`${td} ${glyphCell}`}><span className="inline-block align-middle rounded-sm bg-[#d9b48a] shadow-[inset_0_0_0_1.5px_#1f4d5e] bg-[repeating-linear-gradient(90deg,transparent_0_4px,rgba(164,121,76,.35)_4px_5px)]" style={{ width: Math.max(4, g.w * s), height: Math.max(4, g.h * s) }} /></td>
+                <td className={td}><SizeSelect value={g.w} options={isFront ? FRONT_WIDTHS : []} onChange={(v) => upd({ w: v })} label="Breite" /></td>
+                <td className={td}><SizeSelect value={g.h} options={isFront ? FRONT_HEIGHTS.map((x) => x.h) : []} labels={isFront ? FRONT_HEIGHTS : null} onChange={(v) => upd({ h: v })} label="Höhe" /></td>
+                <td className={td}>
+                  <span className="inline-flex items-center rounded-full border border-sm-border bg-paper overflow-hidden">
+                    <button type="button" aria-label="eine weniger" onClick={() => upd({ n: Math.max(0, (Number(g.n) || 0) - 1) })} className="w-6 h-7 text-ink">−</button>
+                    <span className="min-w-[18px] text-center font-extrabold">{g.n}</span>
+                    <button type="button" aria-label="eine mehr" onClick={() => upd({ n: (Number(g.n) || 0) + 1 })} className="w-6 h-7 text-ink">+</button>
+                  </span>
+                </td>
+                <td className={`${td} text-right`}>{chip(`${c.w}×${c.h}`)}</td>
+                <td className={td}>{groups.length > 1 && <button type="button" aria-label="Größe entfernen" onClick={() => { const rest = groups.filter((_, j) => j !== i); setGroups(rest.length === 1 ? [{ ...rest[0], n: qty }] : rest); }} className="text-ink-muted hover:text-red-text text-base leading-none px-0.5">×</button>}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+        <tfoot><tr>
+          <td className={`pt-1.5 border-t-[1.5px] border-ink ${glyphCell}`} />
+          <td className="pt-1.5 border-t-[1.5px] border-ink font-extrabold" colSpan={2}>Summe</td>
+          <td className={`pt-1.5 border-t-[1.5px] border-ink font-extrabold ${tone}`}>{assigned} / {qty}</td>
+          <td className="pt-1.5 border-t-[1.5px] border-ink text-right" colSpan={2}>{thk}</td>
+        </tr></tfoot>
+      </table>
+      <button type="button" onClick={() => {
+          // Die neue Größe nimmt eine Front von der größten Gruppe, damit die Summe stimmt.
+          const last = groups[groups.length - 1];
+          const fresh = { w: last.w, h: isFront ? 570 : last.h, n: 1 };
+          if (assigned < qty) { fresh.n = qty - assigned; setGroups([...groups, fresh]); return; }
+          const big = groups.reduce((bi, g, i) => ((Number(g.n) || 0) > (Number(groups[bi].n) || 0) ? i : bi), 0);
+          setGroups([...groups.map((g, i) => (i === big ? { ...g, n: Math.max(0, (Number(g.n) || 0) - 1) } : g)), fresh]);
+        }}
+        className="mt-1.5 rounded-full border border-sm-border bg-paper px-2.5 py-1 text-[11.5px] font-bold text-teal hover:bg-cream-soft" data-testid={`fol-add-size-${e.key}`}>+ Größe</button>
+    </div>
+  );
+}
+
+/* ── Zuschnitt live: Summe und wohin die Rolle geht ─────────────────────── */
+function CutSummary({ result, settings, elements, colorOf, input, patch }) {
+  const n = result.nesting;
+  const [openCustom, setOpenCustom] = useState(false);
+  const share = sharesOf(result);
+  const tDef = settings.nesting?.thicknessMm ?? 19;
+  const custom = input.customPieces || [];
+  const setCustom = (i, k, v) => patch({ customPieces: custom.map((c, j) => (j === i ? { ...c, [k]: v } : c)) });
+  const rows = [...elements.filter((e) => share[e.key]), ...(share.custom ? [{ key: 'custom', label: 'Eigene Teile' }] : [])];
+  if (!n) return null;
+  return (
+    <div className="mt-6 rounded-2xl bg-teal-deep text-paper p-4 grid gap-3" data-testid="fol-cut-summary">
+      <div className="grid grid-cols-3 gap-2 text-center">
+        {[[`${fmtNum(n.totalMm / 1000, 1)} lfm`, `von ${settings.nesting?.rollWidthMm || 1220} mm`], [`${n.pieceCount}`, 'Teile'], [`${Math.round(n.wastePct * 100)} %`, 'Verschnitt']].map(([a, b]) => (
+          <div key={b}><div className="font-headings font-bold text-lg tabular-nums leading-tight">{a}</div><div className="text-[10.5px] opacity-80">{b}</div></div>
+        ))}
+      </div>
+      <div className="flex h-2 rounded-full overflow-hidden gap-[2px] bg-paper/15">
+        {rows.map((e) => <i key={e.key} className="block h-full transition-[flex-grow] duration-sig ease-out" style={{ flexGrow: share[e.key].frac, background: colorOf[e.key] || '#cfdee3' }} />)}
+      </div>
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] opacity-90">
+        {rows.map((e) => <span key={e.key} className="inline-flex items-center gap-1"><i className="inline-block w-2 h-2 rounded-sm" style={{ background: colorOf[e.key] || '#cfdee3' }} />{e.label} {Math.round(share[e.key].frac * 100)} %</span>)}
+      </div>
+      <div className="border-t border-paper/15 pt-2">
+        <button type="button" onClick={() => setOpenCustom(!openCustom)} className="text-[12px] font-bold text-teal-tint inline-flex items-center gap-1">
+          <ChevronDown size={14} className={`transition-transform duration-ui ${openCustom ? 'rotate-180' : ''}`} /> Eigene Teile {custom.length ? `(${custom.length})` : ''}
+        </button>
+        {openCustom && (
+          <div className="mt-2 grid gap-2">
+            {custom.map((c, i) => (
+              <div key={i} className="rounded-xl bg-paper text-ink px-3 py-2 flex items-center gap-2 flex-wrap">
+                <input value={c.label} onChange={(ev) => setCustom(i, 'label', ev.target.value)} placeholder="Bezeichnung" className="flex-1 min-w-[110px] text-sm bg-cream rounded-lg border border-sm-border px-2 py-1.5" />
+                <MmField value={c.w} placeholder="Breite" onChange={(v) => setCustom(i, 'w', v)} label="Breite" />×
+                <MmField value={c.h} placeholder="Höhe" onChange={(v) => setCustom(i, 'h', v)} label="Höhe" />×
+                <MmField value={c.n} placeholder="Stk" onChange={(v) => setCustom(i, 'n', v)} label="Stück" narrow />
+                <select value={c.t ?? tDef} onChange={(ev) => setCustom(i, 't', Number(ev.target.value))} className={pill} aria-label="Stärke">
+                  {THICKNESSES.map((t) => <option key={t} value={t}>{t} mm</option>)}
+                </select>
+                <label className="inline-flex items-center gap-1 text-[11px] text-ink-muted"><input type="checkbox" checked={!!c.vertical} onChange={(ev) => setCustom(i, 'vertical', ev.target.checked)} className="accent-amber" /> senkrecht</label>
+                <button type="button" onClick={() => patch({ customPieces: custom.filter((_, j) => j !== i) })} className="p-1 text-ink-muted hover:text-red-text" aria-label="Entfernen"><Trash2 size={14} /></button>
+              </div>
+            ))}
+            <button type="button" onClick={() => patch({ customPieces: [...custom, { label: '', w: '', h: '', n: 1, t: tDef, vertical: true }] })}
+              className="justify-self-start rounded-full bg-paper text-teal px-3 py-1.5 text-[12px] font-bold inline-flex items-center gap-1"><Plus size={13} /> Teil hinzufügen</button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -554,135 +743,6 @@ function ProPanel({ result, input, settings }) {
 }
 
 /* ── Zuschnitt: Maße je Element und eigene Teile ────────────────────────── */
-function PieceEditor({ surface, elements, input, patch, settings, result }) {
-  const [open, setOpen] = useState(false);
-  const ns = settings.nesting || {};
-  const back = ns.backWrapMm ?? 25, bleed = ns.bleedMm ?? 10, tDef = ns.thicknessMm ?? 19;
-  const rows = elements
-    .filter((e) => (Number(input.counts[e.key]) || 0) > 0)
-    .map((e) => ({ e, d: pieceDefault(e.surfaceKey || surface.key, e.rawKey || e.key), o: input.pieces?.[e.key] }))
-    .filter((r) => r.d || r.o);
-  const setPiece = (key, p) => patch({ pieces: { ...(input.pieces || {}), [key]: { ...(input.pieces?.[key] || {}), ...p } } });
-  const clearPiece = (key) => { const p = { ...(input.pieces || {}) }; delete p[key]; patch({ pieces: p }); };
-  const custom = input.customPieces || [];
-  const setCustom = (i, k, v) => patch({ customPieces: custom.map((c, j) => (j === i ? { ...c, [k]: v } : c)) });
-  const n = result.nesting;
-  return (
-    <div className="mt-8 rounded-2xl border border-navy-edge bg-navy-wedge p-4">
-      <button type="button" onClick={() => setOpen(!open)} className="w-full flex items-center justify-between gap-3 text-left">
-        <div className="min-w-0">
-          <div className="font-headings font-bold text-ink flex items-center gap-2"><Scissors size={16} className="text-navy" /> Maße, Stärke & Zuschnitt</div>
-          <div className="text-xs text-ink-muted mt-0.5">
-            {n ? `${n.pieceCount} Teile → ${fmtNum(n.totalMm / 1000, 1)} lfm auf ${n.rollCount} Rolle${n.rollCount === 1 ? '' : 'n'} à ${ns.rollWidthMm || 1220} mm · Verschnitt ${Math.round(n.wastePct * 100)} %` : 'Standardmaße; trag echte Maße ein, wenn du sie hast.'}
-          </div>
-        </div>
-        <ChevronDown size={18} className={`text-ink-muted shrink-0 transition ${open ? 'rotate-180' : ''}`} />
-      </button>
-      {open && (
-        <div className="mt-3 grid gap-2">
-          <p className="text-xs text-ink-muted">
-            Sichtmaß eingeben. Der Zuschnitt rechnet je umschlagener Kante die Materialstärke plus {back} mm auf die Rückseite dazu, je freier Kante {bleed} mm Anschnitt.
-            Fronten, Türen und Seiten werden nie gedreht: die Maserung steht senkrecht.
-          </p>
-          {rows.map(({ e, d, o }) => {
-            const kind = d?.parts && !(o?.w && o?.h) ? 'parts' : d?.perM ? 'perM' : d?.strip ? 'strip' : 'piece';
-            const spec = { t: o?.t ?? d?.t ?? tDef, wx: d?.wx ?? 2, wy: d?.wy ?? 2 };
-            const qty = Number(input.counts[e.key]) || 0;
-            const groups = o?.groups || [];
-            const grouped = groups.reduce((a, g) => a + (Number(g.n) || 0), 0);
-            const baseW = o?.w || d?.w, baseH = o?.h || d?.h;
-            const cut = kind === 'piece' && baseW && baseH ? cutSize(baseW, baseH, spec, back, bleed) : null;
-            const isFront = e.unit === 'stk' && /front|blatt/.test(e.rawKey || e.key);
-            return (
-              <div key={e.key} className="rounded-xl bg-paper border border-sm-border px-3 py-2.5 grid gap-2">
-                <div className="flex items-start justify-between gap-2 flex-wrap">
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-ink">{qty} {e.unit === 'stk' ? '×' : e.unit === 'm2' ? 'm²' : 'm'} {e.label}{e.addon?.startsWith('surface:') ? ` · ${surfaceByKey(e.surfaceKey).short}` : ''}</div>
-                    <div className="text-[11px] text-ink-muted">
-                      {kind === 'parts' && `Leistensatz: ${d.parts.map((p) => `${p.n} × ${p.w} × ${p.h}`).join(', ')} mm je Stück`}
-                      {kind === 'perM' && `Streifen ${baseW} mm sichtbar, ${qty} m lang → Zuschnitt ${cutSize(baseW, qty * 1000, { ...spec, wy: 0 }, back, bleed).w} mm breit`}
-                      {kind === 'strip' && 'volle Bahnbreite, Länge aus der Fläche, kein Umschlag'}
-                      {kind === 'piece' && cut && `Standard ${baseW} × ${baseH} → Zuschnitt ${cut.w} × ${cut.h} mm (${spec.wx + spec.wy} Kanten umschlagen)`}
-                    </div>
-                  </div>
-                  {kind !== 'strip' && (
-                    <label className="inline-flex items-center gap-1.5 text-[11px] text-ink-muted">
-                      Stärke
-                      <select value={spec.t} onChange={(ev) => setPiece(e.key, { t: Number(ev.target.value) })} className="rounded-lg border border-sm-border bg-cream px-1.5 py-1 text-xs text-ink">
-                        {[...new Set([...THICKNESSES, spec.t])].sort((a, b) => a - b).map((t) => <option key={t} value={t}>{t} mm</option>)}
-                      </select>
-                    </label>
-                  )}
-                </div>
-
-                {kind === 'piece' && e.unit === 'stk' && (
-                  <div className="grid gap-1.5">
-                    {groups.map((g, gi) => {
-                      const c = g.w && g.h ? cutSize(Number(g.w), Number(g.h), spec, back, bleed) : null;
-                      return (
-                        <div key={gi} className="flex items-center gap-1.5 flex-wrap text-xs">
-                          <SizeSelect value={g.w} options={isFront ? FRONT_WIDTHS : []} onChange={(v) => setPiece(e.key, { groups: groups.map((x, j) => (j === gi ? { ...x, w: v } : x)) })} label="Breite" />
-                          <span className="text-ink-muted">×</span>
-                          <SizeSelect value={g.h} options={isFront ? FRONT_HEIGHTS.map((x) => x.h) : []} labels={isFront ? FRONT_HEIGHTS : []} onChange={(v) => setPiece(e.key, { groups: groups.map((x, j) => (j === gi ? { ...x, h: v } : x)) })} label="Höhe" />
-                          <span className="text-ink-muted">×</span>
-                          <MmField value={g.n} placeholder="Stk" onChange={(v) => setPiece(e.key, { groups: groups.map((x, j) => (j === gi ? { ...x, n: v } : x)) })} label="Stück" narrow />
-                          {c && <span className="text-ink-muted">→ {c.w} × {c.h}</span>}
-                          <button type="button" onClick={() => setPiece(e.key, { groups: groups.filter((_, j) => j !== gi) })} className="p-1 text-ink-muted hover:text-red-text" aria-label="Größe entfernen"><Trash2 size={13} /></button>
-                        </div>
-                      );
-                    })}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <button type="button" onClick={() => setPiece(e.key, { groups: [...groups, { w: baseW || 596, h: baseH || 716, n: Math.max(1, qty - grouped) }] })}
-                        className="inline-flex items-center gap-1 rounded-lg border border-sm-border bg-cream px-2 py-1 text-xs font-semibold text-ink hover:bg-cream-deep"><Plus size={12} /> Größe aufteilen</button>
-                      {groups.length > 0 && (
-                        <span className={`text-[11px] ${grouped === qty ? 'text-green-text' : grouped > qty ? 'text-red-text' : 'text-ink-muted'}`}>
-                          {grouped} von {qty} zugeordnet{grouped < qty ? `, ${qty - grouped} im Standardmaß` : grouped > qty ? ', zu viele' : ''}
-                        </span>
-                      )}
-                      {groups.length === 0 && (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-ink-muted">Standard
-                          <MmField value={o?.w ?? ''} placeholder={String(d?.w ?? '')} onChange={(v) => setPiece(e.key, { w: v })} label="Breite" />×
-                          <MmField value={o?.h ?? ''} placeholder={String(d?.h ?? '')} onChange={(v) => setPiece(e.key, { h: v })} label="Höhe" />
-                        </span>
-                      )}
-                      {o && <button type="button" onClick={() => clearPiece(e.key)} className="p-1 text-ink-muted hover:text-red-text" aria-label="Zurücksetzen"><RotateCcwIcon /></button>}
-                    </div>
-                  </div>
-                )}
-                {kind === 'perM' && (
-                  <div className="flex items-center gap-1.5 text-[11px] text-ink-muted">Sichtbreite <MmField value={o?.w ?? ''} placeholder={String(d?.w ?? '')} onChange={(v) => setPiece(e.key, { w: v })} label="Breite" />
-                    {o && <button type="button" onClick={() => clearPiece(e.key)} className="p-1 text-ink-muted hover:text-red-text" aria-label="Zurücksetzen"><RotateCcwIcon /></button>}</div>
-                )}
-                {kind === 'piece' && e.unit !== 'stk' && (
-                  <div className="flex items-center gap-1.5 text-[11px] text-ink-muted">Maß <MmField value={o?.w ?? ''} placeholder={String(d?.w ?? '')} onChange={(v) => setPiece(e.key, { w: v })} label="Breite" />×<MmField value={o?.h ?? ''} placeholder={String(d?.h ?? '')} onChange={(v) => setPiece(e.key, { h: v })} label="Höhe" /></div>
-                )}
-              </div>
-            );
-          })}
-          <Kicker className="mt-2">Eigene Teile</Kicker>
-          {custom.map((c, i) => (
-            <div key={i} className="rounded-xl bg-paper border border-sm-border px-3 py-2 flex items-center gap-2 flex-wrap">
-              <input value={c.label} onChange={(e) => setCustom(i, 'label', e.target.value)} placeholder="Bezeichnung" className="flex-1 min-w-[120px] text-sm bg-cream rounded-lg border border-sm-border px-2 py-1.5 text-ink" />
-              <MmField value={c.w} placeholder="Breite" onChange={(v) => setCustom(i, 'w', v)} label="Breite" />
-              <span className="text-ink-muted text-xs">×</span>
-              <MmField value={c.h} placeholder="Höhe" onChange={(v) => setCustom(i, 'h', v)} label="Höhe" />
-              <span className="text-ink-muted text-xs">×</span>
-              <MmField value={c.n} placeholder="Stk" onChange={(v) => setCustom(i, 'n', v)} label="Stück" narrow />
-              <select value={c.t ?? tDef} onChange={(e) => setCustom(i, 't', Number(e.target.value))} className="rounded-lg border border-sm-border bg-cream px-1.5 py-1 text-xs text-ink" aria-label="Stärke">
-                {THICKNESSES.map((t) => <option key={t} value={t}>{t} mm</option>)}
-              </select>
-              <label className="inline-flex items-center gap-1 text-[11px] text-ink-muted"><input type="checkbox" checked={!!c.vertical} onChange={(e) => setCustom(i, 'vertical', e.target.checked)} className="accent-amber" /> senkrecht</label>
-              <button type="button" onClick={() => patch({ customPieces: custom.filter((_, j) => j !== i) })} className="p-1.5 text-ink-muted hover:text-red-text" aria-label="Entfernen"><Trash2 size={14} /></button>
-            </div>
-          ))}
-          <button type="button" onClick={() => patch({ customPieces: [...custom, { label: '', w: '', h: '', n: 1, t: tDef, vertical: true }] })}
-            className="justify-self-start inline-flex items-center gap-1.5 rounded-xl border border-sm-border bg-paper px-3 py-2 text-sm font-semibold text-ink hover:bg-cream-soft"><Plus size={14} /> Teil hinzufügen</button>
-        </div>
-      )}
-    </div>
-  );
-}
-
 /* Standardmaß aus der Liste oder ein eigenes. */
 function SizeSelect({ value, options, labels, onChange, label }) {
   const v = value === '' || value == null ? '' : Number(value);
@@ -699,9 +759,9 @@ function SizeSelect({ value, options, labels, onChange, label }) {
   return (
     <select value={inList ? v : ''} aria-label={label}
       onChange={(e) => { if (e.target.value === '__custom') { setCustom(true); return; } onChange(Number(e.target.value)); }}
-      className="rounded-lg border border-sm-border bg-cream px-1.5 py-1 text-xs text-ink">
+      className={pill}>
       {!inList && <option value="">{label}</option>}
-      {options.map((o) => <option key={o} value={o}>{labels ? (labels.find((l) => l.h === o)?.label || o) : `${o} mm`}</option>)}
+      {options.map((o) => <option key={o} value={o} title={labels ? labels.find((l) => l.h === o)?.label : undefined}>{o}</option>)}
       <option value="__custom">anderes Maß…</option>
     </select>
   );
@@ -716,10 +776,6 @@ function MmField({ value, onChange, placeholder, label, narrow }) {
       {!narrow && <span className="pr-1.5 text-[10px] text-ink-muted">mm</span>}
     </span>
   );
-}
-
-function RotateCcwIcon() {
-  return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></svg>;
 }
 
 /* ── Nesting: die Rolle als Bild ────────────────────────────────────────── */
