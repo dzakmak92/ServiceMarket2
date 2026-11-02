@@ -3,21 +3,14 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import {
-  Briefcase, Loader2, Search, Check, CornerUpRight, Phone, FileText, Send,
-  CalendarClock, Calculator, Receipt, LayoutDashboard, List, MapPin, UserPlus, Play, FilePlus2,
+  Briefcase, Loader2, Search, CalendarClock, LayoutDashboard, List,
 } from 'lucide-react';
-import { toast } from 'sonner';
-import { stepStates, daysSince } from '../../utils/jobSteps';
-import { routeHref } from '../../utils/maps';
-import { telHref } from '../../utils/sms';
-import { moneyLocale } from '../../utils/money';
-import JobRing from '../../components/pro/JobRing';
-import JobCard from '../../components/pro/JobCard';
-import JobSpan from '../../components/pro/JobSpan';
-import JobTabs from '../../components/pro/JobTabs';
+import { moneyLocale, fmtEur } from '../../utils/money';
 import useJobAction from '../../hooks/useJobAction';
-import JobListView, { tradeOfCategory } from '../../components/pro/JobListView';
-import { openQuotePdf } from '../../utils/openPdf';
+import JobListView from '../../components/pro/JobListView';
+import {
+  OverviewHero, WeekCalendar, StatusPills, JobTile, SKINS,
+} from '../../components/pro/JobOverview';
 
 /**
  * Every job, in the two states a business cares about: what is running and
@@ -221,6 +214,10 @@ export default function PMProjectsPage() {
     { weekday: 'long', day: 'numeric', month: 'long' });
 
   const skin = isProject ? SKIN.projects : SKIN.jobs;
+  const tileSkin = isProject ? SKINS.projects : SKINS.jobs;
+  /* What the selected status is worth, for the line under the pills. */
+  const leadSum = rows.reduce((sum, j) => sum + (tab === 'pipeline'
+    ? Number(sentFor[j.id]?.net_total || j.contract_amount || 0) : worth(j)), 0);
 
   return (
     <div className="min-h-screen bg-paper pb-28 md:pb-12">
@@ -274,18 +271,21 @@ export default function PMProjectsPage() {
                        sentFor={sentFor} worth={worth} t={t} act={act} navigate={navigate}
                        locale={moneyLocale()} />
         ) : (
-          <>
-            <JobRing amounts={amounts} total={total} counts={counts} tab={tab}
-                     onPick={setTab} accent={skin.accent} tint={skin.tint} t={t} />
+          <div className="grid gap-4">
+            <OverviewHero amounts={amounts} total={total} counts={counts} tab={tab}
+                          onPick={setTab} skin={tileSkin} t={t} />
 
-            <JobSpan jobs={jobs} accent={skin.accent} tint={skin.tint} t={t} />
+            <WeekCalendar jobs={jobs} skin={tileSkin} t={t} />
 
-            <JobTabs tabs={TABS} tab={tab} counts={tabCounts} onPick={setTab}
-                     accent={skin.accent} t={t} />
+            <StatusPills tabs={TABS} tab={tab} counts={tabCounts} onPick={setTab} skin={tileSkin} t={t}
+                         lead={rows.length ? {
+                           text: `${t(TABS.find((x) => x.key === tab).labelKey)} · ${t(`ov_lead_${tab}`)}`,
+                           amount: fmtEur(leadSum),
+                         } : null} />
 
             {buckets[tab].length >= SEARCH_FROM && (
               <label className="flex items-center gap-2 rounded-xl border bg-paper
-                                px-3 mb-3 min-h-[44px]" style={{ borderColor: '#dbe4ec' }}>
+                                px-3 min-h-[44px]" style={{ borderColor: '#dbe4ec' }}>
                 <Search size={15} className="text-ink-muted shrink-0" aria-hidden="true" />
                 <input value={search} onChange={(e) => setSearch(e.target.value)}
                        placeholder={t('pm_search_ph')} data-testid="ov-search"
@@ -293,14 +293,22 @@ export default function PMProjectsPage() {
               </label>
             )}
 
-            {/* Pulled in from the right so the cards do not run into the edge —
-                the spine already takes 53 px on the left. */}
-            <div className="pr-4">
-              {tab === 'live' && <LiveList rows={rows} t={t} act={act} worth={worth} accent={skin.accent} navigate={navigate} />}
-              {tab === 'pipeline' && <PipeList rows={rows} sentFor={sentFor} t={t} navigate={navigate} accent={skin.accent} />}
-              {tab === 'done' && <DoneList rows={rows} t={t} navigate={navigate} worth={worth} accent={skin.accent} />}
-            </div>
-          </>
+            {rows.length ? (
+              <div className="grid gap-3" data-testid={`ov-list-${tab}`}>
+                {rows.map((j) => (
+                  <JobTile key={j.id} j={j} tab={tab} q={sentFor[j.id] || wonFor[j.id]}
+                           worth={worth} t={t} act={act} navigate={navigate} skin={tileSkin} />
+                ))}
+              </div>
+            ) : (
+              <Empty text={t(`ov_empty_${tab}`)} testid={`ov-empty-${tab}`}
+                     action={tab === 'pipeline'
+                       ? { label: t('ov_calculate'), onClick: () => navigate('/estimate') }
+                       : tab === 'live' && tabCounts.pipeline > 0
+                         ? { label: t('ov_show_pipeline', { n: tabCounts.pipeline }), onClick: () => setTab('pipeline') }
+                         : null} />
+            )}
+          </div>
         )}
       </div>
     </div>
@@ -308,7 +316,7 @@ export default function PMProjectsPage() {
 }
 
 
-/* ── the three lists ──────────────────────────────────────────────────── */
+/* ── empty state ───────────────────────────────────────────────────── */
 
 function Empty({ text, testid, action }) {
   return (
@@ -322,199 +330,5 @@ function Empty({ text, testid, action }) {
                            text-[13px] font-bold text-teal">{action.label}</button>
       )}
     </div>
-  );
-}
-
-/** When it happens, in the fewest words that are still true. */
-function whenLabel(job, t) {
-  if (job.status === 'in_progress') {
-    const since = job.started_at ? new Date(job.started_at) : null;
-    return since ? t('ov_running_since', { t: hhmm(since) }) : t('job_running');
-  }
-  if (!job.scheduled_start) return t('job_not_scheduled');
-  const d = new Date(job.scheduled_start);
-  const days = -daysSince(d);
-  if (days === 0) return `${t('job_rel_today')} ${hhmm(d)}`;
-  if (days === 1) return `${t('job_rel_tomorrow')} ${hhmm(d)}`;
-  /* Built from 24-hour parts rather than toLocaleTimeString: the badge is
-     narrow, and "08:00 AM" in an English locale on a German page was both
-     wrong and two characters too long. */
-  return `${d.toLocaleDateString(moneyLocale(), { weekday: 'short', day: 'numeric', month: 'short' })} ${hhmm(d)}`;
-}
-
-const hhmm = (d) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-
-/* The spine beside a card: the day over the time, or a dash when the row has
-   no date at all. Short and numeric, because the column is 44 px wide — a
-   locale that spells the weekday out would wrap it. */
-function spineOf(value, { time = true } = {}) {
-  if (!value) return { top: '—' };
-  const d = new Date(value);
-  if (Number.isNaN(+d)) return { top: '—' };
-  return {
-    top: d.toLocaleDateString(moneyLocale(), { weekday: 'short', day: 'numeric' }),
-    bottom: time ? hhmm(d) : null,
-  };
-}
-
-/* Who and where. A job with no customer yet falls back to what it does have
-   — its number and trade — rather than leaving the line blank, which read as
-   a rendering fault. */
-function place(job) {
-  const who = [job.customer_name, job.site_city || job.customer_city].filter(Boolean).join(' · ');
-  return who || [job.job_number, job.category].filter(Boolean).join(' · ');
-}
-
-function LiveList({ rows, t, act, worth, accent, navigate }) {
-  if (!rows.length) return <Empty text={t('ov_empty_live')} testid="ov-empty-live" />;
-  const now = Date.now();
-  return (
-    <div data-testid="ov-list-live">
-      {rows.map((j, i) => {
-        const running = j.status === 'in_progress';
-        const start = j.scheduled_start ? new Date(j.scheduled_start) : null;
-        /* Late is a fact about the clock, not about the status: both of the
-           live jobs on today's data are booked in the past. Saying "scheduled"
-           over a date that has been and gone is the one thing this list must
-           not do. */
-        const late = !!start && !running && +start < now;
-        const tel = telHref(j.customer_phone);
-        const route = routeHref(j);
-        /* All three, on every live card, in the same three places — a card
-           that drops the buttons it cannot fill reads as a different kind of
-           card rather than as a job missing a phone number. Route and Call
-           leave the app rather than move the job, so they are offered on any
-           live job; finishing flips the status and draws up an invoice, so it
-           waits for the job that has actually started, where the server's
-           transition table agrees. What is greyed says why in its label. */
-        /* No dead ends: a missing address or phone opens the job where it
-           is filled in, and a job not started yet offers "Starten" — the
-           server allows accepted/scheduled → in_progress — instead of a
-           greyed "Fertig" that could never be pressed. */
-        const actions = [
-          route ? { key: 'route', label: t('day_route'), icon: CornerUpRight, external: true, href: route }
-            : { key: 'route', label: t('ov_add_address'), icon: MapPin, onClick: () => navigate(`/projects/${j.id}`) },
-          tel ? { key: 'call', label: t('day_call'), icon: Phone, href: `tel:${tel}` }
-            : { key: 'call', label: t('ov_add_phone'), icon: UserPlus, onClick: () => navigate(`/projects/${j.id}`) },
-          running
-            ? { key: 'finish', label: t('job_finish_do'), icon: Check, kind: 'primary',
-                onClick: () => act({ id: j.id, status: j.status }, 'complete') }
-            : { key: 'start', label: t('ov_start'), icon: Play, kind: 'primary',
-                onClick: () => act({ id: j.id, status: j.status }, 'start') },
-        ];
-        return (
-          <JobCard key={j.id} job={{ ...j, contract_amount: worth(j) }} states={stepStates(j)}
-                   accent={accent} last={i === rows.length - 1}
-                   spine={{ ...spineOf(j.scheduled_start), tone: late ? '#c14655' : accent }}
-                   meta={place(j)}
-                   badge={running ? whenLabel(j, t)
-                     : late ? t('ov_overdue') : start ? t('job_step_sched') : t('job_not_scheduled')}
-                   badgeTone={running ? 'a' : late ? 'r' : 'w'}
-                   actions={actions} testid={`ov-job-${j.id}`} />
-        );
-      })}
-    </div>
-  );
-}
-
-/* The estimator for this job's trade, writing onto this job — "Kalkulieren"
-   used to open a blank estimator whose quote made a second job. */
-const calcFor = (j) => {
-  const trade = tradeOfCategory(j.category);
-  return `${trade ? `/estimate/${trade}` : '/estimate'}?job=${j.id}`;
-};
-
-function PipeList({ rows, sentFor, t, navigate, accent }) {
-  if (!rows.length) {
-    return <Empty text={t('ov_empty_pipeline')} testid="ov-empty-pipeline"
-                  action={{ label: t('ov_calculate'), onClick: () => navigate('/estimate') }} />;
-  }
-  const quoted = rows.filter((j) => j.status === 'quoted');
-  const leads = rows.filter((j) => j.status === 'lead');
-  return (
-    <div data-testid="ov-list-pipeline">
-      {quoted.length > 0 && (
-        <>
-          <Head text={t('ov_head_waiting')} n={quoted.length} testid="ov-head-waiting" />
-          {quoted.map((j, i) => {
-            const q = sentFor[j.id];
-            const age = daysSince(q?.sent_at || j.updated_at || j.created_at);
-            return (
-              <JobCard key={j.id} job={{ ...j, contract_amount: q?.net_total || j.contract_amount }}
-                       states={stepStates(j)} accent={accent}
-                       last={i === quoted.length - 1 && leads.length === 0}
-                       spine={spineOf(q?.sent_at || j.created_at, { time: false })}
-                       meta={[place(j), q?.quote_number].filter(Boolean).join(' · ')}
-                       badge={age != null ? t('ov_days', { n: age }) : null}
-                       badgeTone={age != null && age >= 7 ? 'r' : 'w'}
-                       actions={q ? [
-                         /* Fetched with the session: a bare link to the PDF
-                            endpoint sent no auth header and opened a 401. */
-                         { key: 'pdf', label: t('job_quote_pdf'), icon: FileText,
-                           onClick: () => openQuotePdf(q.id).catch(() => toast.error(t('generic_error'))) },
-                         { key: 'follow', label: t('ov_follow_up'), icon: Send, kind: 'primary',
-                           onClick: () => navigate(`/quotes/${q.id}`) },
-                       ] : [
-                         { key: 'quote', label: t('ov_make_quote'), icon: FilePlus2, kind: 'primary',
-                           onClick: () => navigate(calcFor(j)) },
-                       ]}
-                       testid={`ov-job-${j.id}`} />
-            );
-          })}
-        </>
-      )}
-      {leads.length > 0 && (
-        <>
-          <Head text={t('ov_head_noquote')} n={leads.length} testid="ov-head-noquote" />
-          {leads.map((j, i) => (
-            <JobCard key={j.id} job={j} states={stepStates(j)} accent={accent}
-                     last={i === leads.length - 1}
-                     spine={spineOf(j.created_at, { time: false })}
-                     meta={[place(j), t('ov_asked', { n: daysSince(j.created_at) ?? 0 })]
-                       .filter(Boolean).join(' · ')}
-                     actions={[
-                       { key: 'visit', label: t('ov_site_visit'), icon: CalendarClock,
-                         onClick: () => navigate(`/projects/${j.id}`) },
-                       { key: 'calc', label: t('ov_calculate'), icon: Calculator, kind: 'primary',
-                         onClick: () => navigate(calcFor(j)) },
-                     ]}
-                     testid={`ov-job-${j.id}`} />
-          ))}
-        </>
-      )}
-    </div>
-  );
-}
-
-function DoneList({ rows, t, navigate, worth, accent }) {
-  if (!rows.length) return <Empty text={t('ov_empty_done')} testid="ov-empty-done" />;
-  return (
-    <div data-testid="ov-list-done">
-      {rows.map((j, i) => {
-        const age = daysSince(j.completed_at);
-        return (
-          <JobCard key={j.id} job={{ ...j, contract_amount: worth(j) }} states={stepStates(j)}
-                   accent={accent} last={i === rows.length - 1}
-                   spine={spineOf(j.completed_at, { time: false })} meta={place(j)}
-                   badge={age != null ? t('ov_done_days', { n: age }) : null}
-                   badgeTone={age != null && age >= 3 ? 'r' : 'g'}
-                   actions={[{ key: 'bill', label: t('job_bill_create'), icon: Receipt,
-                               kind: 'primary', onClick: () => navigate(`/jobs/${j.id}/invoice`) }]}
-                   testid={`ov-job-${j.id}`} />
-        );
-      })}
-      <p className="text-[11.5px] text-ink-faint leading-relaxed text-center mt-3">
-        {t('ov_done_note')}
-      </p>
-    </div>
-  );
-}
-
-function Head({ text, n, testid }) {
-  return (
-    <p className="flex items-baseline gap-2 mt-3.5 mb-2 ml-0.5" data-testid={testid}>
-      <b className="text-[12px] font-extrabold uppercase tracking-[0.05em] text-ink-muted">{text}</b>
-      <span className="text-[12px] text-ink-faint tabular-nums">{n}</span>
-    </p>
   );
 }
