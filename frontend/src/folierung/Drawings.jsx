@@ -231,3 +231,49 @@ export function ConditionIcon({ kind, className = 'w-16 h-20' }) {
   };
   return <svg viewBox="0 0 48 64" className={className} aria-hidden="true" strokeWidth="1">{body[kind] || body.glatt}</svg>;
 }
+
+/* Typen je Fläche (Schritt 1), wie die Küchenformen: ein Bild pro Typ.
+   48 × 40, Strich 2, in der Linienfarbe der Oberflächen-Icons. */
+const T = {
+  zimmertuer: <><path d="M6 37h36" /><rect x="15" y="4" width="18" height="33" rx="1" /><circle cx="29" cy="21" r="1.4" /></>,
+  glastuer: <><path d="M6 37h36" /><rect x="15" y="4" width="18" height="33" rx="1" /><rect x="19" y="8" width="10" height="12" /><circle cx="29.5" cy="24" r="1.4" /></>,
+  beidseitig: <><path d="M6 37h36" /><rect x="15" y="4" width="18" height="33" rx="1" /><path d="M8 18h5M8 18l2-2M8 18l2 2M40 18h-5M40 18l-2-2M40 18l-2 2" /></>,
+  haustuer: <><path d="M6 37h36" /><rect x="13" y="3" width="22" height="34" rx="1.5" /><path d="M17 10h14M17 17h14M17 24h14" /><circle cx="31" cy="30" r="1.4" /></>,
+  schrankwand: <><rect x="4" y="5" width="40" height="30" rx="1" /><path d="M14 5v30M24 5v30M34 5v30M12 20v3M16 20v3M32 20v3M36 20v3" /></>,
+  kleiderschrank: <><rect x="11" y="2" width="26" height="35" rx="1" /><path d="M24 2v35M22 17v4M26 17v4M13 37v2M35 37v2" /></>,
+  kommode: <><rect x="7" y="9" width="34" height="24" rx="1" /><path d="M7 17h34M7 25h34M22 13h4M22 21h4M22 29h4M10 33v4M38 33v4" /></>,
+  sideboard: <><rect x="4" y="14" width="40" height="16" rx="1" /><path d="M17 14v16M31 14v16M15 20v4M19 20v4M8 30v6M40 30v6" /></>,
+  regal: <><rect x="11" y="3" width="26" height="34" rx="1" /><path d="M11 11h26M11 19h26M11 27h26" /></>,
+  tisch: <><rect x="4" y="13" width="40" height="4" rx="1" /><path d="M8 17v19M40 17v19M14 17l-2 6M34 17l2 6" /></>,
+  bett: <><path d="M5 34V10M5 22h38v12M5 28h38" /><rect x="9" y="17" width="9" height="5" rx="2" /></>,
+  waschtisch: <><path d="M5 15h38" /><path d="M16 15c0 4 3 6 8 6s8-2 8-6" /><path d="M24 7v4M21 7h6" /><rect x="8" y="21" width="32" height="15" rx="1" /><path d="M24 21v15" /></>,
+  hochschrank: <><rect x="16" y="2" width="16" height="35" rx="1" /><path d="M16 19h16M29 9v4M29 25v4" /></>,
+  fliesenwand: <><rect x="6" y="4" width="36" height="32" rx="1" /><path d="M18 4v32M30 4v32M6 15h36M6 26h36" /></>,
+  wanne: <><path d="M4 18h40v6a9 9 0 0 1-9 9H13a9 9 0 0 1-9-9z" /><path d="M8 18V8a3 3 0 0 1 6 0M10 33l-2 4M38 33l2 4" /></>,
+  dusche: <><rect x="10" y="4" width="28" height="33" rx="1" /><path d="M30 8h-6v4M21 15l-2 4M24 15v5M27 15l2 4" /></>,
+  akzentwand: <><rect x="4" y="4" width="40" height="30" rx="1" /><path d="M4 34l12-12M14 34l20-20M28 34l16-16" /><path d="M2 37h44" /></>,
+  paneele: <><rect x="5" y="4" width="8" height="32" rx="1" /><rect x="15" y="4" width="8" height="32" rx="1" /><rect x="25" y="4" width="8" height="32" rx="1" /><rect x="35" y="4" width="8" height="32" rx="1" /></>,
+  saeule: <><path d="M14 4h20M14 37h20" /><rect x="18" y="6" width="12" height="29" /><path d="M22 6v29M26 6v29" /></>,
+  decke: <><path d="M4 6h40M4 6l8 10h24l8-10M12 16h24" /><path d="M24 16v8" /><path d="M19 28a5 4 0 0 1 10 0z" /></>,
+  einfluegel: <><rect x="12" y="4" width="24" height="28" rx="1" /><rect x="16" y="8" width="16" height="20" /><path d="M31 18v4M9 35h30" /></>,
+  zweifluegel: <><rect x="6" y="4" width="36" height="28" rx="1" /><path d="M24 4v28M22 16v4M26 16v4M3 35h42" /><rect x="9" y="7" width="12" height="22" /><rect x="27" y="7" width="12" height="22" /></>,
+  balkontuer: <><rect x="14" y="2" width="20" height="35" rx="1" /><rect x="18" y="6" width="12" height="20" /><path d="M31 28v4" /></>,
+  rollo: <><rect x="6" y="4" width="36" height="9" rx="1" /><path d="M9 16h30M9 20h30M9 24h30M9 28h30" /></>,
+  theke: <><path d="M3 15h42" /><rect x="6" y="15" width="36" height="20" rx="1" /><path d="M6 25h36" /></>,
+  laden: <><rect x="4" y="4" width="18" height="32" rx="1" /><rect x="26" y="4" width="18" height="32" rx="1" /><path d="M4 14h18M4 24h18M26 14h18M26 24h18" /></>,
+  aufzug: <><rect x="10" y="3" width="28" height="34" rx="1" /><path d="M24 3v34M17 15l-3 3 3 3M31 15l3 3-3 3" /></>,
+  hotel: <><path d="M4 33V15M4 25h28v8M4 29h28" /><rect x="8" y="20" width="7" height="5" rx="2" /><rect x="35" y="21" width="9" height="12" rx="1" /><path d="M35 27h9" /></>,
+  buero: <><rect x="4" y="20" width="40" height="3" /><path d="M8 23v13M40 23v13" /><rect x="17" y="6" width="16" height="11" rx="1" /><path d="M25 17v3" /></>,
+  treppe: <><path d="M4 36h8v-7h8v-7h8v-7h8V8h8" /><path d="M4 36h40" /></>,
+  heizkoerper: <><rect x="6" y="10" width="36" height="22" rx="2" /><path d="M13 13v16M20 13v16M27 13v16M34 13v16M10 32v4M38 32v4" /></>,
+  garderobe: <><rect x="6" y="6" width="36" height="12" rx="1" /><path d="M14 18v5M24 18v5M34 18v5M14 23a2 2 0 0 0 4 0M24 23a2 2 0 0 0 4 0M34 23a2 2 0 0 0 4 0" /></>,
+};
+
+export function TypeGlyph({ kind, className = 'w-12 h-10' }) {
+  return (
+    <svg viewBox="0 0 48 40" className={`shrink-0 ${className}`} aria-hidden="true" fill="none"
+      strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">
+      <g className="stroke-teal-deep">{T[kind] || <rect x="8" y="6" width="32" height="28" rx="2" />}</g>
+    </svg>
+  );
+}

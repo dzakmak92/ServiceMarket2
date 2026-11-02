@@ -185,3 +185,10 @@ Eine einzige Größe zählt immer mit der Zeile mit; „+ Größe“ nimmt eine 
 Gruppe, damit die Summe stimmt. Unten „Zuschnitt live“ (`CutSummary`): lfm, Teile, Verschnitt,
 gestapelter Balken je Element und „Eigene Teile“. Der alte Bereich „Maße, Stärke & Zuschnitt“
 ist entfernt. Die Kundenseite zeigt keine Maße.
+
+**Typen je Fläche (Nov. 2026):** Jede Fläche außer der Küche hat in Schritt 1 eine Bildauswahl
+„Was gehört dazu?“ (`types` + `defaultTypes` im Katalog, `TypeGlyph` in `Drawings.jsx`):
+Türen (Zimmertür, mit Glas, beidseitig, Haustür), Möbel (Schrankwand, Kleiderschrank, Kommode,
+Sideboard, Regal, Tisch, Bett), Bad, Wände, Fenster, Objekt, Treppe & Co. Jeder Typ hat eine
+Anzahl; `withType()` addiert die Differenz × Preset in die Zählung, nie unter 0. Die Küche
+behält Form und Bausteine. Symbol im Gewerke-Raster: stehende Folienrolle mit abgerollter Bahn.

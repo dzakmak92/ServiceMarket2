@@ -51,14 +51,15 @@ const PATHS = {
       <path d="M8 18a3 3 0 0 1 3-3" />
     </>
   ),
-  /* Eine Folienrolle, von der eine Bahn abläuft. Der Kreis allein wäre eine
-     Münze; erst die Bahn mit der Kante macht daraus Material. */
+  /* Eine stehende Folienrolle, von der seitlich eine Bahn abgerollt ist, mit
+     umgeschlagener Ecke: so sieht Folie in der Werkstatt aus. Liegend mit
+     hängender Bahn las sie sich als Küchenrolle. */
   folierung: (
     <>
-      <circle cx="10" cy="10" r="6" />
-      <circle cx="10" cy="10" r="1.8" />
-      <path d="M16 10h10v18H10V16" />
-      <path d="M21 23l5 5" />
+      <ellipse cx="9" cy="6.5" rx="4" ry="2" />
+      <path d="M5 6.5v19a4 2 0 0 0 8 0v-19" />
+      <path d="M13 8.5h14v13l-4.5 4.5H13" />
+      <path d="M22.5 26v-4.5H27" />
     </>
   ),
   montage: (

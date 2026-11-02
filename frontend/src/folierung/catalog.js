@@ -75,6 +75,16 @@ export const SURFACES = [
     tagline: 'Zimmertüren, Zargen, Haustür innen',
     drawing: 'door',
     intro: 'Eine Tür ist Blatt plus Zarge. Zähl beides getrennt, weil die Zarge vor Ort gemacht wird und das Blatt auch in der Werkstatt sein kann.',
+    /* Wie bei der Küche die Form: Typen mit Bild. Jeder Typ trägt, was eine
+       Einheit davon an Elementen bedeutet; die Anzahl je Typ addiert sich in
+       die Zählung. Die Vorgabe sorgt dafür, dass sofort ein Preis dasteht. */
+    types: [
+      { key: 'zimmertuer', label: 'Zimmertür', hint: 'Blatt eine Seite, Zarge', preset: { blatt_1: 1, zarge: 1 } },
+      { key: 'glastuer', label: 'Tür mit Glas', hint: 'Blatt mit Ausschnitt, Zarge', preset: { blatt_1: 1, zarge: 1, glas: 1 } },
+      { key: 'beidseitig', label: 'Tür beidseitig', hint: 'beide Seiten und Kanten, Zarge', preset: { blatt_2: 1, zarge: 1 } },
+      { key: 'haustuer', label: 'Haustür innen', hint: 'Innenseite ohne Rahmen', preset: { haustuer: 1 } },
+    ],
+    defaultTypes: { zimmertuer: 4 },
     elements: [
       el('blatt_1', 'Türblatt, eine Seite', { step: 1, rule: 'Nur die Seite zum Flur oder zum Raum.', area: 1.7, edge: 5.6, hours: 1.4, default: 4 }),
       el('blatt_2', 'Türblatt, beide Seiten', { step: 1, rule: 'Beide Seiten plus die Kanten.', area: 3.6, edge: 5.6, hours: 2.6, default: 0 }),
@@ -88,6 +98,16 @@ export const SURFACES = [
     tagline: 'Schrankwand, Kommode, Tisch, Regal',
     drawing: 'cabinet',
     intro: 'Möbel werden wie eine Küche gezählt: Fronten einzeln, Sichtseiten einzeln, Platten in Metern.',
+    types: [
+      { key: 'schrankwand', label: 'Schrankwand', hint: '6 Fronten, 2 Seiten', preset: { fronten: 6, seiten: 2 } },
+      { key: 'kleiderschrank', label: 'Kleiderschrank', hint: '4 Türen, 2 Seiten', preset: { fronten: 4, seiten: 2 } },
+      { key: 'kommode', label: 'Kommode', hint: '4 Schubladen, 2 Seiten', preset: { fronten: 4, seiten: 2 } },
+      { key: 'sideboard', label: 'Sideboard', hint: '3 Fronten, 2 Seiten', preset: { fronten: 3, seiten: 2 } },
+      { key: 'regal', label: 'Regal', hint: '5 Böden, 2 Seiten', preset: { regal: 5, seiten: 2 } },
+      { key: 'tisch', label: 'Tisch', hint: 'Platte ca. 1,3 m²', preset: { tisch: 1.25 } },
+      { key: 'bett', label: 'Bett', hint: 'Kopfteil und Seiten', preset: { bett: 1 } },
+    ],
+    defaultTypes: { schrankwand: 1 },
     elements: [
       el('fronten', 'Fronten', { step: 1, rule: 'Jede Tür und Schublade.', area: 0.42, edge: 2.6, hours: 0.45, default: 6 }),
       el('seiten', 'Sichtseiten', { step: 2, rule: 'Freie Korpusseiten und Oberböden.', area: 0.55, edge: 2.4, hours: 0.5, default: 2, portable: false }),
@@ -101,6 +121,14 @@ export const SURFACES = [
     tagline: 'Fliesen, Badmöbel, Waschtisch, Wannenschürze',
     drawing: 'bath',
     intro: 'Im Bad zählt die Fläche. Fliesen in Quadratmetern, Möbel wie in der Küche. Fugen werden vorher gefüllt, das rechnet der Primer-Vorschlag mit.',
+    types: [
+      { key: 'waschtisch', label: 'Waschtisch', hint: '2 Fronten, Platte 1 m', preset: { fronten: 2, waschtisch: 1 } },
+      { key: 'hochschrank', label: 'Hochschrank', hint: '2 Fronten', preset: { fronten: 2 } },
+      { key: 'fliesenwand', label: 'Fliesenwand', hint: 'ca. 6 m²', preset: { fliesen: 6 } },
+      { key: 'wanne', label: 'Badewanne', hint: 'Schürze ca. 1 m²', preset: { schuerze: 1 } },
+      { key: 'dusche', label: 'Duschwand', hint: 'ca. 2 m², trockener Bereich', preset: { dusche: 2 } },
+    ],
+    defaultTypes: { waschtisch: 1, fliesenwand: 1 },
     elements: [
       el('fliesen', 'Wandfliesen', { step: 1, unit: 'm2', rule: 'Höhe mal Breite der Fliesenfläche, Fenster und Türen abziehen.', area: 1.0, edge: 0.8, hours: 1.1, default: 6, portable: false, stepSize: 0.5 }),
       el('fronten', 'Badmöbel-Fronten', { step: 2, rule: 'Jede Tür und Schublade von Waschtisch- und Hochschrank.', area: 0.35, edge: 2.2, hours: 0.45, default: 4 }),
@@ -114,6 +142,13 @@ export const SURFACES = [
     tagline: 'Glatte Wandflächen, Paneele, Säulen',
     drawing: 'wall',
     intro: 'Architekturfolie braucht einen glatten, tragfähigen Grund. Raufaser und Putz werden vorher gespachtelt und geschliffen; der Primer-Vorschlag sagt dir, wie viel.',
+    types: [
+      { key: 'akzentwand', label: 'Akzentwand', hint: 'ca. 8 m² glatte Wand', preset: { wand: 8 } },
+      { key: 'paneele', label: 'Paneelwand', hint: '6 Paneele', preset: { paneel: 6 } },
+      { key: 'saeule', label: 'Säule', hint: 'Raumhöhe 2,5 m', preset: { saeule: 2.5 } },
+      { key: 'decke', label: 'Decke', hint: 'ca. 10 m²', preset: { decke: 10 } },
+    ],
+    defaultTypes: { akzentwand: 1 },
     elements: [
       el('wand', 'Wandfläche', { step: 1, unit: 'm2', rule: 'Höhe mal Breite, Öffnungen abziehen.', area: 1.0, edge: 0.6, hours: 0.5, default: 10, portable: false, stepSize: 0.5 }),
       el('paneel', 'Wandpaneele', { step: 2, rule: 'Jedes Paneel einzeln, Stöße werden mitfoliert.', area: 0.6, edge: 2.0, hours: 0.4, default: 0 }),
@@ -126,6 +161,13 @@ export const SURFACES = [
     tagline: 'Kunststofffenster, Fensterbänke, Rollladenkästen',
     drawing: 'window',
     intro: 'Weiße Kunststofffenster werden innen anthrazit oder Holzoptik. Gezählt wird pro Flügel und Rahmen in Metern.',
+    types: [
+      { key: 'einfluegel', label: 'Fenster einflügelig', hint: '1 Flügel, Rahmen, Bank', preset: { fluegel: 1, rahmen: 5, bank: 1 } },
+      { key: 'zweifluegel', label: 'Fenster zweiflügelig', hint: '2 Flügel, Rahmen, Bank', preset: { fluegel: 2, rahmen: 6, bank: 1.5 } },
+      { key: 'balkontuer', label: 'Balkontür', hint: '1 Flügel, Rahmen', preset: { fluegel: 1, rahmen: 6 } },
+      { key: 'rollo', label: 'Rollladenkasten', hint: 'Blende 1,5 m', preset: { rollo: 1.5 } },
+    ],
+    defaultTypes: { zweifluegel: 2 },
     elements: [
       el('fluegel', 'Fensterflügel innen', { step: 1, rule: 'Jeder bewegliche Flügel, innen rundum.', area: 0.5, edge: 4.0, hours: 1.0, default: 4, portable: false }),
       el('rahmen', 'Blendrahmen', { step: 2, unit: 'm', rule: 'Umfang des Rahmens innen, in Metern.', area: 0.12, edge: 2.0, hours: 0.35, default: 16, portable: false, stepSize: 0.5 }),
@@ -138,6 +180,14 @@ export const SURFACES = [
     tagline: 'Theke, Ladenbau, Aufzug, Hotelzimmer, Büro',
     drawing: 'counter',
     intro: 'Objekte werden nach Fläche und Stück gerechnet; bei Hotels und Büros in Räumen. Nacht- und Wochenendarbeit kommt als Zuschlag dazu.',
+    types: [
+      { key: 'theke', label: 'Theke', hint: '3 m Front und Platte', preset: { theke: 3 } },
+      { key: 'laden', label: 'Ladenregale', hint: '4 Module', preset: { regal: 4 } },
+      { key: 'aufzug', label: 'Aufzug', hint: 'Kabine ca. 8 m²', preset: { aufzug: 8 } },
+      { key: 'hotel', label: 'Hotelzimmer', hint: 'Möbelset je Zimmer', preset: { zimmer: 1 } },
+      { key: 'buero', label: 'Büro', hint: '4 Tische, 4 m² Trennwand', preset: { tisch: 4, trennwand: 4 } },
+    ],
+    defaultTypes: { theke: 1 },
     elements: [
       el('theke', 'Theke / Empfang', { step: 1, unit: 'm', rule: 'Front plus Oberseite, Länge in Metern.', area: 1.6, edge: 3.0, hours: 1.6, default: 3, portable: false, stepSize: 0.5 }),
       el('regal', 'Ladenregale / Warenträger', { step: 2, rule: 'Jedes Regalmodul als Stück.', area: 1.5, edge: 5.0, hours: 1.2, default: 0 }),
@@ -152,6 +202,12 @@ export const SURFACES = [
     tagline: 'Treppenstufen, Heizkörper, Garderobe, Fensterbank',
     drawing: 'stairs',
     intro: 'Was sonst nirgends reinpasst. Treppen zählen pro Stufe, Heizkörper pro Stück.',
+    types: [
+      { key: 'treppe', label: 'Treppe', hint: '14 Tritt- und Setzstufen', preset: { stufe: 14, setzstufe: 14 } },
+      { key: 'heizkoerper', label: 'Heizkörper', hint: 'Flachheizkörper', preset: { heizkoerper: 1 } },
+      { key: 'garderobe', label: 'Garderobe', hint: '2 Paneele', preset: { garderobe: 2 } },
+    ],
+    defaultTypes: { treppe: 1 },
     elements: [
       el('stufe', 'Trittstufe', { step: 1, rule: 'Jede Trittstufe, Vorderkante inklusive.', area: 0.35, edge: 2.2, hours: 0.6, default: 0, portable: false }),
       el('setzstufe', 'Setzstufe', { step: 2, rule: 'Das senkrechte Brett zwischen zwei Stufen.', area: 0.18, edge: 1.0, hours: 0.3, default: 0, portable: false }),

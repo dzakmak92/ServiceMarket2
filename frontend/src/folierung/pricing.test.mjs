@@ -13,7 +13,7 @@ const nestingUrl = asUrl(readFileSync(join(here, 'nesting.js'), 'utf8'));
 const pricingSrc = readFileSync(join(here, 'pricing.js'), 'utf8')
   .replaceAll("from './catalog'", `from '${catalogUrl}'`)
   .replaceAll("from './nesting'", `from '${nestingUrl}'`);
-const { calculate, emptyInput, withShape, withAddon, withExtraSurface, primerPacks, DEFAULT_SETTINGS, summaryText, vatFromProfile, vatLabel, quoteLinesFrom } = await import(asUrl(pricingSrc));
+const { calculate, emptyInput, withShape, withAddon, withExtraSurface, withType, primerPacks, DEFAULT_SETTINGS, summaryText, vatFromProfile, vatLabel, quoteLinesFrom } = await import(asUrl(pricingSrc));
 
 let pass = 0, fail = 0;
 const ok = (c, m) => { c ? (pass++, console.log('  ok  ', m)) : (fail++, console.log('  FAIL', m)); };
@@ -85,6 +85,21 @@ ok(wall.notes.some((n) => n.level === 'high'), 'Wände tragen den Q3-Hinweis');
 ok(summaryText(inp, base).includes('16 × Fronten'), 'die Anfrage nennt die Positionen');
 let nothing = calculate({ ...emptyInput('kueche'), counts: {} });
 ok(nothing.vk === 0 && nothing.hours.total === 0 && nothing.ways.pickup === null, 'nichts gezählt → kein Preis, keine Rüstzeit');
+
+console.log('\n── Typen je Fläche ──');
+const mb = emptyInput('moebel');
+ok(mb.types.schrankwand === 1 && mb.counts.fronten === 6 && mb.counts.seiten === 2, 'Möbel starten mit einer Schrankwand (6 Fronten, 2 Seiten)');
+const mb2 = withType(mb, 'kommode', 1);
+ok(mb2.counts.fronten === 10 && mb2.counts.seiten === 4, 'Kommode dazu: +4 Fronten, +2 Seiten');
+const mb3 = withType(mb2, 'schrankwand', 0);
+ok(mb3.counts.fronten === 4 && mb3.types.schrankwand === 0, 'Schrankwand weg: Fronten zurück auf 4');
+const td = emptyInput('tueren');
+ok(td.counts.blatt_1 === 4 && td.counts.zarge === 4, 'Türen starten mit 4 Zimmertüren');
+const td2 = withType(td, 'glastuer', 2);
+ok(td2.counts.glas === 2 && td2.counts.blatt_1 === 6, 'zwei Glastüren: +2 Blätter, +2 Ausschnitte');
+const manual = withType({ ...mb, counts: { ...mb.counts, fronten: 1 } }, 'schrankwand', 0);
+ok(manual.counts.fronten === 0, 'nie unter 0, auch wenn von Hand weniger gezählt wurde');
+ok(emptyInput('kueche').types && Object.keys(emptyInput('kueche').types).length === 0, 'Küche bleibt bei Form und Bausteinen');
 
 console.log('\n── Umsatzsteuer aus dem Profil ──');
 const at = vatFromProfile({ invoice_country: 'AT' });

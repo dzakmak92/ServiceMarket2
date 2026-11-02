@@ -12,8 +12,8 @@ import {
   SURFACES, surfaceByKey, activeElements, CONDITIONS, SUBSTRATES, SUBSTRATES_FOR,
   substrateByKey, DECORS, EXTRAS, TRAVEL_ZONES, FRONT_WIDTHS, FRONT_HEIGHTS, THICKNESSES,
 } from './catalog';
-import { calculate, emptyInput, withAddon, withShape, withExtraSurface, summaryText, vatLabel } from './pricing';
-import Drawing, { drawingFor, SurfaceIcon, ConditionIcon } from './Drawings';
+import { calculate, emptyInput, withAddon, withShape, withExtraSurface, withType, summaryText, vatLabel } from './pricing';
+import Drawing, { drawingFor, SurfaceIcon, ConditionIcon, TypeGlyph } from './Drawings';
 import { pieceDefault, cutSize } from './nesting';
 
 /**
@@ -121,6 +121,39 @@ const FolierungWizard = forwardRef(function FolierungWizard({ audience = 'custom
               </Choice>
             ))}
           </div>
+
+          {surface.types && (
+            <>
+              <Kicker className="mt-8">Was gehört dazu?</Kicker>
+              <p className="text-sm text-ink-muted mb-3">Tipp an, was foliert wird, und stell die Anzahl ein. Das setzt die Startwerte; im Zählschritt passt du jedes Teil genau an.</p>
+              <div className="grid sm:grid-cols-2 gap-2" data-testid="fol-types">
+                {surface.types.map((tp) => {
+                  const n = input.types?.[tp.key] || 0;
+                  return (
+                    <div key={tp.key} role="button" tabIndex={0} aria-pressed={n > 0} data-testid={`fol-type-${tp.key}`}
+                      onClick={() => { if (!n) setInput(withType(input, tp.key, 1)); }}
+                      onKeyDown={(ev) => { if ((ev.key === 'Enter' || ev.key === ' ') && !n) { ev.preventDefault(); setInput(withType(input, tp.key, 1)); } }}
+                      className={`relative flex items-center gap-3 rounded-2xl border p-3 transition duration-ui ease-out ${n ? 'border-amber bg-amber/5 ring-2 ring-amber/30' : 'border-sm-border bg-paper hover:border-teal/40 cursor-pointer active:scale-[.98]'}`}>
+                      <TypeGlyph kind={tp.key} />
+                      <div className="min-w-0 flex-1">
+                        <div className="font-headings font-bold text-ink leading-tight">{tp.label}</div>
+                        <div className="text-xs text-ink-muted leading-snug">{tp.hint}</div>
+                      </div>
+                      {n > 0 ? (
+                        <span className="inline-flex items-center rounded-full border border-sm-border bg-paper overflow-hidden" onClick={(ev) => ev.stopPropagation()} role="presentation">
+                          <button type="button" aria-label={`${tp.label} weniger`} onClick={() => setInput(withType(input, tp.key, n - 1))} className="w-8 h-8 text-ink"><Minus size={14} className="mx-auto" /></button>
+                          <span className="min-w-[20px] text-center font-extrabold text-ink tabular-nums">{n}</span>
+                          <button type="button" aria-label={`${tp.label} mehr`} onClick={() => setInput(withType(input, tp.key, n + 1))} className="w-8 h-8 text-ink"><Plus size={14} className="mx-auto" /></button>
+                        </span>
+                      ) : (
+                        <span className="w-8 h-8 rounded-full border border-dashed border-teal/40 text-teal flex items-center justify-center"><Plus size={14} /></span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
 
           {surface.shapes && (
             <>

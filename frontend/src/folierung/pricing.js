@@ -74,9 +74,18 @@ export function vatLabel(vat) {
 export function emptyInput(surfaceKey = 'kueche') {
   const surface = surfaceByKey(surfaceKey);
   const counts = {};
-  for (const e of activeElements(surface, [])) counts[e.key] = e.default;
+  // Flächen mit Typen starten bei 0 und bekommen die Vorgabe-Typen addiert.
+  for (const e of activeElements(surface, [])) counts[e.key] = surface.types ? 0 : e.default;
+  const types = {};
+  for (const [k, n] of Object.entries(surface.defaultTypes || {})) {
+    const t = surface.types.find((x) => x.key === k);
+    if (!t) continue;
+    types[k] = n;
+    for (const [ek, q] of Object.entries(t.preset)) counts[ek] = Math.round(((counts[ek] || 0) + n * q) * 100) / 100;
+  }
   const subs = surface.key;
   return {
+    types,
     surface: surface.key,
     shape: surface.shapes ? surface.shapes[1].key : null,
     addons: [],
@@ -116,6 +125,19 @@ export function withExtraSurface(input, surfaceKey, on) {
   const counts = { ...input.counts };
   if (on) for (const e of extra.elements) if (counts[`${extra.key}:${e.key}`] == null) counts[`${extra.key}:${e.key}`] = e.default;
   return { ...input, extraSurfaces, counts };
+}
+
+/** Anzahl eines Typs ändern (Möbel, Türen, …): die Differenz geht in die Zählung. */
+export function withType(input, typeKey, n) {
+  const surface = surfaceByKey(input.surface);
+  const t = (surface.types || []).find((x) => x.key === typeKey);
+  if (!t) return input;
+  const next = Math.max(0, Math.round(n));
+  const delta = next - (input.types?.[typeKey] || 0);
+  if (!delta) return input;
+  const counts = { ...input.counts };
+  for (const [ek, q] of Object.entries(t.preset)) counts[ek] = Math.max(0, Math.round(((counts[ek] || 0) + delta * q) * 100) / 100);
+  return { ...input, types: { ...(input.types || {}), [typeKey]: next }, counts };
 }
 
 /** Küchenform wählen: setzt die Zählwerte auf die typischen Startwerte. */
