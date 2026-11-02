@@ -12,7 +12,7 @@ import {
   SURFACES, surfaceByKey, activeElements, CONDITIONS, SUBSTRATES, SUBSTRATES_FOR,
   substrateByKey, DECORS, EXTRAS, TRAVEL_ZONES, FRONT_WIDTHS, FRONT_HEIGHTS, THICKNESSES,
 } from './catalog';
-import { calculate, emptyInput, withAddon, withShape, withExtraSurface, withType, summaryText, vatLabel } from './pricing';
+import { calculate, emptyInput, withAddon, withShape, withType, summaryText, vatLabel } from './pricing';
 import Drawing, { drawingFor, SurfaceIcon, ConditionIcon, TypeGlyph } from './Drawings';
 import { pieceDefault, cutSize } from './nesting';
 
@@ -131,9 +131,11 @@ const FolierungWizard = forwardRef(function FolierungWizard({ audience = 'custom
                   const n = input.types?.[tp.key] || 0;
                   return (
                     <div key={tp.key} role="button" tabIndex={0} aria-pressed={n > 0} data-testid={`fol-type-${tp.key}`}
-                      onClick={() => { if (!n) setInput(withType(input, tp.key, 1)); }}
-                      onKeyDown={(ev) => { if ((ev.key === 'Enter' || ev.key === ' ') && !n) { ev.preventDefault(); setInput(withType(input, tp.key, 1)); } }}
-                      className={`relative flex items-center gap-3 rounded-2xl border p-3 transition duration-ui ease-out ${n ? 'border-amber bg-amber/5 ring-2 ring-amber/30' : 'border-sm-border bg-paper hover:border-teal/40 cursor-pointer active:scale-[.98]'}`}>
+                      /* Tippen schaltet um: nicht gewählt → 1, gewählt → 0. Die Anzahl
+                         stellt man am Zähler rechts ein. */
+                      onClick={() => setInput(withType(input, tp.key, n ? 0 : 1))}
+                      onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); setInput(withType(input, tp.key, n ? 0 : 1)); } }}
+                      className={`relative flex items-center gap-3 rounded-2xl border p-3 cursor-pointer transition duration-ui ease-out active:scale-[.98] ${n ? 'border-amber bg-amber/5 ring-2 ring-amber/30' : 'border-sm-border bg-paper hover:border-teal/40'}`}>
                       <TypeGlyph kind={tp.key} />
                       <div className="min-w-0 flex-1">
                         <div className="font-headings font-bold text-ink leading-tight">{tp.label}</div>
@@ -190,19 +192,6 @@ const FolierungWizard = forwardRef(function FolierungWizard({ audience = 'custom
               </div>
             </>
           )}
-          <Kicker className="mt-8">Weitere Bereiche im selben Auftrag</Kicker>
-          <p className="text-sm text-ink-muted mb-3">Türen, Möbel oder Bad gleich mit? Jeder Bereich bekommt seine eigene Zählzeichnung, der Preis wird einer.</p>
-          <div className="flex flex-wrap gap-2">
-            {SURFACES.filter((x) => x.key !== input.surface).map((x) => {
-              const on = (input.extraSurfaces || []).includes(x.key);
-              return (
-                <button key={x.key} type="button" onClick={() => setInput(withExtraSurface(input, x.key, !on))} aria-pressed={on} data-testid={`fol-extra-surface-${x.key}`}
-                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition ${on ? 'border-amber bg-amber/10 text-ink' : 'border-sm-border bg-paper text-ink hover:border-teal/40'}`}>
-                  {on ? <Check size={14} className="text-amber-deep" /> : <Plus size={14} className="text-ink-muted" />} {x.label}
-                </button>
-              );
-            })}
-          </div>
         </section>
       )}
 
