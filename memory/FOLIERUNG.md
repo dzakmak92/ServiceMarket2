@@ -192,3 +192,15 @@ Türen (Zimmertür, mit Glas, beidseitig, Haustür), Möbel (Schrankwand, Kleide
 Sideboard, Regal, Tisch, Bett), Bad, Wände, Fenster, Objekt, Treppe & Co. Jeder Typ hat eine
 Anzahl; `withType()` addiert die Differenz × Preset in die Zählung, nie unter 0. Die Küche
 behält Form und Bausteine. Symbol im Gewerke-Raster: stehende Folienrolle mit abgerollter Bahn.
+
+## Entwürfe für alle Gewerke (Nov. 2026, Variante A)
+
+Angefangene Kalkulationen werden nach jeder Änderung automatisch gesichert (`utils/calcDrafts.js`,
+heute localStorage, Schnittstelle für eine spätere Server-Route) und stehen unter
+**Angebote › Entwürfe** (erster Tab, `components/pro/CalcDraftList.jsx`). Beim Verlassen, egal
+wohin, kommt ein Hinweis „Kalkulation gespeichert · Angebote › Entwürfe“ mit „Ansehen“
+(`utils/draftToast.js`, sonner). Der Dialog „Kalkulation verlassen?“ ist entfernt.
+`/estimate/{trade}?draft={id}` öffnet einen Entwurf: Folierung mit Stand und Schritt, die anderen
+Gewerke mit ihrer Auswahl (`EstimateCards` nimmt `initialPicked`). Aus der Liste: Weiter,
+Angebot anlegen, Löschen mit Rückgängig. Entwürfe ohne Änderung fallen nach 30 Tagen heraus;
+wird ein Angebot daraus, verschwindet der Entwurf.

@@ -46,9 +46,9 @@ const roundTo = (v, step) => Math.round(v / step) * step;
 const PALETTE = ['#1e5490', '#c27c12', '#2d6a7f', '#7a4f9a', '#3b6f32', '#ae3f4c', '#5b8fb0', '#8a6a3c'];
 
 /* forwardRef: die Kalkulationsseite wählt die Fläche über das Dial. */
-const FolierungWizard = forwardRef(function FolierungWizard({ audience = 'customer', settings, initial, onSave, onCreateQuote, onChange, creating = false, surfaceFromDial = false }, ref) {
+const FolierungWizard = forwardRef(function FolierungWizard({ audience = 'customer', settings, initial, onSave, onCreateQuote, onChange, creating = false, surfaceFromDial = false, initialStep = 0 }, ref) {
   const isPro = audience === 'pro';
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(initialStep);
   const [input, setInput] = useState(() => initial || emptyInput('kueche'));
   const [active, setActive] = useState(null);     // hervorgehobenes Element in der Zeichnung
   const [copied, setCopied] = useState(false);
@@ -70,7 +70,7 @@ const FolierungWizard = forwardRef(function FolierungWizard({ audience = 'custom
   /* Der Elternteil (Kalkulationsseite) braucht den Stand, um beim Verlassen
      ein Angebot anzulegen und den Entwurf zu sichern. */
   const startRef = useRef(JSON.stringify(input));
-  useEffect(() => { onChange?.({ input, result, dirty: JSON.stringify(input) !== startRef.current }); }, [input, result]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { onChange?.({ input, result, step, dirty: JSON.stringify(input) !== startRef.current }); }, [input, result, step]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const patch = (p) => setInput((i) => ({ ...i, ...p }));
   const setCount = (key, v) => setInput((i) => {

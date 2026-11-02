@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import CalcDraftList, { useCalcDrafts } from '../../components/pro/CalcDraftList';
 import SkeletonList from '../../components/motion/SkeletonList';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
@@ -277,14 +278,16 @@ const STATUS_STYLE = {
  * business guessing at that.
  */
 export default function QuotesPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [quotes, setQuotes] = useState([]);
   const [jobs, setJobs] = useState([]);
   /* Which of the three lists is on screen. The status dropdown this replaces
      offered eight fine statuses and no counts, so it could tell you there were
      "sent" quotes but never that anything was waiting. The fine status is still
      on every card, where it belongs. */
-  const [tab, setTab] = useState('open');
+  const [params] = useSearchParams();
+  const [tab, setTab] = useState(() => (params.get('tab') === 'drafts' ? 'drafts' : 'open'));
+  const drafts = useCalcDrafts();
   // Which quote is being turned into work. Null when the sheet is closed.
   const [converting, setConverting] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -332,7 +335,7 @@ export default function QuotesPage() {
      version a newer one replaced, not an outcome — so it appears under Offen,
      where its own card already says "ersetzt" and offers no verdict. */
   const byTab = useMemo(() => {
-    const out = { open: [], won: [], lost: [] };
+    const out = { drafts: [], open: [], won: [], lost: [] };
     quotes.forEach((q) => out[VERDICT_OF[q.status] || 'open'].push(q));
     return out;
   }, [quotes]);
@@ -458,8 +461,21 @@ export default function QuotesPage() {
             which is where it was being read from anyway. */}
         <div className="flex rounded-xl border border-sm-border bg-paper overflow-hidden mb-3"
              role="tablist" aria-label={t('quote_verdict')} data-testid="quote-tabs">
-          {['open', 'won', 'lost'].map((v) => {
+          {['drafts', 'open', 'won', 'lost'].map((v) => {
             const on = v === tab;
+            if (v === 'drafts') {
+              return (
+                <button key={v} type="button" role="tab" aria-selected={on}
+                        onClick={() => setTab(v)} data-testid="quote-tab-drafts"
+                        className={`flex-1 min-h-[52px] px-2 text-[13px] font-bold leading-tight
+                                    border-r border-sm-border ${on ? 'bg-amber/15 text-amber-text' : 'text-ink-muted'}`}>
+                  Entwürfe
+                  <span className="block text-[11px] font-semibold opacity-90">
+                    {drafts.length}{drafts.length > 0 && <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber ml-1 align-middle" />}
+                  </span>
+                </button>
+              );
+            }
             return (
               <button key={v} type="button" role="tab" aria-selected={on}
                       onClick={() => setTab(v)} data-testid={`quote-tab-${v}`}
@@ -482,7 +498,9 @@ export default function QuotesPage() {
         )}
 
 
-        {loading ? (
+        {tab === 'drafts' ? (
+          <CalcDraftList drafts={drafts} lang={lang} onQuoted={() => { load(); }} />
+        ) : loading ? (
           <SkeletonList rows={4} />
         ) : shown.length === 0 ? (
           <div className="card-lg text-center py-10" data-testid="quote-empty">

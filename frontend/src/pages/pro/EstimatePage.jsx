@@ -11,6 +11,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import FolierungPanel from '../../folierung/FolierungPanel';
 import { canUseFolierung } from '../../folierung/store';
 import SuccessCheck from '../../components/motion/SuccessCheck';
+import { getDraft, saveDraft, removeDraft, newDraftId } from '../../utils/calcDrafts';
+import { notifyDraftSaved } from '../../utils/draftToast';
 import { SURFACES as FOL_SURFACES } from '../../folierung/catalog';
 import { fmtEur0 as fmtEur, fmtEur as fmtEur2, fmtNum as fmtNumRaw } from '../../utils/money';
 
@@ -167,12 +169,18 @@ export default function EstimatePage() {
      and this page owns the back button, so leaving with work on the table can
      only be caught if the two know about each other. */
   const [selection, setSelection] = useState({ positions: [], total: 0, unpriced: 0 });
-  const [leaving, setLeaving] = useState(false);
-  /* Where the pro was going when the guard stopped them. Back goes home, as
-     it always has; the trade carousel goes to the trade they tapped, and
-     sending them home instead would be the guard losing their place on top of
-     what it is already asking about. */
-  const [leaveTo, setLeaveTo] = useState('/');
+  /* Entwürfe (utils/calcDrafts): Die Auswahl wird nach jeder Änderung als
+     Entwurf gesichert und liegt unter Angebote › Entwürfe. Beim Verlassen
+     kommt nur ein Hinweis, kein Dialog mehr. `?draft={id}` öffnet einen. */
+  const draftParam = params.get('draft');
+  const restoredDraft = useMemo(() => {
+    const d = getDraft(draftParam);
+    return d?.kind === 'estimate' && d.trade === trade ? d : null;
+  }, [draftParam, trade]);
+  const estDraftId = useRef(null);
+  const pickedRef = useRef({});
+  const selRef = useRef(selection);
+  useEffect(() => { estDraftId.current = restoredDraft?.id || null; }, [trade, restoredDraft]);
   const [accuracy, setAccuracy] = useState(null);
   const [showAccuracy, setShowAccuracy] = useState(false);
   const [calibrating, setCalibrating] = useState(false);
@@ -395,12 +403,36 @@ export default function EstimatePage() {
    * lose the work, which is not always where the tap was pointing: back has
    * always dropped them home rather than at the trade list.
    */
-  const leave = (to, onDiscard = to) => {
-    // Die Folierung führt ihren eigenen Stand und ihren eigenen Dialog.
-    if (trade === FOL_KEY) { if (!folRef.current?.requestLeave(onDiscard)) navigate(to); return; }
-    if (selection.positions.length || selection.unpriced) { setLeaveTo(onDiscard); setLeaving(true); }
-    else navigate(to);
+  const onSelectionChange = (positions, total, unpriced) => {
+    const sel = { positions, total, unpriced };
+    setSelection(sel);
+    selRef.current = sel;
+    if (!positions.length && !unpriced) return;
+    if (!estDraftId.current) estDraftId.current = newDraftId();
+    const label = tradeList.find((x) => x.key === trade)?.label || trade;
+    const n = positions.length + unpriced;
+    saveDraft({
+      id: estDraftId.current, kind: 'estimate', trade,
+      title: `${label} · ${n} ${n === 1 ? 'Position' : 'Positionen'}`,
+      sub: unpriced ? `${unpriced} noch ohne Menge` : 'bereit für ein Angebot',
+      step: unpriced ? 1 : 2, steps: 2, net: total,
+      payload: { picked: pickedRef.current, positions },
+    });
   };
+
+  const leave = (to) => {
+    if (trade === FOL_KEY) { folRef.current?.requestLeave(to); navigate(to); return; }
+    const s0 = selRef.current;
+    if ((s0.positions.length || s0.unpriced) && estDraftId.current) notifyDraftSaved(estDraftId.current, navigate);
+    estDraftId.current = null;
+    navigate(to);
+  };
+
+  /* Auch über die Navigationsleiste: wer mit Auswahl geht, erfährt, wo sie liegt. */
+  useEffect(() => () => {
+    const s0 = selRef.current;
+    if ((s0.positions.length || s0.unpriced) && estDraftId.current) notifyDraftSaved(estDraftId.current, navigate);
+  }, [navigate]);
 
   const openJob = async (key) => {
     setError('');
@@ -578,6 +610,7 @@ export default function EstimatePage() {
          kept on the way to somewhere else and a second dialog would be one
          more thing to dismiss. */
       const q = data?.quotes?.[0];
+      if (q?.id && estDraftId.current) { removeDraft(estDraftId.current); estDraftId.current = null; selRef.current = { positions: [], total: 0, unpriced: 0 }; }
       if (q?.id && then === 'home') { navigate('/'); return data; }
       if (q?.id) {
         /* The gross too. `quotes` has always carried `vat_total` and
@@ -815,8 +848,10 @@ export default function EstimatePage() {
                                         only={dial ? openGroup : null}
                                         lang={lang} quoting={creating}
                                         onQuote={createMultiQuote}
-                                        onSelection={(positions, total, unpriced) =>
-                                          setSelection({ positions, total, unpriced })} />
+                                        key={`${trade}|${restoredDraft?.id || ''}`}
+                                        initialPicked={restoredDraft?.payload?.picked || null}
+                                        onPickedChange={(p) => { pickedRef.current = p; }}
+                                        onSelection={onSelectionChange} />
                        ) : null} />
             {/* The learned-rates card is off this screen. It is an expert
                 tool — a list of the hourly and unit rates the app has inferred
@@ -879,61 +914,6 @@ export default function EstimatePage() {
           </>
         )}
       </div>
-
-      {/* Leaving with positions ticked. Nothing on this screen is stored until
-          a quote is made, so back used to throw away an afternoon of ticking
-          without a word. It asks rather than saving silently: a calculation
-          abandoned after two taps becomes a draft nobody wants, and the quotes
-          list is where they would pile up. */}
-      {leaving && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-6 bg-ink/40 animate-scrim-in"
-             role="dialog" aria-modal="true" data-testid="estimate-leave"
-             onClick={(e) => { if (e.target === e.currentTarget) setLeaving(false); }}>
-          <div className="w-full max-w-sm rounded-2xl bg-paper p-4 shadow-xl animate-dialog-in">
-            <p className="font-headings font-bold text-ink text-[17px]">
-              {t('est_leave_title')}
-            </p>
-            <p className="text-[14px] text-ink-muted mt-1.5">
-              {selection.positions.length
-                ? t('est_leave_body', { n: selection.positions.length,
-                                        v: fmtEur(selection.total) })
-                /* Ticked, but no quantity anywhere, so there is no price and
-                   nothing a quote could be made of. Offering "keep draft"
-                   here would either save an empty document or invent the
-                   quantities — say so instead. */
-                : t('est_leave_nothing', { n: selection.unpriced })}
-            </p>
-            <div className="flex gap-2 mt-4">
-              {selection.positions.length > 0 && (
-              <button type="button" disabled={creating}
-                      data-testid="estimate-leave-keep"
-                      onClick={async () => {
-                        // Straight home on success. The dialog has already
-                        // said the draft is being kept, so a second one
-                        // announcing it would be a thing to dismiss twice.
-                        const ok = await createMultiQuote(selection.positions,
-                                                          { then: 'home' });
-                        if (!ok) setLeaving(false);
-                      }}
-                      className="flex-1 min-h-[46px] rounded-xl bg-teal text-paper
-                                 font-bold text-[14px] flex items-center justify-center gap-2">
-                {creating ? <Loader2 size={15} className="animate-spin" /> : null}
-                {t('est_leave_keep')}
-              </button>
-              )}
-              <button type="button" disabled={creating}
-                      data-testid="estimate-leave-discard"
-                      onClick={() => { setLeaving(false); navigate(leaveTo); }}
-                      className={`flex-1 min-h-[46px] rounded-xl font-bold text-[14px]
-                                  ${selection.positions.length
-                                    ? 'border border-red-warn/35 bg-paper text-red-text'
-                                    : 'bg-teal text-paper'}`}>
-                {selection.positions.length ? t('est_leave_discard') : t('est_leave_ok')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* The quote exists. Said here rather than by arriving somewhere new,
           because "did that work?" is the question, and a screen you did not

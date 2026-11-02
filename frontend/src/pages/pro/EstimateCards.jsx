@@ -985,9 +985,11 @@ function Card({ job, state, onToggle, onOpen, onAnswer, onLineQty, onLineRate,
 }
 
 export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
-                                        onSelection, only = null, vat }) {
+                                        onSelection, only = null, vat,
+                                        initialPicked = null, onPickedChange }) {
   const { t } = useLang();
-  const [picked, setPicked] = useState({});
+  /* Ein Entwurf aus Angebote › Entwürfe bringt seine Auswahl mit. */
+  const [picked, setPicked] = useState(() => initialPicked || {});
 
   /* Answers → estimate, one request per card that has a quantity — including
      one only opened to be read, because the price is what somebody opened it
@@ -1271,6 +1273,17 @@ export default function EstimateCards({ jobs, sections, lang, onQuote, quoting,
      estimate, so it is not in `chosen` — and that is precisely the state a pro
      is in halfway through, which is precisely when they hit back. */
   const signature = JSON.stringify([positions, Math.round(total * 100), pending.length]);
+  /* Vor onSelection, damit die Seite beim Sichern des Entwurfs schon die
+     aktuelle Auswahl hat (Effekte laufen in Reihenfolge). Nur Angehaktes. */
+  useEffect(() => {
+    if (!onPickedChange) return;
+    const keep = {};
+    Object.entries(picked).forEach(([k, v]) => {
+      if (v?.checked) keep[k] = { checked: true, open: false, answers: v.answers, qtyOverrides: v.qtyOverrides, rateEdits: v.rateEdits, excluded: v.excluded, form: v.form, est: v.est };
+    });
+    onPickedChange(keep);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [picked]);
   useEffect(() => {
     const [pos, , unpriced] = JSON.parse(signature);
     onSelection?.(pos, total, unpriced);
