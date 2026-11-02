@@ -5,11 +5,14 @@ import SkeletonList from '../../components/motion/SkeletonList';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import { fmtEur } from '../../utils/money';
-import { fmtDate } from '../../utils/money';
 import ConvertSheet from '../../components/pro/ConvertSheet';
+import { openQuotePdf } from '../../utils/openPdf';
+import CompactRow, { MiniGroup, MiniBtn } from '../../components/pro/CompactRow';
+import TradeMark from '../../components/TradeMark';
+import { tradeOfCategory } from '../../components/pro/JobListView';
 import {
   Loader2, Check, Ban, FileText, AlertCircle, Trash2,
-  Calculator, Clock, Pencil, Share2, MoreHorizontal, FileDown,
+  Calculator, Clock, Pencil, Share2, FileDown,
 } from 'lucide-react';
 
 
@@ -74,61 +77,18 @@ const AGE = [
   { after: 7, card: 'bg-age-warm border-age-warm-edge',
     text: 'text-teal', meta: 'text-ink-muted' },
 ];
+/* The fine status as the card's label colour: waiting is amber, looked at is
+   teal, decided is green or red, and a draft or a replaced version is grey. */
+const STATUS_TONE = {
+  draft: 'muted', sent: 'amber', viewed: 'teal', negotiating: 'teal',
+  accepted: 'green', converted: 'green', rejected: 'red', expired: 'red', superseded: 'muted',
+};
+
 const ageOf = (q) => {
   const days = Math.floor((Date.now() - new Date(q.created_at)) / 86400000);
   return { days, step: q.created_at ? AGE.find((a) => days >= a.after) : null };
 };
 
-/**
- * The one line under a quote that says what is going on with it.
- *
- * This is what the status badge could not be. A badge says "versendet"; this
- * says "3× angesehen, keine Antwort" — which is the difference between knowing
- * the state and knowing whether to pick up the phone. Every branch is built
- * from a column the table already has: sent_at, first_viewed_at, viewed_count,
- * decided_at, reject_reason, valid_until.
- *
- * Ordered by what would make somebody act. An expiring quote outranks an
- * unanswered one, because the deadline is the thing that stops being fixable.
- */
-function signal(q, t) {
-  // `fmtDate`, not toLocaleDateString: the latter takes the browser's
-  // locale, so an Austrian pro with an English browser got 8/5/2026 for
-  // the 5th of August.
-  const day = (d) => (d ? fmtDate(d) : '');
-  if (q.status === 'accepted' || q.status === 'converted') {
-    return { text: t('quote_sig_won', { d: day(q.decided_at) }), tone: 'text-green-text' };
-  }
-  if (q.status === 'rejected') {
-    const why = (q.reject_reason || '').trim();
-    return { text: why ? t('quote_sig_lost_why', { r: why }) : t('quote_sig_lost'),
-             tone: 'text-ink-muted' };
-  }
-  if (q.status === 'expired') {
-    return { text: t('quote_sig_expired'), tone: 'text-ink-muted' };
-  }
-  // Replaced by a newer version. Without this branch it fell through to the
-  // still-waiting cases below and announced "noch nicht geöffnet" about a
-  // document nobody was ever going to open.
-  if (q.status === 'superseded') {
-    return { text: t('quote_sig_superseded'), tone: 'text-ink-muted' };
-  }
-  if (q.status === 'draft') {
-    return { text: t('quote_sig_draft'), tone: 'text-ink-muted' };
-  }
-  // Still out with the customer. Days left first — it is the only one with a
-  // deadline attached.
-  if (q.valid_until) {
-    const left = Math.ceil((new Date(q.valid_until) - Date.now()) / 86400000);
-    if (left <= 0) return { text: t('quote_sig_expired'), tone: 'text-red-text' };
-    if (left <= 5) return { text: t('quote_sig_expires', { n: left }), tone: 'text-red-text' };
-  }
-  if (q.viewed_count > 0) {
-    return { text: t('quote_sig_viewed', { n: q.viewed_count }), tone: 'text-amber-text' };
-  }
-  if (q.sent_at) return { text: t('quote_sig_unopened'), tone: 'text-ink-muted' };
-  return { text: t('quote_sig_sent'), tone: 'text-ink-muted' };
-}
 
 /**
  * The four-week strip above the list.
@@ -296,10 +256,8 @@ export default function QuotesPage() {
   // Which row just put a link on the clipboard. Cleared on a timer, because
   // the confirmation is about the gesture, not about the quote.
   const [shared, setShared] = useState(null);
-  // Which row has its overflow menu open, and which quote is being confirmed
-  // for deletion. Both hold an id rather than a boolean so only one row can be
-  // open at a time without any closing logic.
-  const [menu, setMenu] = useState(null);
+  // Which quote is being confirmed for deletion. The ••• menus keep their own
+  // open state inside CompactRow.
   const [deleting, setDeleting] = useState(null);
   // Which quote just changed tabs, so the list can say so. Cleared on a timer
   // and by any further interaction.
@@ -374,10 +332,7 @@ export default function QuotesPage() {
   const openPdf = async (id) => {
     setBusyId(id);
     try {
-      const r = await api.get(`/api/quotes/${id}/pdf`, { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([r.data], { type: 'application/pdf' }));
-      window.open(url, '_blank', 'noopener');
-      setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
+      await openQuotePdf(id);
     } catch (e) {
       setError(e?.response?.data?.detail || t('generic_error'));
       window.scrollTo({ top: 0 });
@@ -385,6 +340,7 @@ export default function QuotesPage() {
       setBusyId(null);
     }
   };
+
 
   const destroy = async (q) => {
     setBusyId(q.id);
@@ -551,7 +507,7 @@ export default function QuotesPage() {
               </button>
             </div>
           )}
-          <div className="space-y-2.5" data-testid="quote-list">
+          <div className="space-y-2" data-testid="quote-list">
             {shown.map((q) => {
               /* `superseded` is not a fourth outcome — it is a version a newer
                  one replaced — and the server refuses to accept, reject or
@@ -563,226 +519,75 @@ export default function QuotesPage() {
                  The two never appear together, because the tabs keep them on
                  separate screens — which is the whole reason age can afford a
                  colour at all. */
-              const { days, step } = ageOf(q);
+              const { step } = ageOf(q);
               const aged = verdict === 'open' ? step : null;
               const skin = aged ? aged.card
                 : (verdict && VERDICT[verdict].card) || 'bg-paper border-sm-border';
+              const trade = tradeOfCategory(q.job_category || q.category);
+              const canShare = q.status === 'draft' || !!q.share_token;
               return (
-              <div key={q.id} className={`rounded-2xl border p-3.5 ${skin}`}
-                   data-testid="quote-row" data-verdict={verdict || q.status}>
-                <div className="flex items-start justify-between gap-3">
-                  {/* The whole row is the way in — opening a quote to read it,
-                      change it, revise it or print it was not possible from
-                      anywhere before this link existed. */}
-                  {/* min-h-[44px]: this link is the way into the quote and it
-                      measured 42 px, sized by its own two lines of text. Two
-                      pixels under is still under. */}
-                  <Link to={`/quotes/${q.id}`}
-                        className="min-w-0 flex-1 group min-h-[44px] flex flex-col justify-center"
-                        data-testid="quote-open">
-                    <div className="font-headings font-bold text-[16px] text-ink leading-tight
-                                    truncate group-hover:text-teal">
-                      {q.title || q.job_title || (t('quote') || 'Angebot')}
-                    </div>
-                    <div className={`text-[13px] truncate mt-0.5 ${aged?.meta || 'text-ink-muted'}`}>
-                      {[q.quote_number, q.customer_name, q.job_number].filter(Boolean).join(' · ')}
-                    </div>
-                  </Link>
-                  <div className="text-right shrink-0">
-                    <div className="font-headings font-bold text-[17px] text-ink tabular-nums">
-                      {fmtEur(q.gross_total)}
-                    </div>
-                    <div className={`text-[12px] mt-0.5 ${aged?.meta || 'text-ink-muted'}`}>
-                      {t(`quote_status_${q.status}`) || q.status}
-                    </div>
-                  </div>
-                </div>
-
-                {(() => {
-                  const sig = signal(q, t);
-                  return (
-                    <p className={`text-[13px] font-semibold mt-1.5 ${aged?.text || sig.tone}`}
-                       data-testid="quote-signal">{sig.text}</p>
-                  );
-                })()}
-
-                {/* How long, in words. The wash on its own is a mood; with the
-                    number beside it, it is a fact — and it is the only thing on
-                    the card teaching what the colour means. */}
-                {aged && (
-                  <p className={`text-[13px] font-semibold mt-0.5 ${aged.text}`}
-                     data-testid="quote-age">{t('quote_open_days', { n: days })}</p>
+              <CompactRow key={q.id} testid="quote-row" data={{ 'data-verdict': verdict || q.status }}
+                openTestid="quote-open" moreTestid="quote-more" menuTestid="quote-menu"
+                menuLabel={t('quote_row_more')} skin={skin} washed={!!aged}
+                metaClass={aged?.meta || 'text-ink-muted'}
+                to={`/quotes/${q.id}`}
+                mark={trade ? <TradeMark trade={trade} size={24} /> : <FileText size={21} aria-hidden="true" />}
+                title={q.title || q.job_title || (t('quote') || 'Angebot')}
+                meta={[q.quote_number, q.customer_name].filter(Boolean).join(' · ') || q.job_number}
+                pill={{ tone: STATUS_TONE[q.status] || 'muted', text: t(`quote_status_${q.status}`) || q.status }}
+                amount={busyId === q.id
+                  ? <Loader2 size={16} className="animate-spin text-teal" />
+                  : fmtEur(q.gross_total)}
+                controls={(
+                  /* The verdict, as three icons. Every verdict is reachable
+                     from every other one; the one already set is inert, and a
+                     superseded quote has none of the three to offer. Winning
+                     goes through the ConvertSheet, because accepting is also
+                     scheduling the work; a lost quote is reopened first, since
+                     the server refuses to convert a rejected one. */
+                  <MiniGroup label={t('quote_verdict')} testid="quote-verdict">
+                    {['open', 'won', 'lost'].map((v) => {
+                      const on = v === verdict;
+                      const reachable = !on && verdict !== null;
+                      return (
+                        <MiniBtn key={v} icon={{ open: Clock, won: Check, lost: Ban }[v]}
+                                 label={t(`quote_verdict_${v}`)} on={on} tone={VERDICT[v].fill}
+                                 disabled={!reachable || busyId === q.id}
+                                 testid={`quote-verdict-${v}`}
+                                 onClick={async () => {
+                                   if (!reachable) return;
+                                   if (v !== 'won') {
+                                     if (await act(q.id, VERDICT[v].to, { reason: '' })) {
+                                       setMoved({ to: v, id: q.id, from: verdict });
+                                     }
+                                     return;
+                                   }
+                                   if (verdict === 'lost' && !await act(q.id, 'reopen')) return;
+                                   setConverting(q);
+                                 }} />
+                      );
+                    })}
+                  </MiniGroup>
                 )}
-
-                {/* One row: the verdict, and the two things you do to a quote
-                    from a list.
-
-                    This row used to be four blocks tall — signal, verdict, a
-                    full-width amber call to action, then a wrap of secondary
-                    buttons — about 240 px per quote. The amber was the worst of
-                    it: on an accepted quote it shouted "Arbeit planen" at a
-                    decision already taken.
-
-                    A list row summarises; you act inside the quote. So the
-                    amber is gone and planning lives on the quote page, where
-                    the ConvertSheet now opens from. What stays on the row is
-                    the verdict and two icons, because those two are the things
-                    you genuinely do without opening anything. */}
-                <div className="mt-3 flex items-center gap-1.5">
-                {/* The control sits on `paper` even when the card is tinted:
-                    it is the one thing here you can act on, and a control that
-                    shares the card's fill stops reading as a control.
-
-                    A decided quote's other two segments are disabled rather
-                    than hidden — the verdict stays legible as one of three,
-                    and nothing offers a transition the API would refuse. */}
-                <div className="flex-1 flex rounded-xl border border-sm-border bg-paper
-                                overflow-hidden" role="group"
-                     aria-label={t('quote_verdict')} data-testid="quote-verdict">
-                  {['open', 'won', 'lost'].map((v) => {
-                    const on = v === verdict;
-                    // Every verdict is reachable from every other one. The one
-                    // already set is inert, and a superseded quote has none of
-                    // the three to offer.
-                    const reachable = !on && verdict !== null;
-                    const Icon = { open: Clock, won: Check, lost: Ban }[v];
-                    return (
-                      <button key={v} type="button"
-                              disabled={!reachable || busyId === q.id}
-                              onClick={async () => {
-                                if (!reachable) return;
-                                // Winning goes through the sheet, because
-                                // accepting is also scheduling the work and
-                                // two accepts that do different things is a
-                                // fork nobody asked for. Losing is a plain
-                                // transition.
-                                if (v !== 'won') {
-                                  // The quote leaves this tab the moment the
-                                  // verdict lands, so the row does not fade
-                                  // out — it is simply not here any more. Say
-                                  // where it went, or the tap reads as a bug.
-                                  if (await act(q.id, VERDICT[v].to, { reason: '' })) {
-                                    setMoved({ to: v, id: q.id, from: verdict });
-                                  }
-                                  return;
-                                }
-                                // A rejected or expired quote can be neither
-                                // accepted nor converted — the server refuses
-                                // both — so winning one has to undo the
-                                // decision first. Without this the sheet
-                                // opened on a quote that could never take the
-                                // answer, and "Create the job" came back with
-                                // "A rejected quote cannot be converted."
-                                if (verdict === 'lost' && !await act(q.id, 'reopen')) return;
-                                // Winning goes through the sheet, so the move
-                                // is announced when the sheet finishes rather
-                                // than now — nothing has changed yet.
-                                setConverting(q);
-                              }}
-                              aria-pressed={on}
-                              aria-label={t(`quote_verdict_${v}`)}
-                              title={t(`quote_verdict_${v}`)}
-                              data-testid={`quote-verdict-${v}`}
-                              className={`flex-1 min-h-[44px] px-2 text-[13px] font-bold
-                                          flex items-center justify-center gap-1.5
-                                          border-r border-sm-border last:border-r-0
-                                          ${on ? VERDICT[v].fill : 'text-ink-muted'}`}>
-                        {/* The active verdict is named; the two you could
-                            switch to are their icon alone. Three words plus
-                            three icon buttons does not fit 390 px — "Verloren"
-                            was being clipped — and the words are redundant
-                            anyway now that the tab above says which list this
-                            is. The icons keep their own labels for anyone not
-                            reading by eye. */}
-                        <Icon size={14} aria-hidden="true" />
-                        {on && t(`quote_verdict_${v}`)}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                  {/* The pen goes to the same place the title does. It is not
-                      redundant with it: on a phone a bold heading does not
-                      announce itself as a link, and "where do I change this"
-                      was the question the row could not answer. */}
-                  <Link to={`/quotes/${q.id}`} data-testid="quote-edit"
-                        title={t('quote_row_edit')} aria-label={t('quote_row_edit')}
-                        className="shrink-0 min-h-[44px] min-w-[44px] rounded-xl border
-                                   border-sm-border bg-paper text-ink flex items-center
-                                   justify-center">
-                    <Pencil size={16} aria-hidden="true" />
-                  </Link>
-
-                  {/* Share, singular. A draft has never been sent, so sharing
-                      it means sending it — that is what `send` does, and it
-                      hands back the token. An already-sent quote just has its
-                      link copied. Two backend calls, one intention, so one
-                      button; splitting them made the pro decide which verb the
-                      database wanted. */}
-                  {(q.status === 'draft' || q.share_token) && (
-                    <button type="button" data-testid="quote-share"
-                            disabled={busyId === q.id}
-                            title={t('quote_row_share')} aria-label={t('quote_row_share')}
-                            onClick={() => share(q)}
-                            className="shrink-0 min-h-[44px] min-w-[44px] rounded-xl border
-                                       border-sm-border bg-paper text-ink flex items-center
-                                       justify-center">
-                      {busyId === q.id
-                        ? <Loader2 size={16} className="animate-spin text-teal" />
-                        : <Share2 size={16} aria-hidden="true" />}
-                    </button>
-                  )}
-
-                  {/* Everything rare, behind one button. Deleting lives here
-                      rather than on the row because it is the one action on
-                      this screen that cannot be undone, and a bin sitting a
-                      thumb's width from the verdict control is a bin that gets
-                      pressed by accident. */}
-                  <button type="button" data-testid="quote-more"
-                          onClick={() => setMenu(menu === q.id ? null : q.id)}
-                          aria-expanded={menu === q.id}
-                          title={t('quote_row_more')} aria-label={t('quote_row_more')}
-                          className="shrink-0 min-h-[44px] min-w-[44px] rounded-xl border
-                                     border-sm-border bg-paper text-ink flex items-center
-                                     justify-center">
-                    <MoreHorizontal size={16} aria-hidden="true" />
-                  </button>
-                </div>
-
-                {menu === q.id && (
-                  <div className="mt-2 rounded-xl border border-sm-border bg-paper
-                                  overflow-hidden" data-testid="quote-menu">
-                    <button type="button" onClick={() => { setMenu(null); openPdf(q.id); }}
-                            data-testid="quote-menu-pdf"
-                            className="w-full min-h-[44px] px-3.5 text-left text-[14px]
-                                       font-semibold text-ink flex items-center gap-2
-                                       border-b border-sm-border">
-                      <FileDown size={15} />{t('quote_pdf')}
-                    </button>
-                    {/* Only a draft. A sent Angebot is a document the customer
-                        is holding — the row says so rather than hiding the
-                        option, because "why can I not delete this" is a
-                        question the screen should answer once. */}
-                    <button type="button" disabled={q.status !== 'draft'}
-                            data-testid="quote-menu-delete"
-                            onClick={() => { setMenu(null); setDeleting(q); }}
-                            className={`w-full min-h-[44px] px-3.5 text-left text-[14px]
-                                        font-semibold flex items-center gap-2
-                                        ${q.status === 'draft'
-                                          ? 'text-red-text' : 'text-ink-muted'}`}>
-                      <Trash2 size={15} />
-                      {q.status === 'draft' ? t('delete') : t('quote_delete_only_draft')}
-                    </button>
-                  </div>
-                )}
-
-                {/* Copying to the clipboard is silent, and a silent button is
-                    indistinguishable from a broken one. */}
-                {shared === q.id && (
-                  <p className="text-[12px] text-teal font-semibold mt-1.5"
+                menu={[
+                  { key: 'edit', label: t('quote_row_edit'), icon: Pencil, to: `/quotes/${q.id}`, testid: 'quote-edit' },
+                  /* Share, singular: a draft is sent (which hands back the
+                     link), a sent quote just has its link copied. A quote
+                     with neither has nothing to share, so it is not offered. */
+                  canShare && { key: 'share', label: q.status === 'draft' ? t('quote_row_send') : t('quote_row_share'),
+                                icon: Share2, onClick: () => share(q), testid: 'quote-share' },
+                  { key: 'pdf', label: t('quote_pdf'), icon: FileDown, onClick: () => openPdf(q.id), testid: 'quote-menu-pdf' },
+                  /* Only a draft can go; a sent Angebot is a document the
+                     customer holds, so the menu simply does not offer it
+                     rather than showing a greyed entry that leads nowhere. */
+                  q.status === 'draft' && { key: 'delete', icon: Trash2, testid: 'quote-menu-delete',
+                    danger: true, label: t('delete'), onClick: () => setDeleting(q) },
+                ]}
+                note={shared === q.id && (
+                  <p className="text-[12px] text-teal font-semibold mt-1.5 px-1"
                      role="status" data-testid="quote-shared">{t('quote_row_shared')}</p>
                 )}
-              </div>
+              />
             );})}
           </div>
           </>

@@ -40,7 +40,7 @@ export default function CalcDraftList({ drafts, lang, onQuoted }) {
   const [menu, setMenu] = useState(null);
   const [busy, setBusy] = useState(null);
 
-  const resume = (d) => navigate(`/estimate/${d.trade}?draft=${d.id}`);
+  const resume = (d) => navigate(`/estimate/${d.trade}?draft=${d.id}${d.jobId ? `&job=${d.jobId}` : ''}`);
   const del = (d) => {
     setMenu(null);
     removeDraft(d.id);
@@ -53,11 +53,11 @@ export default function CalcDraftList({ drafts, lang, onQuoted }) {
       if (d.kind === 'folierung') {
         const settings = loadSettings();
         const result = calculate(d.payload.input, settings);
-        quote = await createFolierungQuote(d.payload.input, result, settings);
+        quote = await createFolierungQuote(d.payload.input, result, settings, { jobId: d.jobId });
       } else {
         const positions = d.payload?.positions || [];
         if (!positions.length) { toast.error('Noch keine Position mit Menge. Öffne den Entwurf und trag die Mengen ein.'); return; }
-        const { data } = await api.post('/api/estimate/quote/multi', { positions, lang });
+        const { data } = await api.post('/api/estimate/quote/multi', { positions, lang, job_id: d.jobId || null });
         quote = data?.quotes?.[0];
       }
       removeDraft(d.id);

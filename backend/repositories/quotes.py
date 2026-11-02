@@ -462,7 +462,8 @@ async def list_for_pro(pro_id: str, *, job_id: Optional[str] = None,
     args.extend([limit, offset])
     rows = await pg.fetch(
         f"""
-        select q.*, c.name as customer_name, j.job_number, j.title as job_title
+        select q.*, c.name as customer_name, j.job_number, j.title as job_title,
+               j.category as job_category
           from quotes q
           left join customers c on c.id = q.customer_id
           left join jobs j on j.id = q.job_id

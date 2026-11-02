@@ -4,8 +4,9 @@ import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import {
   Briefcase, Loader2, Search, Check, CornerUpRight, Phone, FileText, Send,
-  CalendarClock, Calculator, Receipt, LayoutDashboard, List,
+  CalendarClock, Calculator, Receipt, LayoutDashboard, List, MapPin, UserPlus, Play, FilePlus2,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { stepStates, daysSince } from '../../utils/jobSteps';
 import { routeHref } from '../../utils/maps';
 import { telHref } from '../../utils/sms';
@@ -15,7 +16,8 @@ import JobCard from '../../components/pro/JobCard';
 import JobSpan from '../../components/pro/JobSpan';
 import JobTabs from '../../components/pro/JobTabs';
 import useJobAction from '../../hooks/useJobAction';
-import JobListView from '../../components/pro/JobListView';
+import JobListView, { tradeOfCategory } from '../../components/pro/JobListView';
+import { openQuotePdf } from '../../utils/openPdf';
 
 /**
  * Every job, in the two states a business cares about: what is running and
@@ -42,6 +44,10 @@ import JobListView from '../../components/pro/JobListView';
 const LIVE = ['accepted', 'scheduled', 'in_progress'];
 const PIPE = ['lead', 'quoted'];
 const DONE = ['completed'];
+/* A quote still waiting on the customer. "Angesehen" and "in Verhandlung"
+   are as open as "versendet" — counting only `sent` made a job whose quote
+   had been opened look as if it had none, and offered to write a second. */
+const OPEN_Q = ['sent', 'viewed', 'negotiating'];
 
 const TABS = [
   { key: 'live', statuses: LIVE, labelKey: 'ov_tab_live' },
@@ -129,7 +135,7 @@ export default function PMProjectsPage() {
   const sentFor = useMemo(() => {
     const m = {};
     for (const q of quotes) {
-      if (q.status === 'sent' && q.job_id && mine.has(q.job_id) && !m[q.job_id]) m[q.job_id] = q;
+      if (OPEN_Q.includes(q.status) && q.job_id && mine.has(q.job_id) && !m[q.job_id]) m[q.job_id] = q;
     }
     return m;
   }, [quotes, mine]);
@@ -144,7 +150,7 @@ export default function PMProjectsPage() {
   const amounts = useMemo(() => {
     const a = { offered: 0, booked: 0, running: 0, done: 0 };
     for (const q of quotes) {
-      if (q.status === 'sent' && mine.has(q.job_id)) a.offered += Number(q.net_total || 0);
+      if (OPEN_Q.includes(q.status) && mine.has(q.job_id)) a.offered += Number(q.net_total || 0);
     }
     for (const j of jobs) {
       const v = worth(j);
@@ -290,7 +296,7 @@ export default function PMProjectsPage() {
             {/* Pulled in from the right so the cards do not run into the edge —
                 the spine already takes 53 px on the left. */}
             <div className="pr-4">
-              {tab === 'live' && <LiveList rows={rows} t={t} act={act} worth={worth} accent={skin.accent} />}
+              {tab === 'live' && <LiveList rows={rows} t={t} act={act} worth={worth} accent={skin.accent} navigate={navigate} />}
               {tab === 'pipeline' && <PipeList rows={rows} sentFor={sentFor} t={t} navigate={navigate} accent={skin.accent} />}
               {tab === 'done' && <DoneList rows={rows} t={t} navigate={navigate} worth={worth} accent={skin.accent} />}
             </div>
@@ -304,10 +310,18 @@ export default function PMProjectsPage() {
 
 /* ── the three lists ──────────────────────────────────────────────────── */
 
-function Empty({ text, testid }) {
+function Empty({ text, testid, action }) {
   return (
-    <p className="rounded-2xl border border-dashed border-sm-border bg-cream-soft px-4 py-6
-                  text-center text-[13px] text-ink-soft" data-testid={testid}>{text}</p>
+    <div className="rounded-2xl border border-dashed border-sm-border bg-cream-soft px-4 py-6
+                    text-center" data-testid={testid}>
+      <p className="text-[13px] text-ink-soft">{text}</p>
+      {/* An empty list points at the next step rather than ending the page. */}
+      {action && (
+        <button type="button" onClick={action.onClick} data-testid={`${testid}-go`}
+                className="mt-3 min-h-[40px] px-4 rounded-xl border border-sm-border bg-paper
+                           text-[13px] font-bold text-teal">{action.label}</button>
+      )}
+    </div>
   );
 }
 
@@ -351,7 +365,7 @@ function place(job) {
   return who || [job.job_number, job.category].filter(Boolean).join(' · ');
 }
 
-function LiveList({ rows, t, act, worth, accent }) {
+function LiveList({ rows, t, act, worth, accent, navigate }) {
   if (!rows.length) return <Empty text={t('ov_empty_live')} testid="ov-empty-live" />;
   const now = Date.now();
   return (
@@ -373,15 +387,20 @@ function LiveList({ rows, t, act, worth, accent }) {
            live job; finishing flips the status and draws up an invoice, so it
            waits for the job that has actually started, where the server's
            transition table agrees. What is greyed says why in its label. */
+        /* No dead ends: a missing address or phone opens the job where it
+           is filled in, and a job not started yet offers "Starten" — the
+           server allows accepted/scheduled → in_progress — instead of a
+           greyed "Fertig" that could never be pressed. */
         const actions = [
-          { key: 'route', label: t('day_route'), icon: CornerUpRight, external: true,
-            ...(route ? { href: route } : { disabled: true, why: t('ov_no_address') }) },
-          { key: 'call', label: t('day_call'), icon: Phone,
-            ...(tel ? { href: `tel:${tel}` } : { disabled: true, why: t('ov_no_phone') }) },
-          { key: 'finish', label: t('job_finish_do'), icon: Check, kind: 'primary',
-            ...(running
-              ? { onClick: () => act({ id: j.id, status: j.status }, 'complete') }
-              : { disabled: true, why: t('ov_not_started') }) },
+          route ? { key: 'route', label: t('day_route'), icon: CornerUpRight, external: true, href: route }
+            : { key: 'route', label: t('ov_add_address'), icon: MapPin, onClick: () => navigate(`/projects/${j.id}`) },
+          tel ? { key: 'call', label: t('day_call'), icon: Phone, href: `tel:${tel}` }
+            : { key: 'call', label: t('ov_add_phone'), icon: UserPlus, onClick: () => navigate(`/projects/${j.id}`) },
+          running
+            ? { key: 'finish', label: t('job_finish_do'), icon: Check, kind: 'primary',
+                onClick: () => act({ id: j.id, status: j.status }, 'complete') }
+            : { key: 'start', label: t('ov_start'), icon: Play, kind: 'primary',
+                onClick: () => act({ id: j.id, status: j.status }, 'start') },
         ];
         return (
           <JobCard key={j.id} job={{ ...j, contract_amount: worth(j) }} states={stepStates(j)}
@@ -398,8 +417,18 @@ function LiveList({ rows, t, act, worth, accent }) {
   );
 }
 
+/* The estimator for this job's trade, writing onto this job — "Kalkulieren"
+   used to open a blank estimator whose quote made a second job. */
+const calcFor = (j) => {
+  const trade = tradeOfCategory(j.category);
+  return `${trade ? `/estimate/${trade}` : '/estimate'}?job=${j.id}`;
+};
+
 function PipeList({ rows, sentFor, t, navigate, accent }) {
-  if (!rows.length) return <Empty text={t('ov_empty_pipeline')} testid="ov-empty-pipeline" />;
+  if (!rows.length) {
+    return <Empty text={t('ov_empty_pipeline')} testid="ov-empty-pipeline"
+                  action={{ label: t('ov_calculate'), onClick: () => navigate('/estimate') }} />;
+  }
   const quoted = rows.filter((j) => j.status === 'quoted');
   const leads = rows.filter((j) => j.status === 'lead');
   return (
@@ -418,12 +447,17 @@ function PipeList({ rows, sentFor, t, navigate, accent }) {
                        meta={[place(j), q?.quote_number].filter(Boolean).join(' · ')}
                        badge={age != null ? t('ov_days', { n: age }) : null}
                        badgeTone={age != null && age >= 7 ? 'r' : 'w'}
-                       actions={[
-                         q && { key: 'pdf', label: t('job_quote_pdf'), icon: FileText,
-                                href: `/api/quotes/${q.id}/pdf`, external: true },
-                         q && { key: 'follow', label: t('ov_follow_up'), icon: Send, kind: 'primary',
-                                onClick: () => navigate(`/quotes/${q.id}`) },
-                       ].filter(Boolean)}
+                       actions={q ? [
+                         /* Fetched with the session: a bare link to the PDF
+                            endpoint sent no auth header and opened a 401. */
+                         { key: 'pdf', label: t('job_quote_pdf'), icon: FileText,
+                           onClick: () => openQuotePdf(q.id).catch(() => toast.error(t('generic_error'))) },
+                         { key: 'follow', label: t('ov_follow_up'), icon: Send, kind: 'primary',
+                           onClick: () => navigate(`/quotes/${q.id}`) },
+                       ] : [
+                         { key: 'quote', label: t('ov_make_quote'), icon: FilePlus2, kind: 'primary',
+                           onClick: () => navigate(calcFor(j)) },
+                       ]}
                        testid={`ov-job-${j.id}`} />
             );
           })}
@@ -442,7 +476,7 @@ function PipeList({ rows, sentFor, t, navigate, accent }) {
                        { key: 'visit', label: t('ov_site_visit'), icon: CalendarClock,
                          onClick: () => navigate(`/projects/${j.id}`) },
                        { key: 'calc', label: t('ov_calculate'), icon: Calculator, kind: 'primary',
-                         onClick: () => navigate('/estimate') },
+                         onClick: () => navigate(calcFor(j)) },
                      ]}
                      testid={`ov-job-${j.id}`} />
           ))}

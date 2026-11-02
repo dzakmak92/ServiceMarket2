@@ -412,7 +412,7 @@ export default function EstimatePage() {
     const label = tradeList.find((x) => x.key === trade)?.label || trade;
     const n = positions.length + unpriced;
     saveDraft({
-      id: estDraftId.current, kind: 'estimate', trade,
+      id: estDraftId.current, kind: 'estimate', trade, jobId: targetJob || null,
       title: `${label} · ${n} ${n === 1 ? 'Position' : 'Positionen'}`,
       sub: unpriced ? `${unpriced} noch ohne Menge` : 'bereit für ein Angebot',
       step: unpriced ? 1 : 2, steps: 2, net: total,

@@ -1,9 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import {
-  Briefcase, Pencil, Search, Check, CornerUpRight, Phone, FileText, Send,
-  CalendarClock, Calculator, Receipt,
+  Briefcase, Search, Check, CornerUpRight, Phone, FileText, Send, Play,
+  CalendarClock, Calculator, Receipt, ExternalLink, MapPin, UserPlus, FilePlus2,
 } from 'lucide-react';
+import CompactRow, { MiniGroup, MiniBtn } from './CompactRow';
+import { openQuotePdf } from '../../utils/openPdf';
 import TradeMark from '../TradeMark';
 import { fmtEur } from '../../utils/money';
 import { daysSince } from '../../utils/jobSteps';
@@ -87,12 +89,27 @@ export default function JobListView({
       )}
 
       {!rows.length ? (
-        <p className="rounded-2xl border border-dashed border-sm-border bg-cream-soft px-4 py-6
-                      text-center text-[13px] text-ink-soft" data-testid="jl-empty">
-          {t(`ov_empty_${tab}`)}
-        </p>
+        <div className="rounded-2xl border border-dashed border-sm-border bg-cream-soft px-4 py-6
+                        text-center" data-testid="jl-empty">
+          <p className="text-[13px] text-ink-soft">{t(`ov_empty_${tab}`)}</p>
+          {/* An empty tab says where the work is instead of stopping here. */}
+          {tab === 'live' && counts.pipeline > 0 && (
+            <button type="button" onClick={() => onTab('pipeline')} data-testid="jl-empty-go"
+                    className="mt-3 min-h-[40px] px-4 rounded-xl border border-sm-border bg-paper
+                               text-[13px] font-bold text-teal">
+              {t('ov_show_pipeline', { n: counts.pipeline })}
+            </button>
+          )}
+          {tab === 'pipeline' && (
+            <button type="button" onClick={() => navigate('/estimate')} data-testid="jl-empty-go"
+                    className="mt-3 min-h-[40px] px-4 rounded-xl border border-sm-border bg-paper
+                               text-[13px] font-bold text-teal inline-flex items-center gap-1.5">
+              <Calculator size={15} aria-hidden="true" />{t('ov_calculate')}
+            </button>
+          )}
+        </div>
       ) : (
-        <div className="space-y-2.5" data-testid={`jl-list-${tab}`}>
+        <div className="space-y-2" data-testid={`jl-list-${tab}`}>
           {rows.map((j, i) => (
             <JobRow key={j.id} j={j} i={i} tab={tab} q={sentFor[j.id]} worth={worth}
                     t={t} act={act} navigate={navigate} locale={locale} />
@@ -108,6 +125,10 @@ function JobRow({ j, i, tab, q, worth, t, act, navigate, locale }) {
   const running = j.status === 'in_progress';
   const start = j.scheduled_start ? new Date(j.scheduled_start) : null;
   const late = tab === 'live' && !!start && !running && +start < Date.now();
+  const open = `/projects/${j.id}`;
+  /* The estimator writes the quote onto this job rather than a new one, so
+     "Kalkulieren" from a lead does not leave a twin behind in the pipeline. */
+  const calc = `${trade ? `/estimate/${trade}` : '/estimate'}?job=${j.id}`;
 
   /* What the card is waiting on, in days: the sent quote in Pipeline, the
      missing invoice in Fertig. Live jobs are judged by the clock instead. */
@@ -116,114 +137,92 @@ function JobRow({ j, i, tab, q, worth, t, act, navigate, locale }) {
   const aged = waited != null ? AGE.find((a) => waited >= a.after) : null;
   const skin = late ? 'bg-red-warn/[.07] border-red-warn/25'
     : aged ? aged.card : 'bg-paper border-sm-border';
-  const meta = aged?.meta || 'text-ink-muted';
 
   const amount = tab === 'pipeline' ? Number(q?.net_total || j.contract_amount || 0) : worth(j);
 
-  /* The second line under the amount: when, for live work; the fine status
-     otherwise. One line, so the card stays as short as a quote card. */
-  let sub = t(`pm_status_${j.status}`);
+  let pill;
   if (tab === 'live') {
-    if (running) sub = j.started_at ? t('ov_running_since', { t: hhmm(new Date(j.started_at)) }) : t('job_running');
-    else if (late) sub = t('ov_overdue');
-    else if (start) sub = `${start.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' })} ${hhmm(start)}`;
-    else sub = t('job_not_scheduled');
+    if (running) pill = { tone: 'green', text: j.started_at ? t('ov_running_since', { t: hhmm(new Date(j.started_at)) }) : t('job_running') };
+    else if (late) pill = { tone: 'red', text: t('ov_overdue') };
+    else if (start) pill = { tone: 'teal', text: `${start.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' })} ${hhmm(start)}` };
+    else pill = { tone: 'amber', text: t('job_not_scheduled') };
+  } else if (tab === 'pipeline') {
+    pill = j.status === 'quoted'
+      ? { tone: waited != null && waited >= 7 ? 'amber' : 'teal', text: waited != null ? `${t('pm_status_quoted')} · ${t('ov_days', { n: waited })}` : t('pm_status_quoted') }
+      : { tone: 'muted', text: t('pm_status_lead') };
+  } else {
+    pill = { tone: waited != null && waited >= 3 ? 'amber' : 'green', text: waited != null ? t('ov_done_days', { n: waited }) : t('pm_status_completed') };
   }
 
+  const pdf = async () => {
+    try { await openQuotePdf(q.id); } catch { toast.error(t('generic_error')); }
+  };
+
+  /* No dead ends: every control does something. What used to be a greyed
+     button — no address, no phone, not started yet, no quote — now goes to
+     the place that fixes it. */
   const tel = telHref(j.customer_phone);
   const route = routeHref(j);
   let actions;
   if (tab === 'live') {
     actions = [
-      { key: 'route', label: t('day_route'), icon: CornerUpRight, external: true,
-        ...(route ? { href: route } : { disabled: true, why: t('ov_no_address') }) },
-      { key: 'call', label: t('day_call'), icon: Phone,
-        ...(tel ? { href: `tel:${tel}` } : { disabled: true, why: t('ov_no_phone') }) },
-      { key: 'finish', label: t('ov_tab_done'), icon: Check, primary: true,
-        ...(running ? { onClick: () => act({ id: j.id, status: j.status }, 'complete') }
-          : { disabled: true, why: t('ov_not_started') }) },
+      route ? { key: 'route', label: t('day_route'), icon: CornerUpRight, href: route, external: true }
+        : { key: 'route', label: t('ov_add_address'), icon: MapPin, to: open },
+      tel ? { key: 'call', label: t('day_call'), icon: Phone, href: `tel:${tel}` }
+        : { key: 'call', label: t('ov_add_phone'), icon: UserPlus, to: open },
+      running
+        ? { key: 'finish', label: t('job_finish_do'), icon: Check, primary: true,
+            onClick: () => act({ id: j.id, status: j.status }, 'complete') }
+        : { key: 'start', label: t('ov_start'), icon: Play, primary: true,
+            onClick: () => act({ id: j.id, status: j.status }, 'start') },
+    ];
+  } else if (tab === 'pipeline' && j.status === 'quoted' && q) {
+    actions = [
+      { key: 'pdf', label: t('job_quote_pdf'), icon: FileText, onClick: pdf },
+      { key: 'follow', label: t('ov_follow_up'), icon: Send, primary: true, to: `/quotes/${q.id}` },
     ];
   } else if (tab === 'pipeline' && j.status === 'quoted') {
     actions = [
-      { key: 'pdf', label: t('job_quote_pdf'), icon: FileText, external: true,
-        ...(q ? { href: `/api/quotes/${q.id}/pdf` } : { disabled: true }) },
-      { key: 'follow', label: t('ov_follow_up'), icon: Send, primary: true,
-        ...(q ? { onClick: () => navigate(`/quotes/${q.id}`) } : { disabled: true }) },
+      { key: 'quote', label: t('ov_make_quote'), icon: FilePlus2, primary: true, to: calc },
     ];
   } else if (tab === 'pipeline') {
     actions = [
-      { key: 'visit', label: t('ov_site_visit'), icon: CalendarClock,
-        onClick: () => navigate(`/projects/${j.id}`) },
-      { key: 'calc', label: t('ov_calculate'), icon: Calculator, primary: true,
-        onClick: () => navigate(trade ? `/estimate/${trade}` : '/estimate') },
+      { key: 'visit', label: t('ov_site_visit'), icon: CalendarClock, to: open },
+      { key: 'calc', label: t('ov_calculate'), icon: Calculator, primary: true, to: calc },
     ];
   } else {
     actions = [
-      { key: 'bill', label: t('job_bill_create'), icon: Receipt, primary: true,
-        onClick: () => navigate(`/jobs/${j.id}/invoice`) },
+      { key: 'bill', label: t('job_bill_create'), icon: Receipt, primary: true, to: `/jobs/${j.id}/invoice` },
     ];
   }
 
   return (
-    <div className={`rounded-2xl border p-3.5 animate-rise ${skin}`}
-         style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}
-         data-testid="jl-row" data-status={j.status}>
-      <div className="flex items-start gap-3">
-        <span className={`w-10 h-10 rounded-xl text-navy flex items-center justify-center shrink-0
-                          ${aged || late ? 'bg-white/70' : 'bg-navy-wedge'}`}
-              aria-hidden="true" data-testid="jl-mark" data-trade={trade || 'none'}>
-          {trade ? <TradeMark trade={trade} size={22} /> : <Briefcase size={19} />}
-        </span>
-        <Link to={`/projects/${j.id}`}
-              className="min-w-0 flex-1 group min-h-[44px] flex flex-col justify-center"
-              data-testid="jl-open">
-          <div className="font-headings font-bold text-[16px] text-ink leading-tight truncate
-                          group-hover:text-teal">
-            {j.title || j.job_number || t('nav_jobs_one')}
-          </div>
-          <div className={`text-[13px] truncate mt-0.5 ${meta}`}>
-            {[j.job_number, j.customer_name, j.site_city || j.customer_city].filter(Boolean).join(' · ')}
-          </div>
-        </Link>
-        <div className="text-right shrink-0">
-          <div className="font-headings font-bold text-[17px] text-ink tabular-nums">
-            {amount > 0 ? fmtEur(amount) : '—'}
-          </div>
-          <div className={`text-[12px] mt-0.5 ${late ? 'text-red-text font-semibold' : meta}`}>
-            {sub}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2 mt-3">
-        <div className="flex-1 flex rounded-xl border border-sm-border bg-paper overflow-hidden min-w-0">
-          {actions.map((a) => <Action key={a.key} a={a} testid={`jl-act-${a.key}`} />)}
-        </div>
-        <Link to={`/projects/${j.id}`} data-testid="jl-edit"
-              title={t('nav_jobs_one')} aria-label={t('nav_jobs_one')}
-              className="shrink-0 min-h-[44px] min-w-[44px] rounded-xl border border-sm-border
-                         bg-paper text-ink flex items-center justify-center">
-          <Pencil size={16} aria-hidden="true" />
-        </Link>
-      </div>
-    </div>
+    <CompactRow
+      testid="jl-row" data={{ 'data-status': j.status }} openTestid="jl-open"
+      moreTestid="jl-more" menuTestid="jl-menu" menuLabel={t('ov_more')}
+      style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}
+      skin={skin} washed={!!(aged || late)} metaClass={aged?.meta || 'text-ink-muted'}
+      to={open}
+      mark={<span data-testid="jl-mark" data-trade={trade || 'none'} className="contents">
+        {trade ? <TradeMark trade={trade} size={24} /> : <Briefcase size={21} />}
+      </span>}
+      title={j.title || j.job_number || t('nav_jobs_one')}
+      meta={[j.job_number, j.customer_name, j.site_city || j.customer_city].filter(Boolean).join(' · ')}
+      pill={pill}
+      amount={amount > 0 ? fmtEur(amount) : '—'}
+      controls={(
+        <MiniGroup label={t('ov_more')} testid="jl-actions">
+          {actions.map((a) => (
+            <MiniBtn key={a.key} icon={a.icon} label={a.label} on={a.primary}
+                     onClick={a.onClick} href={a.href} to={a.to} external={a.external}
+                     testid={`jl-act-${a.key}`} />
+          ))}
+        </MiniGroup>
+      )}
+      menu={[
+        { key: 'open', label: t('ov_open'), icon: ExternalLink, to: open, testid: 'jl-menu-open' },
+        ...actions.map((a) => ({ ...a, testid: `jl-menu-${a.key}` })),
+      ]}
+    />
   );
-}
-
-function Action({ a, testid }) {
-  const Icon = a.icon;
-  const cls = `flex-1 min-w-0 min-h-[44px] px-1.5 flex items-center justify-center gap-1.5
-               text-[12.5px] font-bold border-r border-sm-border last:border-r-0
-               ${a.disabled ? 'text-ink-faint' : a.primary ? 'bg-teal/[.12] text-teal' : 'text-ink'}`;
-  const inner = (<><Icon size={15} className="shrink-0" aria-hidden="true" /><span className="truncate">{a.label}</span></>);
-  if (a.disabled) {
-    return <span className={cls} title={a.why} aria-disabled="true" data-testid={testid}>{inner}</span>;
-  }
-  if (a.href) {
-    return (
-      <a href={a.href} className={cls} data-testid={testid}
-         {...(a.external ? { target: '_blank', rel: 'noreferrer' } : {})}>{inner}</a>
-    );
-  }
-  return <button type="button" onClick={a.onClick} className={cls} data-testid={testid}>{inner}</button>;
 }

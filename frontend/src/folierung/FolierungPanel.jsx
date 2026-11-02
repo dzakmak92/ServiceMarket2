@@ -45,6 +45,9 @@ const FolierungPanel = forwardRef(function FolierungPanel(_props, ref) {
     const d = getDraft(params.get('draft'));
     return d?.kind === 'folierung' ? d : null;
   });
+  /* Der Auftrag, für den gerechnet wird (`?job=` aus Aufträge/Projekte). Er
+     wandert in den Entwurf mit, damit "Weiter" später am selben Auftrag landet. */
+  const jobId = useRef(params.get('job') || draft?.jobId || null);
   const [initial, setInitial] = useState(() => draft?.payload?.input || null);
   const [restored, setRestored] = useState(!!draft);
   const [wizardKey, setWizardKey] = useState(0);
@@ -73,7 +76,7 @@ const FolierungPanel = forwardRef(function FolierungPanel(_props, ref) {
     state.current = { input, result, dirty: d, restoredDirty: state.current.restoredDirty };
     if (d && result.lines.length) {
       saveDraft({
-        id: draftId.current, kind: 'folierung', trade: 'folierung',
+        id: draftId.current, kind: 'folierung', trade: 'folierung', jobId: jobId.current,
         title: quoteTitleFrom(input),
         sub: `${result.lines.length} Positionen · ${['Fläche', 'Zustand', 'Zählen', 'Preis'][step] || ''}`,
         step: (step || 0) + 1, steps: 4, net: result.vk, gross: result.ways.montage.gross,
@@ -95,7 +98,7 @@ const FolierungPanel = forwardRef(function FolierungPanel(_props, ref) {
   const createQuote = async ({ input, result }) => {
     setCreating(true); setError('');
     try {
-      const quote = await createFolierungQuote(input, result, settings);
+      const quote = await createFolierungQuote(input, result, settings, { jobId: jobId.current });
       removeDraft(draftId.current);
       state.current.dirty = false;
       return quote;
