@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { moneyLocale } from '../../utils/money';
 import { Link } from 'react-router-dom';
 import {
   Check, CornerUpRight, ExternalLink, MapPin, Phone, Play, Receipt, User, X,
@@ -102,7 +103,7 @@ export default function JobSheet({ appt, onClose, onPrimary, t }) {
               {!openEnded && <> – {hhmm(appt.end)}</>}
               {spansDays && (
                 <span className="font-bold">
-                  {' '}({new Date(toMs(appt.end)).toLocaleDateString(undefined,
+                  {' '}({new Date(toMs(appt.end)).toLocaleDateString(moneyLocale(),
                     { weekday: 'short', day: 'numeric', month: 'short' })})
                 </span>
               )}

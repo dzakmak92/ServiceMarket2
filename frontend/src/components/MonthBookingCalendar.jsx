@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import { moneyLocale } from '../utils/money';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Loader2, Clock } from 'lucide-react';
 import { useLang } from '../contexts/LangContext';
 import { dayKey } from '../utils/schedule';
@@ -103,7 +104,7 @@ export default function MonthBookingCalendar({ availability = [], bookings = [],
     return cells;
   }, [cursor, slotsByWeekday, today]);
 
-  const monthLabel = cursor.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+  const monthLabel = cursor.toLocaleDateString(moneyLocale(), { month: 'short', year: 'numeric' });
 
   const goPrev = () => {
     const d = new Date(cursor);
@@ -250,7 +251,7 @@ export default function MonthBookingCalendar({ availability = [], bookings = [],
         ) : (
           <>
             <p className="text-[10px] text-ink-soft font-semibold mb-1 truncate" data-testid="booking-day-label">
-              {selectedDate.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}
+              {selectedDate.toLocaleDateString(moneyLocale(), { weekday: 'short', day: 'numeric', month: 'short' })}
             </p>
             {compositeSlot && (
               <div

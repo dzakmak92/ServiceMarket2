@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { moneyLocale } from '../utils/money';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { useLang } from '../contexts/LangContext';
 import { dayKey } from '../utils/schedule';
@@ -100,7 +101,7 @@ export default function BookingCalendar({
     }
   };
 
-  const weekLabel = `${weekStart.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${days[6].toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`;
+  const weekLabel = `${weekStart.toLocaleDateString(moneyLocale(), { day: 'numeric', month: 'short' })} – ${days[6].toLocaleDateString(moneyLocale(), { day: 'numeric', month: 'short' })}`;
   const hasAny = rows.length > 0;
 
   return (
@@ -154,7 +155,7 @@ export default function BookingCalendar({
                       {jsDayToLabel(d.getDay())}
                     </div>
                     <div className={`text-sm font-bold ${isToday ? 'text-teal' : 'text-ink'}`}>
-                      {d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+                      {d.toLocaleDateString(moneyLocale(), { day: 'numeric', month: 'short' })}
                     </div>
                   </div>
                 );
@@ -219,7 +220,7 @@ export default function BookingCalendar({
               <div className="flex items-center gap-3 animate-fade-in">
                 <span className="text-xs text-ink">
                   <strong>{selected.weekday}</strong> · {selected.slot} ·{' '}
-                  <span className="text-ink-muted">{selected.date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</span>
+                  <span className="text-ink-muted">{selected.date.toLocaleDateString(moneyLocale(), { day: 'numeric', month: 'short' })}</span>
                 </span>
                 <button
                   onClick={confirm}

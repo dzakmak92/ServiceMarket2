@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { moneyLocale } from '../../utils/money';
 
 /**
  * The next six weeks, and this week's days under them.
@@ -72,7 +73,7 @@ export default function JobSpan({ jobs, accent, tint, t }) {
     const dd = [];
     for (let i = 0; i < 7; i += 1) {
       const d = new Date(first); d.setDate(d.getDate() + i);
-      dd.push({ n: d.getDate(), lbl: d.toLocaleDateString(undefined, { weekday: 'short' }),
+      dd.push({ n: d.getDate(), lbl: d.toLocaleDateString(moneyLocale(), { weekday: 'short' }),
         today: i === todayOff, busy: perDay[i] > 0 });
     }
 

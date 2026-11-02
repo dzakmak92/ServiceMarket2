@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { moneyLocale } from '../utils/money';
 import { Calendar, ChevronLeft, ChevronRight, Check, X } from 'lucide-react';
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -108,8 +109,8 @@ export default function DatedAvailabilityMatrix({
     return Boolean(bookedMap[`${iso}|${slot}`]);
   };
 
-  const fmtDate = (d) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-  const weekLabel = `${weekStart.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${weekDates[6].toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`;
+  const fmtDate = (d) => d.toLocaleDateString(moneyLocale(), { day: 'numeric', month: 'short' });
+  const weekLabel = `${weekStart.toLocaleDateString(moneyLocale(), { day: 'numeric', month: 'short' })} – ${weekDates[6].toLocaleDateString(moneyLocale(), { day: 'numeric', month: 'short' })}`;
 
   return (
     <div data-testid={`${testidPrefix}-container`}>
