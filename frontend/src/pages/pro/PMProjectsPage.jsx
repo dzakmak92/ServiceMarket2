@@ -4,7 +4,7 @@ import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import {
   Briefcase, Loader2, Search, Check, CornerUpRight, Phone, FileText, Send,
-  CalendarClock, Calculator, Receipt,
+  CalendarClock, Calculator, Receipt, LayoutDashboard, List,
 } from 'lucide-react';
 import { stepStates, daysSince } from '../../utils/jobSteps';
 import { routeHref } from '../../utils/maps';
@@ -15,6 +15,7 @@ import JobCard from '../../components/pro/JobCard';
 import JobSpan from '../../components/pro/JobSpan';
 import JobTabs from '../../components/pro/JobTabs';
 import useJobAction from '../../hooks/useJobAction';
+import JobListView from '../../components/pro/JobListView';
 
 /**
  * Every job, in the two states a business cares about: what is running and
@@ -78,6 +79,20 @@ export default function PMProjectsPage() {
   const [needsToolkit, setNeedsToolkit] = useState(false);
   const [tab, setTab] = useState('live');
   const [search, setSearch] = useState('');
+  /* Two ways to read the same buckets: the ring-and-spine overview, and a
+     list drawn like the Angebote. Remembered per page, so Aufträge can stay
+     on the list while Projekte stays on the overview. */
+  const viewKey = `sm_jobs_view_${isProject ? 'project' : 'simple'}`;
+  const [view, setViewState] = useState(() => {
+    try { return localStorage.getItem(viewKey) === 'list' ? 'list' : 'overview'; } catch { return 'overview'; }
+  });
+  const setView = (v) => {
+    setViewState(v);
+    try { localStorage.setItem(viewKey, v); } catch { /* private mode */ }
+  };
+  useEffect(() => {
+    try { setViewState(localStorage.getItem(viewKey) === 'list' ? 'list' : 'overview'); } catch { /* ignore */ }
+  }, [viewKey]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -223,10 +238,35 @@ export default function PMProjectsPage() {
           </Link>
         </div>
 
+        <div className="relative grid grid-cols-2 rounded-xl border bg-paper p-1 mb-3"
+             style={{ borderColor: '#dbe4ec' }} role="tablist" data-testid="pm-view-tabs">
+          <span aria-hidden="true"
+                className="absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] rounded-lg
+                           transition-transform duration-ui ease-out"
+                style={{ background: skin.tint, boxShadow: `inset 0 0 0 1px ${skin.accent}33`,
+                         transform: view === 'list' ? 'translateX(100%)' : 'none' }} />
+          {[['overview', LayoutDashboard, t('ov_view_overview')], ['list', List, t('ov_view_list')]]
+            .map(([v, Icon, label]) => (
+              <button key={v} type="button" role="tab" aria-selected={view === v}
+                      onClick={() => setView(v)} data-testid={`pm-view-${v}`}
+                      className="relative min-h-[40px] flex items-center justify-center gap-1.5
+                                 text-[13px] font-bold transition-colors duration-ui"
+                      style={{ color: view === v ? skin.accent : undefined }}>
+                <Icon size={15} aria-hidden="true"
+                      className={view === v ? '' : 'text-ink-muted'} />
+                <span className={view === v ? '' : 'text-ink-muted'}>{label}</span>
+              </button>
+            ))}
+        </div>
+
         {loading ? (
           <div className="flex justify-center py-14" data-testid="ov-loading">
             <Loader2 size={24} className="text-teal animate-spin" />
           </div>
+        ) : view === 'list' ? (
+          <JobListView tabs={TABS} tab={tab} onTab={setTab} buckets={buckets} counts={tabCounts}
+                       sentFor={sentFor} worth={worth} t={t} act={act} navigate={navigate}
+                       locale={moneyLocale()} />
         ) : (
           <>
             <JobRing amounts={amounts} total={total} counts={counts} tab={tab}
