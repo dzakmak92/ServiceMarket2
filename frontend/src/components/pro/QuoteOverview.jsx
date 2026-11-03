@@ -24,8 +24,8 @@ const PARTS = [
 ];
 const QUOTE_PILLS = {
   open: { circle: null, bg: '#fff', border: '#d3dee8', fg: '#1a3a52' },
-  won: { circle: '#3f8a4f', bg: '#eef8ef', border: '#c5e2ca', fg: '#2c6b39' },
-  lost: { circle: '#c14655', bg: '#fdeef0', border: '#efc3c9', fg: '#8e2b38' },
+  won: { circle: '#3f8a4f', bg: '#eef8ef', border: '#c5e2ca', fg: '#2c6b39', tone: 'green' },
+  lost: { circle: '#c14655', bg: '#fdeef0', border: '#efc3c9', fg: '#8e2b38', tone: 'red' },
 };
 const TABS = [
   { key: 'open', labelKey: 'quote_verdict_open' },

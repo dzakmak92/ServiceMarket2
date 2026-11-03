@@ -235,8 +235,16 @@ export function WeekCalendar({ jobs, skin, t }) {
 
 export const PILL = {
   live: { circle: null, bg: '#fff', border: '#d3dee8', fg: '#1a3a52' },
-  pipeline: { circle: '#e0951f', bg: '#fff6e6', border: '#f0d5a6', fg: '#7a4a0c' },
-  done: { circle: '#3f8a4f', bg: '#eef8ef', border: '#c5e2ca', fg: '#2c6b39' },
+  pipeline: { circle: '#e0951f', bg: '#fff6e6', border: '#f0d5a6', fg: '#7a4a0c', tone: 'orange' },
+  done: { circle: '#3f8a4f', bg: '#eef8ef', border: '#c5e2ca', fg: '#2c6b39', tone: 'green' },
+};
+
+/* An active pill wears its own colour, the same as the cards it lists:
+   blue (or petrol) for the first, orange, green or red for the others. */
+const PILL_ON = {
+  orange: { grad: 'linear-gradient(135deg, #f5b452, #e0951f 55%, #b8700f)', shadow: 'rgba(201,122,16,.30)', ink: '#b8700f' },
+  green: { grad: 'linear-gradient(135deg, #62c176, #3f8a4f 55%, #2c6b39)', shadow: 'rgba(63,138,79,.30)', ink: '#2c6b39' },
+  red: { grad: 'linear-gradient(135deg, #e27984, #c14655 55%, #93303c)', shadow: 'rgba(193,70,85,.30)', ink: '#93303c' },
 };
 
 export function StatusPills({ tabs, tab, counts, onPick, lead, skin, t, styles = PILL }) {
@@ -253,11 +261,12 @@ export function StatusPills({ tabs, tab, counts, onPick, lead, skin, t, styles =
                                py-1 pl-1 pr-2 min-[400px]:py-[5px] min-[400px]:pl-[5px] min-[400px]:pr-2.5
                                text-[12px] min-[400px]:text-[13px] font-bold transition-[background,box-shadow] duration-ui"
                     style={on
-                      ? { background: skin.grad, color: '#fff', border: '1.5px solid transparent', boxShadow: '0 6px 14px rgba(30,84,144,.26)' }
+                      ? { background: (PILL_ON[p.tone] || {}).grad || skin.grad, color: '#fff', border: '1.5px solid transparent',
+                          boxShadow: `0 6px 14px ${(PILL_ON[p.tone] || {}).shadow || 'rgba(30,84,144,.26)'}` }
                       : { background: p.bg, color: p.fg, border: `1.5px solid ${p.border}` }}>
               <em className="not-italic grid place-items-center rounded-full shrink-0 w-6 h-6
                              min-[400px]:w-7 min-[400px]:h-7 font-headings text-[13px] min-[400px]:text-[14.5px] tabular-nums"
-                  style={on ? { background: '#fff', color: skin.accent }
+                  style={on ? { background: '#fff', color: (PILL_ON[p.tone] || {}).ink || skin.accent }
                     : { background: p.circle || skin.accent, color: '#fff' }}>
                 {counts[key]}
               </em>
