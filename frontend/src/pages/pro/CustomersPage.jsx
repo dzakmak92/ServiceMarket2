@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import SkeletonList from '../../components/motion/SkeletonList';
 import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
@@ -65,7 +65,9 @@ export default function CustomersPage() {
   const { t } = useLang();
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
-  const [q, setQ] = useState('');
+  /* `?q=` lets the search field on the home screen land here already filtered. */
+  const [urlParams] = useSearchParams();
+  const [q, setQ] = useState(() => urlParams.get('q') || '');
   const [typeFilter, setTypeFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
