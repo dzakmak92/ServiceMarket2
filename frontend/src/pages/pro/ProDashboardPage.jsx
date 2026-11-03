@@ -1,356 +1,327 @@
-import React, { useState, useEffect } from 'react';
-import { useLang } from '../../contexts/LangContext';
-import { useAuth } from '../../contexts/AuthContext';
-import api from '../../api/client';
-import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, BarChart, Bar, Cell,
-} from 'recharts';
-import {
-  TrendingUp, Star, Briefcase, Euro, Clock, AlertCircle,
-  CheckCircle2, Lock, ArrowRight,
-} from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import StatusPill from '../../components/StatusPill';
+import { ArrowUpRight, ArrowDownRight, ChevronRight, Lock, Receipt, FileText } from 'lucide-react';
+import { useLang } from '../../contexts/LangContext';
+import api from '../../api/client';
 import { isPremiumTier } from '../../utils/tier';
-import { fmtEur } from '../../utils/money';
+import { fmtEur, fmtEur0, moneyLocale } from '../../utils/money';
+import { tradeOf } from '../../utils/trade';
+import TradeMark from '../../components/TradeMark';
+import SkeletonList from '../../components/motion/SkeletonList';
+import { SKINS } from '../../components/pro/JobOverview';
 
-const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+/**
+ * Dashboard, design D1 "Monatsbericht".
+ *
+ * One blue card that answers "how is this month going" — what was won, how
+ * that compares with last month, and twelve months of quotes sent and won.
+ * Under it three figures, the path from quote to money, what is still owed,
+ * and the latest quotes with their trade and real title.
+ *
+ * What it replaced: four KPI tiles of which two were usually empty
+ * ("€ 0,00", a rating dash), a smoothed line chart whose axis read 0.75 and
+ * 2.25 quotes, two blurred Pro panels, and a recent-quotes list where every
+ * row said "Job" and amounts read "€4180".
+ */
 
-// ─── KPI tile ────────────────────────────────────────────────────────────────
-function KpiCard({ label, value, sub, icon: Icon, color, bg, to }) {
-  // A figure a pro is meant to act on should be the thing they can press.
-  // "Offene Forderungen" was a number with nowhere to go.
-  const Wrap = to ? Link : 'div';
-  const props = to ? { to, className: 'card-lg flex flex-col gap-2 hover:border-teal/40 transition-colors' }
-                   : { className: 'card-lg flex flex-col gap-2' };
-  return (
-    <Wrap {...props} data-testid={`kpi-${label.toLowerCase().replace(/\s+/g,'-')}`}>
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-ink-muted">{label}</span>
-        <div className={`w-8 h-8 rounded-full ${bg} flex items-center justify-center flex-shrink-0`}>
-          <Icon size={15} className={color} />
-        </div>
-      </div>
-      <p className={`text-2xl font-headings font-bold leading-none ${color}`}>{value}</p>
-      {sub && <p className="text-[11px] text-ink-muted">{sub}</p>}
-    </Wrap>
-  );
-}
+const WON = ['accepted', 'converted'];
+const SEEN = ['viewed', 'negotiating', 'accepted', 'converted', 'rejected', 'expired'];
 
-// ─── Pro-only locked upsell card ─────────────────────────────────────────────
-function LockedFeature({ title, desc, t }) {
-  return (
-    <div className="card-lg border-dashed opacity-60 relative overflow-hidden">
-      <div className="absolute inset-0 flex items-center justify-center z-10">
-        <div className="text-center">
-          <Lock size={20} className="text-ink-muted mx-auto mb-1" />
-          <p className="text-xs font-semibold text-ink-muted">{t('pro_only')}</p>
-          <Link to="/billing" className="text-[11px] text-teal underline mt-0.5 inline-block">
-            {t('pro_upgrade')} →
-          </Link>
-        </div>
-      </div>
-      <div className="blur-sm pointer-events-none select-none">
-        <p className="font-headings font-bold text-ink mb-1">{title}</p>
-        <p className="text-xs text-ink-muted">{desc}</p>
-        <div className="h-28 bg-cream-deep rounded-xl mt-2" />
-      </div>
-    </div>
-  );
-}
+const when = (q) => new Date(q.sent_at || q.created_at);
+const wonAt = (q) => new Date(q.decided_at || q.updated_at || q.sent_at || q.created_at);
+
+const STATUS_DOT = {
+  draft: '#8b9aa7', sent: '#e0951f', viewed: '#2f74b8', negotiating: '#2f74b8',
+  accepted: '#3f8a4f', converted: '#3f8a4f', rejected: '#c14655', expired: '#c14655', superseded: '#8b9aa7',
+};
 
 export default function ProDashboard() {
-  const { user } = useAuth();
   const { t } = useLang();
-  const [proProfile, setProProfile] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [quotes, setQuotes] = useState([]);
-  const [invStats, setInvStats] = useState(null);
-  const [cashflow, setCashflow] = useState(null);
+  const [inv, setInv] = useState(null);
+  const [cash, setCash] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [scope, setScopeState] = useState(() => {
+    try { return localStorage.getItem('sm_dash_scope') === 'year' ? 'year' : 'month'; } catch { return 'month'; }
+  });
+  const setScope = (s) => {
+    setScopeState(s);
+    try { localStorage.setItem('sm_dash_scope', s); } catch { /* private mode */ }
+  };
 
   useEffect(() => {
     Promise.all([
-      api.get('/api/profile/pro'),
-      api.get('/api/invoices/stats').catch(() => ({ data: null })),
-      api.get('/api/invoices/cashflow').catch(() => ({ data: null })),
-      // `quotes` was initialised to [] and never fetched, so the win rate,
-      // the monthly-activity chart, the category breakdown and the recent-
-      // quotes list were all permanently empty no matter how many quotes the
-      // business had sent. Four panels of the landing screen showing zero.
-      api.get('/api/quotes', { params: { limit: 200 } }).catch(() => ({ data: null })),
+      api.get('/api/profile/pro').catch(() => null),
+      api.get('/api/invoices/stats').catch(() => null),
+      api.get('/api/invoices/cashflow').catch(() => null),
+      api.get('/api/quotes', { params: { limit: 200 } }).catch(() => null),
     ]).then(([p, s, cf, q]) => {
-      setProProfile(p.data);
-      setInvStats(s.data);
-      setCashflow(cf.data);
-      setQuotes((q.data?.quotes || []).map((row) => ({
-        ...row,
-        // The chart buckets by the month a quote went out; a draft that was
-        // never sent has no date and should not count as this month's work.
-        sent_at: row.sent_at || row.created_at,
-        price: Number(row.gross_total || 0),
-        job_category: row.job_title || row.title || 'other',
-      })));
+      setProfile(p?.data || null);
+      setInv(s?.data || null);
+      setCash(cf?.data || null);
+      setQuotes(q?.data?.quotes || []);
     }).finally(() => setLoading(false));
   }, []);
 
-  const isPro = isPremiumTier(proProfile?.plan_tier);
+  const isPro = isPremiumTier(profile?.plan_tier);
+  const skin = SKINS.jobs;
 
-  // ── Quote metrics ──
-  const totalQuotes = quotes.length;
-  const acceptedQuotes = quotes.filter(q => q.status === 'accepted').length;
-  const successRate = totalQuotes > 0 ? Math.round((acceptedQuotes / totalQuotes) * 100) : 0;
+  const d = useMemo(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    const inMonth = (dt, yy, mm) => dt.getFullYear() === yy && dt.getMonth() === mm;
+    const inPeriod = (dt) => (scope === 'year' ? dt.getFullYear() === y : inMonth(dt, y, m));
+    const inPrev = (dt) => (scope === 'year'
+      ? dt.getFullYear() === y - 1
+      : inMonth(dt, m === 0 ? y - 1 : y, m === 0 ? 11 : m - 1));
 
-  // ── Monthly activity (quotes) ──
-  const monthlyData = MONTH_LABELS.map((month, i) => {
-    const mq = quotes.filter(q => new Date(q.sent_at).getMonth() === i && new Date(q.sent_at).getFullYear() === new Date().getFullYear());
+    const won = quotes.filter((q) => WON.includes(q.status));
+    const wonNow = won.filter((q) => inPeriod(wonAt(q)));
+    const wonPrev = won.filter((q) => inPrev(wonAt(q)));
+    const sum = (arr) => arr.reduce((s, q) => s + Number(q.gross_total || 0), 0);
+    const booked = sum(wonNow);
+    const bookedPrev = sum(wonPrev);
+
+    const sent = quotes.filter((q) => q.status !== 'draft' && q.status !== 'superseded');
+    const sentNow = sent.filter((q) => inPeriod(when(q)));
+    const decidedNow = sentNow.filter((q) => ['accepted', 'converted', 'rejected', 'expired'].includes(q.status));
+    const wonOfSent = sentNow.filter((q) => WON.includes(q.status)).length;
+    const rate = sentNow.length ? Math.round((wonOfSent / sentNow.length) * 100) : null;
+    const avg = wonNow.length ? booked / wonNow.length : (won.length ? sum(won) / won.length : 0);
+
+    /* Twelve months of the current year: how many went out, how many of
+       those were won. Counts, so the axis is whole quotes — never 0.75. */
+    const bars = Array.from({ length: 12 }, (_, i) => {
+      const ms = sent.filter((q) => inMonth(when(q), y, i));
+      return { i, sent: ms.length, won: ms.filter((q) => WON.includes(q.status)).length, cur: i === m, future: i > m };
+    });
+    const maxBar = Math.max(1, ...bars.map((b) => b.sent));
+
+    const yearSent = sent.filter((q) => when(q).getFullYear() === y);
+    const funnel = [
+      { key: 'sent', n: yearSent.length },
+      { key: 'viewed', n: yearSent.filter((q) => SEEN.includes(q.status) || q.first_viewed_at).length },
+      { key: 'won', n: yearSent.filter((q) => WON.includes(q.status)).length },
+      { key: 'paid', n: Number(inv?.paid_count || 0) },
+    ];
+
+    const recent = [...quotes].sort((a, b) => when(b) - when(a)).slice(0, 5);
+    const label = scope === 'year'
+      ? String(y)
+      : now.toLocaleDateString(moneyLocale(), { month: 'long' });
+    const prevLabel = scope === 'year'
+      ? String(y - 1)
+      : new Date(y, m - 1, 1).toLocaleDateString(moneyLocale(), { month: 'short' });
     return {
-      month,
-      quotes: mq.length,
-      won: mq.filter(q => q.status === 'accepted').length,
-      revenue: mq.filter(q => q.status === 'accepted').reduce((s, q) => s + (q.price || 0), 0),
+      booked, bookedPrev, nWon: wonNow.length, sentNow: sentNow.length, decided: decidedNow.length,
+      rate, avg, bars, maxBar, funnel, recent, label, prevLabel,
     };
-  });
+  }, [quotes, scope, inv]);
 
-  // ── Win rate by category (Pro feature b) ──
-  const categoryMap = {};
-  quotes.forEach(q => {
-    const cat = (q.job_category || 'other').replace('_', ' ');
-    if (!categoryMap[cat]) categoryMap[cat] = { total: 0, won: 0 };
-    categoryMap[cat].total++;
-    if (q.status === 'accepted') categoryMap[cat].won++;
-  });
-  const categoryData = Object.entries(categoryMap)
-    .map(([cat, v]) => ({ cat, rate: Math.round((v.won / v.total) * 100), total: v.total, won: v.won }))
-    .filter(c => c.total >= 2)
-    .sort((a, b) => b.rate - a.rate)
-    .slice(0, 8);
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-paper pb-24">
+        <div className="page-container max-w-3xl py-6"><SkeletonList rows={4} /></div>
+      </div>
+    );
+  }
 
-  const recentQuotes = [...quotes].sort((a, b) => new Date(b.sent_at) - new Date(a.sent_at)).slice(0, 5);
-
-  if (loading) return (
-    <div className="min-h-screen bg-cream flex items-center justify-center">
-      <div className="animate-pulse text-ink-muted text-sm">{t('dash_loading')}</div>
-    </div>
-  );
+  const delta = d.booked - d.bookedPrev;
+  const months = t('db_month_letters').split(',');
+  const pending = Number(inv?.pending_brutto || 0);
+  const funnelMax = Math.max(1, ...d.funnel.map((f) => f.n));
+  const FUNNEL_BG = {
+    sent: skin.grad,
+    viewed: 'linear-gradient(135deg,#4f8fc9,#2f74b8)',
+    won: 'linear-gradient(135deg,#62c176,#3f8a4f 55%,#2c6b39)',
+    paid: 'linear-gradient(135deg,#2d8597,#1f5f70 55%,#163a47)',
+  };
+  const cashWeeks = (cash?.weeks || []).slice(0, 6);
+  const cashMax = Math.max(1, ...cashWeeks.map((w) => Number(w.amount || 0)));
 
   return (
-    <div className="min-h-screen bg-cream pb-24 md:pb-8">
-      <div className="page-container py-6 space-y-6">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <h1 className="text-3xl font-headings font-bold text-ink">{t('nav_dashboard')}</h1>
-          {isPro && <span className="pro-badge px-3 py-1 text-sm">PRO</span>}
+    <div className="min-h-screen bg-paper pb-28 md:pb-10">
+      <div className="page-container max-w-3xl py-5 grid gap-4">
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="font-headings font-bold text-ink text-[24px]">{t('nav_dashboard')}</h1>
+          <div className="flex bg-[#eef2f5] rounded-[10px] p-[3px] text-[12px] font-semibold" role="tablist"
+               data-testid="db-scope">
+            {['month', 'year'].map((s) => (
+              <button key={s} type="button" role="tab" aria-selected={scope === s} onClick={() => setScope(s)}
+                      data-testid={`db-scope-${s}`}
+                      className={`px-3 py-[5px] rounded-lg transition-colors duration-ui
+                                  ${scope === s ? 'bg-paper text-[#1e5490] shadow-sm' : 'text-ink-muted'}`}>
+                {t(s === 'month' ? 'db_month' : 'db_year')}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* ── Revenue KPIs ─────────────────────────────────── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <KpiCard
-            label={t('dash_revenue_month')}
-            value={fmtEur(invStats?.this_month_brutto || 0)}
-            sub={t('dash_invoices_ytd', { n: invStats?.issued_count || 0 })}
-            icon={Euro}
-            color="text-teal"
-            bg="bg-teal/10"
-          />
-          <KpiCard
-            label={t('dash_outstanding')}
-            value={fmtEur(invStats?.pending_brutto || 0)}
-            sub={t('dash_unpaid', { n: invStats?.pending_count || 0 })}
-            icon={AlertCircle}
-            color={invStats?.pending_brutto > 0 ? 'text-amber-deep' : 'text-ink-muted'}
-            bg="bg-amber/10"
-            to={invStats?.pending_count > 0 ? '/overdue' : undefined}
-          />
-          <KpiCard
-            label={t('dash_win_rate')}
-            value={`${successRate}%`}
-            sub={t('dash_won_of', { won: acceptedQuotes, total: totalQuotes })}
-            icon={TrendingUp}
-            color="text-green-text"
-            bg="bg-green-pos/10"
-          />
-          <KpiCard
-            label={t('dash_avg_rating')}
-            value={proProfile?.rating_avg ? proProfile.rating_avg.toFixed(1) : '—'}
-            sub={t('dash_jobs_done', { n: proProfile?.completed_jobs_count || 0 })}
-            icon={Star}
-            color="text-amber-deep"
-            bg="bg-amber/10"
-          />
+        {/* ── the month (or year) ─────────────────────────────── */}
+        <div className="rounded-[22px] p-4 text-paper grid gap-2.5"
+             style={{ background: skin.grad, boxShadow: '0 14px 28px rgba(23,58,94,.26)' }} data-testid="db-hero">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10.5px] font-bold uppercase tracking-[0.1em]" style={{ color: skin.soft }}>
+              {t('db_so_far', { p: d.label })}
+            </span>
+            {(d.booked > 0 || d.bookedPrev > 0) && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold rounded-full px-2.5 py-[3px]"
+                    style={{ background: 'rgba(255,255,255,.14)', border: '1px solid rgba(255,255,255,.2)' }}
+                    data-testid="db-delta">
+                {delta >= 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+                {`${delta >= 0 ? '+' : '−'}${fmtEur0(Math.abs(delta))} ${t('db_vs', { p: d.prevLabel })}`}
+              </span>
+            )}
+          </div>
+          <p className="font-headings font-bold text-[32px] leading-none tabular-nums" data-testid="db-booked">
+            {fmtEur(d.booked)}
+          </p>
+          <p className="text-[12px]" style={{ color: skin.soft }}>
+            {t(d.nWon === 1 ? 'db_booked_one' : 'db_booked_many', { n: d.nWon })}
+          </p>
+          <div className="grid grid-cols-12 gap-1 h-[74px] items-end mt-1" aria-hidden="true">
+            {d.bars.map((b) => (
+              <div key={b.i} className="flex flex-col justify-end gap-[3px] h-full">
+                <i className="block rounded-t-[4px] rounded-b-[2px] relative overflow-hidden"
+                   style={{ height: `${Math.max(4, (b.sent / d.maxBar) * 56)}px`,
+                            background: b.future ? 'rgba(255,255,255,.10)' : b.cur ? 'rgba(255,255,255,.42)' : 'rgba(255,255,255,.28)' }}>
+                  <u className="absolute inset-x-0 bottom-0 bg-paper"
+                     style={{ height: b.sent ? `${(b.won / b.sent) * 100}%` : 0 }} />
+                </i>
+                <span className="text-[9px] text-center" style={{ color: b.cur ? '#fff' : '#a9c3dc', fontWeight: b.cur ? 700 : 400 }}>
+                  {months[b.i]}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="flex items-center gap-1.5 text-[10.5px]" style={{ color: skin.soft }}>
+            <i className="w-2 h-2 rounded-sm" style={{ background: 'rgba(255,255,255,.35)' }} />{t('db_bar_sent')}
+            <i className="w-2 h-2 rounded-sm bg-paper ml-2" />{t('db_bar_won')}
+          </p>
         </div>
 
-        {/* ── Paid YTD highlight ───────────────────────────── */}
-        {/* Wraps below 640px. As a single flex row the label wrapped onto
-            three lines and the amount ran under the button on a 390px phone —
-            the device this is meant to be read on. */}
-        {invStats && invStats.paid_brutto > 0 && (
-          <div className="card-lg bg-teal/5 border-teal/20 flex flex-wrap items-center gap-3 sm:gap-4" data-testid="revenue-ytd-banner">
-            <div className="w-10 h-10 rounded-full bg-teal/15 flex items-center justify-center flex-shrink-0">
-              <CheckCircle2 size={18} className="text-teal" />
+        {/* ── three figures ───────────────────────────────────── */}
+        <div className="grid grid-cols-3 gap-1.5" data-testid="db-kpis">
+          {[
+            { k: 'sent', v: String(d.sentNow), l: t('db_kp_sent') },
+            { k: 'rate', v: d.rate == null ? '—' : `${d.rate} %`, l: t('db_kp_rate'), c: '#3f8a4f' },
+            { k: 'avg', v: d.avg ? fmtEur0(d.avg) : '—', l: t('db_kp_avg') },
+          ].map((x) => (
+            <div key={x.k} className="rounded-[14px] px-2.5 py-2 grid gap-px min-w-0"
+                 style={{ border: '1.5px solid #e3e9ee' }} data-testid={`db-kp-${x.k}`}>
+              <b className="font-headings text-[18px] tabular-nums truncate" style={{ color: x.c || '#1a3a52' }}>{x.v}</b>
+              <span className="text-[10.5px] text-ink-muted truncate">{x.l}</span>
             </div>
-            <div className="flex-1 min-w-[8rem]">
-              <p className="text-xs text-ink-muted uppercase font-bold tracking-wide">{t('dash_paid_ytd')}</p>
-              <p className="text-2xl font-headings font-bold text-teal">{fmtEur(invStats.paid_brutto)}</p>
+          ))}
+        </div>
+
+        {/* ── from quote to money ─────────────────────────────── */}
+        <div className="rounded-[18px] p-[13px] grid gap-2.5 bg-paper" style={{ border: '1.5px solid #e3e9ee' }}
+             data-testid="db-funnel">
+          <p className="flex items-baseline justify-between text-[13.5px] font-bold text-ink">
+            {t('db_funnel')}
+            <span className="text-[11.5px] font-medium text-ink-muted">{new Date().getFullYear()}</span>
+          </p>
+          <div className="grid gap-[5px]">
+            {d.funnel.map((f) => (
+              <div key={f.key} className="flex items-center justify-between rounded-[9px] px-2.5 py-1.5 text-paper text-[11.5px] font-semibold min-w-[110px]"
+                   style={{ width: `${Math.max(32, (f.n / funnelMax) * 100)}%`, background: FUNNEL_BG[f.key] }}>
+                <span className="truncate">{t(`db_f_${f.key}`)}</span>
+                <b className="font-headings tabular-nums ml-2">{f.n}</b>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── what is still owed ──────────────────────────────── */}
+        {pending > 0 && (
+          <Link to="/my-invoices" data-testid="db-pending"
+                className="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-3 items-center rounded-[18px] p-[13px]"
+                style={{ background: '#fff8ec', border: '1.5px solid #f0d5a6' }}>
+            <span className="w-9 h-9 rounded-[11px] grid place-items-center text-paper"
+                  style={{ background: 'linear-gradient(135deg,#f5b452,#e0951f 55%,#b8700f)' }}>
+              <Receipt size={17} aria-hidden="true" />
+            </span>
+            <span className="min-w-0">
+              <b className="block text-[14px] text-ink tabular-nums">{t('db_open', { v: fmtEur(pending) })}</b>
+              <small className="block text-[11.5px] text-ink-muted truncate">
+                {t(Number(inv?.pending_count) === 1 ? 'db_open_one' : 'db_open_many', { n: inv?.pending_count || 0 })}
+              </small>
+            </span>
+            <ChevronRight size={18} className="text-ink-faint" aria-hidden="true" />
+          </Link>
+        )}
+
+        {/* ── money coming in (Pro) ───────────────────────────── */}
+        {isPro && cashWeeks.length > 0 && (
+          <div className="rounded-[18px] p-[13px] grid gap-2.5 bg-paper" style={{ border: '1.5px solid #e3e9ee' }}
+               data-testid="db-cash">
+            <p className="text-[13.5px] font-bold text-ink">{t('db_cash')}</p>
+            <div className="grid grid-cols-6 gap-2 items-end h-[92px]">
+              {cashWeeks.map((w) => {
+                const a = Number(w.amount || 0);
+                return (
+                  <div key={w.label} className="grid justify-items-center content-end gap-[3px] h-full">
+                    <small className="text-[10px] font-bold text-[#3f8a4f] h-3 tabular-nums">{a ? fmtEur0(a) : ''}</small>
+                    <span className="w-full max-w-[40px] rounded-[7px]"
+                          style={{ height: `${Math.max(6, (a / cashMax) * 56)}px`,
+                                   background: a ? 'linear-gradient(135deg,#62c176,#3f8a4f 55%,#2c6b39)' : '#eef2f5' }} />
+                    <em className="not-italic text-[10px] text-ink-faint">{w.label}</em>
+                  </div>
+                );
+              })}
             </div>
-            <Link to="/my-invoices" className="btn-ghost text-xs flex-shrink-0 w-full sm:w-auto justify-center">
-              {t('dash_view_invoices')} <ArrowRight size={12} />
-            </Link>
           </div>
         )}
 
-        {/* ── Monthly Activity chart ───────────────────────── */}
-        <div className="card-lg">
-          <h2 className="font-headings font-bold text-ink mb-1 text-base">{t('dash_monthly_activity')}</h2>
-          <p className="text-xs text-ink-muted mb-4">{t('dash_sent_vs_won')}</p>
-          <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={monthlyData}>
-              <defs>
-                <linearGradient id="gTeal" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#2d6a7f" stopOpacity={0.18} />
-                  <stop offset="95%" stopColor="#2d6a7f" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0e3c8" />
-              <XAxis dataKey="month" tick={{ fill: '#7d8a9a', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#7d8a9a', fontSize: 11 }} width={28} />
-              <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #f0e3c8', fontSize: 12 }} />
-              <Area type="monotone" dataKey="quotes" stroke="#2d6a7f" fill="url(#gTeal)" strokeWidth={2} name={t('dash_sent')} />
-              <Area type="monotone" dataKey="won" stroke="#f5a623" fill="none" strokeWidth={2} strokeDasharray="4 4" name={t('dash_won')} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* ── PRO: Cash Flow + Win Rate by Category ───────── */}
-        {isPro ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Cash Flow Timeline */}
-            <div className="card-lg" data-testid="cashflow-chart">
-              <div className="flex items-center gap-2 mb-1">
-                <Euro size={15} className="text-teal" />
-                <h2 className="font-headings font-bold text-ink text-base">{t('dash_cashflow_title')}</h2>
-                <span className="pro-badge text-[9px] px-1.5 py-0.5">PRO</span>
-              </div>
-              <p className="text-xs text-ink-muted mb-3">{t('dash_cashflow_desc')}</p>
-              {cashflow?.overdue > 0 && (
-                <div className="flex items-center gap-2 bg-red-warn/10 border border-red-warn/20 rounded-xl px-3 py-1.5 mb-3 text-xs text-red-text font-semibold">
-                  <AlertCircle size={12} /> {fmtEur(cashflow.overdue)} {t('dash_overdue_now')}
-                </div>
-              )}
-              {cashflow?.weeks?.some(w => w.amount > 0) ? (
-                <ResponsiveContainer width="100%" height={180}>
-                  <BarChart data={cashflow.weeks} barSize={14}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0e3c8" vertical={false} />
-                    <XAxis dataKey="label" tick={{ fill: '#7d8a9a', fontSize: 10 }} />
-                    <YAxis tick={{ fill: '#7d8a9a', fontSize: 10 }} width={40} tickFormatter={v => `€${v}`} />
-                    <Tooltip
-                      formatter={(v) => [fmtEur(v), 'Expected']}
-                      contentStyle={{ borderRadius: '10px', border: '1px solid #f0e3c8', fontSize: 11 }}
-                    />
-                    <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
-                      {cashflow.weeks.map((w, i) => (
-                        <Cell key={i} fill={w.amount > 0 ? '#2d6a7f' : '#e8ddd0'} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-32 text-ink-muted text-sm">
-                  {t('dash_no_outstanding')}
-                </div>
-              )}
-            </div>
-
-            {/* Win Rate by Category */}
-            <div className="card-lg" data-testid="winrate-chart">
-              <div className="flex items-center gap-2 mb-1">
-                <TrendingUp size={15} className="text-teal" />
-                <h2 className="font-headings font-bold text-ink text-base">{t('dash_winrate_cat')}</h2>
-                <span className="pro-badge text-[9px] px-1.5 py-0.5">PRO</span>
-              </div>
-              <p className="text-xs text-ink-muted mb-3">{t('dash_winrate_focus')}</p>
-              {categoryData.length > 0 ? (
-                <div className="space-y-2">
-                  {categoryData.map(c => (
-                    <div key={c.cat} className="flex items-center gap-2 min-w-0">
-                      <span className="text-xs text-ink-soft w-28 truncate flex-shrink-0 capitalize">{c.cat}</span>
-                      <div className="flex-1 h-2 bg-cream-deep rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${c.rate}%`,
-                            background: c.rate >= 60 ? '#2d6a7f' : c.rate >= 30 ? '#f5a623' : '#e5534b',
-                          }}
-                        />
-                      </div>
-                      <span className="text-xs font-bold text-ink w-10 text-right flex-shrink-0">{c.rate}%</span>
-                      <span className="text-[10px] text-ink-muted flex-shrink-0">{c.won}/{c.total}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-32 text-ink-muted text-sm text-center">
-                  {t('dash_winrate_need')}
-                </div>
-              )}
-            </div>
-          </div>
-        ) : (
-          /* Upsell locked cards */
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <LockedFeature
-              title={t('dash_cashflow_title')}
-              desc={t('dash_cashflow_desc')}
-              t={t}
-            />
-            <LockedFeature
-              title={t('dash_winrate_title')}
-              desc={t('dash_winrate_desc')}
-              t={t}
-            />
-          </div>
-        )}
-
-        {/* ── Recent Quotes ────────────────────────────────── */}
-        <div className="card-lg">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-headings font-bold text-ink text-base">{t('dash_recent_quotes')}</h2>
-            <Link to="/quotes" className="text-teal text-xs hover:underline">{t('btn_view_all')}</Link>
-          </div>
-          {recentQuotes.length === 0 ? (
-            <div className="text-center py-8">
-              <Briefcase size={28} className="text-ink-muted mx-auto mb-2" />
+        {/* ── latest quotes ───────────────────────────────────── */}
+        <div className="rounded-[18px] p-[13px] grid gap-2 bg-paper" style={{ border: '1.5px solid #e3e9ee' }}
+             data-testid="db-recent">
+          <p className="flex items-baseline justify-between text-[13.5px] font-bold text-ink">
+            {t('dash_recent_quotes')}
+            <Link to="/quotes" className="text-[11.5px] font-semibold text-teal">{t('btn_view_all')}</Link>
+          </p>
+          {d.recent.length === 0 ? (
+            <div className="text-center py-6">
+              <FileText size={26} className="text-ink-muted mx-auto mb-2" aria-hidden="true" />
               <p className="text-ink-muted text-sm">{t('quotes_empty_hint')}</p>
-              <Link to="/leads/new" className="btn-primary text-xs mt-3 inline-flex">{t('nav_capture_lead')}</Link>
+              <Link to="/estimate" className="btn-primary text-xs mt-3 inline-flex">{t('ov_calculate')}</Link>
             </div>
-          ) : (
-            <div className="space-y-2">
-              {recentQuotes.map(q => (
-                <div key={q.id} className="flex items-center justify-between py-2 border-b border-sm-border last:border-0">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-ink truncate">{q.job_title || 'Job'}</p>
-                    <p className="text-[11px] text-ink-muted">{q.job_city || ''}</p>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-sm font-bold text-ink">€{q.price}</span>
-                    <StatusPill status={q.status} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          ) : d.recent.map((q) => {
+            const trade = tradeOf(q.job_category || q.category, q.title || q.job_title);
+            const won = WON.includes(q.status);
+            return (
+              <Link key={q.id} to={`/quotes/${q.id}`} data-testid="db-recent-row"
+                    className="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-2.5 items-center pt-2"
+                    style={{ borderTop: '1px solid #eef2f5' }}>
+                <span className="w-[30px] h-[30px] rounded-[9px] grid place-items-center text-paper"
+                      style={{ background: won ? 'linear-gradient(135deg,#62c176,#3f8a4f 55%,#2c6b39)' : skin.grad }}>
+                  {trade ? <TradeMark trade={trade} size={17} /> : <FileText size={15} aria-hidden="true" />}
+                </span>
+                <span className="min-w-0">
+                  <b className="block text-[13px] text-ink truncate">{q.title || q.job_title || t('quote')}</b>
+                  <small className="flex items-center gap-1.5 text-[11px] text-ink-muted truncate">
+                    <i className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: STATUS_DOT[q.status] || '#8b9aa7' }} />
+                    {[q.quote_number, t(`quote_status_${q.status}`)].filter(Boolean).join(' · ')}
+                  </small>
+                </span>
+                <em className="not-italic font-bold text-[13px] text-ink tabular-nums">{fmtEur(q.gross_total)}</em>
+              </Link>
+            );
+          })}
         </div>
 
-        {/* ── Upgrade CTA (non-pro) ────────────────────────── */}
+        {/* ── Pro, as one line instead of three blurred panels ─── */}
         {!isPro && (
-          <div className="bg-teal/5 border border-teal/20 rounded-[18px] p-5 flex items-center justify-between gap-4 flex-wrap">
-            <div>
-              <h3 className="font-headings font-bold text-ink text-base">{t('pro_upgrade_banner_title')}</h3>
-              <p className="text-ink-muted text-sm mt-0.5">{t('pro_upgrade_banner_desc')}</p>
-            </div>
-            <Link to="/billing" className="btn-primary flex-shrink-0 text-sm" data-testid="dashboard-upgrade-cta">
-              {t('pro_plan_upgrade')} <ArrowRight size={14} />
-            </Link>
-          </div>
+          <Link to="/billing" data-testid="dashboard-upgrade-cta"
+                className="flex items-center gap-2.5 rounded-[14px] px-3 py-2.5 text-[12px] text-ink-muted"
+                style={{ border: '1.5px dashed #cfdae4' }}>
+            <Lock size={16} className="shrink-0" aria-hidden="true" />
+            <span className="flex-1">{t('db_pro_row')}</span>
+            <b className="text-[#1e5490]">{t('db_pro_see')}</b>
+          </Link>
         )}
       </div>
     </div>
