@@ -7,6 +7,7 @@ import {
 import CompactRow, { MiniGroup, MiniBtn } from './CompactRow';
 import { openQuotePdf } from '../../utils/openPdf';
 import TradeMark from '../TradeMark';
+import { tradeOf } from '../../utils/trade';
 import { fmtEur } from '../../utils/money';
 import { daysSince } from '../../utils/jobSteps';
 import { routeHref } from '../../utils/maps';
@@ -22,15 +23,8 @@ import { telHref } from '../../utils/sms';
  * two views can never disagree about what is running.
  */
 
-/* `jobs.category` speaks the marketplace's words; the marks speak the
-   estimator's. Anything without a drawn mark falls back to the briefcase. */
-const TRADE_OF = {
-  painting: 'maler', tiling: 'fliesen', flooring: 'fliesen', electrical: 'elektrik',
-  plumbing: 'sanitaer', hvac: 'sanitaer', gardening: 'garten', home_cleaning: 'reinigung',
-  handyman: 'montage', carpentry: 'montage', moving: 'montage', locksmith: 'montage',
-  appliance_repair: 'montage', folierung: 'folierung',
-};
-export const tradeOfCategory = (c) => TRADE_OF[(c || '').toLowerCase()] || null;
+/* Kept as an export so older imports keep working; the logic lives in utils/trade. */
+export const tradeOfCategory = (c, title) => tradeOf(c, title);
 
 const TAB_FILL = {
   live: 'bg-teal/[.14] text-teal',
@@ -121,7 +115,7 @@ export default function JobListView({
 }
 
 function JobRow({ j, i, tab, q, worth, t, act, navigate, locale }) {
-  const trade = tradeOfCategory(j.category);
+  const trade = tradeOf(j.category, j.title);
   const running = j.status === 'in_progress';
   const start = j.scheduled_start ? new Date(j.scheduled_start) : null;
   const late = tab === 'live' && !!start && !running && +start < Date.now();

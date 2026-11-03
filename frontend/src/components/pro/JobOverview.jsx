@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   Briefcase, CornerUpRight, Phone, Play, Check, FileText, Send, Calculator,
-  CalendarClock, Receipt, CalendarPlus, FilePlus2,
+  CalendarClock, Receipt, CalendarPlus, FilePlus2, LayoutDashboard, List,
 } from 'lucide-react';
 import TradeMark from '../TradeMark';
 import { fmtEur, fmtEur0, fmtEurBare, moneyLocale } from '../../utils/money';
@@ -11,7 +11,7 @@ import { stepStates, daysSince } from '../../utils/jobSteps';
 import { routeHref } from '../../utils/maps';
 import { telHref } from '../../utils/sms';
 import { openQuotePdf } from '../../utils/openPdf';
-import { tradeOfCategory } from './JobListView';
+import { tradeOf } from '../../utils/trade';
 
 /**
  * The Aufträge / Projekte overview as it was signed off (P1):
@@ -39,6 +39,29 @@ export const SKINS = {
 
 const hhmm = (d) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 const shortDay = (d) => d.toLocaleDateString(moneyLocale(), { weekday: 'short', day: 'numeric', month: 'short' });
+
+/* ── 0 · the Übersicht / Liste switch ─────────────────────────────────── */
+
+export function ViewSwitch({ view, onChange, accent, tint, t, testid = 'pm-view' }) {
+  return (
+    <div className="relative grid grid-cols-2 rounded-xl border bg-paper p-1"
+         style={{ borderColor: '#dbe4ec' }} role="tablist" data-testid={`${testid}-tabs`}>
+      <span aria-hidden="true"
+            className="absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] rounded-lg transition-transform duration-ui ease-out"
+            style={{ background: tint, boxShadow: `inset 0 0 0 1px ${accent}33`,
+                     transform: view === 'list' ? 'translateX(100%)' : 'none' }} />
+      {[['overview', LayoutDashboard, t('ov_view_overview')], ['list', List, t('ov_view_list')]].map(([v, Icon, label]) => (
+        <button key={v} type="button" role="tab" aria-selected={view === v} onClick={() => onChange(v)}
+                data-testid={`${testid}-${v}`}
+                className="relative min-h-[40px] flex items-center justify-center gap-1.5 text-[13px] font-bold transition-colors duration-ui"
+                style={{ color: view === v ? accent : undefined }}>
+          <Icon size={15} aria-hidden="true" className={view === v ? '' : 'text-ink-muted'} />
+          <span className={view === v ? '' : 'text-ink-muted'}>{label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
 
 /* ── 1 · the blue total card ──────────────────────────────────────────── */
 
@@ -96,14 +119,14 @@ export function OverviewHero({ amounts, total, counts, tab, onPick, skin, t }) {
           return (
             <button key={p.key} type="button" onClick={() => onPick(p.tab)}
                     data-testid={`ov-hero-${p.key}`} aria-pressed={on}
-                    className="rounded-xl px-2 py-[7px] text-left min-w-0 transition-colors duration-ui"
+                    className="rounded-xl px-1.5 min-[400px]:px-2 py-[7px] text-left min-w-0 transition-colors duration-ui"
                     style={on
                       ? { background: '#fff', color: skin.accent }
                       : { background: 'rgba(255,255,255,.10)', border: '1px solid rgba(255,255,255,.14)', color: skin.soft }}>
-              <span className="block text-[9.5px] font-bold uppercase tracking-[0.07em] truncate">
+              <span className="block text-[8.5px] min-[400px]:text-[9.5px] font-bold uppercase tracking-[0.02em] min-[400px]:tracking-[0.02em] truncate">
                 {t(p.shortKey)}
               </span>
-              <span className="block text-[15px] font-bold tabular-nums truncate"
+              <span className="block text-[13.5px] min-[400px]:text-[15px] font-bold tabular-nums truncate"
                     style={{ color: on ? skin.accent : '#fff' }}>
                 {fmtEurBare(amounts[p.key] || 0)}
               </span>
@@ -210,30 +233,30 @@ export function WeekCalendar({ jobs, skin, t }) {
 
 /* ── 3 · the three status pills (P1) ──────────────────────────────────── */
 
-const PILL = {
+export const PILL = {
   live: { circle: null, bg: '#fff', border: '#d3dee8', fg: '#1a3a52' },
   pipeline: { circle: '#e0951f', bg: '#fff6e6', border: '#f0d5a6', fg: '#7a4a0c' },
   done: { circle: '#3f8a4f', bg: '#eef8ef', border: '#c5e2ca', fg: '#2c6b39' },
 };
 
-export function StatusPills({ tabs, tab, counts, onPick, lead, skin, t }) {
+export function StatusPills({ tabs, tab, counts, onPick, lead, skin, t, styles = PILL }) {
   return (
     <div className="grid gap-3">
-      <div className="grid grid-cols-3 gap-[5px] min-[400px]:gap-2" role="tablist" data-testid="ov-pills">
+      <div className="flex gap-[5px] min-[400px]:gap-2" role="tablist" data-testid="ov-pills">
         {tabs.map(({ key, labelKey }) => {
           const on = key === tab;
-          const p = PILL[key];
+          const p = styles[key];
           return (
             <button key={key} type="button" role="tab" aria-selected={on}
                     onClick={() => onPick(key)} data-testid={`ov-pill-${key}`}
-                    className="flex items-center justify-center gap-[5px] min-[400px]:gap-2 rounded-full min-w-0
-                               py-1 pl-1 pr-2 min-[400px]:py-1.5 min-[400px]:pl-1.5 min-[400px]:pr-2.5
-                               text-[12.5px] min-[400px]:text-[13px] font-bold transition-[background,box-shadow] duration-ui"
+                    className="flex-auto flex items-center justify-center gap-[5px] min-[400px]:gap-1.5 rounded-full min-w-0
+                               py-1 pl-1 pr-2 min-[400px]:py-[5px] min-[400px]:pl-[5px] min-[400px]:pr-2.5
+                               text-[12px] min-[400px]:text-[13px] font-bold transition-[background,box-shadow] duration-ui"
                     style={on
                       ? { background: skin.grad, color: '#fff', border: '1.5px solid transparent', boxShadow: '0 6px 14px rgba(30,84,144,.26)' }
                       : { background: p.bg, color: p.fg, border: `1.5px solid ${p.border}` }}>
-              <em className="not-italic grid place-items-center rounded-full shrink-0 w-[26px] h-[26px]
-                             min-[400px]:w-[30px] min-[400px]:h-[30px] font-headings text-[13.5px] min-[400px]:text-[15px] tabular-nums"
+              <em className="not-italic grid place-items-center rounded-full shrink-0 w-6 h-6
+                             min-[400px]:w-7 min-[400px]:h-7 font-headings text-[13px] min-[400px]:text-[14.5px] tabular-nums"
                   style={on ? { background: '#fff', color: skin.accent }
                     : { background: p.circle || skin.accent, color: '#fff' }}>
                 {counts[key]}
@@ -254,72 +277,145 @@ export function StatusPills({ tabs, tab, counts, onPick, lead, skin, t }) {
   );
 }
 
-/* ── 4 · the compact job card (C2 / V3) ───────────────────────────────── */
+/* ── 4 · the compact cards ────────────────────────────────────────────── */
 
-const STEP_LABELS = ['ov_step_quote', 'ov_step_sched', 'ov_step_work', 'ov_step_finish', 'ov_step_bill'];
+/* A card's colour says which section it belongs to, the same colour as its
+   pill: Läuft blue (petrol on Projekte), Pipeline orange, Fertig green, and
+   red for a lost quote. Everything on the head — sub text, timeline, labels —
+   is tuned per colour so it stays readable. */
+const WARM_HEAD = {
+  orange: {
+    head: 'radial-gradient(120% 200% at 100% 0%, #f5b452 0%, #e0951f 50%, #b8700f 100%)',
+    soft: '#fff0d6', border: '#ecd2a3', accent: '#c97a10', shadow: 'rgba(201,122,16,.28)', lab: '#ffe6bf',
+  },
+  green: {
+    head: 'radial-gradient(120% 200% at 100% 0%, #62c176 0%, #3f8a4f 55%, #2c6b39 100%)',
+    soft: '#dcf3e0', border: '#c5e2ca', accent: '#3f8a4f', shadow: 'rgba(63,138,79,.28)', lab: '#cdebd3',
+  },
+  red: {
+    head: 'radial-gradient(120% 200% at 100% 0%, #e27984 0%, #c14655 55%, #93303c 100%)',
+    soft: '#ffe0e4', border: '#efc3c9', accent: '#c14655', shadow: 'rgba(193,70,85,.28)', lab: '#ffd2d8',
+  },
+};
 
-function Timeline({ states, warm, t }) {
-  const doneC = warm ? '#3f8a4f' : '#7fd08f';
-  const line = warm ? '#ecd3a5' : 'rgba(255,255,255,.25)';
-  const ring = warm ? '#e8c98f' : 'rgba(255,255,255,.35)';
-  const lab = warm ? '#b98a45' : '#a9c3dc';
-  const labOn = warm ? '#7a4a0c' : '#fff';
+export function toneFor(kind, skin) {
+  if (kind === 'blue') {
+    return {
+      head: skin.head, soft: skin.soft, border: '#c6d4e1', accent: skin.accent, shadow: 'rgba(30,84,144,.25)',
+      done: '#7fd08f', line: 'rgba(255,255,255,.25)', ring: 'rgba(255,255,255,.35)', lab: '#a9c3dc', hollowNow: false,
+    };
+  }
+  const w = WARM_HEAD[kind];
+  return { ...w, done: '#ffffff', line: 'rgba(255,255,255,.38)', ring: 'rgba(255,255,255,.6)', hollowNow: true };
+}
+
+export function Timeline({ states, labels, tone }) {
+  const n = states.length;
   return (
     <div className="grid gap-[5px]" aria-hidden="true">
       <div className="flex items-center">
         {states.map((s, i) => {
           const done = s === 'done';
-          const now = s === 'now' || s === 'run';
-          /* Work under way is amber, like the running share in the ring;
-             "next" is the white dot. One job never shows two white dots. */
+          const now = s === 'now';
+          let dot = { borderColor: tone.ring };
+          if (done) dot = { background: tone.done, borderColor: tone.done };
+          else if (s === 'run') dot = { background: '#ffc76b', borderColor: '#ffc76b', boxShadow: '0 0 0 3px rgba(255,199,107,.28)' };
+          else if (now) {
+            dot = tone.hollowNow
+              ? { background: 'transparent', borderColor: '#fff', borderWidth: 3, boxShadow: '0 0 0 3px rgba(255,255,255,.25)' }
+              : { background: '#fff', borderColor: '#fff', boxShadow: '0 0 0 3px rgba(255,255,255,.22)' };
+          }
           return (
-            <React.Fragment key={STEP_LABELS[i]}>
-              <i className="w-2.5 h-2.5 rounded-full shrink-0 border-2"
-                 style={done ? { background: doneC, borderColor: doneC }
-                   : s === 'run' ? { background: '#ffc76b', borderColor: '#ffc76b', boxShadow: '0 0 0 3px rgba(255,199,107,.28)' }
-                   : now ? (warm
-                     ? { background: '#e0951f', borderColor: '#e0951f', boxShadow: '0 0 0 3px rgba(224,149,31,.2)' }
-                     : { background: '#fff', borderColor: '#fff', boxShadow: '0 0 0 3px rgba(255,255,255,.22)' })
-                     : { borderColor: ring }} />
-              {i < 4 && <u className="flex-1 h-[2px] min-w-2" style={{ background: done ? doneC : line }} />}
+            <React.Fragment key={labels[i]}>
+              <i className="w-2.5 h-2.5 rounded-full shrink-0 border-2" style={dot} />
+              {i < n - 1 && <u className="flex-1 h-[2px] min-w-2" style={{ background: done ? tone.done : tone.line }} />}
             </React.Fragment>
           );
         })}
       </div>
-      <div className="flex text-[9.5px] font-semibold">
-        {states.map((s, i) => (
-          <span key={STEP_LABELS[i]}
-                className={`flex-1 ${i === 0 ? 'text-left' : i === 4 ? 'text-right' : 'text-center'}`}
-                style={{ color: s === 'now' || s === 'run' ? labOn : lab, fontWeight: s === 'now' || s === 'run' ? 700 : 600 }}>
-            {t(STEP_LABELS[i])}
-          </span>
-        ))}
+      <div className="flex text-[9.5px]">
+        {states.map((s, i) => {
+          const on = s === 'now' || s === 'run';
+          return (
+            <span key={labels[i]}
+                  className={`flex-1 truncate ${i === 0 ? 'text-left' : i === n - 1 ? 'text-right' : 'text-center'}`}
+                  style={{ color: on ? '#fff' : tone.lab, fontWeight: on ? 700 : 600 }}>
+              {labels[i]}
+            </span>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-export function JobTile({ j, tab, q, worth, t, act, navigate, skin }) {
-  const trade = tradeOfCategory(j.category);
+/** The shared card: coloured head (link), white foot with money and buttons. */
+export function TileCard({
+  tone, to, trade, title, sub, big, small, smallColor, states, labels, amount, note,
+  icons = [], primary, testid, status,
+}) {
+  return (
+    <div className="rounded-2xl overflow-hidden bg-paper"
+         style={{ border: `1.5px solid ${tone.border}`, boxShadow: '0 4px 12px rgba(20,50,80,.08)' }}
+         data-testid={testid} data-status={status}>
+      <Link to={to} className="px-[13px] py-[11px] grid gap-2.5 text-paper" style={{ background: tone.head }}
+            data-testid={`${testid}-open`}>
+        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-3 items-center">
+          <span className="w-[34px] h-[34px] rounded-[10px] grid place-items-center shrink-0"
+                style={{ background: 'rgba(255,255,255,.18)' }} data-trade={trade || 'none'}>
+            {trade ? <TradeMark trade={trade} size={24} /> : <Briefcase size={20} aria-hidden="true" />}
+          </span>
+          <span className="min-w-0">
+            <span className="block font-headings font-bold text-[15px] leading-[1.2] truncate">{title}</span>
+            <span className="block text-[11px] mt-0.5 truncate" style={{ color: tone.soft }}>{sub}</span>
+          </span>
+          <span className="text-right pl-2">
+            <span className="block font-headings font-bold text-[15.5px] leading-[1.05] tabular-nums whitespace-nowrap">
+              {big}
+            </span>
+            <span className="block text-[10px] mt-0.5 whitespace-nowrap"
+                  style={{ color: smallColor || tone.soft, fontWeight: smallColor ? 700 : 400 }}>
+              {small}
+            </span>
+          </span>
+        </div>
+        {states && <Timeline states={states} labels={labels} tone={tone} />}
+      </Link>
+      <div className="flex items-center justify-between gap-3 px-[13px] py-2" style={{ borderTop: '1px solid #dfe7ee' }}>
+        <span className="font-bold text-[14px] text-ink tabular-nums truncate">
+          {amount}
+          {note && <small className="font-medium text-[11px] text-ink-faint ml-1">{note}</small>}
+        </span>
+        <span className="flex items-center gap-[7px] shrink-0">
+          {icons.map((a) => <TileBtn key={a.key} a={a} />)}
+          {primary && <TileBtn a={primary} primary tone={tone} />}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+const STEP_LABELS = ['ov_step_quote', 'ov_step_sched', 'ov_step_work', 'ov_step_finish', 'ov_step_bill'];
+
+export function JobTile({ j, tab, q, worth, t, act, skin }) {
+  const trade = tradeOf(j.category, j.title);
   const running = j.status === 'in_progress';
   const start = j.scheduled_start ? new Date(j.scheduled_start) : null;
-  const warm = tab === 'live' && !start && !running;
+  const noDate = tab === 'live' && !start && !running;
   const open = `/projects/${j.id}`;
   const calc = `${trade ? `/estimate/${trade}` : '/estimate'}?job=${j.id}`;
-  const states = stepStates(j, q);
+  const tone = toneFor(tab === 'pipeline' ? 'orange' : tab === 'done' ? 'green' : 'blue', skin);
 
   const amount = tab === 'pipeline' ? Number(q?.net_total || j.contract_amount || 0) : worth(j);
   const sub = [j.customer_name, j.site_city || j.customer_city].filter(Boolean).join(' · ')
-    || (warm ? t('ov_waits_date') : j.job_number);
+    || (noDate ? t('ov_waits_date') : j.job_number);
 
-  /* What the right side of the head says: when it happens, how long the quote
-     has been out, or how long the finished job has been waiting for a bill. */
   let when;
   if (tab === 'live') {
     if (running) when = { big: j.started_at ? hhmm(new Date(j.started_at)) : '●', small: t('job_running') };
-    else if (start && +start < Date.now() - 3600000) when = { big: hhmm(start), small: t('ov_overdue'), late: true };
+    else if (start && +start < Date.now() - 3600000) when = { big: hhmm(start), small: t('ov_overdue'), color: '#ffb3bd' };
     else if (start) when = { big: hhmm(start), small: shortDay(start) };
-    else when = { big: '—', small: t('ov_no_date') };
+    else when = { big: '—', small: t('ov_no_date'), color: '#ffd28a' };
   } else if (tab === 'pipeline') {
     const d = daysSince(q?.sent_at || j.created_at);
     when = { big: d != null ? t('ov_days', { n: d }) : '—', small: q ? (q.quote_number || t('pm_status_quoted')) : t('pm_status_lead') };
@@ -334,9 +430,6 @@ export function JobTile({ j, tab, q, worth, t, act, navigate, skin }) {
   const tel = telHref(j.customer_phone);
   const route = routeHref(j);
 
-  /* Small icon buttons first, then the one labelled button that moves the job
-     on. Nothing is ever greyed: a missing address or phone opens the job so
-     it can be filled in. */
   let icons = [];
   let primary;
   if (tab === 'live') {
@@ -346,7 +439,7 @@ export function JobTile({ j, tab, q, worth, t, act, navigate, skin }) {
       tel ? { key: 'call', icon: Phone, label: t('day_call'), href: `tel:${tel}` }
         : { key: 'call', icon: Phone, label: t('ov_add_phone'), to: open },
     ];
-    if (warm) primary = { key: 'plan', icon: CalendarPlus, label: t('ov_plan'), to: open, warm: true };
+    if (noDate) primary = { key: 'plan', icon: CalendarPlus, label: t('ov_plan'), to: open, color: '#e0951f' };
     else if (running) primary = { key: 'finish', icon: Check, label: t('ov_tab_done'), onClick: () => act({ id: j.id, status: j.status }, 'complete') };
     else primary = { key: 'start', icon: Play, label: t('ov_start'), onClick: () => act({ id: j.id, status: j.status }, 'start') };
   } else if (tab === 'pipeline' && j.status === 'quoted' && q) {
@@ -362,61 +455,22 @@ export function JobTile({ j, tab, q, worth, t, act, navigate, skin }) {
   }
 
   return (
-    <div className="rounded-2xl overflow-hidden bg-paper"
-         style={{ border: `1.5px solid ${warm ? '#ecd2a3' : '#c6d4e1'}`, boxShadow: '0 4px 12px rgba(20,50,80,.08)' }}
-         data-testid={`ov-job-${j.id}`} data-status={j.status}>
-      <Link to={open} className="px-[13px] py-[11px] grid gap-2.5"
-            style={warm ? { background: 'linear-gradient(135deg,#fdf3e1,#fbe6c2)', color: '#7a4a0c' }
-              : { background: skin.head, color: '#fff' }}
-            data-testid="ov-job-open">
-        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-3 items-center">
-          <span className="w-[34px] h-[34px] rounded-[10px] grid place-items-center shrink-0"
-                style={warm ? { background: '#fff', color: '#a8680f' } : { background: 'rgba(255,255,255,.16)' }}
-                data-trade={trade || 'none'}>
-            {trade ? <TradeMark trade={trade} size={24} /> : <Briefcase size={20} aria-hidden="true" />}
-          </span>
-          <span className="min-w-0">
-            <span className="block font-headings font-bold text-[15px] leading-[1.2] truncate">
-              {j.title || j.job_number || t('nav_jobs_one')}
-            </span>
-            <span className="block text-[11px] mt-0.5 truncate" style={{ color: warm ? '#a8680f' : skin.soft }}>
-              {sub}
-            </span>
-          </span>
-          <span className="text-right pl-2">
-            <span className="block font-headings font-bold text-[15.5px] leading-[1.05] tabular-nums whitespace-nowrap">
-              {when.big}
-            </span>
-            <span className="block text-[10px] mt-0.5 whitespace-nowrap"
-                  style={{ color: warm ? '#a8680f' : when.late ? '#ffb3bd' : skin.soft, fontWeight: when.late ? 700 : 400 }}>
-              {when.small}
-            </span>
-          </span>
-        </div>
-        <Timeline states={states} warm={warm} t={t} />
-      </Link>
-      <div className="flex items-center justify-between gap-3 px-[13px] py-2"
-           style={{ borderTop: '1px solid #dfe7ee' }}>
-        <span className="font-bold text-[14px] text-ink tabular-nums truncate">
-          {amount > 0 ? fmtEur(amount) : '—'}
-          {amount > 0 && <small className="font-medium text-[11px] text-ink-faint ml-1">{t('ov_net')}</small>}
-        </span>
-        <span className="flex items-center gap-[7px] shrink-0">
-          {icons.map((a) => <TileBtn key={a.key} a={a} />)}
-          {primary && <TileBtn a={primary} primary skin={skin} />}
-        </span>
-      </div>
-    </div>
+    <TileCard tone={tone} to={open} trade={trade} testid={`ov-job-${j.id}`} status={j.status}
+              title={j.title || j.job_number || t('nav_jobs_one')} sub={sub}
+              big={when.big} small={when.small} smallColor={when.color}
+              states={stepStates(j, q)} labels={STEP_LABELS.map((k) => t(k))}
+              amount={amount > 0 ? fmtEur(amount) : '—'} note={amount > 0 ? t('ov_net') : null}
+              icons={icons} primary={primary} />
   );
 }
 
-function TileBtn({ a, primary, skin }) {
+export function TileBtn({ a, primary, tone }) {
   const Icon = a.icon;
   const cls = primary
     ? 'h-8 px-[13px] rounded-[10px] inline-flex items-center gap-1.5 text-[12px] font-bold text-paper'
     : 'w-8 h-8 rounded-[10px] grid place-items-center text-ink bg-paper border border-[#e3e9ee]';
   const style = primary
-    ? (a.warm ? { background: '#e0951f' } : { background: skin.accent, boxShadow: '0 3px 8px rgba(30,84,144,.25)' })
+    ? { background: a.color || tone.accent, boxShadow: `0 3px 8px ${tone.shadow}` }
     : undefined;
   const body = (<><Icon size={primary ? 12 : 14} aria-hidden="true" />{primary && <span>{a.label}</span>}</>);
   const common = { className: cls, style, 'aria-label': a.label, title: a.label, 'data-testid': `ov-act-${a.key}` };
@@ -424,5 +478,5 @@ function TileBtn({ a, primary, skin }) {
   if (a.href) {
     return <a href={a.href} {...common} {...(a.external ? { target: '_blank', rel: 'noreferrer' } : {})}>{body}</a>;
   }
-  return <button type="button" onClick={a.onClick} {...common}>{body}</button>;
+  return <button type="button" onClick={a.onClick} disabled={a.disabled} {...common}>{body}</button>;
 }

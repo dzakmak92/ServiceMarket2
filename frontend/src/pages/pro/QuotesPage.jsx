@@ -9,7 +9,9 @@ import ConvertSheet from '../../components/pro/ConvertSheet';
 import { openQuotePdf } from '../../utils/openPdf';
 import CompactRow, { MiniGroup, MiniBtn } from '../../components/pro/CompactRow';
 import TradeMark from '../../components/TradeMark';
-import { tradeOfCategory } from '../../components/pro/JobListView';
+import { tradeOf } from '../../utils/trade';
+import QuoteOverview from '../../components/pro/QuoteOverview';
+import { ViewSwitch, SKINS } from '../../components/pro/JobOverview';
 import {
   Loader2, Check, Ban, FileText, AlertCircle, Trash2,
   Calculator, Clock, Pencil, Share2, FileDown,
@@ -248,6 +250,14 @@ export default function QuotesPage() {
   const [params] = useSearchParams();
   const [tab, setTab] = useState(() => (params.get('tab') === 'drafts' ? 'drafts' : 'open'));
   const drafts = useCalcDrafts();
+  /* Übersicht or Liste, remembered like on Aufträge. */
+  const [view, setViewState] = useState(() => {
+    try { return localStorage.getItem('sm_quotes_view') === 'list' ? 'list' : 'overview'; } catch { return 'overview'; }
+  });
+  const setView = (v) => {
+    setViewState(v);
+    try { localStorage.setItem('sm_quotes_view', v); } catch { /* private mode */ }
+  };
   // Which quote is being turned into work. Null when the sheet is closed.
   const [converting, setConverting] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -407,6 +417,11 @@ export default function QuotesPage() {
           </Link>
         </div>
 
+        <div className="mb-3">
+          <ViewSwitch view={view} onChange={setView} accent={SKINS.jobs.accent} tint={SKINS.jobs.tint}
+                      t={t} testid="quote-view" />
+        </div>
+
         {/* Three lists, in the shape the cards use for the same three words.
             One idiom on the page for "one of three", and the tab carries its
             own verdict colour so the bar itself says which world you are in.
@@ -415,6 +430,7 @@ export default function QuotesPage() {
             counts — it could tell you there were "versendet" quotes but never
             that anything was waiting. The fine status is still on every card,
             which is where it was being read from anyway. */}
+        {view === 'list' && (
         <div className="flex rounded-xl border border-sm-border bg-paper overflow-hidden mb-3"
              role="tablist" aria-label={t('quote_verdict')} data-testid="quote-tabs">
           {['drafts', 'open', 'won', 'lost'].map((v) => {
@@ -446,6 +462,7 @@ export default function QuotesPage() {
             );
           })}
         </div>
+        )}
 
         {error && (
           <div className="card mb-3 flex items-start gap-2 text-sm text-red-warn" data-testid="quote-error">
@@ -454,7 +471,13 @@ export default function QuotesPage() {
         )}
 
 
-        {tab === 'drafts' ? (
+        {view === 'overview' ? (
+          loading ? <SkeletonList rows={4} /> : (
+            <QuoteOverview quotes={quotes} byTab={byTab} tab={tab} setTab={setTab} drafts={drafts}
+                           draftList={<CalcDraftList drafts={drafts} lang={lang} onQuoted={() => { load(); }} />}
+                           t={t} share={share} openPdf={openPdf} shared={shared} busyId={busyId} />
+          )
+        ) : tab === 'drafts' ? (
           <CalcDraftList drafts={drafts} lang={lang} onQuoted={() => { load(); }} />
         ) : loading ? (
           <SkeletonList rows={4} />
@@ -523,7 +546,7 @@ export default function QuotesPage() {
               const aged = verdict === 'open' ? step : null;
               const skin = aged ? aged.card
                 : (verdict && VERDICT[verdict].card) || 'bg-paper border-sm-border';
-              const trade = tradeOfCategory(q.job_category || q.category);
+              const trade = tradeOf(q.job_category || q.category, q.title || q.job_title);
               const canShare = q.status === 'draft' || !!q.share_token;
               return (
               <CompactRow key={q.id} testid="quote-row" data={{ 'data-verdict': verdict || q.status }}
