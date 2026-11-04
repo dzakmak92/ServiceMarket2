@@ -84,6 +84,7 @@ export default function Header() {
   const navLinks = user?.role === 'tradesperson'
     ? [
         { to: '/', label: t('nav_home') },
+        { to: '/tools', label: t('nav_tools') },
         { to: '/dashboard', label: t('nav_dashboard') },
         ...(hasPmToolkit ? [{ to: '/projects', label: t('nav_projects') }] : []),
       ]

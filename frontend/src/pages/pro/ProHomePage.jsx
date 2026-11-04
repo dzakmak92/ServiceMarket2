@@ -1,14 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  CalendarDays, Calculator, FileText, Handshake, Building2, Receipt, Wrench,
-} from 'lucide-react';
+import { CalendarDays } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLang } from '../../contexts/LangContext';
 import api from '../../api/client';
 import { moneyLocale } from '../../utils/money';
 import useJobAction from '../../hooks/useJobAction';
-import { useCalcDrafts } from '../../components/pro/CalcDraftList';
 import SkeletonList from '../../components/motion/SkeletonList';
 import { SKINS } from '../../components/pro/JobOverview';
 import { WeekStrip, DayPanel, DayCard, EmptyDay } from '../../components/pro/HomeDay';
@@ -20,21 +17,11 @@ import { WeekStrip, DayPanel, DayCard, EmptyDay } from '../../components/pro/Hom
  *   opens like a tab into its schedule → one slim card per appointment.
  *
  * Tapping another day swaps the schedule and the cards. The six steps of the
- * work have moved to their own place; until that place exists in the bottom
- * bar, a compact row of them sits at the foot so no list loses its way in.
+ * work live on Werkzeuge, the second tab of the bottom bar.
  */
 
 const DAY = 86400000;
 const LIVE = ['accepted', 'scheduled', 'in_progress'];
-
-const STEP_BG = {
-  violet: 'linear-gradient(135deg,#8c6be0,#6d4bc2 55%,#4f3399)',
-  orange: 'linear-gradient(135deg,#f5b452,#e0951f 55%,#b8700f)',
-  blue: 'radial-gradient(120% 140% at 100% 0%,#2f74b8 0%,#1e5490 45%,#173a5e 100%)',
-  petrol: 'linear-gradient(135deg,#2d8597,#1f5f70 55%,#163a47)',
-  green: 'linear-gradient(135deg,#62c176,#3f8a4f 55%,#2c6b39)',
-  slate: 'linear-gradient(135deg,#6f8295,#4d6477 55%,#34495a)',
-};
 
 function greetingKey() {
   const h = new Date().getHours();
@@ -52,28 +39,21 @@ function mondayOf(d) {
 export default function ProHomePage() {
   const { user } = useAuth();
   const { t } = useLang();
-  const drafts = useCalcDrafts();
 
   const [profile, setProfile] = useState(null);
-  const [counts, setCounts] = useState({});
   const [jobs, setJobs] = useState([]);
-  const [overdue, setOverdue] = useState([]);
   const [loading, setLoading] = useState(true);
   const todayKey = new Date().toDateString();
   const todayIdx = (new Date().getDay() + 6) % 7;
   const [sel, setSel] = useState(todayIdx);
 
   const load = useCallback(async () => {
-    const [p, c, j, o] = await Promise.all([
+    const [p, j] = await Promise.all([
       api.get('/api/profile/pro').catch(() => null),
-      api.get('/api/jobs/counts').catch(() => null),
       api.get('/api/jobs', { params: { limit: 200 } }).catch(() => null),
-      api.get('/api/invoices/overdue').catch(() => null),
     ]);
     setProfile(p?.data || null);
-    setCounts(c?.data || {});
     setJobs(j?.data?.jobs || []);
-    setOverdue(o?.data?.invoices || []);
     setLoading(false);
   }, []);
 
@@ -125,15 +105,6 @@ export default function ProHomePage() {
   const isToday = sel === todayIdx;
   const extra = isToday ? running.filter((r) => !day.list.some((j) => j.id === r.id)) : [];
   const cards = [...extra, ...day.list];
-
-  const steps = [
-    { key: 'kalkulation', to: '/estimate', icon: Calculator, color: 'violet', label: t('stage_kalkulation'), n: drafts.length || null },
-    { key: 'angebot', to: '/quotes', icon: FileText, color: 'orange', label: t('home_step_quotes'), n: counts.angebot },
-    { key: 'auftrag', to: '/projects?mode=simple', icon: Handshake, color: 'blue', label: t('home_step_jobs'), n: counts.auftrag },
-    { key: 'projekt', to: '/projects?mode=project', icon: Building2, color: 'petrol', label: t('home_step_projects'), n: counts.projekt },
-    { key: 'rechnung', to: overdue.length ? '/overdue' : '/my-invoices', icon: Receipt, color: 'green', label: t('stage_rechnung'), n: overdue.length || null },
-    { key: 'wartung', to: '/recurring', icon: Wrench, color: 'slate', label: t('stage_wartung'), n: counts.wartung },
-  ];
 
   return (
     <div className="min-h-screen bg-paper pb-28 md:pb-10">
@@ -189,29 +160,6 @@ export default function ProHomePage() {
           ) : (
             <EmptyDay isToday={isToday} unplanned={unplanned} t={t} />
           )}
-        </section>
-
-        {/* ── the six steps, until Werkzeuge has its own tab ───── */}
-        <section className="grid gap-2" data-testid="home-steps">
-          <h2 className="font-headings font-bold text-[14px] text-ink-muted">{t('home_flow')}</h2>
-          <div className="grid grid-cols-3 gap-1.5">
-            {steps.map((s) => {
-              const Icon = s.icon;
-              return (
-                <Link key={s.key} to={s.to} data-testid={`home-step-${s.key}`}
-                      className="grid gap-1 rounded-xl px-2.5 py-2 min-w-0 bg-[#f3f6f9]">
-                  <span className="flex items-center justify-between gap-1">
-                    <span className="w-7 h-7 rounded-lg grid place-items-center text-paper shrink-0"
-                          style={{ background: STEP_BG[s.color] }}>
-                      <Icon size={14} aria-hidden="true" />
-                    </span>
-                    {s.n ? <b className="font-headings text-[15px] text-ink tabular-nums">{s.n}</b> : null}
-                  </span>
-                  <span className="text-[12px] font-semibold text-ink truncate">{s.label}</span>
-                </Link>
-              );
-            })}
-          </div>
         </section>
       </div>
     </div>

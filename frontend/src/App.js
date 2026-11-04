@@ -26,6 +26,7 @@ import RemovalPage from "./pages/legal/RemovalPage";
 // Pro pages
 import ProHomePage from "./pages/pro/ProHomePage";
 import ProDashboard from "./pages/pro/ProDashboardPage";
+import ToolsPage from "./pages/pro/ToolsPage";
 import BillingPage from "./pages/pro/BillingPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import OverduePage from "./pages/pro/OverduePage";
@@ -193,6 +194,14 @@ function AppShell() {
           element={
             <ProtectedRoute roles={["tradesperson"]}>
               <BillingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tools"
+          element={
+            <ProtectedRoute roles={["tradesperson"]}>
+              <ToolsPage />
             </ProtectedRoute>
           }
         />
