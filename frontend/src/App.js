@@ -58,6 +58,7 @@ import AccountantSharePage from "./pages/AccountantSharePage";
 import PayInvoicePage from "./pages/PayInvoicePage";
 import PaySuccessPage from "./pages/PaySuccessPage";
 import FeedbackPage from "./pages/FeedbackPage";
+import NotFoundPage from "./pages/NotFoundPage";
 import { Toaster } from "sonner";
 
 const Loader = () => (
@@ -384,7 +385,7 @@ function AppShell() {
           }
         />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
       </ErrorBoundary>
 

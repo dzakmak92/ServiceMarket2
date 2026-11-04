@@ -100,11 +100,15 @@ export default function ProDashboard() {
     const maxBar = Math.max(1, ...bars.map((b) => b.sent));
 
     const yearSent = sent.filter((q) => when(q).getFullYear() === y);
+    // Every step is a subset of the one above it: the same quotes, followed
+    // through. "Paid" used to be the paid-invoice count, a different set, so
+    // the funnel could get wider at the bottom.
+    const yearWon = yearSent.filter((q) => WON.includes(q.status));
     const funnel = [
       { key: 'sent', n: yearSent.length },
       { key: 'viewed', n: yearSent.filter((q) => SEEN.includes(q.status) || q.first_viewed_at).length },
-      { key: 'won', n: yearSent.filter((q) => WON.includes(q.status)).length },
-      { key: 'paid', n: Number(inv?.paid_count || 0) },
+      { key: 'won', n: yearWon.length },
+      { key: 'paid', n: yearWon.filter((q) => q.job_paid).length },
     ];
 
     const recent = [...quotes].sort((a, b) => when(b) - when(a)).slice(0, 5);
@@ -118,7 +122,7 @@ export default function ProDashboard() {
       booked, bookedPrev, nWon: wonNow.length, sentNow: sentNow.length, decided: decidedNow.length,
       rate, avg, bars, maxBar, funnel, recent, label, prevLabel,
     };
-  }, [quotes, scope, inv]);
+  }, [quotes, scope]);
 
   if (loading) {
     return (

@@ -463,7 +463,16 @@ async def list_for_pro(pro_id: str, *, job_id: Optional[str] = None,
     rows = await pg.fetch(
         f"""
         select q.*, c.name as customer_name, j.job_number, j.title as job_title,
-               j.category as job_category
+               j.category as job_category,
+               -- Whether the job this quote won has been paid for. The
+               -- dashboard funnel needs the last step to be a subset of the
+               -- quotes above it; counting paid invoices instead let "paid"
+               -- outgrow "won" whenever old work was settled this year.
+               exists (select 1 from invoices i
+                        where i.job_id = q.job_id and i.pro_id = q.pro_id
+                          and i.status <> 'draft' and i.cancelled_at is null
+                          and i.type <> 'storno'
+                          and i.payment_state = 'paid') as job_paid
           from quotes q
           left join customers c on c.id = q.customer_id
           left join jobs j on j.id = q.job_id
