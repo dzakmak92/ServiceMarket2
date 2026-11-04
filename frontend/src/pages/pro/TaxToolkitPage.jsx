@@ -137,7 +137,7 @@ function DashboardTab({ year, t }) {
         <p className="text-xs uppercase font-bold text-ink-muted tracking-wider mb-2">{t('tax_card_ustva_current')}</p>
         <p className="text-3xl font-headings font-bold text-ink">{fmtEur(data.ust_due_this_quarter)}</p>
         <p className="text-sm text-ink-muted mt-1">
-          {t('tax_card_ustva_current_help').replace('{q}', data.current_quarter)}
+          {t('tax_card_ustva_current_help').replace('{q}', data.current_quarter || `Q${Math.ceil((new Date().getMonth() + 1) / 3)}`)}
           {data.is_kleinunternehmer && <span className="ml-2 text-amber-deep font-semibold">· {t('tax_kleinunternehmer_pill')}</span>}
         </p>
       </div>

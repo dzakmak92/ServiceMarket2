@@ -38,6 +38,20 @@ function snapshotName(row) {
 }
 
 
+// "fällig in 14 Tagen" was printed from the payment terms, so an invoice a
+// week past its due date still read as due in two weeks. Count from the
+// due date instead, and say overdue when it is.
+function dueLabel(inv, t) {
+  if (inv.payment_status === 'paid') return t('myinv_paid');
+  if (!inv.due_date) return t('myinv_due_in').replace('{n}', inv.payment_due_days);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const due = new Date(inv.due_date); due.setHours(0, 0, 0, 0);
+  const n = Math.round((due - today) / 864e5);
+  if (n < 0) return t('myinv_overdue_by').replace('{n}', -n);
+  if (n === 0) return t('myinv_due_today');
+  return t('myinv_due_in').replace('{n}', n);
+}
+
 export default function MyInvoicesPage() {
   const { t, lang } = useLang();
   const MONTHS = useMemo(monthNames, [lang]);
@@ -673,7 +687,7 @@ function InvoiceCard({ inv, busy, t, onPreview, onDownload, onShare, onMarkPaid,
           <p className="text-sm text-ink-soft">{inv.customer_snapshot?.name || '—'}</p>
           <p className="text-xs text-ink-muted">
             {isDraft ? t('myinv_draft_hint')
-              : <>{fmtDate(inv.invoice_date)} · {t('myinv_due_in').replace('{n}', inv.payment_due_days)}</>}
+              : <>{fmtDate(inv.invoice_date)} · {dueLabel(inv, t)}</>}
           </p>
         </div>
         <div className="text-right">
