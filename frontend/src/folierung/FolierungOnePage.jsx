@@ -138,33 +138,33 @@ const FolierungOnePage = forwardRef(function FolierungOnePage({
         {cards.map((c, i) => {
           const isOpen = open === i;
           return (
+            /* Same build as the step cards on the other calculators
+               (EstimatePage › Step): square number badge, 17 px title,
+               64 px header, 16 px inner padding. */
             <section key={i} ref={(el) => { cardRefs.current[i] = el; }}
-                     className={`scroll-mt-24 rounded-[18px] bg-paper overflow-hidden transition-shadow duration-ui
-                                 ${isOpen ? 'shadow-[0_0_0_1.5px_#1e5490,0_8px_20px_rgba(30,84,144,.12)]' : 'shadow-[0_0_0_1px_#dfe6ec,0_2px_6px_rgba(26,58,82,.04)]'}`}
+                     className={`scroll-mt-24 rounded-2xl border border-sm-border bg-paper overflow-hidden
+                                 ${isOpen ? 'shadow-[0_4px_16px_rgba(26,58,82,.09)]' : ''}`}
                      data-testid={`fol-card-${i}`} data-open={isOpen ? 'yes' : 'no'}>
               <button type="button" onClick={() => toggle(i)} aria-expanded={isOpen}
-                      className="w-full grid grid-cols-[26px_minmax(0,1fr)_auto] items-center gap-2.5 px-3 py-2.5 min-h-[56px] text-left">
-                {c.prices ? (
-                  <span className={`w-[26px] h-[26px] rounded-full grid place-items-center ${isOpen ? 'bg-navy text-paper' : 'bg-[#eef2f6] text-ink-muted'}`}>
-                    <SlidersHorizontal size={14} aria-hidden="true" />
-                  </span>
-                ) : (
-                  <span className={`w-[26px] h-[26px] rounded-full grid place-items-center
-                                    ${isOpen ? 'bg-navy shadow-[0_0_0_4px_#dbe7f3]' : touched[i] ? 'bg-[#e3f3e7] text-[#2f7a45]' : 'bg-[#eef2f6]'}`}>
-                    {!isOpen && touched[i] && <Check size={14} strokeWidth={2.6} aria-hidden="true" />}
-                  </span>
-                )}
-                <span className="min-w-0">
-                  <b className="block font-headings font-bold text-[15.5px] text-ink leading-tight">{c.title}</b>
-                  <small className="block text-[12px] text-ink-muted truncate" data-testid={`fol-card-sum-${i}`}>
+                      className="w-full min-h-[64px] flex items-center gap-3 px-4 py-3 text-left
+                                 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal/25">
+                <span aria-hidden="true"
+                      className={`w-7 h-7 rounded-[9px] grid place-items-center text-[14px] font-bold shrink-0
+                                  ${isOpen ? 'bg-teal text-paper'
+                                           : (!c.prices && touched[i]) ? 'bg-green-pos/12 text-green-text' : 'bg-cream-deep text-ink-muted'}`}>
+                  {c.prices ? <SlidersHorizontal size={14} /> : (!isOpen && touched[i] ? <Check size={14} strokeWidth={2.6} /> : i + 1)}
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-[17px] font-headings font-bold leading-tight tracking-[-.015em] text-ink">{c.title}</span>
+                  <span className="block text-[13px] text-ink-muted mt-0.5 truncate" data-testid={`fol-card-sum-${i}`}>
                     {isOpen && i === 0 ? 'Was und wie viel' : summaries[i]}
                     {!c.prices && !touched[i] && !(isOpen && i === 0) && <span className="ml-1.5 font-semibold text-amber-text">Vorschlag</span>}
-                  </small>
+                  </span>
                 </span>
                 <ChevronDown size={18} aria-hidden="true"
-                             className={`text-ink-faint transition-transform duration-ui ${isOpen ? 'rotate-180' : ''}`} />
+                             className={`shrink-0 text-ink-faint transition-transform duration-ui ${isOpen ? 'rotate-180' : ''}`} />
               </button>
-              {isOpen && <div className="px-3 pb-3 pt-1 border-t border-[#eef2f5] grid gap-2.5">{c.body}</div>}
+              {isOpen && <div className="px-4 pb-4 grid gap-2.5">{c.body}</div>}
             </section>
           );
         })}
