@@ -154,9 +154,23 @@ async def get_current_user_optional(request: Request) -> Optional[dict]:
         return None
 
 
+# Owners who run the platform from their own tradesperson login. An account has
+# one role, and the owner works in the app as a pro; this list adds the admin
+# panel on top instead of forcing a second login. Comma-separated; set
+# ADMIN_EMAILS to an empty string in Vercel to switch it off.
+ADMIN_EMAILS = frozenset(
+    e.strip().lower() for e in os.environ.get("ADMIN_EMAILS", "dzakmak92@gmail.com").split(",") if e.strip())
+
+
+def is_admin(user: Optional[dict]) -> bool:
+    if not user:
+        return False
+    return user.get("role") == "admin" or str(user.get("email") or "").lower() in ADMIN_EMAILS
+
+
 async def require_admin(request: Request) -> dict:
     user = await get_current_user(request)
-    if user.get("role") != "admin":
+    if not is_admin(user):
         raise HTTPException(403, "Admin access required")
     return user
 

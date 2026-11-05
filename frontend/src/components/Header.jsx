@@ -334,7 +334,7 @@ export default function Header() {
                         </span>
                       </div>
 
-                      {user.role === 'admin' && (
+                      {(user.role === 'admin' || user.is_admin) && (
                         <Link to="/admin" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm text-ink hover:bg-cream-soft">
                           <LayoutDashboard size={14} /> {t('header_admin_panel')}
                         </Link>

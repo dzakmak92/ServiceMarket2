@@ -19,7 +19,8 @@ from pydantic import BaseModel, EmailStr, Field
 
 from auth import (JWT_ALGORITHM, clear_auth_cookies, create_access_token,
                   create_refresh_token, get_current_user, get_jwt_secret,
-                  hash_password, load_user, set_auth_cookies, verify_password)
+                  hash_password, is_admin, load_user, set_auth_cookies,
+                  verify_password)
 from db import pg
 from services import mailer
 
@@ -236,6 +237,8 @@ async def login(data: LoginIn, response: Response, request: Request):
     if user and user.get("role") == "tradesperson":
         user["plan_tier"] = await pg.fetchval(
             "select plan_tier from pro_profiles where user_id::text = $1", row["id"]) or "standard"
+    if user:
+        user["is_admin"] = is_admin(user)
     return user
 
 
@@ -433,6 +436,7 @@ async def me(user: dict = Depends(get_current_user)):
     if user.get("role") == "tradesperson":
         user["plan_tier"] = await pg.fetchval(
             "select plan_tier from pro_profiles where user_id::text = $1", user["id"]) or "standard"
+    user["is_admin"] = is_admin(user)
     return user
 
 

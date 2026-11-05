@@ -72,7 +72,10 @@ function ProtectedRoute({ children, roles }) {
   if (loading) return <Loader />;
   if (!user) return <Navigate to="/auth" replace state={{ from: location }} />;
   if (!user.onboarding_complete) return <Navigate to="/onboarding" replace />;
-  if (roles && !roles.includes(user.role)) return <Navigate to="/" replace />;
+  /* `is_admin`: the owner runs the admin panel from their tradesperson login
+     (ADMIN_EMAILS on the server). */
+  const allowed = !roles || roles.includes(user.role) || (roles.includes('admin') && user.is_admin);
+  if (!allowed) return <Navigate to="/" replace />;
   return children;
 }
 
