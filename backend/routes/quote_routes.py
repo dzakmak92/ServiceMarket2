@@ -5,10 +5,11 @@ account: the customer never logs in, so the share token is their credential.
 """
 from __future__ import annotations
 
+import os
 from datetime import date, datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from auth import get_current_user
@@ -190,7 +191,7 @@ async def revise(quote_id: str, body: LinesIn, user: dict = Depends(get_current_
 
 
 @router.get("/{quote_id}/pdf")
-async def quote_pdf(quote_id: str, user: dict = Depends(get_current_user)):
+async def quote_pdf(quote_id: str, request: Request, user: dict = Depends(get_current_user)):
     """The branded Angebot the customer actually receives."""
     from fastapi.responses import Response
 
@@ -206,7 +207,26 @@ async def quote_pdf(quote_id: str, user: dict = Depends(get_current_user)):
         "select * from customers where id = $1", quote.get("customer_id")) \
         if quote.get("customer_id") else {}
 
-    pdf = render_quote_pdf(dict(quote), pro=dict(pro or {}), customer=dict(customer or {}))
+    pro = dict(pro or {})
+    # The letterhead needs a phone number and an e-mail address, which live on
+    # the user, not on the business profile.
+    owner = await pg.fetchrow("select name, email, phone from users where id = $1",
+                              pro.get("user_id")) if pro.get("user_id") else None
+    if owner:
+        pro["contact_person"] = pro.get("contact_person") or owner.get("name")
+        pro["phone"] = pro.get("phone") or owner.get("phone")
+        pro["email"] = pro.get("email") or (str(owner["email"]) if owner.get("email") else None)
+
+    # A QR code to the customer's page, but only once the quote is on it:
+    # the portal lists sent quotes, so a draft's code would open a page that
+    # does not show this offer.
+    portal_url = None
+    if quote.get("share_token") and quote.get("status") in ("sent", "viewed", "negotiating"):
+        base = (os.environ.get("FRONTEND_URL") or str(request.base_url)).rstrip("/")
+        portal_url = f"{base}/p/{quote['share_token']}"
+
+    pdf = render_quote_pdf(dict(quote), pro=pro, customer=dict(customer or {}),
+                           portal_url=portal_url)
     name = f"Angebot-{quote.get('quote_number') or quote_id[:8]}.pdf"
     return Response(
         content=pdf, media_type="application/pdf",

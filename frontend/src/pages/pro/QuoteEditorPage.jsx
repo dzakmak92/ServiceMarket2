@@ -500,7 +500,7 @@ export default function QuoteEditorPage() {
               it is a job or a project and books it — so this is the one chip
               that is filled, wherever a quote can still be won, and the way to
               schedule one that already was. */}
-          {['sent', 'viewed', 'negotiating', 'accepted'].includes(quote.status) && (
+          {['draft', 'sent', 'viewed', 'negotiating', 'accepted'].includes(quote.status) && (
             <button type="button" className={`${CHIP} bg-teal text-paper border-teal`}
                     disabled={!!busy} onClick={() => setConverting(true)}
                     data-testid="quote-editor-convert">
@@ -508,7 +508,7 @@ export default function QuoteEditorPage() {
               {quote.status === 'accepted' ? t('conv_cta_plain') : t('conv_cta_accept')}
             </button>
           )}
-          {['sent', 'viewed', 'negotiating'].includes(quote.status) && (
+          {['draft', 'sent', 'viewed', 'negotiating'].includes(quote.status) && (
             <>
               <button type="button" className={`${CHIP} ${CHIP_PLAIN}`}
                       disabled={!!busy} onClick={() => act('accept')} data-testid="quote-editor-accept">

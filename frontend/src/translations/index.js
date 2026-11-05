@@ -57,7 +57,7 @@ const t = {
     // already-sent quote only has its link copied — one gesture, because to
     // the pro those are the same intention.
     quote_row_share: 'Share with the customer', quote_row_send: 'Send and copy link',
-    quote_row_shared: 'Link copied',
+    quote_row_shared: 'Link copied', send_sheet_title: 'Send quote', send_sheet_greet: 'Hello', send_sheet_greet_name: 'Hello {name}', send_sheet_text: '{greet},\n\nhere is our quote "{title}" for {sum}. You can view it and accept it here:\n{url}\n\nKind regards', send_sheet_mail: 'E-mail', send_sheet_other: 'Other app', send_sheet_other_sub: 'SMS, Signal, Telegram …', send_sheet_copy: 'Copy link', send_sheet_pick_contact: 'choose the contact in the app', send_sheet_nolink: 'This quote has no customer link yet.', send_sheet_note: 'Choosing a way marks the quote as sent.',
     est_also_in: 'Also under {s}',
     est_n_templates: '{n} templates',
     est_groups: 'Template groups',
@@ -1929,7 +1929,7 @@ const t = {
     quote_delete_body: '„{q}“ über {v} ist endgültig weg. Er wurde nie versendet, niemand sonst hat ihn gesehen.',
     quote_row_edit: 'Öffnen und bearbeiten',
     quote_row_share: 'Mit dem Kunden teilen', quote_row_send: 'Senden und Link kopieren',
-    quote_row_shared: 'Link kopiert',
+    quote_row_shared: 'Link kopiert', send_sheet_title: 'Angebot senden', send_sheet_greet: 'Guten Tag', send_sheet_greet_name: 'Guten Tag {name}', send_sheet_text: '{greet},\n\nanbei unser Angebot „{title}“ über {sum}. Hier können Sie es ansehen und annehmen:\n{url}\n\nMit freundlichen Grüßen', send_sheet_mail: 'E-Mail', send_sheet_other: 'Andere App', send_sheet_other_sub: 'SMS, Signal, Telegram …', send_sheet_copy: 'Link kopieren', send_sheet_pick_contact: 'Kontakt in der App wählen', send_sheet_nolink: 'Für dieses Angebot gibt es noch keinen Kundenlink.', send_sheet_note: 'Sobald du einen Weg wählst, gilt das Angebot als gesendet.',
     est_also_in: 'Auch unter {s}',
     est_n_templates: '{n} Vorlagen',
     est_groups: 'Vorlagengruppen',

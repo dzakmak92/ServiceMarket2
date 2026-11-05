@@ -6,6 +6,7 @@ import api from '../../api/client';
 import { useLang } from '../../contexts/LangContext';
 import { fmtEur } from '../../utils/money';
 import ConvertSheet from '../../components/pro/ConvertSheet';
+import SendQuoteSheet from '../../components/pro/SendQuoteSheet';
 import { openQuotePdf } from '../../utils/openPdf';
 import CompactRow, { MiniGroup, MiniBtn } from '../../components/pro/CompactRow';
 import TradeMark from '../../components/TradeMark';
@@ -266,6 +267,7 @@ export default function QuotesPage() {
   // Which row just put a link on the clipboard. Cleared on a timer, because
   // the confirmation is about the gesture, not about the quote.
   const [shared, setShared] = useState(null);
+  const [sending, setSending] = useState(null);
   // Which quote is being confirmed for deletion. The ••• menus keep their own
   // open state inside CompactRow.
   const [deleting, setDeleting] = useState(null);
@@ -319,7 +321,13 @@ export default function QuotesPage() {
    * the copying; this only has to say which one applies and confirm it
    * afterwards.
    */
+  /* Sending opens the sheet with the actual ways to reach the customer
+     (WhatsApp, e-mail, share, copy). Its own options mark the quote as
+     sent; see SendQuoteSheet. */
   const share = async (q) => {
+    if (q.share_token) { setSending(q); return; }
+    // A job from before share tokens existed gets one when the quote is
+    // sent; the old path still does that and copies it.
     if (q.status === 'draft') {
       if (!await act(q.id, 'send')) return;
     } else if (q.share_token) {
@@ -616,6 +624,11 @@ export default function QuotesPage() {
           </>
         )}
       </div>
+
+      {sending && (
+        <SendQuoteSheet q={sending} t={t} onClose={() => setSending(null)}
+                        onSend={(q) => { if (q.status === 'draft') act(q.id, 'send'); }} />
+      )}
 
       {converting && (
         <ConvertSheet

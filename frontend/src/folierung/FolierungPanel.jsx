@@ -18,7 +18,7 @@ import { surfaceByKey, DECORS, SURFACES } from './catalog';
 
 /* Die acht Flächen als Ring, wie die Gruppen der anderen Gewerke. Die Zahl
    unter dem Namen ist die Anzahl zählbarer Elemente. */
-const DIAL = SURFACES.map((s) => ({ key: s.key, label: s.short, count: s.elements.length }));
+export const DIAL = SURFACES.map((s) => ({ key: s.key, label: s.short, count: s.elements.length }));
 
 /**
  * Die Folierung als Gewerk auf der Kalkulationsseite (/estimate/folierung).
@@ -28,7 +28,7 @@ const DIAL = SURFACES.map((s) => ({ key: s.key, label: s.short, count: s.element
  * Verlassen, egal wohin, kommt der Hinweis "gespeichert unter Angebote ›
  * Entwürfe". `?draft={id}` öffnet einen Entwurf an der Stelle, wo er stand.
  */
-const FolierungPanel = forwardRef(function FolierungPanel(_props, ref) {
+const FolierungPanel = forwardRef(function FolierungPanel({ renderDial } = {}, ref) {
   const { t } = useLang();
   const navigate = useNavigate();
   const [settings, setSettings] = useState(loadSettings);
@@ -123,6 +123,8 @@ const FolierungPanel = forwardRef(function FolierungPanel(_props, ref) {
     setWizardKey((k) => k + 1);
   };
 
+  const pickSurface = (k) => { wizardRef.current?.chooseSurface(k); setSurface(k); };
+
   const open = (c) => { setInitial(c.input); setRestored(true); setWizardKey((k) => k + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
   return (
@@ -140,9 +142,13 @@ const FolierungPanel = forwardRef(function FolierungPanel(_props, ref) {
       </div>
 
       <div className="mb-3 -mx-1" data-testid="folierung-dial">
-        <GroupDial groups={DIAL} value={surface}
-                   onChange={(k) => { wizardRef.current?.chooseSurface(k); setSurface(k); }}
-                   label="Flächen" promise={t('est_promise_lead')} seconds={t('est_promise_time')} />
+        {/* The estimate page passes its trade carousel here, so the surfaces
+            dial sits in the same swipe as every other trade's dial instead of
+            being skipped. Standalone, it is the plain dial. */}
+        {renderDial ? renderDial({ surface, onSurface: pickSurface }) : (
+          <GroupDial groups={DIAL} value={surface} onChange={pickSurface}
+                     label="Flächen" promise={t('est_promise_lead')} seconds={t('est_promise_time')} />
+        )}
       </div>
 
       {restored && draft && wizardKey === 0 && (

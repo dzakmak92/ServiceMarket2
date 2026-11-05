@@ -463,7 +463,8 @@ async def list_for_pro(pro_id: str, *, job_id: Optional[str] = None,
     rows = await pg.fetch(
         f"""
         select q.*, c.name as customer_name, j.job_number, j.title as job_title,
-               j.category as job_category,
+               j.category as job_category, j.share_token,
+               c.phone as customer_phone, c.email::text as customer_email,
                -- Whether the job this quote won has been paid for. The
                -- dashboard funnel needs the last step to be a subset of the
                -- quotes above it; counting paid invoices instead let "paid"

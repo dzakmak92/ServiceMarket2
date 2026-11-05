@@ -8,7 +8,7 @@ import GroupDial from '../../components/pro/GroupDial';
 import DialSwipe from '../../components/pro/DialSwipe';
 import TradeRow from '../../components/pro/TradeRow';
 import { useAuth } from '../../contexts/AuthContext';
-import FolierungPanel from '../../folierung/FolierungPanel';
+import FolierungPanel, { DIAL as FOL_DIAL } from '../../folierung/FolierungPanel';
 import { canUseFolierung } from '../../folierung/store';
 import SuccessCheck from '../../components/motion/SuccessCheck';
 import { getDraft, saveDraft, removeDraft, newDraftId } from '../../utils/calcDrafts';
@@ -373,8 +373,11 @@ export default function EstimatePage() {
       out[tr.key] = same(prev, w) ? prev : w;
       wedgeCache.current[tr.key] = out[tr.key];
     }
+    /* Folierung has its own calculator, but its surfaces dial belongs in the
+       same carousel; it was missing here, so a swipe skipped it. */
+    if (folAllowed) out[FOL_KEY] = FOL_DIAL;
     return out;
-  }, [meta, wedgesOf]);
+  }, [meta, wedgesOf, folAllowed]);
 
   /* Order is the trades that actually have a dial, so a swipe never lands on
      an empty pane. */
@@ -384,8 +387,8 @@ export default function EstimatePage() {
   ], [meta, folAllowed, t]);
 
   const swipeOrder = useMemo(
-    () => (meta?.trades || []).map((tr) => tr.key).filter((k) => dials[k]),
-    [meta, dials],
+    () => tradeList.map((tr) => tr.key).filter((k) => dials[k]),
+    [tradeList, dials],
   );
 
   /* Resolved, not stored: `group` can name a section that this trade does not
@@ -708,7 +711,17 @@ export default function EstimatePage() {
                       onChange={(k) => leave(`/estimate/${k}`)}
                       label={t('est_pick_trade')} unit={t('est_templates')} />
           </div>
-          <FolierungPanel ref={folRef} />
+          <FolierungPanel ref={folRef} renderDial={swipeOrder.length > 1 ? ({ surface, onSurface }) => (
+            <DialSwipe order={swipeOrder} value={FOL_KEY}
+                       onChange={(k) => leave(`/estimate/${k}`)}
+                       dials={dials} group={surface} onGroup={onSurface}
+                       label={t('est_groups')}
+                       promise={t('est_promise_lead')}
+                       seconds={t('est_promise_time')}
+                       swipeLabel={t('est_swipe_trades')}
+                       prevLabel={t('est_prev_trade')}
+                       nextLabel={t('est_next_trade')} />
+          ) : undefined} />
         </div>
       </div>
     );
