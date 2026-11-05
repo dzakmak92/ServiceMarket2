@@ -41,6 +41,16 @@ const isToday = (iso) => !!iso && new Date(iso).toDateString() === new Date().to
 const daysSince = (iso) => (iso ? (Date.now() - new Date(iso).getTime()) / DAY : 0);
 const sum = (arr, f) => arr.reduce((s, x) => s + Number(f(x) || 0), 0);
 
+
+/* The page's measurements in one place. Thinner than the first version: the
+   coloured column carries icon and name side by side, the money card shows
+   its bars two by two, and the office tiles are flat. */
+const D = {
+  gap: 14, hero: '12px 13px 11px', heroGap: 6, total: 22, barH: 7, barGrid: 2, hintPad: 7, hintIcon: 24,
+  groupGap: 16, cardGap: 9, leftW: 124, leftPad: '8px 8px 9px 11px', icon: 18, iconRow: true,
+  rightPad: '7px 9px 8px 11px', num: 19, secondW: 58, btnW: 66, btnH: 32, base: 2, offH: 50, offRow: true,
+};
+
 function StepCard({ step, first, t }) {
   const base = step.color;
   const top = first ? lighten(base, 0.28) : base;
@@ -48,33 +58,35 @@ function StepCard({ step, first, t }) {
   const Icon = step.icon;
   return (
     <Link to={step.to} data-testid={`tools-step-${step.key}`}
-          className="grid grid-cols-[104px_minmax(0,1fr)] rounded-[18px] overflow-hidden bg-paper"
-          style={{ boxShadow: `0 0 0 1px ${base}, 0 6px 16px rgba(26,58,82,.06)` }}>
-      <span className="grid content-center justify-items-start gap-px text-paper min-w-0"
-            style={{ background: `linear-gradient(150deg, ${top}, ${dk})`, padding: '12px 10px 13px 14px',
-                     boxShadow: `inset 0 -3px 0 ${dk}` }}>
-        <Icon size={28} strokeWidth={1.9} className="mb-2" aria-hidden="true" />
-        <b className="text-[13.5px] font-bold leading-tight">{step.label}</b>
-        <small className="text-[12px] opacity-90 tabular-nums whitespace-nowrap">{fmtEur0(step.amount)}</small>
+          className="grid rounded-[16px] overflow-hidden bg-paper"
+          style={{ gridTemplateColumns: `${D.leftW}px minmax(0,1fr)`, boxShadow: `0 0 0 1px ${base}, 0 4px 12px rgba(26,58,82,.06)` }}>
+      <span className={`grid content-center text-paper min-w-0 ${D.iconRow ? 'grid-cols-[auto_minmax(0,1fr)] gap-x-2 items-center' : 'justify-items-start gap-px'}`}
+            style={{ background: `linear-gradient(150deg, ${top}, ${dk})`, padding: D.leftPad,
+                     boxShadow: `inset 0 -${D.base}px 0 ${dk}` }}>
+        <Icon size={D.icon} strokeWidth={1.9} className={D.iconRow ? 'row-span-2' : 'mb-1.5'} aria-hidden="true" />
+        <b className={`font-bold leading-tight truncate ${D.iconRow ? "text-[12.5px]" : "text-[13px]"}`}>{step.label}</b>
+        <small className="text-[11.5px] opacity-90 tabular-nums whitespace-nowrap">{fmtEur0(step.amount)}</small>
       </span>
-      <span className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 items-center min-w-0"
-            style={{ background: tint(base, 0.05), padding: '12px 12px 14px 14px',
-                     boxShadow: `inset 0 -3px 0 ${tint(base, 0.45)}` }}>
-        <span className="flex items-center min-w-0">
+      <span className="grid grid-cols-[minmax(0,1fr)_auto] gap-2.5 items-center min-w-0"
+            style={{ background: tint(base, 0.05), padding: D.rightPad,
+                     boxShadow: `inset 0 -${D.base}px 0 ${tint(base, 0.45)}` }}>
+        {/* A fixed second column, so the divider and the second number sit at
+            the same place on every card instead of moving with the digits. */}
+        <span className="grid items-center min-w-0" style={{ gridTemplateColumns: `minmax(0,1fr) ${D.secondW}px` }}>
           {step.values.map((v, i) => (
-            <span key={v.label} className="grid min-w-0 py-0.5"
-                  style={i ? { paddingLeft: 10, flex: 'none', boxShadow: `inset 1.5px 0 0 ${tint(base, 0.25)}` } : { paddingRight: 10, flex: '1 1 auto' }}
+            <span key={v.label} className="grid min-w-0"
+                  style={i ? { paddingLeft: 9, boxShadow: `inset 1.5px 0 0 ${tint(base, 0.25)}` } : { paddingRight: 9 }}
                   data-testid={`tools-step-${step.key}-v${i}`}>
-              <b className="font-headings font-bold text-[24px] leading-[1.05] tabular-nums tracking-[-.01em]"
-                 style={{ color: v.hot ? '#c27712' : '#1a3a52' }}>{v.n}</b>
-              <small className="text-[12px] font-medium text-ink-muted whitespace-nowrap overflow-hidden text-ellipsis mt-px">
+              <b className="font-headings font-bold leading-[1.05] tabular-nums tracking-[-.01em]"
+                 style={{ fontSize: D.num, color: v.hot ? '#c27712' : '#1a3a52' }}>{v.n}</b>
+              <small className="text-[11.5px] font-medium text-ink-muted whitespace-nowrap overflow-hidden text-ellipsis">
                 {v.label}
               </small>
             </span>
           ))}
         </span>
-        <span className="w-20 h-10 rounded-[11px] grid place-items-center bg-paper text-ink text-[13px] font-bold"
-              style={{ boxShadow: '0 0 0 1px rgba(26,58,82,.12), 0 2px 5px rgba(26,58,82,.07)' }}>
+        <span className="rounded-[10px] grid place-items-center bg-paper text-ink text-[12.5px] font-bold"
+              style={{ width: D.btnW, height: D.btnH, boxShadow: '0 0 0 1px rgba(26,58,82,.12), 0 2px 5px rgba(26,58,82,.07)' }}>
           {t('tools_open')}
         </span>
       </span>
@@ -86,14 +98,14 @@ function OfficeTile({ tile }) {
   const Icon = tile.icon;
   return (
     <Link to={tile.to} data-testid={`tools-office-${tile.key}`}
-          className="grid justify-items-start content-start gap-px rounded-2xl bg-paper p-2 min-[380px]:p-2.5 min-h-[94px] min-w-0"
-          style={{ boxShadow: '0 0 0 1px rgba(26,58,82,.06), 0 1px 2px rgba(26,58,82,.06), 0 4px 12px rgba(26,58,82,.05)' }}>
-      <span className="w-[34px] h-[34px] rounded-[11px] grid place-items-center text-paper mb-1.5"
+          className={`rounded-2xl bg-paper min-w-0 ${D.offRow ? 'grid grid-cols-[30px_minmax(0,1fr)] gap-x-2 items-center p-2' : 'grid justify-items-start content-start gap-px p-2 min-[380px]:p-2.5'}`}
+          style={{ minHeight: D.offH, boxShadow: '0 0 0 1px rgba(26,58,82,.06), 0 1px 2px rgba(26,58,82,.06), 0 4px 12px rgba(26,58,82,.05)' }}>
+      <span className={`rounded-[10px] grid place-items-center text-paper ${D.offRow ? 'w-[30px] h-[30px] row-span-2' : 'w-[30px] h-[30px] mb-1'}`}
             style={{ background: tile.color }}>
-        <Icon size={17} aria-hidden="true" />
+        <Icon size={16} aria-hidden="true" />
       </span>
-      <b className="text-[12px] min-[380px]:text-[13px] font-bold text-ink truncate max-w-full">{tile.label}</b>
-      <small className="text-[11px] text-ink-muted truncate max-w-full">{tile.sub}</small>
+      <b className="text-[12px] min-[380px]:text-[12.5px] font-bold text-ink truncate max-w-full leading-tight">{tile.label}</b>
+      <small className="text-[10.5px] text-ink-muted truncate max-w-full leading-tight">{tile.sub}</small>
     </Link>
   );
 }
@@ -213,35 +225,37 @@ export default function ToolsPage() {
 
   return (
     <div className="min-h-screen bg-paper pb-28 md:pb-10" data-testid="tools-page">
-      <div className="page-container max-w-3xl py-4 grid gap-6">
+      <div className="page-container max-w-3xl py-4 grid" style={{ gap: D.gap }}>
         <header>
           <p className="text-[13px] text-ink-muted">{t('tools_sub')}</p>
           <h1 className="font-headings font-bold text-ink text-[26px] leading-tight tracking-[-.01em]">{t('nav_tools')}</h1>
         </header>
 
         {/* ── where the money sits ───────────────────────────────── */}
-        <section className="grid gap-[9px] rounded-[22px] text-paper"
-                 style={{ background: NAVY_CARD, padding: '16px 16px 14px', boxShadow: '0 14px 28px rgba(23,58,94,.25)' }}
+        <section className="grid rounded-[20px] text-paper"
+                 style={{ gap: D.heroGap, background: NAVY_CARD, padding: D.hero, boxShadow: '0 12px 24px rgba(23,58,94,.22)' }}
                  data-testid="tools-hero">
           <div className="flex items-baseline justify-between gap-3 mb-1">
             <span className="text-[13px]" style={{ color: '#c8daed' }}>{t('tools_in_flow')}</span>
-            <b className="font-headings font-bold text-[28px] tabular-nums" data-testid="tools-total">{fmtEur0(total)}</b>
+            <b className="font-headings font-bold tabular-nums" style={{ fontSize: D.total }} data-testid="tools-total">{fmtEur0(total)}</b>
           </div>
+          <div className="grid gap-x-3" style={{ gridTemplateColumns: `repeat(${D.barGrid}, minmax(0,1fr))`, rowGap: D.heroGap }}>
           {bars.map((b) => (
-            <div key={b.key} className="grid grid-cols-[76px_minmax(0,1fr)_auto] gap-2 items-center text-[12px]">
+            <div key={b.key} className={`grid gap-2 items-center text-[12px] ${D.barGrid > 1 ? 'grid-cols-[minmax(0,1fr)_auto] gap-y-1' : 'grid-cols-[76px_minmax(0,1fr)_auto]'}`}>
               <span className="truncate" style={{ color: '#c8daed' }}>{b.label}</span>
-              <span className="h-2.5 rounded-md overflow-hidden" style={{ background: 'rgba(255,255,255,.12)' }}>
+              <span className={`rounded-md overflow-hidden ${D.barGrid > 1 ? 'col-span-2 row-start-2' : ''}`} style={{ height: D.barH, background: 'rgba(255,255,255,.12)' }}>
                 <i className="block h-full rounded-md"
                    style={{ width: `${b.v ? Math.max(3, (b.v / peak) * 100) : 0}%`, background: b.color }} />
               </span>
-              <b className="text-right text-[13px] tabular-nums whitespace-nowrap min-w-[58px]">{fmtEur0(b.v)}</b>
+              <b className={`text-right text-[12.5px] tabular-nums whitespace-nowrap ${D.barGrid > 1 ? 'row-start-1 col-start-2' : 'min-w-[58px]'}`}>{fmtEur0(b.v)}</b>
             </div>
           ))}
+          </div>
           {hint && (
-            <p className="mt-1.5 grid grid-cols-[30px_minmax(0,1fr)] gap-2.5 items-start rounded-[14px] p-2.5 text-[12.5px] leading-snug"
-               style={{ background: 'rgba(255,255,255,.1)', color: '#dce8f4' }} data-testid="tools-hint">
-              <span className="w-[30px] h-[30px] rounded-[9px] grid place-items-center" style={{ background: '#f5b452', color: '#3b2500' }}>
-                <Euro size={17} aria-hidden="true" />
+            <p className="mt-1 grid gap-2.5 items-center rounded-[12px] text-[12px] leading-snug"
+               style={{ gridTemplateColumns: `${D.hintIcon}px minmax(0,1fr)`, padding: D.hintPad, background: 'rgba(255,255,255,.1)', color: '#dce8f4' }} data-testid="tools-hint">
+              <span className="rounded-[8px] grid place-items-center" style={{ width: D.hintIcon, height: D.hintIcon, background: '#f5b452', color: '#3b2500' }}>
+                <Euro size={Math.round(D.hintIcon * 0.55)} aria-hidden="true" />
               </span>
               <span><b className="text-paper">{hint.b}</b> {hint.s}</span>
             </p>
@@ -249,15 +263,15 @@ export default function ToolsPage() {
         </section>
 
         {/* ── the six steps, in three pairs ──────────────────────── */}
-        <section className="grid gap-[30px]" data-testid="tools-steps">
+        <section className="grid" style={{ gap: D.groupGap }} data-testid="tools-steps">
           {groups.map((g, gi) => (
-            <div key={g.title} className="grid gap-2.5">
-              <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-ink mx-0.5">
-                <i className="not-italic w-[22px] h-[22px] rounded-full grid place-items-center text-[11.5px] font-bold text-paper"
+            <div key={g.title} className="grid" style={{ gap: D.cardGap + 2 }}>
+              <h2 className="flex items-center gap-2 text-[13px] font-semibold text-ink mx-0.5">
+                <i className="not-italic w-[20px] h-[20px] rounded-full grid place-items-center text-[11.5px] font-bold text-paper"
                    style={{ background: '#1a3a52' }}>{gi + 1}</i>
                 {g.title}
               </h2>
-              <div className="grid gap-2.5">
+              <div className="grid" style={{ gap: D.cardGap }}>
                 {g.steps.map((s, i) => <StepCard key={s.key} step={s} first={i === 0} t={t} />)}
               </div>
             </div>
@@ -265,7 +279,7 @@ export default function ToolsPage() {
         </section>
 
         {/* ── the office ─────────────────────────────────────────── */}
-        <section className="grid gap-2.5" data-testid="tools-office">
+        <section className="grid gap-2" data-testid="tools-office">
           <h2 className="font-headings font-bold text-[16px] text-ink">{t('tools_office')}</h2>
           <div className="grid grid-cols-3 gap-2">
             {office.map((tile) => <OfficeTile key={tile.key} tile={tile} />)}
