@@ -38,13 +38,13 @@ const EXTRA_SHORT = { innen: 'Innenseiten', grifflos: 'Griffe', geraete: 'Gerät
 const CARD_NAMES = ['Teile', 'Zustand & Dekor', 'Extras & Anfahrt'];
 export const ONE_PAGE_STEPS = CARD_NAMES;
 
-const reduce = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 const FolierungOnePage = forwardRef(function FolierungOnePage({
-  settings, initial, onSave, onCreateQuote, onChange, creating = false, initialStep = 0,
+  settings, initial, onSave, onCreateQuote, onChange, creating = false,
 }, ref) {
   const [input, setInput] = useState(() => initial || emptyInput('kueche'));
-  const [open, setOpen] = useState(() => Math.min(Math.max(Number(initialStep) || 0, 0), 2));
+  /* Zu wie auf den anderen Kalkulationen: alle Karten geschlossen. */
+  const [open, setOpen] = useState(-1);
   const [touched, setTouched] = useState(() => (initial ? [true, true, true] : [false, false, false]));
   const [sheet, setSheet] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -77,17 +77,19 @@ const FolierungOnePage = forwardRef(function FolierungOnePage({
     if (key === input.surface) return;
     setInput(emptyInput(key));
     setTouched([false, false, false]);
-    setOpen(0);
+    setOpen(-1);
   };
   useImperativeHandle(ref, () => ({ chooseSurface }));
 
-  const toggle = (i) => {
-    const next = open === i ? -1 : i;
-    setOpen(next);
-    if (next >= 0) {
-      requestAnimationFrame(() => cardRefs.current[i]?.scrollIntoView({ behavior: reduce() ? 'auto' : 'smooth', block: 'nearest' }));
-    }
+  /* Wie EstimateCards: Titel und Pfeil öffnen nur, das Kästchen hakt ab.
+     Abhaken einer geschlossenen Karte öffnet sie auch. Kein Mitscrollen. */
+  const toggle = (i) => setOpen((o) => (o === i ? -1 : i));
+  const check = (i) => {
+    const on = !touched[i];
+    setTouched((t) => t.map((v, j) => (j === i ? on : v)));
+    if (on) setOpen(i);
   };
+  const anyChecked = touched.some(Boolean);
 
   /* ── Zusammenfassungen ─────────────────────────────────────────────── */
   const own = elements.filter((e) => !e.addon);
@@ -147,26 +149,44 @@ const FolierungOnePage = forwardRef(function FolierungOnePage({
                                  ${isOpen ? 'border-navy shadow-[0_2px_10px_rgba(30,84,144,.10)] bg-paper'
                                           : done ? 'border-transparent bg-teal/[.07]' : 'border-transparent bg-row'}`}
                      data-testid={`fol-card-${i}`} data-open={isOpen ? 'yes' : 'no'}>
-              <button type="button" onClick={() => toggle(i)} aria-expanded={isOpen}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left rounded-[14px]
-                                 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal/30">
-                <span aria-hidden="true"
-                      className={`h-5 w-5 shrink-0 rounded-[6px] grid place-items-center text-[11px] font-bold
-                                  ${isOpen || done ? 'bg-teal text-paper'
-                                                   : 'border-[1.6px] border-ink-faint/50 text-ink-muted'}`}>
-                  {c.prices ? <SlidersHorizontal size={11} strokeWidth={2.4} />
-                    : (!isOpen && done ? <Check size={11} strokeWidth={3} /> : i + 1)}
-                </span>
-                <span className="flex-1 min-w-0">
+              <div className="flex items-center gap-2.5 px-3 py-2.5">
+                {c.prices ? (
+                  <span aria-hidden="true" className="h-5 w-5 shrink-0 grid place-items-center text-ink-muted">
+                    <SlidersHorizontal size={14} />
+                  </span>
+                ) : (
+                  <button type="button" onClick={() => check(i)}
+                          aria-pressed={done} aria-label={`${c.title} übernehmen`}
+                          data-testid={`fol-check-${i}`}
+                          className={`h-5 w-5 shrink-0 rounded-[6px] border-[1.6px] flex items-center
+                                      justify-center focus-visible:outline-none focus-visible:ring-4
+                                      focus-visible:ring-teal/30
+                                      ${done ? 'border-teal bg-teal' : 'border-ink-faint/50'}`}>
+                    {done && (
+                      <svg width="10" height="8" viewBox="0 0 10 8" aria-hidden="true">
+                        <path d="M1 4l2.5 2.5L9 1" stroke="#fff" strokeWidth="2"
+                              fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </button>
+                )}
+                <button type="button" onClick={() => toggle(i)} data-testid={`fol-open-${i}`}
+                        className="min-w-0 flex-1 text-left focus-visible:outline-none
+                                   focus-visible:ring-4 focus-visible:ring-teal/30 rounded">
                   <span className="block font-bold text-ink text-[13px] leading-tight">{c.title}</span>
                   <span className="block text-[10px] text-ink-muted mt-[2px] leading-snug truncate" data-testid={`fol-card-sum-${i}`}>
-                    {isOpen && i === 0 ? 'Was und wie viel' : summaries[i]}
-                    {!c.prices && !touched[i] && !(isOpen && i === 0) && <span className="ml-1 font-bold text-amber-text">Vorschlag</span>}
+                    {summaries[i]}
+                    {!c.prices && !touched[i] && <span className="ml-1 font-bold text-amber-text">Vorschlag</span>}
                   </span>
-                </span>
-                <ChevronDown size={14} aria-hidden="true"
-                             className={`shrink-0 text-ink-faint transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-              </button>
+                </button>
+                <button type="button" onClick={() => toggle(i)} aria-expanded={isOpen}
+                        aria-label={`${c.title} — Details`}
+                        className="-my-2 -mr-1 shrink-0 px-1 py-2 rounded focus-visible:outline-none
+                                   focus-visible:ring-4 focus-visible:ring-teal/30">
+                  <ChevronDown size={14} aria-hidden="true"
+                               className={`text-ink-faint transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
               {isOpen && <div className="border-t border-rule bg-paper px-3 py-3 grid gap-2.5">{c.body}</div>}
             </section>
           );
@@ -176,8 +196,8 @@ const FolierungOnePage = forwardRef(function FolierungOnePage({
       {/* Der Preis: dieselbe Leiste wie unter den anderen Kalkulationen
           (EstimateCards › estimate-total-bar). Auf dem Handy über der unteren
           Navigation angedockt, der Abstandhalter hält die letzte Karte frei. */}
-      <div className="h-[64px] md:hidden" aria-hidden="true" />
-      <div data-testid="fol-pricebar"
+      {anyChecked && <div className="h-[64px] md:hidden" aria-hidden="true" />}
+      {anyChecked && <div data-testid="fol-pricebar"
            className="fixed left-0 right-0 bottom-[var(--tabbar-h,0px)] z-30
                       md:sticky md:bottom-0 md:-mx-4 md:mt-4 md:z-20
                       flex items-center justify-between gap-3
@@ -198,7 +218,7 @@ const FolierungOnePage = forwardRef(function FolierungOnePage({
                 data-testid="fol-create-quote">
           {creating ? <Loader2 size={14} className="animate-spin" /> : 'Angebot erstellen'}
         </button>
-      </div>
+      </div>}
 
       {sheet && (
         <PriceSheet result={result} input={input} settings={settings} elements={elements} colorOf={colorOf}
