@@ -1,5 +1,6 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown, Minus, Plus, Save, FileText, Copy, AlertTriangle, X, Ruler } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Check, ChevronDown, Minus, Plus, Save, FileText, Copy, AlertTriangle, X, Ruler, SlidersHorizontal, ArrowRight } from 'lucide-react';
 import AnimatedEur from '../components/motion/AnimatedEur';
 import useSheetModal from '../hooks/useSheetModal';
 import { copyToClipboard } from '../utils/sms';
@@ -124,7 +125,12 @@ const FolierungOnePage = forwardRef(function FolierungOnePage({
     { title: surface.label, body: <PartsCard surface={surface} input={input} elements={elements} setCount={setCount} edit={edit} patch={patch} settings={settings} /> },
     { title: 'Zustand & Dekor', body: <StateCard surface={surface} input={input} patch={patch} settings={settings} /> },
     { title: 'Extras & Anfahrt', body: <ExtrasCard input={input} patch={patch} settings={settings} /> },
+    /* The prices the calculation runs on, where the cards are: what used to be
+       a gear icon at the top of the page. Read here, changed on the prices page. */
+    { title: 'Meine Preise', prices: true, body: <PricesCard settings={settings} /> },
   ];
+  const vkMin = Math.min(...DECORS.map((d) => Number(settings.decors?.[d.key]?.vk ?? d.vk) || 0));
+  summaries[3] = `${eur(settings.hourlyRate)}/h · Folie ab ${eur(vkMin)}/m² · Mindestauftrag ${eur(settings.minOrder)}`;
 
   return (
     <div data-testid="fol-onepage">
@@ -138,15 +144,21 @@ const FolierungOnePage = forwardRef(function FolierungOnePage({
                      data-testid={`fol-card-${i}`} data-open={isOpen ? 'yes' : 'no'}>
               <button type="button" onClick={() => toggle(i)} aria-expanded={isOpen}
                       className="w-full grid grid-cols-[26px_minmax(0,1fr)_auto] items-center gap-2.5 px-3 py-2.5 min-h-[56px] text-left">
-                <span className={`w-[26px] h-[26px] rounded-full grid place-items-center
-                                  ${isOpen ? 'bg-navy shadow-[0_0_0_4px_#dbe7f3]' : touched[i] ? 'bg-[#e3f3e7] text-[#2f7a45]' : 'bg-[#eef2f6]'}`}>
-                  {!isOpen && touched[i] && <Check size={14} strokeWidth={2.6} aria-hidden="true" />}
-                </span>
+                {c.prices ? (
+                  <span className={`w-[26px] h-[26px] rounded-full grid place-items-center ${isOpen ? 'bg-navy text-paper' : 'bg-[#eef2f6] text-ink-muted'}`}>
+                    <SlidersHorizontal size={14} aria-hidden="true" />
+                  </span>
+                ) : (
+                  <span className={`w-[26px] h-[26px] rounded-full grid place-items-center
+                                    ${isOpen ? 'bg-navy shadow-[0_0_0_4px_#dbe7f3]' : touched[i] ? 'bg-[#e3f3e7] text-[#2f7a45]' : 'bg-[#eef2f6]'}`}>
+                    {!isOpen && touched[i] && <Check size={14} strokeWidth={2.6} aria-hidden="true" />}
+                  </span>
+                )}
                 <span className="min-w-0">
                   <b className="block font-headings font-bold text-[15.5px] text-ink leading-tight">{c.title}</b>
                   <small className="block text-[12px] text-ink-muted truncate" data-testid={`fol-card-sum-${i}`}>
                     {isOpen && i === 0 ? 'Was und wie viel' : summaries[i]}
-                    {!touched[i] && !(isOpen && i === 0) && <span className="ml-1.5 font-semibold text-amber-text">Vorschlag</span>}
+                    {!c.prices && !touched[i] && !(isOpen && i === 0) && <span className="ml-1.5 font-semibold text-amber-text">Vorschlag</span>}
                   </small>
                 </span>
                 <ChevronDown size={18} aria-hidden="true"
@@ -159,8 +171,16 @@ const FolierungOnePage = forwardRef(function FolierungOnePage({
       </div>
 
       {/* Der Preis: immer da, ändert sich live. Über der unteren Leiste. */}
-      <div className="sticky bottom-[calc(64px+env(safe-area-inset-bottom))] md:bottom-4 z-20 mt-4" data-testid="fol-pricebar">
-        <div className="rounded-[18px] bg-[#173a5e] text-paper flex items-center justify-between gap-3 pl-4 pr-2 py-2 shadow-[0_10px_24px_rgba(23,58,94,.28)]">
+      {/* Docked to the tab bar on phones: full width, flat bottom, so it reads
+          as part of the frame rather than a card floating over the content. */}
+      {/* Fixed, not sticky, on phones: sticky let go of the tab bar at the end
+          of the page and left a strip of page between the two. The spacer
+          keeps the last card clear of it. */}
+      <div className="h-[72px] md:hidden" aria-hidden="true" />
+      <div className="fixed left-0 right-0 bottom-[var(--tabbar-h,73px)] md:sticky md:bottom-4 z-30 md:z-20 md:mt-4"
+           data-testid="fol-pricebar">
+        <div className="bg-[#173a5e] text-paper flex items-center justify-between gap-3 pl-4 pr-3 py-2
+                        rounded-t-[16px] md:rounded-[18px] shadow-[0_-6px_18px_rgba(23,58,94,.18)] md:shadow-[0_10px_24px_rgba(23,58,94,.28)]">
           <button type="button" onClick={() => setSheet(true)} className="min-w-0 text-left" data-testid="fol-price-open"
                   aria-label="Preis und Kalkulation öffnen">
             <small className="block text-[11px] text-[#a9c3dc]">Montage vor Ort</small>
@@ -386,6 +406,44 @@ function Label({ children, hint }) {
 }
 
 /* ── Karte 2: Zustand, Material, Dekor ─────────────────────────────────── */
+/* Read-only: the figures the price above is built from, and the way to change them. */
+function PricesCard({ settings }) {
+  const rows = [
+    ['Stundensatz', `${eur(settings.hourlyRate)}/h`],
+    ['Mindestauftrag', eur(settings.minOrder)],
+    ['Verschnitt', `${fmtNum(settings.waste, 0)} %`],
+    ['Rüstzeit je Auftrag', `${fmtNum(settings.setupHours, 1)} h`],
+    ['Wochenende', `+${fmtNum(settings.weekendPct, 0)} %`],
+    ['Anfahrt bis 30 km', eur(settings.travel?.[TRAVEL_ZONES[0]?.key] ?? 0)],
+  ];
+  return (
+    <div className="grid gap-2.5" data-testid="fol-prices-card">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 m-0 text-[13px]">
+        {rows.map(([k, v]) => (
+          <div key={k} className="flex justify-between gap-2 border-b border-[#eef2f5] pb-1.5 min-w-0">
+            <dt className="text-ink-muted truncate">{k}</dt><dd className="m-0 font-semibold text-ink tabular-nums whitespace-nowrap">{v}</dd>
+          </div>
+        ))}
+      </dl>
+      <div>
+        <p className="text-[12px] font-semibold text-ink-muted mb-1.5">Folie, Verkauf je m²</p>
+        <div className="grid grid-cols-4 gap-1.5">
+          {DECORS.map((d) => (
+            <span key={d.key} className="rounded-[10px] bg-[#f6f8fa] px-2 py-1.5 min-w-0">
+              <small className="block text-[10.5px] text-ink-muted truncate">{d.label}</small>
+              <b className="block text-[12.5px] text-ink tabular-nums">{eur(settings.decors?.[d.key]?.vk ?? d.vk)}</b>
+            </span>
+          ))}
+        </div>
+      </div>
+      <Link to="/folierung/preise" data-testid="fol-prices-edit"
+            className="min-h-[44px] rounded-xl bg-[#eef3f8] text-navy font-bold text-[14px] flex items-center justify-center gap-2">
+        Preise bearbeiten <ArrowRight size={16} aria-hidden="true" />
+      </Link>
+    </div>
+  );
+}
+
 function StateCard({ surface, input, patch, settings }) {
   return (
     <>

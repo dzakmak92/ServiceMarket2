@@ -1,6 +1,6 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Settings as SettingsIcon, ExternalLink, Trash2, History, Layers, RotateCcw } from 'lucide-react';
+import { Trash2, History, Layers, RotateCcw } from 'lucide-react';
 import api from '../api/client';
 import { useLang } from '../contexts/LangContext';
 import { fmtEur0, fmtDate } from '../utils/money';
@@ -129,18 +129,6 @@ const FolierungPanel = forwardRef(function FolierungPanel({ renderDial } = {}, r
 
   return (
     <div data-testid="folierung-panel">
-      <div className="flex items-center justify-between gap-3 mb-5 mt-1">
-        <p className="text-sm text-ink-muted min-w-0">Drei Karten, der Preis steht unten und rechnet mit. Mit deinen Preisen, Primer und Zuschnitt.</p>
-        <div className="flex gap-2 shrink-0">
-          <Link to="/folierung/preise" className="inline-flex items-center gap-1.5 rounded-xl border border-sm-border bg-paper px-3 py-2 text-sm font-semibold text-ink hover:bg-cream-soft" data-testid="fol-to-prices">
-            <SettingsIcon size={16} /> <span className="hidden sm:inline">Preise</span>
-          </Link>
-          <Link to={`/folie/${settings.slug || 'folie'}`} target="_blank" className="inline-flex items-center gap-1.5 rounded-xl border border-sm-border bg-paper px-3 py-2 text-sm font-semibold text-ink hover:bg-cream-soft" title="Kundenseite öffnen">
-            <ExternalLink size={16} /> <span className="hidden sm:inline">Kundenseite</span>
-          </Link>
-        </div>
-      </div>
-
       <div className="mb-3 -mx-1" data-testid="folierung-dial">
         {/* The estimate page passes its trade carousel here, so the surfaces
             dial sits in the same swipe as every other trade's dial instead of

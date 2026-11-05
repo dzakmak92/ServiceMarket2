@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import useEscapeKey from '../hooks/useEscapeKey';
 import { useAuth } from '../contexts/AuthContext';
@@ -32,6 +32,19 @@ export default function MobileNav() {
 
   // Close the More sheet whenever the route changes.
   useEffect(() => { setMoreOpen(false); }, [location.pathname]);
+
+  /* Publish the bar's real height, so anything docked above it (the
+     Folierung price bar) sits flush on it instead of guessing. */
+  const navRef = useRef(null);
+  useEffect(() => {
+    const el = navRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return undefined;
+    const set = () => document.documentElement.style.setProperty('--tabbar-h', `${el.getBoundingClientRect().height}px`);
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(el);
+    return () => ro.disconnect();
+  });
   /* Escape closes the sheet — it only closed on a backdrop tap. */
   useEscapeKey(moreOpen, () => setMoreOpen(false));
 
@@ -67,6 +80,7 @@ export default function MobileNav() {
   return (
     <>
       <nav
+        ref={navRef}
         className="md:hidden fixed bottom-0 left-0 right-0 bg-paper border-t border-sm-border z-40 pb-safe"
         data-testid="mobile-nav"
       >
