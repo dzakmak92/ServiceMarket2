@@ -282,7 +282,8 @@ export default function ToolsPage() {
         <section className="grid gap-2" data-testid="tools-office">
           <h2 className="font-headings font-bold text-[16px] text-ink">{t('tools_office')}</h2>
           <div className="grid grid-cols-3 gap-2">
-            {office.map((tile) => <OfficeTile key={tile.key} tile={tile} />)}
+            {office.filter((tile) => tile.key !== 'prices' || (data.profile.enabled_trades || []).includes('folierung'))
+              .map((tile) => <OfficeTile key={tile.key} tile={tile} />)}
           </div>
         </section>
       </div>

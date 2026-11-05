@@ -7,9 +7,7 @@ import EstimateCards from './EstimateCards';
 import GroupDial from '../../components/pro/GroupDial';
 import DialSwipe from '../../components/pro/DialSwipe';
 import TradeRow from '../../components/pro/TradeRow';
-import { useAuth } from '../../contexts/AuthContext';
 import FolierungPanel, { DIAL as FOL_DIAL } from '../../folierung/FolierungPanel';
-import { canUseFolierung } from '../../folierung/store';
 import SuccessCheck from '../../components/motion/SuccessCheck';
 import { getDraft, saveDraft, removeDraft, newDraftId } from '../../utils/calcDrafts';
 import { notifyDraftSaved } from '../../utils/draftToast';
@@ -68,6 +66,7 @@ export default function EstimatePage() {
   // of small friction that stops a tool being used on site.
   const [params] = useSearchParams();
   const [meta, setMeta] = useState(null);
+  const folAllowed = !!meta?.enabled_trades?.includes(FOL_KEY);
   const [jobs, setJobs] = useState([]);
   // The trade lives in the URL, not in component state: `/estimate/maler` is
   // Maler's templates. That makes every trade a real address — the back button
@@ -79,8 +78,10 @@ export default function EstimatePage() {
   /* Folierung ist ein Gewerk auf dieser Seite, aber kein Katalog-Gewerk des
      Servers: es hat seinen eigenen Rechner (src/folierung) und erscheint nur
      für freigeschaltete Profile als achte Karte, also zweite Reihe 4 + 4. */
-  const { user } = useAuth();
-  const folAllowed = canUseFolierung(user);
+  /* Which calculators this pro may use is set by the admin (per
+     Gewerbeschein) and arrives with the catalogue: `meta.trades` holds only
+     the enabled catalogue trades, `meta.enabled_trades` also says whether
+     Folierung is on. */
   const folRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -109,14 +110,23 @@ export default function EstimatePage() {
      hardcoded `maler`, so hiding a trade on the server cannot send anybody to
      an address with nothing at it. */
   useEffect(() => {
-    if (trade || !meta?.trades?.length) return;
+    if (!meta) return;
+    const first = meta.trades?.[0]?.key || (folAllowed ? FOL_KEY : null);
+    /* A trade switched off by the admin (or typed into the address bar) goes
+       to the first one that is on, rather than to a 403. */
+    if (trade) {
+      const ok = meta.trades?.some((x) => x.key === trade) || (trade === FOL_KEY && folAllowed);
+      if (!ok && first) navigate(`/estimate/${first}${window.location.search}`, { replace: true });
+      return;
+    }
+    if (!first) return;
     const last = localStorage.getItem('est_trade');
     const known = meta.trades.some((x) => x.key === last) || (last === FOL_KEY && folAllowed);
     /* Keep the query. /estimate?customer=… is how the contacts page hands a
        customer over, and this redirect ran before anything read it — the
        customer was chosen, then dropped on the way to the trade. */
     const qs = window.location.search;
-    navigate(`/estimate/${known ? last : meta.trades[0].key}${qs}`, { replace: true });
+    navigate(`/estimate/${known ? last : first}${qs}`, { replace: true });
   }, [trade, meta, navigate, folAllowed]);
 
   useEffect(() => {
@@ -690,6 +700,23 @@ export default function EstimatePage() {
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center">
         <Loader2 className="animate-spin text-ink-muted" size={24} />
+      </div>
+    );
+  }
+
+  /* Nothing switched on for this account. The admin enables calculators per
+     trade licence, so this is a real state for a new pro, not an error. */
+  if (meta && !meta.trades?.length && !folAllowed) {
+    return (
+      <div className="min-h-screen bg-paper px-4 pt-10" data-testid="estimate-none-enabled">
+        <div className="max-w-md mx-auto rounded-[14px] bg-row px-4 py-5 text-center">
+          <p className="font-bold text-ink text-[15px]">Noch keine Kalkulation freigeschaltet</p>
+          <p className="text-[13px] text-ink-muted mt-1.5">
+            Die Kalkulationen werden passend zu deinem Gewerbeschein freigeschaltet.
+            Schick uns deinen Gewerbeschein über Feedback &amp; Support, dann schalten wir sie frei.
+          </p>
+          <Link to="/feedback" className="btn-primary inline-flex mt-4 !text-[13px]">Feedback &amp; Support</Link>
+        </div>
       </div>
     );
   }

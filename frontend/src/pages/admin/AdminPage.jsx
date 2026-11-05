@@ -10,6 +10,7 @@ import {
 import AdminOverview from './tabs/AdminOverview';
 import AdminVerifications from './tabs/AdminVerifications';
 import AdminUsers from './tabs/AdminUsers';
+import AdminTrades from './tabs/AdminTrades';
 import AdminBilling from './tabs/AdminBilling';
 import AdminInvoicing from './tabs/AdminInvoicing';
 import AdminFeedback from './tabs/AdminFeedback';
@@ -22,8 +23,9 @@ import AdminHeatmap from './tabs/AdminHeatmap';
 import AdminPayouts from './tabs/AdminPayouts';
 import ScrollSnapTabStrip from '../../components/ScrollSnapTabStrip';
 
-const TAB_KEYS = ['overview', 'heatmap', 'verifications', 'users', 'projects', 'billing', 'payouts', 'invoicing', 'feedback', 'insights', 'support', 'toolkits', 'paynow'];
+const TAB_KEYS = ['trades', 'overview', 'heatmap', 'verifications', 'users', 'projects', 'billing', 'payouts', 'invoicing', 'feedback', 'insights', 'support', 'toolkits', 'paynow'];
 const TAB_LABELS = {
+  trades: 'admin_trades',
   overview: 'admin_overview',
   heatmap: 'admin_heatmap',
   verifications: 'admin_verifications',
@@ -50,7 +52,7 @@ export default function AdminPage() {
   const { user, logout } = useAuth();
   const { t, lang, changeLang } = useLang();
   const navigate = useNavigate();
-  const [tab, setTab] = useState('overview');
+  const [tab, setTab] = useState('trades');
   const [notice, setNotice] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [bellOpen, setBellOpen] = useState(false);
@@ -238,6 +240,7 @@ export default function AdminPage() {
           {tab === 'overview' && <AdminOverview flash={flash} />}
           {tab === 'heatmap' && <AdminHeatmap flash={flash} />}
           {tab === 'verifications' && <AdminVerifications flash={flash} />}
+          {tab === 'trades' && <AdminTrades flash={flash} />}
           {tab === 'users' && <AdminUsers flash={flash} />}
           {tab === 'projects' && <AdminProjects flash={flash} />}
           {tab === 'billing' && <AdminBilling flash={flash} />}

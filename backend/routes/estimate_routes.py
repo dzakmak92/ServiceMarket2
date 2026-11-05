@@ -38,6 +38,7 @@ from repositories import quotes as quotes_repo
 from routes._pro import require_pro_id
 from services import calibration as calib
 from services import catalogue_ui
+from services import trades
 from services import catalogue_i18n
 from services import estimate_breakdown
 from services import estimator
@@ -232,6 +233,7 @@ async def _calibration_for(pro_id: str, job_key: str, use: bool) -> Optional[dic
 
 
 async def _estimate(pro_id: str, body: "EstimateIn", *, tier: Optional[str] = None) -> dict:
+    await trades.require_job(pro_id, body.job_key)
     country = body.country or await _country_for(pro_id)
     rates = await _rates_for(pro_id) if body.use_own_rates else {}
     cal = await _calibration_for(pro_id, body.job_key, body.use_calibration)
@@ -281,6 +283,11 @@ async def get_catalogue(lang: str = Query(default="de", pattern="^(de|en|tr|es)$
     """
     pro_id = await require_pro_id(user)
     out = estimator.meta(lang)
+    # Only the calculators the admin switched on for this pro. `enabled_trades`
+    # also carries `folierung`, which is not a catalogue trade.
+    enabled = await trades.enabled_for(pro_id)
+    out["trades"] = [t for t in out["trades"] if t["key"] in enabled]
+    out["enabled_trades"] = enabled
     out["vat"] = await _own_vat(pro_id)
     return out
 
@@ -295,7 +302,11 @@ async def list_jobs(trade: Optional[str] = None, group: Optional[str] = None,
     # to this list without knowing which one — the same invoicing country the
     # estimate itself is computed against, not a guess from a locale.
     country = await _country_for(pro_id)
-    found = estimator.jobs(trade=trade, group=group)
+    enabled = await trades.enabled_for(pro_id)
+    if trade and trade not in enabled:
+        raise HTTPException(403, "Diese Kalkulation ist für dein Konto nicht freigeschaltet.")
+    found = [j for j in estimator.jobs(trade=trade, group=group)
+             if j["trade"] not in trades.ALL_TRADES or j["trade"] in enabled]
     if q:
         # Searched against both languages: a Turkish-speaking pro types what
         # the screen showed them, and the screen showed them the translation.
@@ -341,7 +352,7 @@ async def job_survey(job_key: str, lang: str = Query(default="de", pattern="^(de
     question actually does to it rather than from how it is declared, so the
     label cannot go stale the next time a question is priced or unpriced.
     """
-    await require_pro_id(user)
+    await trades.require_job(await require_pro_id(user), job_key)
     try:
         out = dict(estimator.survey(job_key))
     except LookupError as exc:
@@ -573,6 +584,7 @@ async def multi_position_quote(body: MultiQuoteIn,
 
     results = []
     for pos in body.positions:
+        await trades.require_job(pro_id, pos.job_key)
         cal = await _calibration_for(pro_id, pos.job_key, body.use_calibration)
         kw = {"country": country, "tier": pos.tier, "rates": rates, "calibration": cal}
         if pos.hourly_rate:

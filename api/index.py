@@ -66,6 +66,7 @@ def _build_app():
     import_error: str | None = None
     try:
         from routes._pro import require_pro_id  # noqa: F401
+        from routes.admin_routes import router as admin_router
         from routes.auth_routes import router as auth_router
         from routes.customer_routes import router as customer_router
         from routes.estimate_routes import router as estimate_router
@@ -91,7 +92,7 @@ def _build_app():
                                           router as upload_router)
         from routes.weather_routes import router as weather_router
 
-        for r in (auth_router, customer_router, job_router, quote_router,
+        for r in (admin_router, auth_router, customer_router, job_router, quote_router,
                   profile_router, recurring_router, template_router,
                   estimate_router, privacy_router, privacy_me_router,
                   quote_invoice_router, invoice_router, tax_router,

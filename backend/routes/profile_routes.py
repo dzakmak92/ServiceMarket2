@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field
 
 from auth import get_current_user
 from db import pg
+from services import trades
 from routes._pro import require_pro_id
 from services import storage
 
@@ -102,6 +103,8 @@ async def _payload(pro_id: str) -> dict:
     data["id"] = str(data["id"])
     data["user_id"] = str(data["user_id"])
     data["completed_jobs_count"] = completed
+    # The calculators the admin switched on (NULL in the column = the default).
+    data["enabled_trades"] = trades.effective(data.get("enabled_trades"))
     # All three toolkits are on, and nothing enforces them anyway.
     #
     # `has_invoice_toolkit` was hardcoded true; `has_tax_toolkit` and
