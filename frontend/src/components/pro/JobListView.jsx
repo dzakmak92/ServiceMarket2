@@ -142,7 +142,7 @@ function JobRow({ j, i, tab, q, worth, t, act, navigate, locale }) {
     else pill = { tone: 'amber', text: t('job_not_scheduled') };
   } else if (tab === 'pipeline') {
     pill = j.status === 'quoted'
-      ? { tone: waited != null && waited >= 7 ? 'amber' : 'teal', text: waited != null ? `${t('pm_status_quoted')} · ${t('ov_days', { n: waited })}` : t('pm_status_quoted') }
+      ? { tone: waited != null && waited >= 7 ? 'amber' : 'teal', text: waited != null ? `${t('pm_status_quoted')} · ${(waited === 1 ? t('ov_day_one') : t('ov_days', { n: waited }))}` : t('pm_status_quoted') }
       : { tone: 'muted', text: t('pm_status_lead') };
   } else {
     pill = { tone: waited != null && waited >= 3 ? 'amber' : 'green', text: waited != null ? t('ov_done_days', { n: waited }) : t('pm_status_completed') };

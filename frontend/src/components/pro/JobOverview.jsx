@@ -361,7 +361,7 @@ export function Timeline({ states, labels, tone }) {
 /** The shared card: coloured head (link), white foot with money and buttons. */
 export function TileCard({
   tone, to, trade, title, sub, big, small, smallColor, states, labels, amount, note,
-  icons = [], primary, testid, status,
+  icons = [], primary, testid, status, actions, below,
 }) {
   return (
     <div className="rounded-2xl overflow-hidden bg-paper"
@@ -398,8 +398,10 @@ export function TileCard({
         <span className="flex items-center gap-[7px] shrink-0">
           {icons.map((a) => <TileBtn key={a.key} a={a} />)}
           {primary && <TileBtn a={primary} primary tone={tone} />}
+          {actions}
         </span>
       </div>
+      {below}
     </div>
   );
 }
@@ -427,7 +429,7 @@ export function JobTile({ j, tab, q, worth, t, act, skin }) {
     else when = { big: '—', small: t('ov_no_date'), color: '#ffd28a' };
   } else if (tab === 'pipeline') {
     const d = daysSince(q?.sent_at || j.created_at);
-    when = { big: d != null ? t('ov_days', { n: d }) : '—', small: q ? (q.quote_number || t('pm_status_quoted')) : t('pm_status_lead') };
+    when = { big: d != null ? (d === 1 ? t('ov_day_one') : t('ov_days', { n: d })) : '—', small: q ? (q.quote_number || t('pm_status_quoted')) : t('pm_status_lead') };
   } else {
     const d = daysSince(j.completed_at);
     when = { big: j.completed_at ? shortDay(new Date(j.completed_at)) : '—', small: d != null ? t('ov_done_days', { n: d }) : '' };

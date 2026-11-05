@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FileDown, Share2, Send, Briefcase, ExternalLink, ChevronRight, FileText,
+  MoreHorizontal,
 } from 'lucide-react';
 import { fmtEur, fmtEur0, fmtEurBare, moneyLocale } from '../../utils/money';
 import { daysSince } from '../../utils/jobSteps';
 import { tradeOf } from '../../utils/trade';
 import { StatusPills, TileCard, toneFor, SKINS } from './JobOverview';
+import { RowMenu } from './CompactRow';
 
 /**
  * The Angebote overview, built from the same parts as Aufträge: a blue total
@@ -36,6 +38,7 @@ const SORT = { open: 'qv_sort_open', won: 'qv_sort_won', lost: 'qv_sort_lost' };
 
 export default function QuoteOverview({
   quotes, byTab, tab, setTab, drafts, draftList, t, share, openPdf, shared, busyId,
+  verdictControls, rowMenu,
 }) {
   const skin = SKINS.jobs;
   const amounts = { draft: 0, out: 0, won: 0, lost: 0 };
@@ -129,7 +132,8 @@ export default function QuoteOverview({
             <div className="grid gap-3" data-testid={`qv-list-${tab}`}>
               {rows.map((q) => (
                 <QuoteTile key={q.id} q={q} tab={tab} t={t} share={share} openPdf={openPdf}
-                           shared={shared === q.id} busy={busyId === q.id} skin={skin} />
+                           shared={shared === q.id} busy={busyId === q.id} skin={skin}
+                           controls={verdictControls?.(q)} menu={rowMenu?.(q)} />
               ))}
             </div>
           ) : (
@@ -163,14 +167,15 @@ function quoteStates(q) {
   return done.map((d, i) => (d ? 'done' : i === last + 1 ? 'now' : 'wait'));
 }
 
-function QuoteTile({ q, tab, t, share, openPdf, shared, busy, skin }) {
+function QuoteTile({ q, tab, t, share, openPdf, shared, busy, skin, controls, menu }) {
+  const [menuOpen, setMenuOpen] = useState(false);
   const trade = tradeOf(q.job_category || q.category, q.title || q.job_title);
   const tone = toneFor(tab === 'won' ? 'green' : tab === 'lost' ? 'red' : 'blue', skin);
   const open = `/quotes/${q.id}`;
   const age = daysSince(q.sent_at || q.created_at);
   const decidedOn = q.decided_at ? new Date(q.decided_at) : null;
   const big = tab === 'open'
-    ? (age != null ? t('ov_days', { n: age }) : '—')
+    ? (age != null ? (age === 1 ? t('ov_day_one') : t('ov_days', { n: age })) : '—')
     : decidedOn ? decidedOn.toLocaleDateString(moneyLocale(), { day: 'numeric', month: 'short' }) : '—';
   const sub = [q.customer_name, q.quote_number].filter(Boolean).join(' · ') || q.job_number || '';
 
@@ -193,7 +198,24 @@ function QuoteTile({ q, tab, t, share, openPdf, shared, busy, skin }) {
                 big={big} small={t(`quote_status_${q.status}`) || q.status}
                 states={quoteStates(q)} labels={Q_STEPS.map((k) => t(k))}
                 amount={fmtEur(q.gross_total)} note={t('qv_gross')}
-                icons={icons} primary={primary} />
+                icons={controls ? [] : icons} primary={controls ? null : primary}
+                actions={controls && (
+                  /* The same three verdicts and ••• as a list row (B1): PDF,
+                     sending and the rest moved into the menu. */
+                  <span className="flex items-center gap-1.5">
+                    {controls}
+                    <button type="button" onClick={() => setMenuOpen((v) => !v)} aria-expanded={menuOpen}
+                            aria-label={t('quote_row_more')} title={t('quote_row_more')} data-testid="qv-more"
+                            className={`w-9 h-9 rounded-[11px] border border-sm-border grid place-items-center
+                                        ${menuOpen ? 'bg-ink text-paper' : 'bg-paper text-ink'}`}>
+                      <MoreHorizontal size={16} aria-hidden="true" />
+                    </button>
+                  </span>
+                )}
+                below={menuOpen && menu && (
+                  <RowMenu items={menu} testid="qv-menu" className="mx-[13px] mb-[11px]"
+                           onPick={() => setMenuOpen(false)} />
+                )} />
       {shared && (
         <p className="text-[12px] text-teal font-semibold px-1" role="status" data-testid="quote-shared">
           {t('quote_row_shared')}

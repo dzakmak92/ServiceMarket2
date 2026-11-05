@@ -104,36 +104,36 @@ export default function CompactRow({
         </div>
       </div>
 
-      {open && (
-        <div className="mt-2 rounded-xl border border-sm-border bg-paper overflow-hidden animate-drop"
-             data-testid={menuTestid}>
-          {menu.filter(Boolean).map((m) => {
-            const Icon = m.icon;
-            const cls = `w-full min-h-[44px] px-3.5 text-left text-[14px] font-semibold flex
-                         items-center gap-2 border-b border-sm-border last:border-b-0
-                         ${m.disabled ? 'text-ink-muted' : m.danger ? 'text-red-text' : 'text-ink'}`;
-            const body = (<>{Icon && <Icon size={15} aria-hidden="true" />}<span className="flex-1">{m.label}</span>
-              {m.hint && <span className="text-[12px] font-medium text-ink-muted">{m.hint}</span>}</>);
-            if (m.to) {
-              return <Link key={m.key} to={m.to} className={cls} data-testid={m.testid}
-                           onClick={() => setOpen(false)}>{body}</Link>;
-            }
-            if (m.href) {
-              return (
-                <a key={m.key} href={m.href} className={cls} data-testid={m.testid}
-                   onClick={() => setOpen(false)}
-                   {...(m.external ? { target: '_blank', rel: 'noreferrer' } : {})}>{body}</a>
-              );
-            }
-            return (
-              <button key={m.key} type="button" disabled={m.disabled} className={cls}
-                      data-testid={m.testid}
-                      onClick={() => { setOpen(false); m.onClick?.(); }}>{body}</button>
-            );
-          })}
-        </div>
-      )}
+      {open && <RowMenu items={menu} testid={menuTestid} onPick={() => setOpen(false)} />}
       {note}
+    </div>
+  );
+}
+
+/** The ••• menu's list, shared by the compact row and the overview tiles. */
+export function RowMenu({ items, testid, onPick, className = 'mt-2' }) {
+  return (
+    <div className={`${className} rounded-xl border border-sm-border bg-paper overflow-hidden animate-drop`}
+         data-testid={testid}>
+      {items.filter(Boolean).map((m) => {
+        const Icon = m.icon;
+        const cls = `w-full min-h-[44px] px-3.5 text-left text-[14px] font-semibold flex
+                     items-center gap-2 border-b border-sm-border last:border-b-0
+                     ${m.disabled ? 'text-ink-muted' : m.danger ? 'text-red-text' : 'text-ink'}`;
+        const body = (<>{Icon && <Icon size={15} aria-hidden="true" />}<span className="flex-1">{m.label}</span>
+          {m.hint && <span className="text-[12px] font-medium text-ink-muted">{m.hint}</span>}</>);
+        if (m.to) return <Link key={m.key} to={m.to} className={cls} data-testid={m.testid} onClick={onPick}>{body}</Link>;
+        if (m.href) {
+          return (
+            <a key={m.key} href={m.href} className={cls} data-testid={m.testid} onClick={onPick}
+               {...(m.external ? { target: '_blank', rel: 'noreferrer' } : {})}>{body}</a>
+          );
+        }
+        return (
+          <button key={m.key} type="button" disabled={m.disabled} className={cls} data-testid={m.testid}
+                  onClick={() => { onPick?.(); m.onClick?.(); }}>{body}</button>
+        );
+      })}
     </div>
   );
 }

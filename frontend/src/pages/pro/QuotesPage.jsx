@@ -402,6 +402,62 @@ export default function QuotesPage() {
     return ok;
   };
 
+
+  /* The verdict buttons and the ••• menu, shared by the list rows and the
+     overview tiles so both offer exactly the same actions. */
+  const verdictOf = (q) => VERDICT_OF[q.status] || (q.status === 'superseded' ? null : 'open');
+  const verdictControls = (q) => {
+    const verdict = verdictOf(q);
+    return (
+                  /* The verdict, as three icons. Every verdict is reachable
+                     from every other one; the one already set is inert, and a
+                     superseded quote has none of the three to offer. Winning
+                     goes through the ConvertSheet, because accepting is also
+                     scheduling the work; a lost quote is reopened first, since
+                     the server refuses to convert a rejected one. */
+                  <MiniGroup label={t('quote_verdict')} testid="quote-verdict">
+                    {['open', 'won', 'lost'].map((v) => {
+                      const on = v === verdict;
+                      const reachable = !on && verdict !== null;
+                      return (
+                        <MiniBtn key={v} icon={{ open: Clock, won: Check, lost: Ban }[v]}
+                                 label={t(`quote_verdict_${v}`)} on={on} tone={VERDICT[v].fill}
+                                 disabled={!reachable || busyId === q.id}
+                                 testid={`quote-verdict-${v}`}
+                                 onClick={async () => {
+                                   if (!reachable) return;
+                                   if (v !== 'won') {
+                                     if (await act(q.id, VERDICT[v].to, { reason: '' })) {
+                                       setMoved({ to: v, id: q.id, from: verdict });
+                                     }
+                                     return;
+                                   }
+                                   if (verdict === 'lost' && !await act(q.id, 'reopen')) return;
+                                   setConverting(q);
+                                 }} />
+                      );
+                    })}
+                  </MiniGroup>
+                );
+  };
+  const rowMenu = (q) => {
+    const canShare = q.status === 'draft' || !!q.share_token;
+    return [
+                  { key: 'edit', label: t('quote_row_edit'), icon: Pencil, to: `/quotes/${q.id}`, testid: 'quote-edit' },
+                  /* Share, singular: a draft is sent (which hands back the
+                     link), a sent quote just has its link copied. A quote
+                     with neither has nothing to share, so it is not offered. */
+                  canShare && { key: 'share', label: q.status === 'draft' ? t('quote_row_send') : t('quote_row_share'),
+                                icon: Share2, onClick: () => share(q), testid: 'quote-share' },
+                  { key: 'pdf', label: t('quote_pdf'), icon: FileDown, onClick: () => openPdf(q.id), testid: 'quote-menu-pdf' },
+                  /* Only a draft can go; a sent Angebot is a document the
+                     customer holds, so the menu simply does not offer it
+                     rather than showing a greyed entry that leads nowhere. */
+                  q.status === 'draft' && { key: 'delete', icon: Trash2, testid: 'quote-menu-delete',
+                    danger: true, label: t('delete'), onClick: () => setDeleting(q) },
+                ];
+  };
+
   return (
     <div className="min-h-screen bg-cream pb-24">
       <div className="max-w-4xl mx-auto px-4 pt-6">
@@ -483,7 +539,8 @@ export default function QuotesPage() {
           loading ? <SkeletonList rows={4} /> : (
             <QuoteOverview quotes={quotes} byTab={byTab} tab={tab} setTab={setTab} drafts={drafts}
                            draftList={<CalcDraftList drafts={drafts} lang={lang} onQuoted={() => { load(); }} />}
-                           t={t} share={share} openPdf={openPdf} shared={shared} busyId={busyId} />
+                           t={t} share={share} openPdf={openPdf} shared={shared} busyId={busyId}
+                           verdictControls={verdictControls} rowMenu={rowMenu} />
           )
         ) : tab === 'drafts' ? (
           <CalcDraftList drafts={drafts} lang={lang} onQuoted={() => { load(); }} />
@@ -555,7 +612,6 @@ export default function QuotesPage() {
               const skin = aged ? aged.card
                 : (verdict && VERDICT[verdict].card) || 'bg-paper border-sm-border';
               const trade = tradeOf(q.job_category || q.category, q.title || q.job_title);
-              const canShare = q.status === 'draft' || !!q.share_token;
               return (
               <CompactRow key={q.id} testid="quote-row" data={{ 'data-verdict': verdict || q.status }}
                 openTestid="quote-open" moreTestid="quote-more" menuTestid="quote-menu"
@@ -569,51 +625,8 @@ export default function QuotesPage() {
                 amount={busyId === q.id
                   ? <Loader2 size={16} className="animate-spin text-teal" />
                   : fmtEur(q.gross_total)}
-                controls={(
-                  /* The verdict, as three icons. Every verdict is reachable
-                     from every other one; the one already set is inert, and a
-                     superseded quote has none of the three to offer. Winning
-                     goes through the ConvertSheet, because accepting is also
-                     scheduling the work; a lost quote is reopened first, since
-                     the server refuses to convert a rejected one. */
-                  <MiniGroup label={t('quote_verdict')} testid="quote-verdict">
-                    {['open', 'won', 'lost'].map((v) => {
-                      const on = v === verdict;
-                      const reachable = !on && verdict !== null;
-                      return (
-                        <MiniBtn key={v} icon={{ open: Clock, won: Check, lost: Ban }[v]}
-                                 label={t(`quote_verdict_${v}`)} on={on} tone={VERDICT[v].fill}
-                                 disabled={!reachable || busyId === q.id}
-                                 testid={`quote-verdict-${v}`}
-                                 onClick={async () => {
-                                   if (!reachable) return;
-                                   if (v !== 'won') {
-                                     if (await act(q.id, VERDICT[v].to, { reason: '' })) {
-                                       setMoved({ to: v, id: q.id, from: verdict });
-                                     }
-                                     return;
-                                   }
-                                   if (verdict === 'lost' && !await act(q.id, 'reopen')) return;
-                                   setConverting(q);
-                                 }} />
-                      );
-                    })}
-                  </MiniGroup>
-                )}
-                menu={[
-                  { key: 'edit', label: t('quote_row_edit'), icon: Pencil, to: `/quotes/${q.id}`, testid: 'quote-edit' },
-                  /* Share, singular: a draft is sent (which hands back the
-                     link), a sent quote just has its link copied. A quote
-                     with neither has nothing to share, so it is not offered. */
-                  canShare && { key: 'share', label: q.status === 'draft' ? t('quote_row_send') : t('quote_row_share'),
-                                icon: Share2, onClick: () => share(q), testid: 'quote-share' },
-                  { key: 'pdf', label: t('quote_pdf'), icon: FileDown, onClick: () => openPdf(q.id), testid: 'quote-menu-pdf' },
-                  /* Only a draft can go; a sent Angebot is a document the
-                     customer holds, so the menu simply does not offer it
-                     rather than showing a greyed entry that leads nowhere. */
-                  q.status === 'draft' && { key: 'delete', icon: Trash2, testid: 'quote-menu-delete',
-                    danger: true, label: t('delete'), onClick: () => setDeleting(q) },
-                ]}
+                controls={verdictControls(q)}
+                menu={rowMenu(q)}
                 note={shared === q.id && (
                   <p className="text-[12px] text-teal font-semibold mt-1.5 px-1"
                      role="status" data-testid="quote-shared">{t('quote_row_shared')}</p>
