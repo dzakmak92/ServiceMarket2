@@ -928,3 +928,6 @@ function ShapeGlyph({ kind }) {
   const d = { zeile: 'M4 20h40v8H4z', l: 'M4 6h8v24h32v8H4z', u: 'M4 6h8v24h24V6h8v32H4z' }[kind];
   return <svg viewBox="0 0 48 44" className="w-12 h-11 shrink-0" aria-hidden="true"><path d={d} className="fill-teal-deep" /></svg>;
 }
+
+/* Für die einseitige Betriebsansicht (FolierungOnePage). */
+export { CountBlock, DimTable, CutSummary, ProPanel, NestingCard, Stepper, ShapeGlyph, PRIMER_LABEL };

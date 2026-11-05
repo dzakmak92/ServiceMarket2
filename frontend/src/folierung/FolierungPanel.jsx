@@ -4,7 +4,7 @@ import { Settings as SettingsIcon, ExternalLink, Trash2, History, Layers, Rotate
 import api from '../api/client';
 import { useLang } from '../contexts/LangContext';
 import { fmtEur0, fmtDate } from '../utils/money';
-import FolierungWizard from './FolierungWizard';
+import FolierungOnePage, { ONE_PAGE_STEPS } from './FolierungOnePage';
 import GroupDial from '../components/pro/GroupDial';
 import SuccessCheck from '../components/motion/SuccessCheck';
 import {
@@ -56,7 +56,7 @@ const FolierungPanel = forwardRef(function FolierungPanel({ renderDial } = {}, r
   const draftId = useRef(draft?.id || newDraftId());
   const state = useRef({ input: null, result: null, dirty: !!draft });
   const wizardRef = useRef(null);
-  const [surface, setSurface] = useState(() => draft?.input?.surface || 'kueche');
+  const [surface, setSurface] = useState(() => draft?.payload?.input?.surface || 'kueche');
   const [done, setDone] = useState(null);             // gerade angelegtes Angebot
 
   /* Steuer aus dem Profil: Rechnungsland und Kleinunternehmer. */
@@ -78,8 +78,8 @@ const FolierungPanel = forwardRef(function FolierungPanel({ renderDial } = {}, r
       saveDraft({
         id: draftId.current, kind: 'folierung', trade: 'folierung', jobId: jobId.current,
         title: quoteTitleFrom(input),
-        sub: `${result.lines.length} Positionen · ${['Fläche', 'Zustand', 'Zählen', 'Preis'][step] || ''}`,
-        step: (step || 0) + 1, steps: 4, net: result.vk, gross: result.ways.montage.gross,
+        sub: `${result.lines.length} Positionen · ${ONE_PAGE_STEPS[step] || ''}`,
+        step: Math.max(0, step || 0) + 1, steps: ONE_PAGE_STEPS.length, net: result.vk, gross: result.ways.montage.gross,
         payload: { input, step },
       });
     }
@@ -130,7 +130,7 @@ const FolierungPanel = forwardRef(function FolierungPanel({ renderDial } = {}, r
   return (
     <div data-testid="folierung-panel">
       <div className="flex items-center justify-between gap-3 mb-5 mt-1">
-        <p className="text-sm text-ink-muted min-w-0">Vier Schritte, drei Wege zum Preis. Mit deinen Preisen, Primer und Zuschnitt.</p>
+        <p className="text-sm text-ink-muted min-w-0">Drei Karten, der Preis steht unten und rechnet mit. Mit deinen Preisen, Primer und Zuschnitt.</p>
         <div className="flex gap-2 shrink-0">
           <Link to="/folierung/preise" className="inline-flex items-center gap-1.5 rounded-xl border border-sm-border bg-paper px-3 py-2 text-sm font-semibold text-ink hover:bg-cream-soft" data-testid="fol-to-prices">
             <SettingsIcon size={16} /> <span className="hidden sm:inline">Preise</span>
@@ -159,8 +159,8 @@ const FolierungPanel = forwardRef(function FolierungPanel({ renderDial } = {}, r
       )}
       {error && <div className="rounded-xl border border-red-warn/40 bg-red-warn/5 px-4 py-2.5 mb-4 text-sm text-red-text">{error}</div>}
 
-      <FolierungWizard ref={wizardRef} key={wizardKey} audience="pro" surfaceFromDial settings={settings} initial={initial} onChange={onChange} creating={creating}
-        initialStep={wizardKey === 0 ? (draft?.payload?.step || 0) : 0}
+      <FolierungOnePage ref={wizardRef} key={wizardKey} settings={settings} initial={initial} onChange={onChange} creating={creating}
+        initialStep={wizardKey === 0 ? Math.min(draft?.payload?.step || 0, 2) : 0}
         onSave={({ input, result }) => setCalcs(saveCalc({
           input, surface: input.surface, decor: input.decor, vk: result.vk, ek: result.ek, hours: result.hours.total, fronts: result.fronts,
         }))}
