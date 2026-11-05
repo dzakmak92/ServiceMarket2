@@ -218,7 +218,7 @@ export default function ToolsPage() {
     { key: 'customers', to: '/customers', icon: Users, color: '#4d6477', label: t('nav_customers'), sub: t('home_contacts', { n: data.customers || 0 }) },
     { key: 'schedule', to: '/schedule', icon: CalendarDays, color: '#c14655', label: t('nav_schedule'), sub: t('home_today', { n: m.apptToday }) },
     { key: 'tax', to: '/tax', icon: Landmark, color: '#1f5f70', label: t('nav_tax'), sub: t('tools_tax_sub') },
-    { key: 'prices', to: '/folierung/preise', icon: Tag, color: '#6d4bc2', label: t('tools_prices'), sub: t('tools_prices_sub') },
+    { key: 'prices', to: '/estimate/folierung?preise=1', icon: Tag, color: '#6d4bc2', label: t('tools_prices'), sub: t('tools_prices_sub') },
     { key: 'settings', to: '/settings', icon: SettingsIcon, color: '#2a8a7e', label: t('nav_settings'), sub: t('tools_settings_sub') },
     { key: 'billing', to: '/billing', icon: CreditCard, color: '#c97a10', label: t('tools_plan'), sub: planLabel(data.profile.plan_tier, t) },
   ];

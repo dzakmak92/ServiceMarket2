@@ -45,7 +45,6 @@ import MySchedulePage from "./pages/pro/MySchedulePage";
 import PMProjectDetailPage from "./pages/pro/PMProjectDetailPage";
 import InvoiceFromProjectRedirect from "./pages/pro/InvoiceFromProjectRedirect";
 import ProSettingsPage from "./pages/pro/ProSettingsPage";
-import FolierungPricesPage from "./pages/pro/FolierungPricesPage";
 import FoliePublicPage from "./pages/FoliePublicPage";
 
 // Admin
@@ -359,14 +358,8 @@ function AppShell() {
         />
         {/* Folierung lebt jetzt als Gewerk auf der Kalkulationsseite. */}
         <Route path="/folierung" element={<Navigate to="/estimate/folierung" replace />} />
-        <Route
-          path="/folierung/preise"
-          element={
-            <ProtectedRoute roles={["tradesperson", "admin"]}>
-              <FolierungPricesPage />
-            </ProtectedRoute>
-          }
-        />
+        {/* Die Preise werden jetzt in der Karte „Meine Preise“ bearbeitet. */}
+        <Route path="/folierung/preise" element={<Navigate to="/estimate/folierung?preise=1" replace />} />
         <Route
           path="/settings"
           element={

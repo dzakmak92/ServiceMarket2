@@ -1,6 +1,7 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Check, ChevronDown, ChevronUp, Loader2, Minus, Plus, Save, FileText, Copy, AlertTriangle, X, Ruler, SlidersHorizontal, ArrowRight } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import PricesEditor from './PricesEditor';
+import { Check, ChevronDown, ChevronUp, Loader2, Minus, Plus, Save, FileText, Copy, AlertTriangle, X, Ruler, SlidersHorizontal } from 'lucide-react';
 import AnimatedEur from '../components/motion/AnimatedEur';
 import useSheetModal from '../hooks/useSheetModal';
 import { copyToClipboard } from '../utils/sms';
@@ -40,11 +41,16 @@ export const ONE_PAGE_STEPS = CARD_NAMES;
 
 
 const FolierungOnePage = forwardRef(function FolierungOnePage({
-  settings, initial, onSave, onCreateQuote, onChange, creating = false,
+  settings, initial, onSave, onCreateQuote, onChange, onSettings, onResetSettings, creating = false,
 }, ref) {
   const [input, setInput] = useState(() => initial || emptyInput('kueche'));
-  /* Zu wie auf den anderen Kalkulationen: alle Karten geschlossen. */
-  const [open, setOpen] = useState(-1);
+  /* Zu wie auf den anderen Kalkulationen: alle Karten geschlossen. Aus den
+     Werkzeugen (?preise=1) kommt man direkt in „Meine Preise“. */
+  const [params] = useSearchParams();
+  const [open, setOpen] = useState(() => (params.get('preise') ? 3 : -1));
+  useEffect(() => {
+    if (open === 3) requestAnimationFrame(() => cardRefs.current[3]?.scrollIntoView({ block: 'start' }));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [touched, setTouched] = useState(() => (initial ? [true, true, true] : [false, false, false]));
   const [sheet, setSheet] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -129,7 +135,7 @@ const FolierungOnePage = forwardRef(function FolierungOnePage({
     { title: 'Extras & Anfahrt', body: <ExtrasCard input={input} patch={patch} settings={settings} /> },
     /* The prices the calculation runs on, where the cards are: what used to be
        a gear icon at the top of the page. Read here, changed on the prices page. */
-    { title: 'Meine Preise', prices: true, body: <PricesCard settings={settings} /> },
+    { title: 'Meine Preise', prices: true, body: <PricesEditor settings={settings} onChange={onSettings} onReset={onResetSettings} /> },
   ];
   const vkMin = Math.min(...DECORS.map((d) => Number(settings.decors?.[d.key]?.vk ?? d.vk) || 0));
   summaries[3] = `${eur(settings.hourlyRate)}/h · Folie ab ${eur(vkMin)}/m² · Mindestauftrag ${eur(settings.minOrder)}`;
@@ -431,43 +437,6 @@ function Label({ children, hint }) {
 
 /* ── Karte 2: Zustand, Material, Dekor ─────────────────────────────────── */
 /* Read-only: the figures the price above is built from, and the way to change them. */
-function PricesCard({ settings }) {
-  const rows = [
-    ['Stundensatz', `${eur(settings.hourlyRate)}/h`],
-    ['Mindestauftrag', eur(settings.minOrder)],
-    ['Verschnitt', `${fmtNum(settings.waste, 0)} %`],
-    ['Rüstzeit je Auftrag', `${fmtNum(settings.setupHours, 1)} h`],
-    ['Wochenende', `+${fmtNum(settings.weekendPct, 0)} %`],
-    ['Anfahrt bis 30 km', eur(settings.travel?.[TRAVEL_ZONES[0]?.key] ?? 0)],
-  ];
-  return (
-    <div className="grid gap-2.5" data-testid="fol-prices-card">
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 m-0 text-[13px]">
-        {rows.map(([k, v]) => (
-          <div key={k} className="flex justify-between gap-2 border-b border-[#eef2f5] pb-1.5 min-w-0">
-            <dt className="text-ink-muted truncate">{k}</dt><dd className="m-0 font-semibold text-ink tabular-nums whitespace-nowrap">{v}</dd>
-          </div>
-        ))}
-      </dl>
-      <div>
-        <p className="text-[12px] font-semibold text-ink-muted mb-1.5">Folie, Verkauf je m²</p>
-        <div className="grid grid-cols-4 gap-1.5">
-          {DECORS.map((d) => (
-            <span key={d.key} className="rounded-[10px] bg-[#f6f8fa] px-2 py-1.5 min-w-0">
-              <small className="block text-[10.5px] text-ink-muted truncate">{d.label}</small>
-              <b className="block text-[12.5px] text-ink tabular-nums">{eur(settings.decors?.[d.key]?.vk ?? d.vk)}</b>
-            </span>
-          ))}
-        </div>
-      </div>
-      <Link to="/folierung/preise" data-testid="fol-prices-edit"
-            className="min-h-[44px] rounded-xl bg-[#eef3f8] text-navy font-bold text-[14px] flex items-center justify-center gap-2">
-        Preise bearbeiten <ArrowRight size={16} aria-hidden="true" />
-      </Link>
-    </div>
-  );
-}
-
 function StateCard({ surface, input, patch, settings }) {
   return (
     <>

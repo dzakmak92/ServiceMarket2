@@ -8,7 +8,7 @@ import FolierungOnePage, { ONE_PAGE_STEPS } from './FolierungOnePage';
 import GroupDial from '../components/pro/GroupDial';
 import SuccessCheck from '../components/motion/SuccessCheck';
 import {
-  loadSettings, loadCalcs, saveCalc, deleteCalc, rememberVat, loadDraft as loadLegacyDraft, clearDraft as clearLegacyDraft,
+  loadSettings, saveSettings, resetSettings, loadCalcs, saveCalc, deleteCalc, rememberVat, loadDraft as loadLegacyDraft, clearDraft as clearLegacyDraft,
 } from './store';
 import { vatFromProfile, quoteTitleFrom } from './pricing';
 import { createFolierungQuote } from './quote';
@@ -148,7 +148,8 @@ const FolierungPanel = forwardRef(function FolierungPanel({ renderDial } = {}, r
       {error && <div className="rounded-xl border border-red-warn/40 bg-red-warn/5 px-4 py-2.5 mb-4 text-sm text-red-text">{error}</div>}
 
       <FolierungOnePage ref={wizardRef} key={wizardKey} settings={settings} initial={initial} onChange={onChange} creating={creating}
-        initialStep={wizardKey === 0 ? Math.min(draft?.payload?.step || 0, 2) : 0}
+        onSettings={(next) => { setSettings(next); saveSettings(next); }}
+        onResetSettings={() => setSettings((cur) => ({ ...resetSettings(), vat: cur.vat, businessName: cur.businessName }))}
         onSave={({ input, result }) => setCalcs(saveCalc({
           input, surface: input.surface, decor: input.decor, vk: result.vk, ek: result.ek, hours: result.hours.total, fronts: result.fronts,
         }))}
