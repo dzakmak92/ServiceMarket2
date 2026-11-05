@@ -133,7 +133,10 @@ export default function ProDashboard() {
   }
 
   const delta = d.booked - d.bookedPrev;
-  const months = t('db_month_letters').split(',');
+  /* Three letters, not one: J, J, J and M, M under the bars were guesswork.
+     The locale gives "Jän" in Austria and "Jan" in Germany. */
+  const months = Array.from({ length: 12 }, (_, i) =>
+    new Date(2026, i, 1).toLocaleDateString(moneyLocale(), { month: 'short' }).replace('.', '').slice(0, 3));
   const pending = Number(inv?.pending_brutto || 0);
   const funnelMax = Math.max(1, ...d.funnel.map((f) => f.n));
   const FUNNEL_BG = {
@@ -185,16 +188,24 @@ export default function ProDashboard() {
           <p className="text-[12px]" style={{ color: skin.soft }}>
             {t(d.nWon === 1 ? 'db_booked_one' : 'db_booked_many', { n: d.nWon })}
           </p>
-          <div className="grid grid-cols-12 gap-1 h-[74px] items-end mt-1" aria-hidden="true">
+          <div className="grid grid-cols-12 gap-1 h-[96px] items-end mt-1" aria-hidden="true">
             {d.bars.map((b) => (
-              <div key={b.i} className="flex flex-col justify-end gap-[3px] h-full">
+              <div key={b.i} className="relative flex flex-col justify-end gap-[3px] h-full">
+                {/* A faint line before each quarter, so the year reads in four parts. */}
+                {b.i % 3 === 0 && b.i > 0 && (
+                  <i className="absolute -left-[2.5px] top-3.5 bottom-4 w-px" style={{ background: 'rgba(255,255,255,.16)' }} />
+                )}
+                <span className="text-[9.5px] text-center font-bold tabular-nums whitespace-nowrap min-h-[12px]"
+                      data-testid={b.cur ? 'db-bar-cur' : undefined}>
+                  {b.cur && b.sent ? `${b.sent}/${b.won}` : ''}
+                </span>
                 <i className="block rounded-t-[4px] rounded-b-[2px] relative overflow-hidden"
                    style={{ height: `${Math.max(4, (b.sent / d.maxBar) * 56)}px`,
                             background: b.future ? 'rgba(255,255,255,.10)' : b.cur ? 'rgba(255,255,255,.42)' : 'rgba(255,255,255,.28)' }}>
                   <u className="absolute inset-x-0 bottom-0 bg-paper"
                      style={{ height: b.sent ? `${(b.won / b.sent) * 100}%` : 0 }} />
                 </i>
-                <span className="text-[9px] text-center" style={{ color: b.cur ? '#fff' : '#a9c3dc', fontWeight: b.cur ? 700 : 400 }}>
+                <span className="text-[9.5px] text-center tracking-[-0.02em]" style={{ color: b.cur ? '#fff' : '#a9c3dc', fontWeight: b.cur ? 700 : 400 }}>
                   {months[b.i]}
                 </span>
               </div>

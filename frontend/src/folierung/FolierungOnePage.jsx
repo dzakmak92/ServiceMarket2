@@ -165,7 +165,7 @@ const FolierungOnePage = forwardRef(function FolierungOnePage({
                   aria-label="Preis und Kalkulation öffnen">
             <small className="block text-[11px] text-[#a9c3dc]">Montage vor Ort</small>
             <b className="block font-headings text-[20px] leading-tight tabular-nums" data-testid="fol-price">
-              {montage.value > 0 ? <AnimatedEur value={roundTo(montage.grossLo, 10)} format={(v) => `ab ${eur(roundTo(v, 10))}`} /> : '–'}
+              {montage.value > 0 ? <AnimatedEur onDark value={roundTo(montage.grossLo, 10)} format={(v) => `ab ${eur(roundTo(v, 10))}`} /> : '–'}
             </b>
           </button>
           <button type="button" onClick={createQuote} disabled={creating || noCount || !onCreateQuote}

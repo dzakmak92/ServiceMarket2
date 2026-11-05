@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLang } from '../../contexts/LangContext';
 import api from '../../api/client';
@@ -13,7 +12,7 @@ import { WeekStrip, DayPanel, DayCard, EmptyDay } from '../../components/pro/Hom
 /**
  * Startseite, design D1 (H1c base, only the chosen day framed).
  *
- *   greeting → this week, Mon to Sun → the chosen day (today by default)
+ *   date and profile → this week, Mon to Sun → the chosen day (today by default)
  *   opens like a tab into its schedule → one slim card per appointment.
  *
  * Tapping another day swaps the schedule and the cards. The six steps of the
@@ -23,12 +22,6 @@ import { WeekStrip, DayPanel, DayCard, EmptyDay } from '../../components/pro/Hom
 const DAY = 86400000;
 const LIVE = ['accepted', 'scheduled', 'in_progress'];
 
-function greetingKey() {
-  const h = new Date().getHours();
-  if (h < 11) return 'home_hi_morning';
-  if (h < 18) return 'home_hi_day';
-  return 'home_hi_evening';
-}
 
 function mondayOf(d) {
   const m = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -109,25 +102,21 @@ export default function ProHomePage() {
   return (
     <div className="min-h-screen bg-paper pb-28 md:pb-10">
       <div className="page-container max-w-3xl py-4 grid gap-4">
-        {/* ── greeting ─────────────────────────────────────────── */}
+        {/* ── date and profile ─────────────────────────────────
+            No greeting: the date is what a pro looks for first thing,
+            and the profile is one tap away from here. */}
         <header className="flex items-center gap-3">
-          <span className="w-11 h-11 rounded-[15px] grid place-items-center text-paper font-headings font-bold text-[18px] shrink-0"
-                style={{ background: SKINS.jobs.grad, boxShadow: '0 6px 14px rgba(30,84,144,.3)' }} aria-hidden="true">
+          <Link to="/settings" data-testid="home-profile" aria-label={name || t('nav_settings')}
+                className="w-11 h-11 rounded-[15px] grid place-items-center text-paper font-headings font-bold text-[18px] shrink-0"
+                style={{ background: SKINS.jobs.grad, boxShadow: '0 6px 14px rgba(30,84,144,.3)' }}>
             {(name || '?').trim().charAt(0).toUpperCase()}
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-[12px] text-ink-muted truncate">
-              {new Date().toLocaleDateString(moneyLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}
-            </p>
-            <h1 className="font-headings font-bold text-ink text-[21px] leading-tight truncate" data-testid="home-hi">
-              {t(greetingKey())}
-            </h1>
-          </div>
-          <Link to="/schedule" data-testid="home-calendar" aria-label={t('home_calendar')} title={t('home_calendar')}
-                className="w-10 h-10 rounded-xl grid place-items-center shrink-0 text-ink"
-                style={{ background: '#f3f6f9' }}>
-            <CalendarDays size={18} aria-hidden="true" />
           </Link>
+          <div className="min-w-0 flex-1">
+            <h1 className="font-headings font-bold text-ink text-[21px] leading-tight truncate" data-testid="home-date">
+              {new Date().toLocaleDateString(moneyLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}
+            </h1>
+            {name && <p className="text-[12.5px] text-ink-muted truncate" data-testid="home-name">{name}</p>}
+          </div>
         </header>
 
         {/* ── the week, the chosen day opening into its schedule ─ */}
