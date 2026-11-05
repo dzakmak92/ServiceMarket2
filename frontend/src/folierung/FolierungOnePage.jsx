@@ -1,6 +1,6 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, ChevronDown, Minus, Plus, Save, FileText, Copy, AlertTriangle, X, Ruler, SlidersHorizontal, ArrowRight } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, Loader2, Minus, Plus, Save, FileText, Copy, AlertTriangle, X, Ruler, SlidersHorizontal, ArrowRight } from 'lucide-react';
 import AnimatedEur from '../components/motion/AnimatedEur';
 import useSheetModal from '../hooks/useSheetModal';
 import { copyToClipboard } from '../utils/sms';
@@ -134,66 +134,70 @@ const FolierungOnePage = forwardRef(function FolierungOnePage({
 
   return (
     <div data-testid="fol-onepage">
-      <div className="grid gap-2.5">
+      <div className="grid gap-1.5">
         {cards.map((c, i) => {
           const isOpen = open === i;
+          const done = !c.prices && touched[i];
           return (
-            /* Same build as the step cards on the other calculators
-               (EstimatePage › Step): square number badge, 17 px title,
-               64 px header, 16 px inner padding. */
+            /* Same build as the template rows on the other calculators
+               (EstimateCards › Card): 14 px corners, 20 px box on the left,
+               13 px title over a 10 px line, 54 px closed, 6 px apart. */
             <section key={i} ref={(el) => { cardRefs.current[i] = el; }}
-                     className={`scroll-mt-24 rounded-2xl border border-sm-border bg-paper overflow-hidden
-                                 ${isOpen ? 'shadow-[0_4px_16px_rgba(26,58,82,.09)]' : ''}`}
+                     className={`scroll-mt-24 rounded-[14px] border overflow-hidden transition-colors
+                                 ${isOpen ? 'border-navy shadow-[0_2px_10px_rgba(30,84,144,.10)] bg-paper'
+                                          : done ? 'border-transparent bg-teal/[.07]' : 'border-transparent bg-row'}`}
                      data-testid={`fol-card-${i}`} data-open={isOpen ? 'yes' : 'no'}>
               <button type="button" onClick={() => toggle(i)} aria-expanded={isOpen}
-                      className="w-full min-h-[64px] flex items-center gap-3 px-4 py-3 text-left
-                                 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal/25">
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left rounded-[14px]
+                                 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal/30">
                 <span aria-hidden="true"
-                      className={`w-7 h-7 rounded-[9px] grid place-items-center text-[14px] font-bold shrink-0
-                                  ${isOpen ? 'bg-teal text-paper'
-                                           : (!c.prices && touched[i]) ? 'bg-green-pos/12 text-green-text' : 'bg-cream-deep text-ink-muted'}`}>
-                  {c.prices ? <SlidersHorizontal size={14} /> : (!isOpen && touched[i] ? <Check size={14} strokeWidth={2.6} /> : i + 1)}
+                      className={`h-5 w-5 shrink-0 rounded-[6px] grid place-items-center text-[11px] font-bold
+                                  ${isOpen || done ? 'bg-teal text-paper'
+                                                   : 'border-[1.6px] border-ink-faint/50 text-ink-muted'}`}>
+                  {c.prices ? <SlidersHorizontal size={11} strokeWidth={2.4} />
+                    : (!isOpen && done ? <Check size={11} strokeWidth={3} /> : i + 1)}
                 </span>
                 <span className="flex-1 min-w-0">
-                  <span className="block text-[17px] font-headings font-bold leading-tight tracking-[-.015em] text-ink">{c.title}</span>
-                  <span className="block text-[13px] text-ink-muted mt-0.5 truncate" data-testid={`fol-card-sum-${i}`}>
+                  <span className="block font-bold text-ink text-[13px] leading-tight">{c.title}</span>
+                  <span className="block text-[10px] text-ink-muted mt-[2px] leading-snug truncate" data-testid={`fol-card-sum-${i}`}>
                     {isOpen && i === 0 ? 'Was und wie viel' : summaries[i]}
-                    {!c.prices && !touched[i] && !(isOpen && i === 0) && <span className="ml-1.5 font-semibold text-amber-text">Vorschlag</span>}
+                    {!c.prices && !touched[i] && !(isOpen && i === 0) && <span className="ml-1 font-bold text-amber-text">Vorschlag</span>}
                   </span>
                 </span>
-                <ChevronDown size={18} aria-hidden="true"
-                             className={`shrink-0 text-ink-faint transition-transform duration-ui ${isOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={14} aria-hidden="true"
+                             className={`shrink-0 text-ink-faint transition-transform ${isOpen ? 'rotate-180' : ''}`} />
               </button>
-              {isOpen && <div className="px-4 pb-4 grid gap-2.5">{c.body}</div>}
+              {isOpen && <div className="border-t border-rule bg-paper px-3 py-3 grid gap-2.5">{c.body}</div>}
             </section>
           );
         })}
       </div>
 
-      {/* Der Preis: immer da, ändert sich live. Über der unteren Leiste. */}
-      {/* Docked to the tab bar on phones: full width, flat bottom, so it reads
-          as part of the frame rather than a card floating over the content. */}
-      {/* Fixed, not sticky, on phones: sticky let go of the tab bar at the end
-          of the page and left a strip of page between the two. The spacer
-          keeps the last card clear of it. */}
-      <div className="h-[72px] md:hidden" aria-hidden="true" />
-      <div className="fixed left-0 right-0 bottom-[var(--tabbar-h,73px)] md:sticky md:bottom-4 z-30 md:z-20 md:mt-4"
-           data-testid="fol-pricebar">
-        <div className="bg-[#173a5e] text-paper flex items-center justify-between gap-3 pl-4 pr-3 py-2
-                        rounded-t-[16px] md:rounded-[18px] shadow-[0_-6px_18px_rgba(23,58,94,.18)] md:shadow-[0_10px_24px_rgba(23,58,94,.28)]">
-          <button type="button" onClick={() => setSheet(true)} className="min-w-0 text-left" data-testid="fol-price-open"
-                  aria-label="Preis und Kalkulation öffnen">
-            <small className="block text-[11px] text-[#a9c3dc]">Montage vor Ort</small>
-            <b className="block font-headings text-[20px] leading-tight tabular-nums" data-testid="fol-price">
-              {montage.value > 0 ? <AnimatedEur onDark value={roundTo(montage.grossLo, 10)} format={(v) => `ab ${eur(roundTo(v, 10))}`} /> : '–'}
-            </b>
-          </button>
-          <button type="button" onClick={createQuote} disabled={creating || noCount || !onCreateQuote}
-                  className="shrink-0 min-h-[44px] px-4 rounded-xl bg-amber text-on-amber font-bold text-[14px] disabled:opacity-60"
-                  data-testid="fol-create-quote">
-            {creating ? 'Lege an…' : 'Angebot erstellen'}
-          </button>
-        </div>
+      {/* Der Preis: dieselbe Leiste wie unter den anderen Kalkulationen
+          (EstimateCards › estimate-total-bar). Auf dem Handy über der unteren
+          Navigation angedockt, der Abstandhalter hält die letzte Karte frei. */}
+      <div className="h-[64px] md:hidden" aria-hidden="true" />
+      <div data-testid="fol-pricebar"
+           className="fixed left-0 right-0 bottom-[var(--tabbar-h,0px)] z-30
+                      md:sticky md:bottom-0 md:-mx-4 md:mt-4 md:z-20
+                      flex items-center justify-between gap-3
+                      border-t border-sm-border bg-paper px-4 py-2.5
+                      shadow-[0_-3px_14px_rgba(26,58,82,.07)]">
+        <button type="button" onClick={() => setSheet(true)} className="min-w-0 text-left" data-testid="fol-price-open"
+                aria-label="Preis und Kalkulation öffnen">
+          <p className="text-[9.5px] text-ink-muted">Montage vor Ort · {result.vat && !result.vat.klein ? vatLabel(result.vat) : 'ohne USt.'}</p>
+          <p className="flex items-center gap-1.5">
+            <span className="font-headings text-[17px] font-extrabold text-ink tabular-nums" data-testid="fol-price">
+              {montage.value > 0 ? <AnimatedEur value={roundTo(montage.grossLo, 10)} format={(v) => `ab ${eur(roundTo(v, 10))}`} /> : '–'}
+            </span>
+            <ChevronUp size={14} aria-hidden="true" className="text-ink-faint" />
+          </p>
+        </button>
+        <button type="button" onClick={createQuote} disabled={creating || noCount || !onCreateQuote}
+                className="btn-amber !px-4 !py-2.5 !text-[13px] disabled:opacity-50 disabled:cursor-not-allowed"
+                data-testid="fol-create-quote">
+          {creating ? <Loader2 size={14} className="animate-spin" /> : 'Angebot erstellen'}
+        </button>
       </div>
 
       {sheet && (
