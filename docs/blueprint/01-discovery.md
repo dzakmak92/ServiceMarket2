@@ -1,5 +1,5 @@
-# 01 Discovery: (winner pending user choice)
-Date: 2026-11-14 | Verdict: GO with conditions (top 3 within 2 points; user to pick)
+# 01 Discovery: ClaimClock (working name): get paid on time as a subcontractor
+Date: 2026-11-14 | Verdict: GO with conditions | Winner P-05 | Runners-up P-02, P-04
 
 ## Hunting grounds
 
@@ -92,4 +92,64 @@ Hard kills: none outright. Watch items:
 - **P-04 (28):** GO with conditions. Needs a narrow wedge, because a full field-service platform is out of scope.
 - P-01 is the time-boxed alternative: the window closes before the January busy season.
 
-Winner: **pending user choice** (see STATE.md open questions).
+Winner: **P-05**. The user had no preference, so the recommendation was taken: it best fits the brief of high pain, missing or failing solutions, medium-high price, high WTP and buildable. Runners-up: **P-02** (fallback if the pre-sale fails; highest WTP, fits the ServiceMarket marketplace) and **P-04**.
+
+## Winning concept
+
+**J-01 (→ P-05):** When I've finished work for a builder or head contractor and the money is late, short or held as retention, I want to send a claim that is legally valid and know exactly which deadline the other side has to meet and what I can do next. That way I get paid without hiring a lawyer or "eating it".
+- Current workaround and cost: chase by phone and email, then a lawyer ("billable costs", X-G5-04) or DIY adjudication (X-G5-02). Per incident, $7k–50k is delayed or lost (X-G5-01, 02, 04) `[E]`.
+
+**Wedge:** a payment-claim and deadline tracker for owner-operator subcontractors (1–20 staff) in **Australia (NSW, QLD, VIC) and the UK (England & Wales, Construction Act)**. It does three things:
+- issue a compliant claim
+- start the statutory clocks
+- prompt the next notice when the other side misses one (payment schedule or pay-less notice missing → adjudication or suspension notice)
+
+It also has a retention register with release dates. It is not a project-management suite and not a head-contractor portal.
+
+**One-liner:** For subcontractors who are paid late, short or never, ClaimClock is a payment-claim tracker that turns every invoice into a statutory claim with a running deadline clock. Unlike Payapps, which the head contractor runs and charges per claim, it works for the sub and tells them their next move the day a deadline is missed.
+
+**Pricing hypothesis:**
+- **Anchors:** Payapps charges per claim (subs push back on the cost); Knowify $99–329/mo; Siteline custom; a lawyer's first letter costs about $500+ `[A]`.
+- **Proposal:**
+  - Solo $39/mo or $390/yr
+  - Team $89/mo, unlimited projects
+  - Founding members $199/yr, locked for life
+- **Free tier:** a deadline calculator for one claim. It must NOT include reminders, notice generation or the retention register.
+- This clears the brief's $29/mo B2B minimum.
+
+**Conditions (from the scorecard):**
+1. **Legal-advice exclusion:** the product must be a workflow and deadline tool. Templates and deadline rules need review by a construction lawyer (per state or regime), with a clear "not legal advice" boundary. The SOPA Toolbox precedent is lawyer-built. Budget for a review before launch.
+2. WTP must move from level 3 to 4 in the pre-sale.
+3. Start with 2 regimes (NSW SOPA and UK Construction Act) before adding QLD, VIC, the US (state lien laws, where Levelset is strong) or DACH (§650f BGB).
+
+## Riskiest assumptions (top 3)
+| # | Type | Assumption | Importance | Evidence | Test |
+|---|---|---|---|---|---|
+| A1 | Viability | Owner-operator subcontractors pay for software (not only lawyers) to enforce payment | 5 | 2 (WTP level 3: X-G5-02, X-G5-04) | Pre-sale: ≥ 5 founding-member payments ($199/yr) from ≥ 300 targeted visitors in 10 days |
+| A2 | Desirability | Subs will use it *before* a dispute (every claim), not only after a payment goes bad | 4 | 1 `[A]` | Concierge: 5 subs run their next monthly claim through a manual version; ≥ 3 do a second claim unprompted |
+| A3 | Feasibility / legal | NSW SOPA and UK Construction Act clocks can be encoded reliably, and a lawyer will review the templates for under $3k | 4 | 2 (the rules are formulaic: [UK notices](https://www.designingbuildings.co.uk/wiki/Payment_notice_for_construction_contracts); SOPA Toolbox exists) | Get 2 lawyer quotes; build the deadline engine for NSW and UK with 20 test cases checked against official guides |
+
+## Content hooks
+1. "POV: you finished the job 3 months ago and the builder is 'waiting on the client'." (X-G5-01, 03)
+2. "My retention has been 'frozen' for a year behind work that isn't mine." (X-G5-01)
+3. "I won $23k under the Security of Payment Act with zero legal background. Here's the 4-step clock." (X-G5-02)
+4. "If they don't send a payment schedule within 10 business days, they owe you the full claim. Most subbies don't know this."
+5. "Under-certified again? The QS 'forgot' 30% of your work area." (X-G5-05)
+
+- **Formats that already spread here:** "how I won" story posts (X-G5-02), advice threads in legal-advice subs, and homeowner lien horror stories (X-G5-16, 1,230 upvotes) as the mirror audience.
+- **Two-week plan:**
+  - Week 1: value-only posts. Post a free SOPA/Construction Act timeline cheat-sheet in r/tradies, r/AusLegalAdvice, r/ContractorUK, r/Construction and AU/UK trade Facebook groups. Answer existing "GC not paying" threads with the rules and no link.
+  - Week 2: share the cheat-sheet as a PDF behind the founding-member page, and only where the subreddit's rules allow it.
+- **Metric that a hook works:** saves and DMs asking for the template or tool, and ≥ 3% click-through to the founding page.
+
+## Pre-sale test plan
+- **Test:** a landing page plus a founding-member offer ($199/yr, refundable until launch), and a concierge pilot running in parallel.
+- **Thresholds (set in advance):**
+  - ≥ 5 paid reservations from ≥ 300 targeted visitors within 10 days, **or**
+  - ≥ 3 of 15 subs who publicly posted a payment problem agree to a paid concierge pilot ($49 for the next claim cycle)
+- **Fail:** fewer than 2 reservations and 0 pilots. Then `h:back 1` and promote P-02.
+- **Landing copy:**
+  - Headline: "Get paid on time, every claim. ClaimClock turns your invoice into a statutory payment claim and counts down the builder's deadline."
+  - Three bullets: compliant claim in 2 minutes · deadline alerts + next-step notice · retention release tracker.
+  - Footer: "Not legal advice — templates reviewed by a construction lawyer."
+- **Outreach (manual, one-to-one, only to people who publicly asked):** "Saw your post about [builder] not paying. I'm building a small tool that tracks SOPA / Construction Act deadlines for subbies. Happy to walk your current claim through the timeline for free and show you where you stand. If it's useful there's a founding-member plan; if not, no worries and I won't message again."

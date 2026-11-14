@@ -2,12 +2,12 @@
 
 ## Current phase
 Phase: 1 Discover | Started: 2026-11-14 | Last updated: 2026-11-14
-Winning pain topic: (set at Gate 1) | Runners-up: | Primary job: | Mode: deep
+Winning pain topic: P-05 (subcontractor payment claims) | Runners-up: P-02, P-04 | Primary job: J-01 | Mode: deep
 
 ## Gate log
 | Phase | Verdict | Date | Notes |
 |---|---|---|---|
-| 1 Discover | | | |
+| 1 Discover | GO with conditions (awaiting h:go) | 2026-11-14 | Winner chosen by recommendation (user: no preference); conditions: lawyer review, WTP 3→4 via pre-sale, 2 regimes first |
 | 2 Scope | | | |
 | 3 Flows & States | | | |
 | 4 Data Model | | | |
@@ -16,6 +16,7 @@ Winning pain topic: (set at Gate 1) | Runners-up: | Primary job: | Mode: deep
 ## Pre-sale test
 | Test | Threshold | Started | Result |
 |---|---|---|---|
+| Founding-member page $199/yr + concierge pilot | ≥ 5 reservations / 300 visitors in 10 days, or ≥ 3 of 15 paid pilots | not started | |
 
 ## Confirmed decisions
 | Decision | Choice | Date |
@@ -31,6 +32,7 @@ Winning pain topic: (set at Gate 1) | Runners-up: | Primary job: | Mode: deep
 ## Traceability matrix
 | Pain topic | Job | Feature | Screens | Entities | Tests | Status |
 |---|---|---|---|---|---|---|
+| P-05 | J-01 | (Phase 2) | | | | open |
 
 ## treg spend
 Approved budget: $0.80 (approved 2026-11-14, deep mode) | Spent: $0.106 logged / $0.557 by balance | Balance at start: $9.70
@@ -43,6 +45,7 @@ Approved budget: $0.80 (approved 2026-11-14, deep mode) | Spent: $0.106 logged /
 ## Accepted risks (h:skip)
 | Phase | Gate item skipped | Risk | Date |
 |---|---|---|---|
+| 1 | (none skipped) Momentum/shareability scored [A] without Trends/TikTok data | virality may be overstated; P-05 volume is low (2) | 2026-11-14 |
 
 ## Change log (h:back)
 | Date | Changed | Affected IDs |
@@ -50,3 +53,5 @@ Approved budget: $0.80 (approved 2026-11-14, deep mode) | Spent: $0.106 logged /
 
 ## Open questions
 - Grounds: user asked for niches with high pain, missing solutions, medium-high prices and high willingness to pay; grounds re-weighted toward B2B / high-ticket (see 01-discovery.md)
+- Legal-advice exclusion: ClaimClock must stay a workflow/deadline tool with lawyer-reviewed templates
+- Hours per week and services budget still open
