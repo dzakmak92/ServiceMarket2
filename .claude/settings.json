@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Treg",
+      "mcp__Treg__*",
+      "mcp__treg",
+      "mcp__treg__*"
+    ]
+  }
+}
