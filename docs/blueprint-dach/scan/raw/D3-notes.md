@@ -1,3 +1,124 @@
 # D3 raw notes (Steuerberater / Buchhaltung / Belege)
 
 Cost log (USD):
+- reddit search x4 = 0.004 (cum 0.004). NOTE: tikhub returns Reddit auto-translated EN text for DE posts; quotes below are Reddit EN translation (tag "tr").
+
+## Signals so far
+- r/selbststaendig 2026-10-30 https://www.reddit.com/r/selbststaendig/comments/1xjm8e0/ (10 comments, score 0) builder: StB said "the real problem for my clients isn't the paying, it's that they send me their receipts way too late." tr. vendor/research but StB quote on Belege-delay.
+- r/Steuerberater 2026-10-01 https://www.reddit.com/r/Steuerberater/comments/1wv18po/ (score 9, 10 c) DATEV dropping Mandantentyp Einzelunternehmer -> split into natural person + Unternehmen; "I imagine that to be quite tedious, especially with older clients that have a lot of documents." tr. DATEV friction/migration.
+- r/selbststaendig 2026-10-12 https://www.reddit.com/r/selbststaendig/comments/1x49qrg/ (score 2, 26 c) "we're not satisfied with our current one and he's also charging a bit too much." tr. switching to digital StB.
+- r/selbststaendig 2026-04-28 https://www.reddit.com/r/selbststaendig/comments/1sxyfqr/ (17 c) Tischlerei 15 MA, E-Rechnung; StB defensive on Lexoffice: "a lot of ignorance and displeasure about wanting to switch the product" tr; pushes DATEV Unternehmen online.
+- r/Steuerberater 2026-04-09 https://www.reddit.com/r/Steuerberater/comments/1sgxutt/ (14 c) online shop needs DATEV catch-up "this would be for a fee" tr -> says-would-pay one-time.
+- r/selbststaendig 2026-01-29 https://www.reddit.com/r/selbststaendig/comments/1qq1eoy/ (score 5, 14 c) DE verbatim: "Selbst ein Stb bei dem ich zuvor ... meinte, keine Chance - sind absolut voll." [StB full, Fachkräftemangel client side]
+- r/Steuerberater 2026-08-10 https://www.reddit.com/r/Steuerberater/comments/1vkwe39/ (score 5, 8c) DATEV in WP: "The lack of clarity, poor structure ... and the outdated presentation are killing me." tr
+- r/FinanzenAT 2026-09-10 https://www.reddit.com/r/FinanzenAT/comments/1wce7c3/ (score 27, 55 c) AT: StB total ~1600 EUR for simple return; "this fun cost me about 1600 euros" tr
+- r/selbststaendig 2026-05-29 https://www.reddit.com/r/selbststaendig/comments/1tqwq1u/ (score 20, 70 c) GmbH 20 in/5 out invoices, 2-3 payrolls "all the local firms want 500€+ a month." tr -> price anchor recurring
+- r/selbststaendig 2026-07-30 https://www.reddit.com/r/selbststaendig/comments/1vb01r7/ StB >20k EUR invoice (StBVV), score 0, 14c
+- r/selbststaendig 2026-10-28 https://www.reddit.com/r/selbststaendig/comments/1xhymvh/ (83 c) digital StB asks what holds back: "Costs, unclear prices, effort with documents" vendor/research
+- r/Steuerberater 2026-10-24 https://www.reddit.com/r/Steuerberater/comments/1xe5e8i/ VA asking Belegchaos vs interfaces; vendor/research (6 c, score 0)
+- r/Steuern 2026-03-31 https://www.reddit.com/r/Steuern/comments/1s8fc1v/ dev builds AI receipt collector "blurry gas station receipts sent via WhatsApp" vendor/research (18c)
+- r/Steuerberater 2026-10-14 https://www.reddit.com/r/Steuerberater/comments/1x5l314/ (score 4, 16 c) "My boss wants to possibly move away from Datev" -> Addison pricing; switching
+- r/Steuerberater 2026-06-16 https://www.reddit.com/r/Steuerberater/comments/1u7ly21/ StB mother 3-4 part-time staff "struggling to find skilled workers"; Addison ML only; 17c vendor/research-ish
+- r/Steuern 2026-03-11 https://www.reddit.com/r/Steuern/comments/1rquvj8/ parents pay "Almost €5,000 a year, just for data preparation and the annual financial statements." tr; builder vendor/research, 27c
+- comments x2 = 0.002 (cum 0.006)
+- comment 2026-10-14 r/Steuerberater 1x5l314/pgndano score 12: "Just the move and setup + downtime from Datev to Addison will financially eat up the savings of several years." tr (switching cost lock-in)
+- comment 2026-10-14 1x5l314/pgnbole score 11: "all platforms first connect with DATEV, even laypeople know DATEV" tr
+- comment 2026-10-14 1x5l314/pgnk67y score 6: "That's why I switched to DATEV and now pay around six times as much." tr (pays-competitor)
+- comment 2026-10-15 1x5l314/pgzdef4 score 4: "I've been working with DATEV for 10 years now and wouldn't apply to firms that use other programs." tr (staff lock-in)
+- comment 2026-10-24 1xe5e8i/19rkuz2rc26gx score 6: "There are DEFINITELY more digital refusers than there are issues with interfaces... 80-90% of the clients." tr
+- comment 2026-10-24 1xe5e8i/19rkvedzqeb0h score 2: "often leads to burnout, as people pile up their documents and can't get them processed." tr
+- comment 2026-10-24 1xe5e8i/19rl0u703ivyc score 3: "for most people, DUO is more than sufficient, but something like scanning receipts on the go and how to use it is missing" tr ("holding their hand" onboarding)
+- comment 2026-10-24 1xe5e8i/19rkva3apiwcg score 5: "Billing as a time fee and no liability risk, you can't earn a better hourly rate." tr (counter-signal: StB profits from analog chaos)
+- SERP x5 @0.00038 = 0.0019 (cum ~0.0079)
+- DATEV Preisliste Unternehmen 08_2026 (official): "Ab 2027 werden Produkte und Leistungen, die laufend bepreist werden, jährlich zum 01.01. ... um 3% erhöht." https://www.datev.de/content/dam/markenassets/preislisten/DATEV-Preisliste_fuer_Unternehmen.pdf
+- datev-community 2026-03-06 https://www.datev-community.de/t5/Office-Management/Preiserh%C3%B6hung-MyDATEV-Kanzlei-zum-01-01-2026-um-43/td-p/541681 "dass DATEV die Kosten für MyDATEV Kanzlei (Artikel 66021) zum 01.01.2026 um 43% (!) erhöht hat. Wie ist eine derart maßlose ..." -> READ candidate
+- milia.io 2026-06-22 (vendor ctx): DATEV Eigenorganisation -> Kanzleimanagement migration starts Herbst 2026 https://milia.io/blog/datev-cloud-umstieg-pflicht-oder-strategie
+- steuerboard.com 2026-07-08 (vendor ctx) DATEV-Alternativen: Addison, Agenda, hmd, SIMBA ...
+- nordflux.de 2026-08-21 DUO Kosten 2026 (vendor ctx) https://nordflux.de/wissen/datev-unternehmen-online-kosten
+- taxaro.de 2026-07-08 (vendor) "Mandanten liefern Belege zu spät?" ; LinkedIn ~Aug 2026 "Das wird jeden Monat wieder angefragt." (vendor) https://de.linkedin.com/pulse/fehlende-belege-beim-mandanten-anfordern-warum-manuelle-jakob-brandt-txi7f
+- datev-community 2024-08-26 (OLD) chaotic Mandanten DUO "Bleibt m.E. nur, den Mandanten kündigen oder Preiserhöhung, die die Mehrarbeit bezahlt." https://www.datev-community.de/t5/Unternehmen-online/Unternehmen-online-Wie-ist-der-Ablauf-bei-chaotischen-Mandanten/td-p/438471
+- datev-community 2025-07-08 DUO Berechnungsänderung ab 1.8.2025 (all DUO Mandanten incl. without active access billed) https://www.datev-community.de/t5/Unternehmen-online/DATEV-Unternehmen-Online-Berechnungs%C3%A4nderung-ab-1-8-2025/td-p/495046
+- datev-community 2025-08-26 "bei E-Rechnungen (ZUGPFERD) die strukturierten Daten in DUO nicht in die Erfassungsmaske übernommen werden" https://www.datev-community.de/t5/Unternehmen-online/Buchungsdatenservice-und-E-Rechnungen-aus-Fremdsystem/td-p/503358
+- datev-community 2026-06-08 "ein Mandant ... hat eine E-Rechnung (XML-Datei) via upload mail an Uo gesendet und erhält jedoch folgende Nachricht" https://www.datev-community.de/t5/Unternehmen-online/E-Rechnung-XML-Datei-via-upload-mail/td-p/462418
+- datev-community idea (undated) "von mehreren Mandanten angesprochen, dass eine x-Rechnung nicht per Upload Mail ins UNO geschickt werden kann" https://www.datev-community.de/t5/Ideen-zu-Unternehmen-online/x-Rechnungen-per-Upload-Mail/idi-p/458958
+- datev-community 2024-10-28 (old) "XRechnungen werden 'kommentarlos' abgelehnt" https://www.datev-community.de/t5/Unternehmen-online/Upload-Mail-XRechnung-Fehlererkennung-beim-Mandanten/td-p/451690
+- AT: BMD Com Basis € 1,00/Monat (taxandbytes.de); kanzlei-import.at BMD&RZL Import "Startpaket beginnt bei 87 EUR pro Monat für bis zu 3 Mandanten"; belegmanager.at; steincode.com Wien Mandantenportal (2026-10-17) -> AT saturation med
+- reddit x2 = 0.002 (cum ~0.0099). CH Reddit search gave no Treuhand signals (only DE).
+- r/selbststaendig 2026-05-04 https://www.reddit.com/r/selbststaendig/comments/1t3imx7/ (score 15, 105 c) "every tool I look at feels like a half ERP system" tr; e-invoice coming -> must change (client side E-Rechnung)
+- r/selbststaendig 2026-08-15 https://www.reddit.com/r/selbststaendig/comments/1vp1x57/ (score 3, 27 c) Bilanzierung from 2027; Buchhalter options "€75 per hour" vs "at least €500 a month ... quite expensive for the roughly 20 invoices" tr -> price anchor
+- r/Unternehmer 2026-11-05 https://www.reddit.com/r/Unternehmer/comments/1xoh2hh/ Stripe + E-Rechnung how? (14 c, score 0)
+- r/SideProject 2026-10-26 E-Rechnung tool builder (vendor/research) https://www.reddit.com/r/SideProject/comments/1xg8l9g/
+- r/Steuerberater 2026-10-19 https://www.reddit.com/r/Steuerberater/comments/1xa7dp8/ StB & KI (score 25, 59c) context
+- r/Kleinunternehmer 2026-06-21 https://www.reddit.com/r/Kleinunternehmer/comments/1ubtolg/ back to Google sheet from €25-30/mo tool (22 c) -> low WTP micro segment
+- SERP x4 = 0.0015 (cum ~0.0114)
+- GetMyInvoices: Unternehmen 19-179 EUR/Mo (bsteuern.com 2026-09-23); Kanzleilizenz ab 499 EUR/Mo unlimited Mandanten, 10.000 docs/yr (taxandbytes.de) https://www.taxandbytes.de/tools/rechnungsmanagement/getmyinvoicescom/preise ; GMI claims "sparen durchschnittlich 2 Stunden pro Mandant und Monat" (vendor) https://www.getmyinvoices.com/de/kanzleilizenzen/
+- datev-community 2024-05-21 (old) GMI->DUO: "für den Mandanten kostet er 11 EUR im Monat" https://www.datev-community.de/t5/Betriebliches-Rechnungswesen/GetMyInvoices-DATEV-Rechnungsdatenservice-1-0-Kosten/td-p/420166
+- Candis "ab 389 € pro Monat bei 12 bis 36 Monaten Vertragsbindung" (docunest.de 2026-08-01, competitor ctx) https://docunest.de/vergleich/vs-candis ; OMR: "fehlerhafte Belegerfassung, bei der Candis Rechnungen falsch kategorisiert" https://omr.com/de/reviews/product/candis
+- Fachkräftemangel: BStBK STAX 2024 (official) https://www.bstbk.de/downloads/bstbk/recht-und-berufsrecht/fachinfos/02_Sonderauswertungen_Digitalisierung_Fachkraeftemangel_STAX2024.pdf ; ">70 Prozent der Kanzleien ... erheblichen Schwierigkeiten bei der Personalgewinnung" (visionarydata 2026-03-31 citing STAX); "72,7 % der Kanzleien finden kein Personal, über 10.000 Stellen" (clara-agent vendor); haufe 2024 ~60%.
+- E-Rechnung: ZDH "Ab dem 1.1.2027 müssen alle Unternehmen mit einem Vorjahresumsatz von mehr als 800.000 Euro E-Rechnungen ... ausstellen" https://www.zdh.de/ueber-uns/fachbereich-steuern-und-finanzen/elektronische-rechnung/ ; IHK Stuttgart 2026-10-15 receive since 1.1.2025 https://www.ihk.de/stuttgart/fuer-unternehmen/recht-und-steuern/steuerrecht/steuermeldungen/e-rechnungen-5864496 ; 1.1.2028 all (haufe 2026-09-23)
+- integral.de DATEV-Alternative (Buchhaltung+StB) 89,90 EUR/Mo (vendor)
+- page read x1 (DATEV community 43% thread) cost 0 (tinyfish) (cum ~0.0114)
+- datev-community 2026-03-05/06 thread (7 msgs, OP 7 kudos, ~2618 views): OP "Wie ist eine derart maßlose Erhöhung für ein Produkt, das gerade vor 6 Monaten eingeführt wurde, zu rechtfertigen?" ; reply 3 kudos "Erst einmal alle Nutzer mit günstigen Preisen locken ... und dann wenn die Abhängigkeiten bestehen die Preise anziehen." ; reply 2 kudos "Allein die Übermittlungsgebühr ESt hat sich in letzter Zeit mehr als vervierfacht." / "Ich verzichte auf das MVP 'Meine Kanzlei' weil der Preis nicht gerechtfertigt ist." ; OP 4 kudos: MyDATEV Kanzlei "automatisch jedes Jahr zum 01. Januar um weitere 3 % erhöhen"
+- AppStore search + reviews p1 = 0.0003 (cum ~0.0117)
+- DATEV Upload mobil iOS DE id1079321342 rating 4.62 (62,857 ratings) https://apps.apple.com/de/app/datev-upload-mobil/id1079321342 ; new 2026 Mandanten-Beleg apps: AllDesk Belege (released 2026-09-03), Dafter24 (2026-11-12), prekon.scan (2026-09-08) -> builder saturation rising
+- review 2026-06-25 (5*): "Es dauert manchmal ewig, bis er (vor allem die Kassenschnitte) erkennt." 
+- review 2026-07-15 (5*): "die Qualität der Fotos ist meist grenzwertig schlecht"
+- review 2020-11-11 (old,4*): "Sonst muss man bei jedem Rechnungsempfang die App starten, sich einloggen und das Dokument hochladen. Das nervt"
+- review 2022-08-12 (old): "Meine Mandanten wollen auf ihren SmartPhones und Tabletts nur eine App" (StB voice)
+- AppStore search + reviews = 0.0003 (cum ~0.0120)
+- MyDATEV app (Mandanten communication) iOS DE id6757741069 released 2026-07-01, 4.28 (304 ratings) https://apps.apple.com/de/app/mydatev/id6757741069 ; SmartLogin 4.6 (122,395 ratings)
+- MyDATEV review 2026-08-02 (3*): "Wenn ich einen Beleg hochladen kann, sollte ich ihn auch auf demselben Gerät wiederfinden und einsehen können."
+- MyDATEV review 2026-11-04 (1*): "Leider kann ich weder Dateien Hochladen noch einsehen obwohl ich angemeldet bin."
+- MyDATEV review 2026-07-29 (1*): "Probably one of the most useless apps. Zero consideration for UX"
+- MyDATEV review 2026-07-06 (1*, StB voice): "Wieso soll die App nur für Mandanten sein? ... bevor ich die App meinem Mandanten empfehle."
+- Play reviews (DATEV Upload mobil de.datev.belegtransfer, 1*, newest) = 0.00015 (cum ~0.0122) https://play.google.com/store/apps/details?id=de.datev.belegtransfer
+  - 2026-06-22: "Wie kann es in 2026 sein, dass man mit dieser App nur Fotos hochladen kann und es nicht möglich ist ein PDF hochzuladen"
+  - 2026-06-18: "So verliere ich sogar viel mehr Zeit als die handschriftliche Lösung von Früher"
+  - 2026-06-11 (pharmacy): "Muss die App zwangsweise verwenden, aber wie alles von Datev einfach nicht anwenderfreundlich."
+  - 2026-08-16: "umständliche Anmeldung, funktioniert sehr oft nicht"
+  - 2026-10-06: "wenn es nicht einem ständig rausschmeißen tut , dann werden die Daten nicht hochgeladen"
+  - 2026-11-03: "die Dokumente verschwinden einfach. Bin seit 3 Stunden dabei"
+  - 2026-07-29: "Von einem auf den anderen Tag geht kein Upload der Belege mehr."
+  - 15 of 15 1* reviews within Jun-Nov 2026 (newest sort) -> steady stream
+- Trustpilot candis.io = 0.00135: TrustScore 4.7 from 58 reviews, only 3 kept, all 5* (2025) -> no pain; https://www.trustpilot.com/review/candis.io
+- SERP x4 = 0.0015 (cum ~0.0151)
+- CH prices: sebona-treuhand 2026-06-09 GmbH Buchhaltung "CHF 250 und 450 pro Monat"; mrg-treuhand 2025-10 laufende Buchhaltung CHF 1'000-2'500/Mo; findea Einzelfirma CHF 100-300/Mo; monitoris 2026-09 Treuhänder CHF 90-320/h; treuhand-suche 2026-01-30 Treuhänder pay software 200 CHF/Mo, KMU ab 49 CHF/Mo; easybuchhaltung Monatsabo ab CHF 73. CH digital Treuhand saturation med (tobill, magicheidi, easybuchhaltung).
+- DATEV Belege online "3,83 EUR netto je Mandantenbestand und Monat (Stand 01/2026)" (milia.io 2026-06-22) ; DATEV Automatisierungsservice "0,052 € beim Service Rechnungen und 0,03 € beim Service Bank" per Buchungsvorschlag (bsteuern.com 2026-10-20)
+- FastDocs "Ab 49,00 Euro/Monat" (DATEV Marktplatz) https://www.datev.de/web/de/marktplatz/fastdocs ; taxaro.de Mandantenportal-Kosten 2026-07-29 (vendor); taxandbytes 2026-10-15 "Mandantenportale im Praxistest" (NWB StB-Forum 2026)
+- impulse.de 2024-02-28 (old) "Viele Steuerbüros nehmen kaum neue Mandanten auf." ; r/Steuerberater snippet "teils so ausgelastet sind, dass sie keine neuen Mandanten mehr ..."
+- Many 2026 entrants in Kanzlei-side Beleg/AI tools: milia.io, taxaro.de, docunest.de, clara-agent.de, bsteuern.com, Tabula, prekon.ai, trustax.de, rechnungswaechter.de -> saturation HIGH for generic "Belege einsammeln + KI" pitched to Kanzleien
+- reddit x2 = 0.002 (cum ~0.0171)
+- r/Steuerberater 2026-09-21 https://www.reddit.com/r/Steuerberater/comments/1wmeuj1/ (score 17, 30 c) "The affected client was passed around internally three times because of staff exits." tr (staff turnover -> errors)
+- r/selbststaendig 2025-12-19 https://www.reddit.com/r/selbststaendig/comments/1pqsepo/ (41 c) "What are you currently paying for your ongoing bookkeeping with your tax advisor?" tr
+- r/Steuern 2026-10-22 https://www.reddit.com/r/Steuern/comments/1xcrug0/ (score 8) Buchhaltungsdienstleister disappeared: "Important accounting documents and data are still with him" tr
+- r/Austria 2025-12-27 https://www.reddit.com/r/Austria/comments/1px50zo/ "How much does a tax advisor cost?" (14 c)
+- comments 1tqwq1u = 0.001 (cum ~0.0181)
+  - 2026-05-29 score 6: "Accounting for Sole Proprietorship GmbH 190 Net per month (about 30-40 documents per month) / Annual financial statement 4K" tr
+  - 2026-05-29 score 5: "I have a lean GmbH, making about 4000-5000 a year. ... Five years ago, it was still under 3000." tr (StB cost inflation)
+  - 2026-05-29 score 4: "Operational around 300 / month and 3-5K / year." tr
+  - 2026-05-29 score 6: "GmbH, about 220 employees, accounting including payroll and annual report about 70k per year" tr
+- SERP x4 = 0.0015 (cum ~0.0196)
+- datev-community E-Rechnung 2026 cluster (Kanzlei-side):
+  - 2026-03-05 "Validierung von E-Rechnungen: Wie sensibilisiert Ihr die [Mandanten]" snippet: "häufig die Struktur der XML-Datei der Grund ist, weshalb die ..." https://www.datev-community.de/t5/Unternehmen-online/Validierung-von-E-Rechnungen-Wie-sensibilisiert-Ihr-die/td-p/537557 -> READ candidate
+  - 2026-01-22 "E-Rechnungen - Buchführungen weiterhin in Papierform möglich?" snippet "Die Problematik der E-Rechnungen und die Notwendigkeit der Digitalisierung der Buchführung haben wir im Mandantenkreis angesprochen." https://www.datev-community.de/t5/Unternehmen-online/E-Rechnungen-Buchf%C3%BChrungen-weiterhin-in-Papierform-m%C3%B6glich/td-p/532661
+  - 2026-09-03 "E-Rechnung automatische Kontierung" https://www.datev-community.de/t5/Unternehmen-online/E-Rechnung-automatische-Kontierung-und-Verarbeitung-der-daraus/td-p/573445
+  - 2026-10-15 "E-Rechnung von Lieferant bei Mandant ... 'negativ' aufgefallen" https://www.datev-community.de/t5/Betriebliches-Rechnungswesen/E-Rechnung-von-Lieferant-bei-Mandant/m-p/580289
+  - 2026-03-30 "Anlagen zu e-Rechnung in Unternehmen online nicht sichtbar" https://www.datev-community.de/t5/Unternehmen-online/Anlagen-zu-e-Rechnung-in-Unternehmen-online-nicht-sichtbar/td-p/443267
+  - undated "wie sehe ich denn im DUO ob eine E-Rechnung (XML, ZUGFeRD) nicht korrekt ist, Stichwort Validierung? Wahrscheinlich gar nicht oder?" https://www.datev-community.de/t5/Unternehmen-online/Duo-E-Rechnung-Validierung/td-p/499420
+- gutefrage: all old (2013-2018) -> skip as pain signals (flag old). e.g. "Mein Steuerberater bekommt jeden Monat einen Haufen Geld für die laufende Buchhaltung, obwohl es gar nicht viele Belege sind." (2013)
+- Agenda prices (suitapp.de): Rechnungswesen-Komplettsystem 75 €/Monat; Buchhalter Basis 139 €/Monat https://suitapp.de/software/agenda/vs/datev ; reddit ~2025 "Preispolitik überlege ich derzeit von DATEV zu Addison zu wechseln" https://www.reddit.com/r/Steuerberater/comments/1itr57h/ (older than 12mo? "vor 1 Jahr")
+- AT: KSW Kanzleibarometer 2026 (issuu 2026-09-22); KSW 13,142 entries (Mar 2026); AT vendors aurora-digital.at, ki-kanzlei.at "Beleg-Hölle" (vendor) -> AT saturation med
+- page read #2 (datev-community E-Rechnung Validierung) cost 0 (cum ~0.0196)
+  - thread started 2026-02-13 (443 views, 4 msgs) https://www.datev-community.de/t5/Unternehmen-online/Validierung-von-E-Rechnungen-Wie-sensibilisiert-Ihr-die/td-p/537557
+  - OP: "Prüfen wir die Rechnungen auf Validität, werden Werkzeuge wie der ASR obsolet, weil doch wieder jede Rechnung geprüft werden muss"
+  - OP: "Welche Probleme könnten hinsichtlich der Haftung entstehen, wenn man bei dieser Thematik nicht genug aufklärt"
+  - reply 2026-02-13: "häufig die Struktur der XML-Datei der Grund ist, weshalb die Rechnung von DUO als invalide bezeichnet wird" ; plan to inform Mandanten "bevor ab 01.01.2027 die Pflicht ... greift"
+  - OP 2026-03-05: "das DATEV E-Rechnungspostfach ... andrehen, weil hier ja perspektivisch dann auch für jede Validierung Geld genommen wird und viele Fehlalarme auftreten"
+  - wants: flag non-valid E-Rechnungen in Primanota "damit man den Mandanten dann gesammelt darauf hinweisen kann"
+  - third-party tool mentioned: portinvoice
+- SERP x2 + reddit x1 = 0.00176 (FINAL cum = 0.02132)
+- DATEV E-Rechnungsplattform: free until 30.06.2026; "0,50 € je Ausgangsrechnung" for uploaded/external invoices; receipt stays free https://e-rechnungsplattform.datev.de/ ; datev-community 2025-10-31 (older) "Kostenentwicklung E-Rechnungsplattform - ab 2028" https://www.datev-community.de/t5/Unternehmen-online/Kostenentwicklung-E-Rechnungsplattform-ab-2028-alle/td-p/516813
+- DATEV moderne-honorarpolitik.pdf 2026-05-21: Kanzlei sample "jährliche Digitalisierungsgebühr in Höhe von 40,00€ (netto)" https://www.datev.de/content/dam/markenassets/themen-und-produktgruppen/neu--nichtmitglieder/moderne-honorarpolitik.pdf
+- kanzleipilot podcast 2025-10-05 "Der 10. des Monats ... Stress, Überstunden und fehlende Belege" -> Kurzfristigkeitszuschläge (context)
+- r/germany 2026-09-29 https://www.reddit.com/r/germany/comments/1wt6h4o/ (score 31, 14 c) EN verbatim: "15 months later and our taxes still have not been filed. Communication has been extremely difficult"
+- r/LegaladviceGerman 2026-07-29 https://www.reddit.com/r/LegaladviceGerman/comments/1v9ueyr/ (10 c) "Communication has been very poor from the start; many of my emails were ignored for months." tr
