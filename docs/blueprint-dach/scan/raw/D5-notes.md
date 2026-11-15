@@ -176,3 +176,10 @@ Spend: page reads x2 (9am compliance hub + preise) charged 0 (total ~0.0234). Pa
 - "Ø Nachzahlung pro Engagement: 80.000 €+ (DRV-Statusverfahren)" (vendor claim)
 - Solo 79 €/Monat netto (unbegrenzte Risikotests, PDF-Reports, Vertragsgenerator); Enterprise "typischerweise ab 299 €/Monat" (Org, Audit-Trail); Einzeltest einmalig 29 €; freelancer side: Profil ab 39 €, Pro-Abo ab 14 €/Monat
 - built with Hogan Lovells Cadwalader
+
+Spend: reddit x2 0.002 (FINAL total ~0.0255). STOPPED. Writing D5.md.
+## Reddit "Stundenzettel Freelancer Agentur..." -> repeats BE post; r/StartupDACH 1tgpbi6 2026-05-18 vendor (Logr Time tester call); r/Steuern 1whp8yl 2026-09-16 invoicing confusion (VAT-ID vs Steuernummer)
+## Reddit AT "Werkvertrag freier Dienstvertrag..."
+- https://www.reddit.com/r/Austria/comments/1xlvszf/ | 2026-11-02 | 38 comments, score 8 | [auto-EN] employer converts employee to freier Dienstvertrag: "My boss said my hourly rate would be the same as it is now as an employee."
+- https://www.reddit.com/r/Veranstaltungstechnik/comments/1riacpy/ | 2026-03-01 | 12 comments, score 18 | [auto-EN] "a motivated auditor would probably accuse more than half of the freelance colleagues I know ... of being bogus self-employed."
+- https://www.reddit.com/r/selbststaendig/comments/1ujzwbu/ | 2026-06-30 | 58 comments, score 10 | why no switch to UG due to fear of Scheinselbstständigkeit
