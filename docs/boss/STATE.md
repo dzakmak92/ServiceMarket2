@@ -1,7 +1,7 @@
 # Boss State
 
 ## Current phase
-Phase: 3 Profit | Started: 2026-11-15 | Last updated: 2026-11-15 | Mode: normal
+Phase: 4 Pick | Started: 2026-11-15 | Last updated: 2026-11-15 | Mode: normal
 Siblings found: hunter [x] manager [x]
 
 ## Gate log
@@ -9,14 +9,15 @@ Siblings found: hunter [x] manager [x]
 |---|---|---|---|
 | 1 Hunt | GO (user approved shortlist as is) | 2026-11-15 | Top 10 cut from 3 hunts (24 grounds, ≈ 610 signals); no new spend; ClaimClock #11 |
 | 2 Check ×10 | GO (user: go) | 2026-11-15 | No kills; I-03 28, I-07 25 GO; others GO with conditions |
-| 3 Profit | awaiting approval | 2026-11-15 | Combined: I-07 85.4, I-02 76.6, I-03 74.0, I-05 73.7, I-04 71.7 |
-| 4 Pick | | | |
+| 3 Profit | GO (user: go) | 2026-11-15 | Combined: I-07 85.4, I-02 76.6, I-03 74.0, I-05 73.7, I-04 71.7 |
+| 4 Pick | awaiting choice | 2026-11-15 | R-1 I-07, R-2 I-02, R-3 I-03; 12 sources verified (8 ok, 3 changed, 1 unverified) |
 
 ## treg spend
-Approved budget: $0.38 (2026-11-15, normal; Phase 2 cap $0.25 = 5 agents × $0.05) | Spent in boss: $0.058 of $0.38 | Team balance at start: $4.801 (shared)
+Approved budget: $0.38 (2026-11-15, normal; Phase 2 cap $0.25 = 5 agents × $0.05) | Spent in boss: $0.060 of $0.38 | Team balance at start: $4.801 (shared)
 Hunt spend reused (already paid): hunt 1 $0.106 logged, hunt 2 $0.183, hunt 3 $0.160
 | Date | Phase / shortcut | Calls | Cost USD | Notes |
 |---|---|---|---|---|
+| 2026-11-15 | b:pick verification | 15 | 0.0020 | 12 sources on the live pages |
 | 2026-11-15 | b:check ×10 | ≈ 99 | 0.0583 | I-01/03 0.0128, I-02/10 0.0118, I-04/09 0.0095, I-05/07 0.0114, I-06/08 0.0128 |
 
 ## Ideas
@@ -36,6 +37,9 @@ Hunt spend reused (already paid): hunt 1 $0.106 logged, hunt 2 $0.183, hunt 3 $0
 ## Recommendations
 | R | I-ID | Pre-sale test | Result |
 |---|---|---|---|
+| R-1 | I-07 | ≥ 5 paid €490 audits from 40 agency conversations in 3 weeks | not started |
+| R-2 | I-02 | ≥ 3 paid pilots or 5 LOIs + ≥ 15 carers in 1 metro in 3 weeks | not started |
+| R-3 | I-03 | Vienna: ≥ 15 awarded jobs in 6 weeks (kill < 5) | not started |
 
 ## Hand-off
 Chosen: | Files written: | Date:

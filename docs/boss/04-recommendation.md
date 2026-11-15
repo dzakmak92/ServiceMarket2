@@ -1,6 +1,7 @@
 # 04 Recommendation
 Date: 2026-11-15
-- **treg spent in boss:** $0.058 (Phase 2) + verification (see `04-verification.md`), of $0.38 approved.
+- **treg spent in boss:** $0.060 of $0.38 approved ($0.058 for checks, $0.002 for verification).
+- **Source verification:** 12 key sources re-read on the live pages on 2026-11-15 (`04-verification.md`): 8 confirmed, 3 changed, 1 unverified. Changes are applied below.
 - **Hunt spend before boss:** $0.449.
 - **Diversity check:** the top 3 of the combined ranking serve different buyers and jobs (agencies using freelancers; KMU employers with parent staff; trades and homeowners), so no swap was needed.
 
@@ -34,7 +35,7 @@ Date: 2026-11-15
 - **Red team:** "Agencies will buy a €190 lawyer consultation once a year and a spreadsheet, not a subscription. And if the 2028 reform makes clients withhold contributions anyway, the risk file's urgency vanishes."
 
 ## R-2 · I-02 Einspringer
-- **One line:** For KMU (10–250 staff) whose employees lose days to sick children and Kita closures, a yearly backup-care plan that sends a vetted carer home within hours, billed using the €600 tax-free allowance. Unlike pme (corporates) or babysitter sites (paywalls, dead profiles), it is sized and priced for small firms.
+- **One line:** For KMU (10–250 staff) whose employees lose days to sick children and Kita closures, a yearly backup-care plan that sends a vetted carer home within hours, billed using the €600 tax-free allowance. Unlike pme (built for corporates; it now guarantees next-day back-up care for calls up to 18:00, per verification) or babysitter sites (paywalls, dead profiles), it is sized and priced for small firms. Same-day booking has to be the edge, because next-day is already pme's promise.
 - **Why it's on the list:**
   - Profit score 4 (~$12k base, with the +1 adjustment for recurring B2B)
   - Check 24/35
@@ -56,12 +57,14 @@ Date: 2026-11-15
 - **Red team:** "Supply collapses exactly when demand peaks: the winter infection wave hits every client at once, and carers get sick too. A KMU won't renew after one 'no carer available' morning."
 
 ## R-3 · I-03 Fair-lead trades marketplace
-- **One line:** For trades fed up with paying for shared and ghost contacts, a marketplace where each job goes to one firm and the fee is due only when the job is awarded. Unlike MyHammer (€17–80 per shared contact) or CHECK24 Profis (pay per interest), the trade pays only for won work. It runs on the existing ServiceMarket.
+- **One line:** For trades fed up with paying for shared and ghost contacts, a marketplace where each job goes to one firm and the fee is due only when the job is awarded. Unlike MyHammer (paid per shared contact; €17–80 according to pro reviews, while the official page names no price) or CHECK24 Profis (pay per interest), the trade pays only for won work. It runs on the existing ServiceMarket.
 - **Why it's on the list:**
   - Highest check score (28/35), lowest build (~120 h), founder fit 5
   - Profit score 3 (base ~$19k, but uncapped upside if liquidity works)
 - **Evidence:**
   1. About 28 of 50 MyHammer pro-app reviews complain about paying €17–80 per shared contact; several ask for "Gebühr nur bei Auftragsvergabe" (`checks/I-03.md`) `[E]`.
+   - The €17–80 range comes from reviews only; MyHammer's official page names no amount (verification: unverified).
+   - The often-quoted "€120 per won job" (Baulisten) is a worked example, not a range (changed).
   2. Angi's booked-job pro app rates 4.55★ (38,238 ratings) against 3.94★ (39,577) for its lead app `[E]`.
   3. "myhammer kosten" gets 1,300/mo and "myhammer alternative" 480/mo in DE; r/Handwerker has 115k members, and "Ist MyHammer echt meine einzige Möglichkeit?" got 144 up / 215 comments `[E]`.
 - **Price and model:** a success fee per awarded job, tiered €19 / €49 / €99 by job size, collected in-flow through a Stripe deposit. No subscription, no minimum term `[A]`.
